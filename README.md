@@ -6,12 +6,15 @@ Juguemos helps families turn the time they have into play that is fun and meanin
 
 **Version 1 scope:** Argentina (Buenos Aires first) · ages 1–5 · responsive web
 
+**Stack:** React · Node.js · PostgreSQL · Docker Compose on a DigitalOcean droplet
+
 ## Documentation
 
 | Document | What it covers |
 |---|---|
 | [Product concept](docs/product-concept.md) | Vision, market landscape, features, content approach, v1 decisions, and the planning roadmap |
 | [Constitution](docs/constitution.md) | The five commitments, guardrails, and how to resolve conflicts between them |
+| [Architecture](docs/architecture.md) | How Juguemos is built and run: stack, hosting, data, and operations |
 
 ## Status
 
