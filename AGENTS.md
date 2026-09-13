@@ -20,6 +20,55 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 
 **Start simple.** Build a solid core loop first. Don't add features from the product concept that `docs/releases.md` hasn't scheduled, and don't pull parked features forward without asking.
 
+## The app today
+
+`web/` is the React SPA (Vite, TanStack Router file routes, plain JavaScript with JSDoc). Every 0.1 screen from the Plaza handoff is built and runs on mocked data. The API has only its health route so far.
+
+| Route | Screen (mockup id) |
+|---|---|
+| `/entrada` | Entrada (`2a`) |
+| `/cuenta` | Crear cuenta (`2b`). `?modo=entrar` switches it to sign-in mode, and `?campo=email` focuses the email field |
+| `/verificar` | Verificar el email (`2c`) |
+| `/familia/contanos` | Contame de tu familia (`2d`) |
+| `/familia/revisar` | ¿Está bien así? (`2f`), or Entendió mal (`2g`) when the parse flags fields |
+| `/familia/corregir` | Corregir (`2h`). `?campo=` focuses one field |
+| `/familia` | Mi familia, the card's permanent home after onboarding |
+| `/ajustes` | Ajustes, not designed yet and kept minimal |
+| `/` | Home: `2j`, or `2i` when there is no last idea. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home |
+| `/idea/$id` | Actividad (`2m` or `2n`). Otra idea swaps in place (`2p`) and pushes history, so back returns to the previous idea |
+| `/idea/$id/reloj` | El reloj (`2o`) |
+| `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
+| `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` in dark) |
+| `/demo` | Review scaffolding, not part of the app. It has switches for hard-to-reach states and shortcuts to every screen by mockup id |
+
+How it fits together:
+
+- **Primitives** live in `web/src/components/`: `Screen` (with `Header`, `Body`, `Footer`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, and `ActivityView`. Build new screens from them rather than one-off layouts.
+- **The mock API** is `web/src/api/mock.js`, re-exported by `web/src/api/index.js`. Screens import only from `web/src/api`. Moving to the real API means changing `api/index.js` and keeping the same function shapes. The example family, activities, and stories are in `api/fixtures.js`.
+- **Local state** is in `web/src/lib/store.js`: one localStorage key per piece of state, read with `useStored(key)`. It caches the account, the family, activities, stories, the timer, and story positions. That cache is what keeps the last idea and the open story readable offline.
+- **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, with an unverified email to `/verificar`, and with no family to `/familia/contanos`.
+- **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values. Dark mode (0.3) is reachable with `?tema=oscuro` or from `/demo`.
+- **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity defaults to `2m` (why-first), and `2n` can be switched on from `/demo` until Alex picks one.
+- **Google sign-in** appears on `2a` and `2b` as designed but is mocked. `docs/releases.md` schedules Sign in with Google for 0.3.
+
+## Design rules from the Plaza handoff
+
+The spec is `docs/design_handoff_juguemos_plaza/`. Its README has the tokens, the type scale, and every screen. The mockups (`2a`–`2u`) are the spec, and the wireframes' notes (`1a`–`1t`) say what each screen must never do. Read the README before changing any UI. These are the rules that are easiest to undo by accident:
+
+- **A tool for grown-ups, about play.** No mascot, character, or cartoon. The wordmark's three dots never get a face and never grow past splash size. Fredoka 600 is already at its limit: no heavier weight and no rounded body font.
+- **No sound, ever.** That includes the moment the activity timer ends. No vibration either.
+- **Motion guides and never demands.** Use 120–200 ms ease-out with no bounce, spring, or confetti, and respect `prefers-reduced-motion`.
+- **Flat.** No gradients, glossy or 3D buttons, or drop-shadow buttons. The palette is the token set and nothing more.
+- **Never clinical and never a scoreboard.** No progress rings, streaks, points, badges, counts, percentages, "you stopped early", or days since the family last played. The only progress bar in the app marks position in a story. The timer never logs or compares sessions.
+- **One idea, never a list or a feed.** The wait for an idea happens on Home, and Home's last-idea card is capped at one.
+- **The family's words stay exactly as typed.** Toy names are never normalised, capitalised, or autocorrected, so those inputs set `autoCorrect="off"` and `autoCapitalize="none"`.
+- **Colour is never the only signal.** Flagged rows use a tint, a bar, and words. The current drawer item uses a filled row.
+- **No art on the reading screen,** even after 0.2 brings illustration. The wake lock holds from the moment a story starts being written until the parent leaves it.
+- **Thumb zone.** Primary actions sit in the lower half, and every tap target is at least 48 px. The design width is 390 px, capped with `max-width`.
+- **Copy is Rioplatense Spanish with *vos*,** taken verbatim from the mockups. Failures say "Uy, algo falló. ¿Probamos de nuevo?" with no blame and no error codes. Field errors go under the field, in words, never in a red banner. Offline is "Estás sin conexión. La última idea sigue acá."
+- **Copy still needs a voice pass** in these places, marked `Voice pass pending` in code: Listo, Prefiero un formulario, Guardar, the line after six seconds of thinking, Empezar, the timer screen, Otras opciones, and all account-screen copy.
+- **Out of scope for 0.1, so don't build it:** the toy box, voice recording (the mic is a placeholder), goals, categories and filters, weather, the journal, tips, recaps, holidays, the partner invite, post-activity feedback, and an English interface.
+
 ## Tracking work in Linear
 
 Alex follows the build in Linear, so Linear must always show what is being built and what has finished.

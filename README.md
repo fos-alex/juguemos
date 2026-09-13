@@ -47,6 +47,6 @@ npm run build      # production build to web/dist (Caddy serves this)
 
 ## Status
 
-0.1 client prototype implemented: the Plaza screens (home, activity, story options, reading) with hardcoded family data. The API has only its health endpoint so far.
+Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) is built in `web/` and runs on mocked data from `web/src/api/mock.js`. Open `/demo` to switch hard-to-reach states (the AI misreading the family, offline, slow, a failed request, the two Activity layouts, dark mode) and to jump to any screen by its mockup id. The API has only its health endpoint so far.
 
 Next step: design the data model, meaning the core entities (family, household, adults and their play styles, kids, toys, special dates) and the tags every activity, toy, goal, and tip carries.

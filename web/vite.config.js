@@ -22,6 +22,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2,woff}'],
+        // Spanish needs Latin and Latin-Ext only; other subsets still load on demand via unicode-range.
+        globIgnores: ['**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew,math,symbols}-*.woff2'],
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
       },

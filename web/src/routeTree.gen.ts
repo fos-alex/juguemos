@@ -10,13 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AjustesRouteImport } from './routes/ajustes'
+import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as CuentosRouteImport } from './routes/cuentos'
+import { Route as DemoRouteImport } from './routes/demo'
+import { Route as EntradaRouteImport } from './routes/entrada'
+import { Route as VerificarRouteImport } from './routes/verificar'
 import { Route as CuentoIdRouteImport } from './routes/cuento.$id'
-import { Route as IdeaIdRouteImport } from './routes/idea.$id'
+import { Route as FamiliaIndexRouteImport } from './routes/familia.index'
+import { Route as FamiliaContanosRouteImport } from './routes/familia.contanos'
+import { Route as FamiliaCorregirRouteImport } from './routes/familia.corregir'
+import { Route as FamiliaRevisarRouteImport } from './routes/familia.revisar'
+import { Route as IdeaIdIndexRouteImport } from './routes/idea.$id.index'
+import { Route as IdeaIdRelojRouteImport } from './routes/idea.$id.reloj'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjustesRoute = AjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CuentaRoute = CuentaRouteImport.update({
+  id: '/cuenta',
+  path: '/cuenta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CuentosRoute = CuentosRouteImport.update({
@@ -24,49 +44,172 @@ const CuentosRoute = CuentosRouteImport.update({
   path: '/cuentos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntradaRoute = EntradaRouteImport.update({
+  id: '/entrada',
+  path: '/entrada',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificarRoute = VerificarRouteImport.update({
+  id: '/verificar',
+  path: '/verificar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CuentoIdRoute = CuentoIdRouteImport.update({
   id: '/cuento/$id',
   path: '/cuento/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IdeaIdRoute = IdeaIdRouteImport.update({
-  id: '/idea/$id',
-  path: '/idea/$id',
+const FamiliaIndexRoute = FamiliaIndexRouteImport.update({
+  id: '/familia/',
+  path: '/familia/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamiliaContanosRoute = FamiliaContanosRouteImport.update({
+  id: '/familia/contanos',
+  path: '/familia/contanos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamiliaCorregirRoute = FamiliaCorregirRouteImport.update({
+  id: '/familia/corregir',
+  path: '/familia/corregir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamiliaRevisarRoute = FamiliaRevisarRouteImport.update({
+  id: '/familia/revisar',
+  path: '/familia/revisar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdeaIdIndexRoute = IdeaIdIndexRouteImport.update({
+  id: '/idea/$id/',
+  path: '/idea/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdeaIdRelojRoute = IdeaIdRelojRouteImport.update({
+  id: '/idea/$id/reloj',
+  path: '/idea/$id/reloj',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ajustes': typeof AjustesRoute
+  '/cuenta': typeof CuentaRoute
   '/cuentos': typeof CuentosRoute
+  '/demo': typeof DemoRoute
+  '/entrada': typeof EntradaRoute
+  '/verificar': typeof VerificarRoute
   '/cuento/$id': typeof CuentoIdRoute
-  '/idea/$id': typeof IdeaIdRoute
+  '/familia/contanos': typeof FamiliaContanosRoute
+  '/familia/corregir': typeof FamiliaCorregirRoute
+  '/familia/revisar': typeof FamiliaRevisarRoute
+  '/familia/': typeof FamiliaIndexRoute
+  '/idea/$id/reloj': typeof IdeaIdRelojRoute
+  '/idea/$id/': typeof IdeaIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ajustes': typeof AjustesRoute
+  '/cuenta': typeof CuentaRoute
   '/cuentos': typeof CuentosRoute
+  '/demo': typeof DemoRoute
+  '/entrada': typeof EntradaRoute
+  '/verificar': typeof VerificarRoute
   '/cuento/$id': typeof CuentoIdRoute
-  '/idea/$id': typeof IdeaIdRoute
+  '/familia/contanos': typeof FamiliaContanosRoute
+  '/familia/corregir': typeof FamiliaCorregirRoute
+  '/familia/revisar': typeof FamiliaRevisarRoute
+  '/familia': typeof FamiliaIndexRoute
+  '/idea/$id/reloj': typeof IdeaIdRelojRoute
+  '/idea/$id': typeof IdeaIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ajustes': typeof AjustesRoute
+  '/cuenta': typeof CuentaRoute
   '/cuentos': typeof CuentosRoute
+  '/demo': typeof DemoRoute
+  '/entrada': typeof EntradaRoute
+  '/verificar': typeof VerificarRoute
   '/cuento/$id': typeof CuentoIdRoute
-  '/idea/$id': typeof IdeaIdRoute
+  '/familia/contanos': typeof FamiliaContanosRoute
+  '/familia/corregir': typeof FamiliaCorregirRoute
+  '/familia/revisar': typeof FamiliaRevisarRoute
+  '/familia/': typeof FamiliaIndexRoute
+  '/idea/$id/reloj': typeof IdeaIdRelojRoute
+  '/idea/$id/': typeof IdeaIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cuentos' | '/cuento/$id' | '/idea/$id'
+  fullPaths:
+    | '/'
+    | '/ajustes'
+    | '/cuenta'
+    | '/cuentos'
+    | '/demo'
+    | '/entrada'
+    | '/verificar'
+    | '/cuento/$id'
+    | '/familia/contanos'
+    | '/familia/corregir'
+    | '/familia/revisar'
+    | '/familia/'
+    | '/idea/$id/reloj'
+    | '/idea/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cuentos' | '/cuento/$id' | '/idea/$id'
-  id: '__root__' | '/' | '/cuentos' | '/cuento/$id' | '/idea/$id'
+  to:
+    | '/'
+    | '/ajustes'
+    | '/cuenta'
+    | '/cuentos'
+    | '/demo'
+    | '/entrada'
+    | '/verificar'
+    | '/cuento/$id'
+    | '/familia/contanos'
+    | '/familia/corregir'
+    | '/familia/revisar'
+    | '/familia'
+    | '/idea/$id/reloj'
+    | '/idea/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/ajustes'
+    | '/cuenta'
+    | '/cuentos'
+    | '/demo'
+    | '/entrada'
+    | '/verificar'
+    | '/cuento/$id'
+    | '/familia/contanos'
+    | '/familia/corregir'
+    | '/familia/revisar'
+    | '/familia/'
+    | '/idea/$id/reloj'
+    | '/idea/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AjustesRoute: typeof AjustesRoute
+  CuentaRoute: typeof CuentaRoute
   CuentosRoute: typeof CuentosRoute
+  DemoRoute: typeof DemoRoute
+  EntradaRoute: typeof EntradaRoute
+  VerificarRoute: typeof VerificarRoute
   CuentoIdRoute: typeof CuentoIdRoute
-  IdeaIdRoute: typeof IdeaIdRoute
+  FamiliaContanosRoute: typeof FamiliaContanosRoute
+  FamiliaCorregirRoute: typeof FamiliaCorregirRoute
+  FamiliaRevisarRoute: typeof FamiliaRevisarRoute
+  FamiliaIndexRoute: typeof FamiliaIndexRoute
+  IdeaIdRelojRoute: typeof IdeaIdRelojRoute
+  IdeaIdIndexRoute: typeof IdeaIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,11 +221,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ajustes': {
+      id: '/ajustes'
+      path: '/ajustes'
+      fullPath: '/ajustes'
+      preLoaderRoute: typeof AjustesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cuenta': {
+      id: '/cuenta'
+      path: '/cuenta'
+      fullPath: '/cuenta'
+      preLoaderRoute: typeof CuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cuentos': {
       id: '/cuentos'
       path: '/cuentos'
       fullPath: '/cuentos'
       preLoaderRoute: typeof CuentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrada': {
+      id: '/entrada'
+      path: '/entrada'
+      fullPath: '/entrada'
+      preLoaderRoute: typeof EntradaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificar': {
+      id: '/verificar'
+      path: '/verificar'
+      fullPath: '/verificar'
+      preLoaderRoute: typeof VerificarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cuento/$id': {
@@ -92,11 +270,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CuentoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/idea/$id': {
-      id: '/idea/$id'
+    '/familia/': {
+      id: '/familia/'
+      path: '/familia'
+      fullPath: '/familia/'
+      preLoaderRoute: typeof FamiliaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/familia/contanos': {
+      id: '/familia/contanos'
+      path: '/familia/contanos'
+      fullPath: '/familia/contanos'
+      preLoaderRoute: typeof FamiliaContanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/familia/corregir': {
+      id: '/familia/corregir'
+      path: '/familia/corregir'
+      fullPath: '/familia/corregir'
+      preLoaderRoute: typeof FamiliaCorregirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/familia/revisar': {
+      id: '/familia/revisar'
+      path: '/familia/revisar'
+      fullPath: '/familia/revisar'
+      preLoaderRoute: typeof FamiliaRevisarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/idea/$id/': {
+      id: '/idea/$id/'
       path: '/idea/$id'
-      fullPath: '/idea/$id'
-      preLoaderRoute: typeof IdeaIdRouteImport
+      fullPath: '/idea/$id/'
+      preLoaderRoute: typeof IdeaIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/idea/$id/reloj': {
+      id: '/idea/$id/reloj'
+      path: '/idea/$id/reloj'
+      fullPath: '/idea/$id/reloj'
+      preLoaderRoute: typeof IdeaIdRelojRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -104,9 +317,19 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AjustesRoute: AjustesRoute,
+  CuentaRoute: CuentaRoute,
   CuentosRoute: CuentosRoute,
+  DemoRoute: DemoRoute,
+  EntradaRoute: EntradaRoute,
+  VerificarRoute: VerificarRoute,
   CuentoIdRoute: CuentoIdRoute,
-  IdeaIdRoute: IdeaIdRoute,
+  FamiliaContanosRoute: FamiliaContanosRoute,
+  FamiliaCorregirRoute: FamiliaCorregirRoute,
+  FamiliaRevisarRoute: FamiliaRevisarRoute,
+  FamiliaIndexRoute: FamiliaIndexRoute,
+  IdeaIdRelojRoute: IdeaIdRelojRoute,
+  IdeaIdIndexRoute: IdeaIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
