@@ -16,7 +16,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 
 | Area | Decision | Status |
 |---|---|---|
-| Client | React SPA built with Vite (TypeScript, TanStack Router), shipped as static files served by Caddy | Decided |
+| Client | React SPA built with Vite (JavaScript with JSDoc, TanStack Router), shipped as static files served by Caddy | Decided |
 | Devices | Mobile-first: mid-range Android and iPhone, Chrome and Safari. Desktop is not a target | Decided |
 | Offline | Service worker for the app shell; an app-owned store for offline data | Decided |
 | Server | Node.js HTTP API (Fastify), long-running | Decided |
@@ -24,8 +24,8 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | Hosting | Existing DigitalOcean droplet | Decided |
 | Local development | Docker Compose, same as production, at `https://juguemos.local` | Decided |
 | TLS and reverse proxy | Caddy: automatic certificates in production, internal CA locally | Decided |
-| Language | TypeScript across client and server | Decided |
-| Repo layout | Single repo. npm workspaces with a shared types package arrive with the Vite SPA; no heavier tooling | Decided |
+| Language | JavaScript with JSDoc across client and server (TypeScript tried and dropped; Node 24 can still run `.ts` natively if a module ever wants it) | Decided |
+| Repo layout | Single repo. npm workspaces (api, web): one install, separate codebases, no shared package; no heavier tooling | Decided |
 | Native mobile apps | Not in v1. After 1.0: native Android/iOS or React Native, TBD | Decided |
 
 ## 3. Hosting: why the droplet
@@ -57,11 +57,11 @@ Key rules:
 - The same Compose file runs locally, so there is no drift between a developer machine and the server.
 - Caddy serves the app with `immutable` long-caching for hashed assets and `no-cache` for everything else, which is what makes every deploy refresh cleanly on clients.
 - Locally, the same stack serves `https://juguemos.local` with a certificate from Caddy's internal CA. On the droplet, the same Caddyfile swaps the site address for the real domain.
-- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (the React SPA, whose Vite build output Caddy serves from `web/dist`). The repo is an npm workspace: `api`, `web`, and `packages/shared`, which holds the types both sides share.
+- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (the React SPA, whose Vite build output Caddy serves from `web/dist`). The repo is an npm workspace: `api` and `web`, sharing one install with separate codebases.
 
 ## 5. Client
 
-A single-page app built with Vite and React, written in TypeScript, shipped as static files that Caddy serves. TanStack Router gives it typed routes, per-route code splitting, and prefetching on tap, so every screen after the first loads instantly. No heavy UI component library; the bundle stays lean.
+A single-page app built with Vite and React, written in JavaScript with JSDoc types on the domain data, shipped as static files that Caddy serves. TanStack Router gives it per-route code splitting and prefetching on tap, so every screen after the first loads instantly. No heavy UI component library; the bundle stays lean. The server runs Node 24, which runs `.js` directly; TypeScript was tried across the stack for shared contract types and dropped when the shared package proved only theoretical.
 
 Next.js was considered and set aside. Juguemos is a logged-in, phone-first app with no public pages to rank, and every piece of data and logic belongs to the API. Server-side rendering would add a second server runtime next to it and buy nothing, while its hydration cost would land squarely on the mid-range phones that matter most. If marketing pages that need SEO ever appear, they can be a tiny separate site.
 
@@ -183,4 +183,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 |---|---|---|
 | 0.1 | September 2026 | First draft. Established React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
 | 0.2 | September 2026 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets set (mid-range Android and iPhone; desktop not a target). Service worker and offline rules. `juguemos.local` for local development. Fastify for the API. PostgreSQL now, a CMS with its own database if content grows. First scaffold committed: Compose, Caddy, API, placeholder page. |
-| 0.3 | September 2026 | SPA built from the Plaza prototype: Vite, TanStack Router with per-route code splitting, npm workspaces with a shared types package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |
+| 0.3 | September 2026 | SPA built from the Plaza prototype in JavaScript with JSDoc (TypeScript tried and dropped): Vite, TanStack Router with per-route code splitting, npm workspaces (api, web) with no shared package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |

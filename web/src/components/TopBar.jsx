@@ -2,11 +2,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { toggleTheme, useTheme } from '../hooks/useTheme'
 import { Wordmark } from './Wordmark'
 
-interface TopBarProps {
-  back?: { to: '/'; label: string } | { to: '/cuentos'; label: string }
-}
-
-export function TopBar({ back }: TopBarProps) {
+/** @param {{ back?: { to: '/' | '/cuentos', label: string } }} props */
+export function TopBar({ back }) {
   const navigate = useNavigate()
   const dark = useTheme()
 

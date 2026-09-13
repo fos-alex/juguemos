@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-function subscribe(listener: () => void) {
+function subscribe(listener) {
   window.addEventListener('online', listener)
   window.addEventListener('offline', listener)
   return () => {
@@ -9,6 +9,6 @@ function subscribe(listener: () => void) {
   }
 }
 
-export function useOnline(): boolean {
+export function useOnline() {
   return useSyncExternalStore(subscribe, () => navigator.onLine)
 }

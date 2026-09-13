@@ -1,6 +1,7 @@
-import type { Story } from '@juguemos/shared'
+/** @typedef {{ title: string, teaser: string, minutes: number, parts: string[][] }} Story */
 
-export const stories: Story[] = [
+/** @type {Story[]} */
+export const stories = [
   {
     title: 'El caballo percherón pierde su herradura',
     teaser: 'Milán y el caballo percherón la buscan por toda la casa.',

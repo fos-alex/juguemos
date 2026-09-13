@@ -4,7 +4,7 @@ export function requestTurn() {
   pending = true
 }
 
-export function consumeTurn(): boolean {
+export function consumeTurn() {
   const wasPending = pending
   pending = false
   return wasPending

@@ -1,24 +1,16 @@
 import { useEffect, useState } from 'react'
 
-interface ScreenWakeLock {
-  release(): Promise<void>
-  addEventListener(type: 'release', listener: () => void): void
-}
-
-export function useWakeLock(): boolean {
+export function useWakeLock() {
   const [awake, setAwake] = useState(false)
 
   useEffect(() => {
-    let sentinel: ScreenWakeLock | null = null
+    let sentinel = null
     let active = true
 
     const acquire = async () => {
-      const nav = navigator as Navigator & {
-        wakeLock?: { request(kind: 'screen'): Promise<ScreenWakeLock> }
-      }
-      if (!nav.wakeLock || document.visibilityState !== 'visible') return
+      if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return
       try {
-        const lock = await nav.wakeLock.request('screen')
+        const lock = await navigator.wakeLock.request('screen')
         if (!active) {
           await lock.release()
           return

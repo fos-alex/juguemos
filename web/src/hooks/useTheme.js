@@ -1,12 +1,12 @@
 import { useSyncExternalStore } from 'react'
 
-const listeners = new Set<() => void>()
+const listeners = new Set()
 
-function isDark(): boolean {
+function isDark() {
   return document.documentElement.dataset.theme === 'dark'
 }
 
-function subscribe(listener: () => void) {
+function subscribe(listener) {
   listeners.add(listener)
   return () => {
     listeners.delete(listener)
@@ -25,6 +25,6 @@ export function syncThemeColor() {
   if (meta) meta.setAttribute('content', getComputedStyle(document.body).backgroundColor)
 }
 
-export function useTheme(): boolean {
+export function useTheme() {
   return useSyncExternalStore(subscribe, isDark)
 }

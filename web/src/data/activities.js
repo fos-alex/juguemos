@@ -1,6 +1,7 @@
-import type { ActivitySuggestion } from '@juguemos/shared'
+/** @typedef {{ minutes: number, place: string, title: string, why: string, needs: string, steps: string[], easier: string, harder: string }} Activity */
 
-export const activities: ActivitySuggestion[] = [
+/** @type {Activity[]} */
+export const activities = [
   {
     minutes: 15,
     place: 'Adentro',
@@ -9,7 +10,7 @@ export const activities: ActivitySuggestion[] = [
     needs: 'El dinosaurio chiquito y un almohadón.',
     steps: [
       'Escondé el dinosaurio chiquito debajo de un almohadón mientras Milán mira.',
-      'Preguntá: “¿Dónde está el dinosaurio?” y buscalo con Milán.',
+      'Preguntá: "¿Dónde está el dinosaurio?" y buscalo con Milán.',
       'Cuando lo encuentre, ¡que ruja!',
     ],
     easier: 'Dejá la cola asomando.',
@@ -24,7 +25,7 @@ export const activities: ActivitySuggestion[] = [
     steps: [
       'Armá una vía corta en el piso del living.',
       'Subí al caballo percherón y al dinosaurio chiquito al tren.',
-      'En cada parada, preguntá: “¿Quién se baja acá?” y hagan juntos el ruido de ese pasajero.',
+      'En cada parada, preguntá: "¿Quién se baja acá?" y hagan juntos el ruido de ese pasajero.',
     ],
     easier: 'Una vía recta y un solo pasajero.',
     harder: 'Que Milán decida adónde va el tren y quién sube.',
@@ -38,7 +39,7 @@ export const activities: ActivitySuggestion[] = [
     steps: [
       'Sentá al osito marrón en un almohadón y contale a Milán que tiene mucha hambre.',
       'Dale a Milán el plato y la cuchara para que le dé de comer.',
-      'Cuando termine, hagan “shh” y acuesten al osito a dormir.',
+      'Cuando termine, hagan "shh" y acuesten al osito a dormir.',
     ],
     easier: 'Dale vos la primera cucharada y que Milán te copie.',
     harder: 'Que Milán le cuente al osito qué le está dando de comer.',

@@ -11,10 +11,10 @@ export const Route = createFileRoute('/cuento/$id')({
 function ReadingScreen() {
   const { id } = Route.useParams()
   const awake = useWakeLock()
-  const parts = useRef<(HTMLElement | null)[]>([])
-  const bar = useRef<HTMLDivElement>(null)
-  const fill = useRef<HTMLDivElement>(null)
-  const count = useRef<HTMLSpanElement>(null)
+  const parts = useRef([])
+  const bar = useRef(null)
+  const fill = useRef(null)
+  const count = useRef(null)
 
   const index = Math.min(Math.max(Number(id) || 0, 0), stories.length - 1)
   const story = stories[index]
@@ -38,7 +38,7 @@ function ReadingScreen() {
       const progress = max > 0 ? Math.min(1, window.scrollY / max) : 1
       if (fill.current) fill.current.style.width = `${progress * 100}%`
       const readingLine = window.innerHeight * 0.4
-      const elements = parts.current.filter((el): el is HTMLElement => el !== null)
+      const elements = parts.current.filter((el) => el !== null)
       const current = Math.max(
         1,
         elements.filter((el) => el.getBoundingClientRect().top < readingLine).length,
