@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.2 · September 2026 · Owner: Alex Otero
+**Version:** 0.3 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -57,7 +57,7 @@ Key rules:
 - The same Compose file runs locally, so there is no drift between a developer machine and the server.
 - Caddy serves the app with `immutable` long-caching for hashed assets and `no-cache` for everything else, which is what makes every deploy refresh cleanly on clients.
 - Locally, the same stack serves `https://juguemos.local` with a certificate from Caddy's internal CA. On the droplet, the same Caddyfile swaps the site address for the real domain.
-- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (a placeholder page that the Vite build output replaces when the SPA exists).
+- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (the React SPA, whose Vite build output Caddy serves from `web/dist`). The repo is an npm workspace: `api`, `web`, and `packages/shared`, which holds the types both sides share.
 
 ## 5. Client
 
@@ -183,3 +183,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 |---|---|---|
 | 0.1 | September 2026 | First draft. Established React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
 | 0.2 | September 2026 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets set (mid-range Android and iPhone; desktop not a target). Service worker and offline rules. `juguemos.local` for local development. Fastify for the API. PostgreSQL now, a CMS with its own database if content grows. First scaffold committed: Compose, Caddy, API, placeholder page. |
+| 0.3 | September 2026 | SPA built from the Plaza prototype: Vite, TanStack Router with per-route code splitting, npm workspaces with a shared types package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |

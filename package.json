@@ -1,0 +1,10 @@
+{
+  "name": "juguemos",
+  "private": true,
+  "workspaces": ["api", "web", "packages/shared"],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

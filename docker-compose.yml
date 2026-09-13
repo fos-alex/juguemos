@@ -11,12 +11,14 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-      - ./web/public:/srv:ro
+      - ./web/dist:/srv:ro
     depends_on:
       - api
 
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     restart: unless-stopped
     environment:
       PORT: "3000"
