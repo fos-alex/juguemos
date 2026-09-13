@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.2 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.4 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -72,6 +72,8 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Weather.** Current conditions and the forecast for the family's neighborhood, with rain and heat-wave alternatives.
 - **Time-aware activities and stories.** Based on the time of day and each child's routine, so an energetic game doesn't show up just before bed and bedtime stories are calm.
 - **Enhanced stories with notes to parents.** Voices, sounds, gestures, props from the toy box, and pauses for the child to join in, matched to each child's age.
+- **Story series.** Stories that share a setting and characters are grouped into a series. From a series, the parent asks for the next chapter, and Juguemos writes it as a continuation of what happened before.
+- **Story library and rereads.** Save a story and reread it with one tap. A series keeps its chapters together, in order.
 
 ### 0.4 — *Jugar para crecer*
 
@@ -103,6 +105,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 ### 0.8 — *Hablale*
 
 - **Live voice conversation with the agent.** Ask for ideas, games, and rhymes out loud.
+- **Sound guessing games** (nice to have). The phone plays the sound of an animal, a vehicle, a musical instrument, or a well-known character, and the parent and child guess together what it is. Audio-first and led by the parent, with the screen used as little as possible.
 
 ### 0.9 — *Los detalles*
 
@@ -123,7 +126,6 @@ Public alpha.
 
 Ideas from the product concept that are not scheduled yet. They come back when they connect well to the loop.
 
-- Saving stories to a library and rereading them.
 - Overriding a story's mood (*"uno con pilas"*, *"uno bien tranqui"*).
 - Refining suggestions after three skips.
 - Nearby places from a maps provider.
@@ -149,7 +151,9 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Holidays kept late (0.9) | A nice-to-have, even if cheap to build. |
 | Play styles and monthly recaps at the end (0.9) | They don't form part of the main loop. |
 | Parenting tips after 1.0 | Advice has to be excellent or not given at all. |
-| Mood toggle, story library, and other concept features parked | Start simple, and add features once they connect well. |
+| Mood toggle and other concept features parked | Start simple, and add features once they connect well. |
+| Story series and the story library in 0.3 | A series needs its chapters saved, and toddlers love hearing the same story again. 0.3 already improves stories, so they arrive together. |
+| Sound guessing games in 0.8, as a nice-to-have | Like live voice conversation, they're audio-first and keep the phone out of sight. |
 
 ## 6. Open questions
 
@@ -164,3 +168,5 @@ Changes from the first draft of this plan, and suggestions that were considered 
 |---|---|---|
 | 0.1 draft | September 2026 | First draft, based on Alex's initial release plan. |
 | 0.2 draft | September 2026 | Simplified to a solid core loop first. Guardrails gate outside testers, friends join by invitation after 0.5, tips move after 1.0, and several concept features are parked. |
+| 0.3 draft | September 2026 | Added Story series to 0.3, and moved the story library out of Parked into 0.3 with it. |
+| 0.4 draft | September 2026 | Added sound guessing games to 0.8 as a nice-to-have. |

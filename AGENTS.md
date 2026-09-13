@@ -31,12 +31,14 @@ Alex follows the build in Linear, so Linear must always show what is being built
 
 opencode connects to Linear through the `linear` MCP server (`opencode.json`), authenticated by the `LINEAR_API_KEY` environment variable. Use its tools to find, create, update, and comment on issues directly; don't ask Alex to do in Linear what the MCP can do.
 
+**Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
+
 Every task has a Linear issue, and the issue is updated at each step:
 
 1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress**, assign it to Alex, and comment with what you are about to do and which agent is doing it (Claude Code or opencode).
 2. **While working.** Comment when something meaningful happens: a decision, a change of plan, a blocker, or a question for Alex.
-3. **Ready for review.** Move it to **In Review** and comment with what changed, how it was verified, and anything left open. For uncommitted changes, list the files. For a PR, attach the PR link.
-4. **Finished.** Move it to **Done** once Alex has committed the change or merged the PR.
+3. **Ready for review.** Move it to **In Review** and comment with what changed, how it was verified, and anything left open. For uncommitted changes, list the files and suggest a commit message. For a PR, check that the integration linked it.
+4. **Finished.** Merged PRs move to **Done** through the integration. Uncommitted changes move to **Done** once Alex has committed them.
 
 Don't cancel issues, move them between releases, or change a release's scope without asking Alex. When scope changes, update `docs/releases.md` and Linear together so they stay in sync.
 
@@ -44,17 +46,17 @@ Don't cancel issues, move them between releases, or change a release's scope wit
 
 We work on `main`, and every PR targets `main`.
 
-**Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it.
+**Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it. Suggest a commit message that includes the issue ID, so Linear links the commit.
 
 **Big changes get a worktree and a PR.** Use a worktree and a pull request when a change is big, is a separate feature, or is a distinct workstream.
 
-- Name the branch after the Linear issue's branch name (for example `fosalex/jug-12-family-onboarding`), so the PR links to the issue.
+- Name the branch after the Linear issue's branch name (for example `fosalex/jug-12-family-onboarding`). The integration uses it to link the PR to the issue.
 - Create the worktree next to the repo, not inside it:
   ```bash
   git fetch origin
   git worktree add ../juegar-worktrees/jug-12-family-onboarding -b fosalex/jug-12-family-onboarding origin/main
   ```
-- Push the branch and open the PR with `gh pr create --base main`, then attach the PR to the Linear issue.
+- Push the branch and open the PR with `gh pr create --base main`.
 
 **Alex merges PRs.** Never merge a PR unless Alex has explicitly authorized that specific merge.
 
@@ -72,4 +74,4 @@ git worktree prune
 ## At the start of every session
 
 1. Run `git worktree list` and remove stale worktrees.
-2. Check Linear for issues **In Review** whose change has since been committed or merged, and move them to **Done**.
+2. Check Linear for issues **In Review** whose change has since been committed or merged, and move any the integration didn't already move to **Done**.
