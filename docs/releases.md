@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.4 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.5 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -74,6 +74,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Enhanced stories with notes to parents.** Voices, sounds, gestures, props from the toy box, and pauses for the child to join in, matched to each child's age.
 - **Story series.** Stories that share a setting and characters are grouped into a series. From a series, the parent asks for the next chapter, and Juguemos writes it as a continuation of what happened before.
 - **Story library and rereads.** Save a story and reread it with one tap. A series keeps its chapters together, in order.
+- **Sign in with Google.** Parents can sign in with their Google account, which shares only their name and email. Until the guardrails are complete, only the family's own accounts get in.
 
 ### 0.4 — *Jugar para crecer*
 
@@ -154,6 +155,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Mood toggle and other concept features parked | Start simple, and add features once they connect well. |
 | Story series and the story library in 0.3 | A series needs its chapters saved, and toddlers love hearing the same story again. 0.3 already improves stories, so they arrive together. |
 | Sound guessing games in 0.8, as a nice-to-have | Like live voice conversation, they're audio-first and keep the phone out of sight. |
+| Sign in with Google in 0.3, limited to the family's accounts | Nobody outside the family gets in until the guardrails are complete, whatever the sign-in method. |
 
 ## 6. Open questions
 
@@ -170,3 +172,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.2 draft | September 2026 | Simplified to a solid core loop first. Guardrails gate outside testers, friends join by invitation after 0.5, tips move after 1.0, and several concept features are parked. |
 | 0.3 draft | September 2026 | Added Story series to 0.3, and moved the story library out of Parked into 0.3 with it. |
 | 0.4 draft | September 2026 | Added sound guessing games to 0.8 as a nice-to-have. |
+| 0.5 draft | September 2026 | Added Sign in with Google to 0.3. |
