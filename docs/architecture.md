@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.1 · September 2026 · Owner: Alex Otero
+**Version:** 0.2 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -16,14 +16,17 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 
 | Area | Decision | Status |
 |---|---|---|
-| Client | React, responsive web, phone-first | Decided |
-| Server | Node.js, long-running HTTP API | Decided |
-| Database | PostgreSQL | Decided |
+| Client | React SPA built with Vite (TypeScript, TanStack Router), shipped as static files served by Caddy | Decided |
+| Devices | Mobile-first: mid-range Android and iPhone, Chrome and Safari. Desktop is not a target | Decided |
+| Offline | Service worker for the app shell; an app-owned store for offline data | Decided |
+| Server | Node.js HTTP API (Fastify), long-running | Decided |
+| Database | PostgreSQL. If content grows heavy, a CMS with its own database joins later | Decided |
 | Hosting | Existing DigitalOcean droplet | Decided |
-| Local development | Docker Compose, same as production | Decided |
-| TLS and reverse proxy | Caddy, with automatic certificates | Proposed |
-| Language | TypeScript across client and server | Proposed |
-| Native mobile apps | Not in v1 | Decided |
+| Local development | Docker Compose, same as production, at `https://juguemos.local` | Decided |
+| TLS and reverse proxy | Caddy: automatic certificates in production, internal CA locally | Decided |
+| Language | TypeScript across client and server | Decided |
+| Repo layout | Single repo. npm workspaces with a shared types package arrive with the Vite SPA; no heavier tooling | Decided |
+| Native mobile apps | Not in v1. After 1.0: native Android/iOS or React Native, TBD | Decided |
 
 ## 3. Hosting: why the droplet
 
@@ -52,20 +55,62 @@ Key rules:
 - The browser never talks to an LLM provider, a maps provider, or the database directly. Everything goes through the API, so that keys stay on the server and every AI call can be logged, rate-limited, and bounded by safety rules.
 - The database is not exposed to the public internet. Only the API container reaches it.
 - The same Compose file runs locally, so there is no drift between a developer machine and the server.
+- Caddy serves the app with `immutable` long-caching for hashed assets and `no-cache` for everything else, which is what makes every deploy refresh cleanly on clients.
+- Locally, the same stack serves `https://juguemos.local` with a certificate from Caddy's internal CA. On the droplet, the same Caddyfile swaps the site address for the real domain.
+- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (a placeholder page that the Vite build output replaces when the SPA exists).
 
 ## 5. Client
 
-React, built as a static bundle and served by Caddy.
+A single-page app built with Vite and React, written in TypeScript, shipped as static files that Caddy serves. TanStack Router gives it typed routes, per-route code splitting, and prefetching on tap, so every screen after the first loads instantly. No heavy UI component library; the bundle stays lean.
 
-The interface is phone-first and one-handed, since a parent is often holding a toddler. Text is large, tap targets are generous, and the reading screen for Story Time keeps the screen awake and switches to a warm dark mode near bedtime.
+Next.js was considered and set aside. Juguemos is a logged-in, phone-first app with no public pages to rank, and every piece of data and logic belongs to the API. Server-side rendering would add a second server runtime next to it and buy nothing, while its hydration cost would land squarely on the mid-range phones that matter most. If marketing pages that need SEO ever appear, they can be a tiny separate site.
 
-Voice is the primary input, captured in the browser and sent to the API for transcription. Browser support and permissions for microphone capture need to be validated early, including on iOS Safari, which is the riskiest target.
+### 5.1 Devices and browsers
 
-The app should keep working when the connection is poor. Current suggestions, active goals, and the last story a parent opened should remain readable offline, since play often happens in a plaza or a bedroom with weak signal.
+The interface is phone-first and one-handed, since a parent is often holding a toddler: large text, generous tap targets, and a reading screen for Story Time that keeps the screen awake and switches to a warm dark mode near bedtime. Mobile is not a layout variant; it is the product.
+
+- **Target devices: mid-range Android phones and recent iPhones.** A mid-range Android is the floor for every performance decision, not a fallback. The budget: first screen interactive in under three seconds on a throttled mid-range device (4× CPU slowdown, slow 4G), with under ~150 KB gzipped of JavaScript for the initial route.
+- **Target browsers: Chrome on Android and Safari on iOS.** Two engines, both first-class. iOS Safari is the riskiest target and gets real-device testing early, especially for microphone capture, service workers, and keeping the screen awake.
+- **Desktop is not a target.** The app must not break in a desktop browser, but it gets no dedicated layouts, features, or testing effort in v1.
+
+Voice is the primary input, captured in the browser and sent to the API for transcription. Browser support and permissions for microphone capture need to be validated early on a real iPhone, which is the riskiest target.
+
+### 5.2 Offline and the service worker
+
+Play happens in plazas and bedrooms with weak signal, so the app keeps working when the connection is poor: current suggestions, active goals, and the last story a parent opened remain readable offline. Two hard rules govern the how, born of experience with service worker pain:
+
+**The service worker does not exist in development.** The precache is generated only by `vite build` (Workbox via `vite-plugin-pwa`) and registered only in production builds. `vite dev` serves no worker at all, so it can never cache the dev server or leave stale caches on a developer machine. Service worker behavior is tested the honest way: a production build served locally.
+
+**Every deploy refreshes cleanly on every client.** The known failure modes, each closed:
+
+- Assets are content-hashed. Each build produces new filenames and a new precache manifest; the new worker diffs the manifests, downloads the new files, and deletes the old caches.
+- Entry points always revalidate. Caddy sends `no-cache` for `index.html` and the service worker file and `immutable` for hashed assets — already the case in the scaffold's Caddyfile. If any HTTP cache can serve a stale worker, the whole system breaks silently; this is the rule that most often goes wrong.
+- Open tabs survive a deploy. A tab running yesterday's code may request a lazy chunk the new deploy replaced; the chunk-load error is caught and turned into a single page reload, which lands on the new version instead of a broken screen.
+- Updates never interrupt. New versions download in the background, checked on load and on returning to the app; when one is ready, a small banner offers a refresh. A parent mid-story is never force-reloaded.
+- **Offline data is not the service worker's job.** The worker precaches the app shell so the app opens offline. Product data — current suggestions, active goals, the last story opened — lives in a small app-owned store (IndexedDB) written on every successful fetch and read when the network fails. The worker never caches API responses: that is the origin of most stale-data horror stories, and the app knows better than the worker what may be served stale.
+- **A kill switch always exists.** If a bad worker ever ships, the next deploy can ship one that unregisters all previous workers and tears down their caches.
+
+### 5.3 Local development: juguemos.local
+
+Local development runs at `https://juguemos.local`, not `localhost:3000`, for three reasons:
+
+- Microphone capture, service workers, and the other browser APIs the app leans on require a secure context.
+- Development matches production's shape: one origin, Caddy in front, `/api` proxied to the API container, same Compose file.
+- A real hostname lets real phones on the same Wi-Fi load the dev server, which matters because iOS Safari must be tested on hardware early.
+
+The dev machine resolves `juguemos.local` through its hosts file (on Arch, `files` must come before `mdns_minimal` in `/etc/nsswitch.conf`, or the entry is shadowed); Caddy issues a certificate from its internal CA locally, and the root is trusted once per device. Phones on the network can resolve the name over mDNS, which is exactly what `.local` is for. In production, the same Caddyfile swaps the site address for the real domain and obtains certificates automatically; everything else is identical.
+
+### 5.4 After version 1: native
+
+After 1.0, Juguemos goes native: Android and iOS apps, either React Native or fully native, to be decided then. This is decided now because it shapes v1:
+
+- The client stays a thin rendering layer. All business logic, data, and AI orchestration live in the API, so a native client is a port of the same API, not a rebuild of the product.
+- Browser-specific investment stops at what v1 needs: offline through a service worker, not deep PWA installability.
+- What a native client would reuse — voice capture, the offline store, the API client — is written as isolated modules, not woven through components.
 
 ## 6. Server
 
-A Node.js HTTP API, organized around the product's domains: family and household, toy box, activities and play, goals, tips, stories, special days, and moments.
+A Node.js HTTP API (Fastify), organized around the product's domains: family and household, toy box, activities and play, goals, tips, stories, special days, and moments.
 
 Responsibilities that belong to the server and nowhere else:
 
@@ -82,6 +127,8 @@ Long-running AI work is the main performance concern. Story generation should st
 PostgreSQL, chosen because the model is genuinely relational: families, households, adults and their play styles, kids, toys, activity templates, goals, tips, stories, and moments, with links between nearly all of them. The core query of the product, finding activities for a given age, duration, energy level, and location that use toys this family owns, is exactly what SQL handles well.
 
 Postgres also offers two things worth having later: JSONB for the flexible parts, such as activity templates and their tailoring slots, and `pgvector` if semantic matching over the activity and story catalog proves useful.
+
+**If content grows heavy, a CMS with its own database joins later.** The product side of the catalog — drafts, review states, versions, reviewer accounts, the whole content factory described in the release plan's 0.7 — may one day be more than the app database wants to hold. The answer when we get there is not to stretch PostgreSQL further, but to stand up a CMS with its own database that publishes finished, reviewed content to the app. The v1 schema only needs to keep published content cleanly separated from family data, so that split, if it ever comes, is cheap.
 
 The detailed schema is not settled. It is the next major piece of design work, and it is the backbone of the product, since the tags on activities, toys, goals, and tips determine what the app can actually do.
 
@@ -126,9 +173,8 @@ Version 1 runs a single environment. A separate staging environment is worth add
 
 - Which LLM provider or providers, and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
 - Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path.
-- Whether the API is a single service or splits the content pipeline into a separate worker. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
+- Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - Authentication: how parents sign in and how the partner invite works.
-- Whether offline support needs a service worker in v1 or can be added later.
 - How the activity catalog and holiday calendar are versioned and deployed: as database records, as files in the repo, or both.
 
 ## 12. Change log
@@ -136,3 +182,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | September 2026 | First draft. Established React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
+| 0.2 | September 2026 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets set (mid-range Android and iPhone; desktop not a target). Service worker and offline rules. `juguemos.local` for local development. Fastify for the API. PostgreSQL now, a CMS with its own database if content grows. First scaffold committed: Compose, Caddy, API, placeholder page. |

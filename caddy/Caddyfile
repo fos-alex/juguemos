@@ -1,0 +1,18 @@
+juguemos.local {
+	tls internal
+	encode zstd gzip
+
+	handle_path /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv
+		@immutable path /assets/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+		@revalidate not path /assets/*
+		header @revalidate Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
