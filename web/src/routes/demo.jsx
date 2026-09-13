@@ -4,7 +4,7 @@ import { signOut, WRONG_CODE } from '../api'
 import { ACTIVITIES, EXAMPLE_FAMILY, MISREAD_PARSE, STORIES } from '../api/fixtures'
 import { Body, Header, Screen } from '../components/Screen'
 import { useGoBack } from '../hooks/useGoBack'
-import { toggleTheme, useTheme } from '../hooks/useTheme'
+import { refreshTheme, toggleTheme, useTheme } from '../hooks/useTheme'
 import { updateDemo, useDemo } from '../lib/demo'
 import { write } from '../lib/store'
 
@@ -129,7 +129,15 @@ function DemoScreen() {
             checked={demo.activityLayout === 'pasos'}
             onChange={(steps) => updateDemo({ activityLayout: steps ? 'pasos' : 'porque' })}
           />
-          <Switch label="Modo oscuro (0.3, 2u)" checked={dark} onChange={() => toggleTheme()} />
+          <Switch label="Modo noche, hasta el próximo cambio (2u)" checked={dark} onChange={() => toggleTheme()} />
+          <Switch
+            label="Simular que es de noche (después de las 19)"
+            checked={demo.night}
+            onChange={(night) => {
+              updateDemo({ night })
+              refreshTheme()
+            }}
+          />
           <p className="demo__note">El código {WRONG_CODE} siempre falla en la verificación del email.</p>
         </section>
 

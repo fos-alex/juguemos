@@ -4,6 +4,7 @@ import { writeStory } from '../api'
 import { Dots, TertiaryButton } from '../components/Buttons'
 import { MetaLabel, Skeleton } from '../components/Card'
 import { Body, Footer, Header, Screen } from '../components/Screen'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { useGoBack } from '../hooks/useGoBack'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { failureText } from '../lib/format'
@@ -17,7 +18,8 @@ export const Route = createFileRoute('/cuento/$id')({
  * 2s then 2t. The page fills itself: the title is already set and the text
  * arrives over placeholder lines at story measure, so nothing reflows. The
  * screen stays awake from the first moment. No illustration, ever; the bar
- * marks position in the story, never achievement.
+ * marks position in the story, never achievement. Night mode is one tap away
+ * in the footer, under the thumb.
  */
 function ReadingScreen() {
   const { id } = Route.useParams()
@@ -82,6 +84,7 @@ function ReadingScreen() {
         <StoryProgress id={id} total={story.parts.length} />
       ) : (
         <Footer className="reading-footer reading-footer--waiting">
+          <ThemeToggle />
           {failure ? (
             <TertiaryButton onClick={() => setAttempt((count) => count + 1)}>Probar de nuevo</TertiaryButton>
           ) : (
@@ -175,6 +178,7 @@ function StoryProgress({ id, total }) {
 
   return (
     <Footer sticky row className="reading-footer">
+      <ThemeToggle />
       <div
         ref={bar}
         className="progress"

@@ -38,16 +38,17 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 | `/idea/$id` | Actividad (`2m` or `2n`). Otra idea swaps in place (`2p`) and pushes history, so back returns to the previous idea |
 | `/idea/$id/reloj` | El reloj (`2o`) |
 | `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
-| `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` in dark) |
+| `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` at night) |
 | `/demo` | Review scaffolding, not part of the app. It has switches for hard-to-reach states and shortcuts to every screen by mockup id |
 
 How it fits together:
 
-- **Primitives** live in `web/src/components/`: `Screen` (with `Header`, `Body`, `Footer`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, and `ActivityView`. Build new screens from them rather than one-off layouts.
+- **Primitives** live in `web/src/components/`: `Screen` (with `Header`, `Body`, `Footer`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build new screens from them rather than one-off layouts.
 - **The mock API** is `web/src/api/mock.js`, re-exported by `web/src/api/index.js`. Screens import only from `web/src/api`. Moving to the real API means changing `api/index.js` and keeping the same function shapes. The example family, activities, and stories are in `api/fixtures.js`.
 - **Local state** is in `web/src/lib/store.js`: one localStorage key per piece of state, read with `useStored(key)`. It caches the account, the family, activities, stories, the timer, and story positions. That cache is what keeps the last idea and the open story readable offline.
 - **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, with an unverified email to `/verificar`, and with no family to `/familia/contanos`.
-- **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values. Dark mode (0.3) is reachable with `?tema=oscuro` or from `/demo`.
+- **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values, so nothing depends on a light background.
+- **Night mode** is in `web/src/hooks/useTheme.js`. It is dark from 19:00 to 07:00 local time and flips live at the switch; `index.html` runs the same rule before the first paint, so keep the two in step. One tap (`ThemeToggle` in the reading footer, or the row in the Home drawer) switches it until the next 19:00 or 07:00, and then the clock takes over again. `?tema=oscuro` or `?tema=claro` forces it the same way, and `/demo` can simulate night.
 - **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity defaults to `2m` (why-first), and `2n` can be switched on from `/demo` until Alex picks one.
 - **Google sign-in** appears on `2a` and `2b` as designed but is mocked. `docs/releases.md` schedules Sign in with Google for 0.3.
 

@@ -57,6 +57,13 @@ p {
   white-space: nowrap;
 }
 
+/* Night mode cross-fades (useTheme.js skips it when motion is reduced). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+
 /* Motion guides, never demands: 120–200 ms ease-out, and nothing when reduced. */
 @media (prefers-reduced-motion: reduce) {
   *,

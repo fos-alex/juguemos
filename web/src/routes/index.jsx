@@ -7,6 +7,7 @@ import { Drawer } from '../components/Drawer'
 import { Footer, Screen } from '../components/Screen'
 import { Wordmark } from '../components/Wordmark'
 import { useOnline } from '../hooks/useOnline'
+import { toggleTheme, useTheme } from '../hooks/useTheme'
 import { familyLine } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
@@ -32,6 +33,7 @@ function HomeScreen() {
   const [request, setRequest] = useState(/** @type {'idle' | 'loading' | 'slow' | 'error'} */ ('idle'))
   const [offlineTaps, setOfflineTaps] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const dark = useTheme()
 
   useEffect(() => {
     document.title = 'Juguemos'
@@ -162,6 +164,10 @@ function HomeScreen() {
           <div className="drawer__upcoming">próximas funciones</div>
         </nav>
         <div className="drawer__footer">
+          {/* Voice pass pending. Stays open, so the parent sees the switch happen. */}
+          <button type="button" className="drawer__item drawer__item--muted" onClick={toggleTheme}>
+            {dark ? 'Modo día' : 'Modo noche'}
+          </button>
           <button type="button" className="drawer__item drawer__item--muted" onClick={() => go('/ajustes')}>
             Ajustes
           </button>
