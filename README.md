@@ -37,8 +37,16 @@ sudo update-ca-trust
 
 `/api/health` reports database connectivity. Postgres is reachable from the dev machine on `127.0.0.1:5432`, and `docker compose exec db psql -U juguemos` opens a shell.
 
+The client lives in `web/` as a Vite SPA in an npm workspace alongside `api/`. Both are plain JavaScript with JSDoc types:
+
+```bash
+npm install
+npm run dev        # Vite dev server at http://localhost:5173 (no service worker)
+npm run build      # production build to web/dist (Caddy serves this)
+```
+
 ## Status
 
-Architecture scaffold in place (Docker Compose: Caddy, API, PostgreSQL). No product code yet.
+0.1 client prototype implemented: the Plaza screens (home, activity, story options, reading) with hardcoded family data. The API has only its health endpoint so far.
 
 Next step: design the data model, meaning the core entities (family, household, adults and their play styles, kids, toys, special dates) and the tags every activity, toy, goal, and tip carries.

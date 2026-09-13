@@ -1,0 +1,9 @@
+*
+!package.json
+!package-lock.json
+!api
+!api/package.json
+!api/src
+!api/src/**
+!web
+!web/package.json

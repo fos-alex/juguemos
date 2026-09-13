@@ -1,0 +1,35 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    react(),
+    VitePWA({
+      registerType: 'prompt',
+      injectRegister: false,
+      manifest: {
+        name: 'Juguemos',
+        short_name: 'Juguemos',
+        lang: 'es-AR',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#FFF9F0',
+        theme_color: '#FFF9F0',
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,woff2,woff}'],
+        cleanupOutdatedCaches: true,
+        navigateFallback: 'index.html',
+      },
+    }),
+  ],
+  server: {
+    proxy: {
+      '/api': { target: 'https://juguemos.local', changeOrigin: true, secure: false },
+    },
+  },
+})

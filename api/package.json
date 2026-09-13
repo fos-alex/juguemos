@@ -7,9 +7,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "node --watch src/server.ts",
-    "start": "node src/server.ts",
-    "typecheck": "tsc --noEmit"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   },
   "dependencies": {
     "fastify": "^5.0.0",
