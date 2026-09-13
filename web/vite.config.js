@@ -29,7 +29,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': { target: 'https://juguemos.local', changeOrigin: true, secure: false },
+      '/api': { target: 'https://juguemos.local:3000', changeOrigin: true, secure: false },
     },
   },
 })

@@ -19,7 +19,7 @@ Juguemos helps families turn the time they have into play that is fun and meanin
 
 ## Development
 
-The stack runs locally at `https://juguemos.local`, mirroring production: one origin, Caddy in front, `/api` proxied to the API container. One-time setup:
+The stack runs locally at `https://juguemos.local:3000`, mirroring production: one origin, Caddy in front, `/api` proxied to the API container. One-time setup:
 
 ```bash
 sudo usermod -aG docker $USER
