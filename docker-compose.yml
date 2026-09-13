@@ -14,6 +14,19 @@ services:
     depends_on:
       - api
 
+  # Applies pending migrations, then exits. Every `docker compose up` runs it
+  # after building and before the API starts; running it again is a no-op.
+  migrate:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: ["node", "api/src/migrate.js"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-juguemos}:${POSTGRES_PASSWORD:-juguemos}@db:5432/${POSTGRES_DB:-juguemos}
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     build:
       context: .
@@ -23,11 +36,11 @@ services:
       PORT: "3000"
       DATABASE_URL: postgres://${POSTGRES_USER:-juguemos}:${POSTGRES_PASSWORD:-juguemos}@db:5432/${POSTGRES_DB:-juguemos}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://juguemos.local:3000}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-local-development-only-not-a-real-secret}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   db:
     image: postgres:17-alpine

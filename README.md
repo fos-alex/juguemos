@@ -28,8 +28,9 @@ echo '127.0.0.1 juguemos.local' | sudo tee -a /etc/hosts
 # Arch/Omarchy shadow .local hosts entries behind mDNS; this puts /etc/hosts first
 sudo sed -i 's/^hosts:.*/hosts: files mymachines mdns_minimal [NOTFOUND=return] resolve myhostname dns/' /etc/nsswitch.conf
 
-# Only the emails in SIGNUP_EMAILS can create an account (comma-separated)
-cp .env.example .env && sed -i 's/^SIGNUP_EMAILS=.*/SIGNUP_EMAILS=you@example.com/' .env
+# Local settings: a session secret, and the emails allowed to sign up (comma-separated)
+cp .env.example .env
+sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 32)|; s|^SIGNUP_EMAILS=.*|SIGNUP_EMAILS=you@example.com|" .env
 
 docker compose up --build
 
@@ -47,6 +48,20 @@ npm install
 npm run dev        # Vite dev server at http://localhost:5173 (no service worker)
 npm run build      # production build to web/dist (Caddy serves this)
 ```
+
+### API
+
+`api/src` is layered by domain (`accounts/`, `families/`, `health/`, `auth/`): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the SQL. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
+
+The schema lives in versioned SQL files in `api/migrations/`, applied in order and recorded in the `pgmigrations` table. `docker compose up --build` runs them in a one-shot `migrate` service after the build and before the API starts; the API only starts if they succeed, and running them again is a no-op.
+
+```bash
+npm run migration:create -w api -- add-kids   # new api/migrations/<timestamp>_add-kids.sql
+npm run migrate -w api                        # apply pending migrations outside Docker
+docker compose up -d db && npm test -w api    # integration tests, each file on a fresh database
+```
+
+Never edit a migration that has run anywhere; add a new one.
 
 ## Status
 
