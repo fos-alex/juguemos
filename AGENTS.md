@@ -35,7 +35,7 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 | `/familia` | Mi familia, the card's permanent home after onboarding |
 | `/ajustes` | Ajustes, not designed yet and kept minimal |
 | `/` | Home: `2j`, or `2i` when there is no last idea. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home |
-| `/idea/$id` | Actividad (`2m` or `2n`). Otra idea swaps in place (`2p`) and pushes history, so back returns to the previous idea |
+| `/idea/$id` | Actividad (`2m` or `2n`). Otro juego swaps in place (`2p`) and pushes history, so back returns to the previous one |
 | `/idea/$id/reloj` | El reloj (`2o`) |
 | `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
 | `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` at night) |
@@ -66,7 +66,7 @@ The spec is `docs/design_handoff_juguemos_plaza/`. Its README has the tokens, th
 - **Colour is never the only signal.** Flagged rows use a tint, a bar, and words. The current drawer item uses a filled row.
 - **No art on the reading screen,** even after 0.2 brings illustration. The wake lock holds from the moment a story starts being written until the parent leaves it.
 - **Thumb zone.** Primary actions sit in the lower half, and every tap target is at least 48 px. The design width is 390 px, capped with `max-width`.
-- **Copy is Rioplatense Spanish with *vos*,** taken verbatim from the mockups. Failures say "Uy, algo falló. ¿Probamos de nuevo?" with no blame and no error codes. Field errors go under the field, in words, never in a red banner. Offline is "Estás sin conexión. La última idea sigue acá."
+- **Copy is Rioplatense Spanish with *vos*,** taken verbatim from the mockups. Failures say "Uy, algo falló. ¿Probamos de nuevo?" with no blame and no error codes. Field errors go under the field, in words, never in a red banner. Offline is "Estás sin conexión. El último juego sigue acá." What Juguemos suggests is a *juego*, never an *idea*, and Home's button says "¡Juguemos!". That is Alex's change (JUG-69); the mockups still say *idea* and "¿Qué hacemos ahora?".
 - **Copy still needs a voice pass** in these places, marked `Voice pass pending` in code: Listo, Prefiero un formulario, Guardar, the line after six seconds of thinking, Empezar, the timer screen, Otras opciones, and all account-screen copy.
 - **Out of scope for 0.1, so don't build it:** the toy box, voice recording (the mic is a placeholder), goals, categories and filters, weather, the journal, tips, recaps, holidays, the partner invite, post-activity feedback, and an English interface.
 

@@ -98,13 +98,13 @@ function HomeScreen() {
         <div className="home__memory">
           {!online && (
             <p key={offlineTaps} className="home__offline" role="status">
-              {last ? 'Estás sin conexión. La última idea sigue acá.' : 'Estás sin conexión.'}
+              {last ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
             </p>
           )}
           {last && (
             <Card onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}>
               <MetaLabel as="span" wide>
-                La última idea
+                El último juego
               </MetaLabel>
               <span className="card-title">{last.title}</span>
               <span className="card-meta">
@@ -118,8 +118,8 @@ function HomeScreen() {
       <div className="home__spacer" />
 
       <Footer className="home__actions">
-        <PrimaryButton size="home" busy={busy} busyLabel="Pensando una idea" unavailable={!online} onClick={suggest}>
-          ¿Qué hacemos ahora?
+        <PrimaryButton size="home" busy={busy} busyLabel="Pensando un juego" unavailable={!online} onClick={suggest}>
+          ¡Juguemos!
         </PrimaryButton>
         {/* Voice pass pending: the line shown after ~6 s of thinking. */}
         {request === 'slow' && (
@@ -152,7 +152,7 @@ function HomeScreen() {
         )}
         <nav className="drawer__nav" aria-label="Secciones">
           <button type="button" className="drawer__item is-current" aria-current="page" onClick={() => setMenuOpen(false)}>
-            ¿Qué hacemos ahora?
+            ¡Juguemos!
           </button>
           <button type="button" className="drawer__item" onClick={openStories}>
             Hora del cuento

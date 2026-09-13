@@ -72,8 +72,8 @@ function DemoScreen() {
       },
     },
     { id: '2h', name: 'Corregir, desde cero', open: () => (signedIn({ family: false }), navigate({ to: '/familia/corregir' })) },
-    { id: '2i', name: 'Home, sin última idea', open: () => (signedIn(), navigate({ to: '/' })) },
-    { id: '2j', name: 'Home, con la última idea', open: () => (withActivity(), navigate({ to: '/' })) },
+    { id: '2i', name: 'Home, sin último juego', open: () => (signedIn(), navigate({ to: '/' })) },
+    { id: '2j', name: 'Home, con el último juego', open: () => (withActivity(), navigate({ to: '/' })) },
     {
       id: demo.activityLayout === 'pasos' ? '2n' : '2m',
       name: 'Actividad',
@@ -154,7 +154,7 @@ function DemoScreen() {
             ))}
           </ul>
           <p className="demo__note">
-            Se llega tocando: 2k (el menú en Home), 2l (¿Qué hacemos ahora?), 2p (Otra idea), 2q (Home con “Sin
+            Se llega tocando: 2k (el menú en Home), 2l (¡Juguemos!), 2p (Otro juego), 2q (Home con “Sin
             conexión”). 2e es de la 0.2 y no está construida.
           </p>
         </section>
