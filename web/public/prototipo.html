@@ -1,0 +1,854 @@
+<!doctype html>
+<!--
+  Juguemos 0.1 — Plaza prototype (JUG-57). A throwaway, clickable look at the
+  Plaza styling on a phone, following docs/design_handoff_juguemos_plaza/.
+  It holds the family's names, so remove it before any deploy (JUG-15); the
+  Vite SPA replaces this folder's contents.
+-->
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FFF9F0">
+  <title>Juguemos</title>
+  <link rel="icon" href="data:,">
+  <script>
+    // ?tema=oscuro or ?tema=claro overrides the saved theme, for linking to one mode.
+    const tema = new URLSearchParams(location.search).get('tema');
+    const theme = tema ? (tema === 'oscuro' ? 'dark' : 'light') : localStorage.getItem('theme');
+    document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
+  </script>
+  <!-- Prototype only: the app self-hosts both fonts, as the handoff asks. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
+  <style>
+    /* Tokens ---------------------------------------------------------------
+       Light ships in 0.1; dark is the 0.3 night-mode target. The palette is
+       the whole palette: don't add accents (handoff guardrail 6). */
+
+    :root {
+      color-scheme: light;
+
+      --font-display: 'Fredoka', system-ui, sans-serif;
+      --font-body: 'Nunito Sans', system-ui, sans-serif;
+
+      --bg: #FFF9F0;
+      --surface: #FFFFFF;
+      --surface-accent: #F4EFFA;
+      --reading-bg: #FFFDF8;
+
+      --primary: #6B4EA8;
+      --on-primary: #FFFFFF;
+      --grass: #3F7D4F;
+      --grass-ink: #2F6340;
+      --sun: #E8C98A;
+
+      --ink: #2A2140;
+      --ink-body: #2A2140;
+      --ink-reading: #2A2140;
+      --ink-muted: #6E6480;
+      --reading-meta: #8A7FA3;
+
+      --hairline: #EADFF3;
+      --hairline-strong: #D9CFE8;
+      --progress-fill: #B79BF0;
+
+      --secondary-bg: #FFFFFF;
+      --secondary-border: #3F7D4F;
+      --secondary-border-width: 2px;
+      --secondary-text: #2F6340;
+
+      --wordmark: #6B4EA8;
+      --dot-1: #3F7D4F;
+      --dot-2: #E8C98A;
+      --dot-3: #6B4EA8;
+
+      --focus: #2A2140;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+
+      --bg: #171228;
+      --surface: #241D3F;
+      --surface-accent: #241D3F;
+      --reading-bg: #171228;
+
+      --primary: #B79BF0;
+      --on-primary: #1E1736;
+      --grass: #8FD49E;
+      --grass-ink: #8FD49E;
+
+      --ink: #F3EEFF;
+      --ink-body: #E7E0F7;
+      --ink-reading: #EDE7FA;
+      --ink-muted: #A79ACB;
+      --reading-meta: #A79ACB;
+
+      --hairline: #2E2650;
+      --hairline-strong: #3A3160;
+
+      /* Green was dropped from the dark secondary button: it vibrated against the purple. */
+      --secondary-bg: #2A2140;
+      --secondary-border: #4A3F74;
+      --secondary-border-width: 1px;
+      --secondary-text: #F3EEFF;
+
+      --wordmark: #F3EEFF;
+      --dot-1: #8FD49E;
+      --dot-3: #B79BF0;
+
+      --focus: #F3EEFF;
+    }
+
+    /* Base ----------------------------------------------------------------- */
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body[data-screen="reading"] { background: var(--reading-bg); }
+
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+    /* Screen: a full-height column, capped and centred on wider viewports. */
+    .screen {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .spacer { flex: 1; min-height: 0; }
+
+    /* Top bar. Not in the mocks: the prototype needs a way back and a theme switch. */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 60px;
+      padding: 12px 14px 0;
+    }
+
+    .topbar--home { padding-left: 26px; }
+
+    .link-button {
+      min-height: 48px;
+      padding: 0 12px;
+      border: 0;
+      background: none;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-muted);
+    }
+
+    /* Wordmark: the word plus three dots, a ronda. Never enlarge the dots. */
+    .wordmark { display: inline-flex; align-items: center; gap: 8px; }
+
+    .wordmark__word {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--wordmark);
+    }
+
+    .wordmark__dots { display: flex; gap: 3px; padding-bottom: 3px; }
+    .wordmark__dots span { width: 5px; height: 5px; border-radius: 50%; }
+    .wordmark__dots span:nth-child(1) { background: var(--dot-1); }
+    .wordmark__dots span:nth-child(2) { background: var(--dot-2); }
+    .wordmark__dots span:nth-child(3) { background: var(--dot-3); }
+
+    /* Buttons: flat fills, no gradients or shadows (guardrail 5). */
+    .btn {
+      width: 100%;
+      border: 0;
+      font-family: var(--font-display);
+      touch-action: manipulation;
+      transition: transform 120ms ease-out, filter 120ms ease-out;
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      min-height: 132px;
+      padding: 24px;
+      border-radius: 28px;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
+      text-align: left;
+    }
+
+    .btn-primary[aria-busy="true"] { filter: brightness(0.9); }
+
+    .btn-secondary {
+      min-height: 62px;
+      border-radius: 20px;
+      border: var(--secondary-border-width) solid var(--secondary-border);
+      background: var(--secondary-bg);
+      color: var(--secondary-text);
+      font-size: 21px;
+      font-weight: 500;
+    }
+
+    .btn-bar {
+      min-height: 60px;
+      border-radius: 20px;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-size: 21px;
+      font-weight: 600;
+    }
+
+    /* Home */
+    .home-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 0 26px calc(34px + env(safe-area-inset-bottom));
+    }
+
+    .family-line {
+      margin: 0 0 12px;
+      font-size: 17px;
+      line-height: 1.5;
+      color: var(--ink-muted);
+    }
+
+    .offline {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: var(--grass-ink);
+    }
+
+    /* Text */
+    .meta {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--grass);
+    }
+
+    .title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 30px;
+      font-weight: 600;
+      line-height: 1.15;
+      color: var(--ink);
+      text-wrap: pretty;
+    }
+
+    .label { margin: 0 0 4px; font-size: 13px; font-weight: 700; }
+    .label--accent { color: var(--primary); }
+    .label--grass { color: var(--grass); }
+    .label--muted { color: var(--ink-muted); }
+
+    .body { margin: 0; font-size: 16px; line-height: 1.45; color: var(--ink); }
+
+    /* Activity */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 8px 26px 24px;
+    }
+
+    .card-accent {
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--surface-accent);
+    }
+
+    .card-accent p { margin: 0; font-size: 16px; line-height: 1.45; color: var(--ink-body); }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 0;
+      padding: 0 0 0 26px;
+      font-size: 17px;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+
+    .variations { display: flex; gap: 10px; }
+
+    .note-card {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 14px;
+    }
+
+    .note-card .label { margin-bottom: 2px; }
+    .note-card p { margin: 0; font-size: 15px; line-height: 1.35; color: var(--ink-body); }
+
+    .footer {
+      position: sticky;
+      bottom: 0;
+      padding: 16px 26px calc(30px + env(safe-area-inset-bottom));
+      background: var(--bg);
+    }
+
+    /* Story options. Not mocked in the handoff; built from the same tokens. */
+    .intro { padding: 8px 26px 0; }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 24px 26px calc(34px + env(safe-area-inset-bottom));
+    }
+
+    .option {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      min-height: 96px;
+      padding: 18px 20px;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 16px;
+      background: var(--surface);
+      text-align: left;
+      touch-action: manipulation;
+      transition: transform 120ms ease-out;
+    }
+
+    .option:active { transform: scale(0.98); }
+
+    .option__title {
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 500;
+      line-height: 1.25;
+      color: var(--ink);
+    }
+
+    .option__teaser { font-size: 16px; line-height: 1.45; color: var(--ink-muted); }
+    .option .meta { margin-top: 4px; }
+
+    /* Reading: text only, no art (guardrail 9). */
+    .reading {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      padding: 14px 30px 32px;
+    }
+
+    .reading-meta {
+      margin-bottom: 8px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--reading-meta);
+    }
+
+    .story-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 25px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--ink);
+    }
+
+    .story,
+    .story section {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .story { max-width: 40ch; font-size: 21px; }
+
+    .story p {
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.65;
+      color: var(--ink-reading);
+      text-wrap: pretty;
+    }
+
+    .story .story-end {
+      text-align: center;
+      font-family: var(--font-display);
+      font-weight: 500;
+      color: var(--ink-muted);
+    }
+
+    .reading-footer {
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 30px calc(34px + env(safe-area-inset-bottom));
+      background: var(--reading-bg);
+    }
+
+    .progress {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--hairline);
+      overflow: hidden;
+    }
+
+    .progress__fill {
+      width: 0;
+      height: 100%;
+      border-radius: 3px;
+      background: var(--progress-fill);
+    }
+
+    .progress-count { font-size: 14px; color: var(--reading-meta); white-space: nowrap; }
+
+    /* "Otra idea" turns the idea over in place. Slow and subtle (guardrail 4). */
+    .turn-in { animation: turn-in 180ms ease-out; }
+
+    @keyframes turn-in {
+      from { opacity: 0; transform: translateX(16px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // Static data and hash routes, no build step. The extra activities and the
+    // stories are prototype copy, not reviewed catalog content.
+
+    const family = {
+      kids: [{ name: 'Milán', age: 2 }],
+      pet: 'Inca',
+    };
+
+    const activities = [
+      {
+        minutes: 15,
+        place: 'Adentro',
+        title: 'La búsqueda del dinosaurio chiquito',
+        why: 'Usa el dinosaurio chiquito, a Milán le encantan los dinos y es ideal para una tarde de lluvia.',
+        needs: 'El dinosaurio chiquito y un almohadón.',
+        steps: [
+          'Escondé el dinosaurio chiquito debajo de un almohadón mientras Milán mira.',
+          'Preguntá: “¿Dónde está el dinosaurio?” y buscalo con Milán.',
+          'Cuando lo encuentre, ¡que ruja!',
+        ],
+        easier: 'Dejá la cola asomando.',
+        harder: 'Escondelo en otro lugar del living.',
+      },
+      {
+        minutes: 20,
+        place: 'Adentro',
+        title: 'El tren grandote lleva pasajeros',
+        why: 'Usa el tren grandote y el caballo percherón, y a Milán le encantan los caballos.',
+        needs: 'El tren grandote, el caballo percherón y el dinosaurio chiquito.',
+        steps: [
+          'Armá una vía corta en el piso del living.',
+          'Subí al caballo percherón y al dinosaurio chiquito al tren.',
+          'En cada parada, preguntá: “¿Quién se baja acá?” y hagan juntos el ruido de ese pasajero.',
+        ],
+        easier: 'Una vía recta y un solo pasajero.',
+        harder: 'Que Milán decida adónde va el tren y quién sube.',
+      },
+      {
+        minutes: 10,
+        place: 'Adentro',
+        title: 'El osito marrón tiene hambre',
+        why: 'Un juego tranquilo con el osito marrón, para bajar un cambio antes de la cena.',
+        needs: 'El osito marrón, un plato y una cuchara de plástico.',
+        steps: [
+          'Sentá al osito marrón en un almohadón y contale a Milán que tiene mucha hambre.',
+          'Dale a Milán el plato y la cuchara para que le dé de comer.',
+          'Cuando termine, hagan “shh” y acuesten al osito a dormir.',
+        ],
+        easier: 'Dale vos la primera cucharada y que Milán te copie.',
+        harder: 'Que Milán le cuente al osito qué le está dando de comer.',
+      },
+    ];
+
+    // Each story is a list of parts; each part is a list of paragraphs.
+    const stories = [
+      {
+        title: 'El caballo percherón pierde su herradura',
+        teaser: 'Milán y el caballo percherón la buscan por toda la casa.',
+        minutes: 4,
+        parts: [
+          [
+            'Una mañana, el caballo percherón se despertó, estiró las patas y dijo:',
+            '—¡Ay! ¿Dónde está mi herradura?',
+            'Buscó debajo de la cama. No estaba. Buscó en la caja de juguetes. Tampoco.',
+            '—Milán, ¿me ayudás a buscarla?',
+          ],
+          [
+            'Milán y el caballo percherón fueron a la cocina. Clop, clop, clop. Miraron detrás de las ollas. Nada.',
+            'Fueron al living. Clop, clop, clop. Miraron debajo del sillón y encontraron… ¡el tren grandote! Pero la herradura, no.',
+            '—¿Y si le preguntamos a Inca? —dijo Milán.',
+          ],
+          [
+            'Inca movió la cola y salió corriendo hasta su cucha. Ahí, entre las mantas, brillaba algo.',
+            '¡La herradura! Inca la había guardado para que no se perdiera.',
+            'El caballo percherón se la puso, dio tres saltos de alegría y dijo:',
+            '—¡Gracias, Milán! ¡Gracias, Inca! Clop, clop, clop.',
+          ],
+        ],
+      },
+      {
+        title: 'Inca y el dinosaurio chiquito van a la plaza',
+        teaser: 'Una aventura por el barrio.',
+        minutes: 5,
+        parts: [
+          [
+            'Había una vez un dinosaurio chiquito que vivía en la caja de juguetes de Milán. Una tarde de lluvia, escuchó un ruido que venía del pasillo: ¡chu-chú, chu-chú! Era el tren grandote, que venía a buscarlo para ir de paseo.',
+            '—¿Venís? —preguntó el tren.',
+            'El dinosaurio chiquito se subió al último vagón, y allá fueron los dos, despacito, por toda la casa.',
+          ],
+          [
+            'Afuera, la lluvia ya había parado. Cuando llegaron a la puerta, ahí estaba Inca, moviendo la cola.',
+            '—Me voy a la plaza —dijo Inca—. ¿Quién viene?',
+            '—¡Yo! —dijo el dinosaurio chiquito, y se bajó del tren de un salto.',
+            'El tren grandote se quedó cuidando la casa. Chu-chú, chau.',
+          ],
+          [
+            'En la plaza, los jacarandás estaban llenos de flores violetas. El dinosaurio chiquito se tiró por el tobogán, e Inca lo esperó abajo.',
+            'Juntaron hojas, corrieron por el pasto y saludaron a las palomas.',
+            'Cuando empezó a bajar el sol, volvieron a casa despacito, cansados y contentos.',
+            '—¿Mañana volvemos? —preguntó el dinosaurio chiquito.',
+            '—Mañana volvemos —dijo Inca.',
+          ],
+        ],
+      },
+      {
+        title: 'El osito marrón no tiene sueño',
+        teaser: 'Un cuento tranquilo para antes de dormir.',
+        minutes: 3,
+        parts: [
+          [
+            'Era de noche, y en la casa todos se estaban por dormir. Todos… menos el osito marrón.',
+            '—No tengo sueño —dijo bajito.',
+            'Milán lo abrazó fuerte y le dijo:',
+            '—Vamos a ver quién más está despierto.',
+          ],
+          [
+            'El tren grandote estaba quieto en su vía.',
+            '—Chu… chú… —bostezó, y cerró los ojos.',
+            'El caballo percherón estaba echado en la alfombra. Respiraba lento, muy lento.',
+            'Inca ya dormía en su cucha, con la cola sobre la nariz.',
+          ],
+          [
+            'El osito marrón los miró a todos. Estiró los brazos. Abrió la boca grande, grande… y bostezó.',
+            'Milán lo tapó con la manta, despacito.',
+            '—Buenas noches, osito marrón.',
+            'Y el osito marrón, calentito, se quedó dormido.',
+          ],
+        ],
+      },
+    ];
+
+    const app = document.getElementById('app');
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    let cleanup = null; // teardown for the current screen
+    let turnPending = false; // "Otra idea" animates the next render
+
+    // Theme -----------------------------------------------------------------
+
+    const isDark = () => document.documentElement.dataset.theme === 'dark';
+    const themeLabel = () => (isDark() ? 'Modo día' : 'Modo noche');
+
+    function syncThemeColor() {
+      themeColor.content = getComputedStyle(document.body).backgroundColor;
+    }
+
+    function toggleTheme() {
+      const next = isDark() ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+      document.querySelectorAll('[data-action="theme"]').forEach((button) => {
+        button.textContent = themeLabel();
+      });
+      syncThemeColor();
+    }
+
+    // Pieces ----------------------------------------------------------------
+
+    const wordmark = () => `
+      <span class="wordmark" aria-label="Juguemos">
+        <span class="wordmark__word" aria-hidden="true">Juguemos</span>
+        <span class="wordmark__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+      </span>`;
+
+    function topbar(back) {
+      const start = back
+        ? `<button class="link-button" data-go="${back.href}">← ${back.label}</button>`
+        : wordmark();
+      return `
+        <header class="topbar${back ? '' : ' topbar--home'}">
+          ${start}
+          <button class="link-button" data-action="theme">${themeLabel()}</button>
+        </header>`;
+    }
+
+    const offlineLine = () =>
+      navigator.onLine ? '' : '<p class="offline">Estás sin conexión. La última idea sigue acá.</p>';
+
+    function familyLine() {
+      const kids = family.kids.map((kid) => `${kid.name}, ${kid.age} años`);
+      const day = new Intl.DateTimeFormat('es-AR', { weekday: 'long' }).format(new Date());
+      return [...kids, family.pet, day].join(' · ');
+    }
+
+    // Screens ---------------------------------------------------------------
+
+    function renderHome() {
+      document.title = 'Juguemos';
+      app.innerHTML = `
+        <main class="screen">
+          ${topbar()}
+          <div class="spacer"></div>
+          <div class="home-actions">
+            ${offlineLine()}
+            <p class="family-line">${familyLine()}</p>
+            <button class="btn btn-primary" data-action="suggest">¿Qué hacemos ahora?</button>
+            <button class="btn btn-secondary" data-go="#/cuentos">Hora del cuento</button>
+          </div>
+        </main>`;
+    }
+
+    function renderActivity(index) {
+      const activity = activities[index] ?? activities[0];
+      localStorage.setItem('lastIdea', String(index));
+      document.title = `${activity.title} · Juguemos`;
+      app.innerHTML = `
+        <main class="screen">
+          ${topbar({ href: '#/', label: 'Inicio' })}
+          <article class="content${turnPending ? ' turn-in' : ''}">
+            ${offlineLine()}
+            <div class="meta">${activity.minutes} min · ${activity.place}</div>
+            <h1 class="title">${activity.title}</h1>
+            <section class="card-accent">
+              <h2 class="label label--accent">Por qué ahora</h2>
+              <p>${activity.why}</p>
+            </section>
+            <section>
+              <h2 class="label label--muted">Qué necesitás</h2>
+              <p class="body">${activity.needs}</p>
+            </section>
+            <ol class="steps">${activity.steps.map((step) => `<li>${step}</li>`).join('')}</ol>
+            <div class="variations">
+              <section class="note-card">
+                <h2 class="label label--grass">Más fácil</h2>
+                <p>${activity.easier}</p>
+              </section>
+              <section class="note-card">
+                <h2 class="label label--accent">Más difícil</h2>
+                <p>${activity.harder}</p>
+              </section>
+            </div>
+          </article>
+          <footer class="footer">
+            <button class="btn btn-bar" data-action="another">Otra idea</button>
+          </footer>
+        </main>`;
+      turnPending = false;
+    }
+
+    function renderStoryOptions() {
+      document.title = 'Hora del cuento · Juguemos';
+      app.innerHTML = `
+        <main class="screen">
+          ${topbar({ href: '#/', label: 'Inicio' })}
+          <div class="intro"><h1 class="title">¿Cuál leemos hoy?</h1></div>
+          <div class="spacer"></div>
+          <div class="options">
+            ${stories.map((story, i) => `
+              <button class="option" data-go="#/cuento/${i}">
+                <span class="option__title">${story.title}</span>
+                <span class="option__teaser">${story.teaser}</span>
+                <span class="meta">${story.minutes} min</span>
+              </button>`).join('')}
+          </div>
+        </main>`;
+    }
+
+    function renderReading(index) {
+      const story = stories[index] ?? stories[0];
+      document.title = `${story.title} · Juguemos`;
+      app.innerHTML = `
+        <main class="screen">
+          ${topbar({ href: '#/cuentos', label: 'Cuentos' })}
+          <article class="reading">
+            <header>
+              <div class="reading-meta">${story.minutes} min</div>
+              <h1 class="story-title">${story.title}</h1>
+            </header>
+            <div class="story">
+              ${story.parts.map((part) => `<section>${part.map((p) => `<p>${p}</p>`).join('')}</section>`).join('')}
+              <p class="story-end">Fin</p>
+            </div>
+          </article>
+          <footer class="reading-footer">
+            <div class="progress" role="progressbar" aria-label="Parte del cuento" aria-valuemin="1" aria-valuemax="${story.parts.length}">
+              <div class="progress__fill"></div>
+            </div>
+            <span class="progress-count" aria-hidden="true"></span>
+          </footer>
+        </main>`;
+
+      const meta = app.querySelector('.reading-meta');
+      const bar = app.querySelector('.progress');
+      const fill = app.querySelector('.progress__fill');
+      const count = app.querySelector('.progress-count');
+      const parts = [...app.querySelectorAll('.story section')];
+
+      // Position in the story, never achievement: no percentages (guardrail 7).
+      const update = () => {
+        const max = document.documentElement.scrollHeight - innerHeight;
+        fill.style.width = `${(max > 0 ? Math.min(1, scrollY / max) : 1) * 100}%`;
+        const readingLine = innerHeight * 0.4;
+        const current = Math.max(1, parts.filter((part) => part.getBoundingClientRect().top < readingLine).length);
+        const text = `${current} de ${parts.length}`;
+        count.textContent = text;
+        bar.setAttribute('aria-valuenow', String(current));
+        bar.setAttribute('aria-valuetext', text);
+      };
+      addEventListener('scroll', update, { passive: true });
+      addEventListener('resize', update);
+      update();
+
+      const releaseWakeLock = keepScreenAwake((awake) => {
+        meta.textContent = awake ? `${story.minutes} min · Pantalla despierta` : `${story.minutes} min`;
+      });
+
+      cleanup = () => {
+        removeEventListener('scroll', update);
+        removeEventListener('resize', update);
+        releaseWakeLock();
+      };
+    }
+
+    // The reading screen keeps the display on, and says so only when it has the
+    // lock. The Wake Lock API needs HTTPS; without it this fails silently.
+    function keepScreenAwake(onChange) {
+      let sentinel = null;
+      let active = true;
+
+      const acquire = async () => {
+        if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+        try {
+          const lock = await navigator.wakeLock.request('screen');
+          if (!active) return lock.release();
+          sentinel = lock;
+          onChange(true);
+          lock.addEventListener('release', () => onChange(false));
+        } catch {
+          onChange(false);
+        }
+      };
+
+      const onVisibility = () => {
+        if (document.visibilityState === 'visible') acquire();
+      };
+
+      document.addEventListener('visibilitychange', onVisibility);
+      acquire();
+
+      return () => {
+        active = false;
+        document.removeEventListener('visibilitychange', onVisibility);
+        sentinel?.release();
+      };
+    }
+
+    // Actions and routing ---------------------------------------------------
+
+    const actions = {
+      theme: toggleTheme,
+
+      suggest(button) {
+        if (button.getAttribute('aria-busy') === 'true') return;
+        // Stay on Home with the button waiting, rather than pushing a loading screen.
+        button.setAttribute('aria-busy', 'true');
+        button.textContent = 'Pensando una idea…';
+        const last = Number(localStorage.getItem('lastIdea') ?? -1);
+        const next = navigator.onLine ? (last + 1) % activities.length : Math.max(0, last);
+        setTimeout(() => { location.hash = `#/idea/${next}`; }, 700);
+      },
+
+      another() {
+        const current = Number(location.hash.split('/')[2]) || 0;
+        turnPending = true;
+        location.hash = `#/idea/${(current + 1) % activities.length}`;
+      },
+    };
+
+    const routes = {
+      '': renderHome,
+      idea: renderActivity,
+      cuentos: renderStoryOptions,
+      cuento: renderReading,
+    };
+
+    function render() {
+      cleanup?.();
+      cleanup = null;
+      const [, name = '', param] = location.hash.split('/');
+      const screen = routes[name] ? name : '';
+      document.body.dataset.screen = screen === 'cuento' ? 'reading' : screen || 'home';
+      window.scrollTo(0, 0);
+      routes[screen](Number(param) || 0);
+      syncThemeColor();
+    }
+
+    app.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-go], [data-action]');
+      if (!target) return;
+      if (target.dataset.go) location.hash = target.dataset.go;
+      else actions[target.dataset.action]?.(target);
+    });
+
+    addEventListener('hashchange', render);
+
+    // Show or hide the offline line without disturbing a story being read.
+    for (const type of ['online', 'offline']) {
+      addEventListener(type, () => {
+        if (document.body.dataset.screen !== 'reading') render();
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
