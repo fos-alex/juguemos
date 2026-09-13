@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.3 · September 2026 · Owner: Alex Otero
+**Version:** 0.4 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -27,6 +27,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | Language | JavaScript with JSDoc across client and server (TypeScript tried and dropped; Node 24 can still run `.ts` natively if a module ever wants it) | Decided |
 | Repo layout | Single repo. npm workspaces (api, web): one install, separate codebases, no shared package; no heavier tooling | Decided |
 | Native mobile apps | Not in v1. After 1.0: native Android/iOS or React Native, TBD | Decided |
+| Authentication | Better Auth in the API: email and password, sessions in PostgreSQL behind an httpOnly cookie. Sign-up limited to an email allowlist until invitations (0.5); Google sign-in (0.3) is a plugin on the same library | Decided |
 
 ## 3. Hosting: why the droplet
 
@@ -130,6 +131,8 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **If content grows heavy, a CMS with its own database joins later.** The product side of the catalog — drafts, review states, versions, reviewer accounts, the whole content factory described in the release plan's 0.7 — may one day be more than the app database wants to hold. The answer when we get there is not to stretch PostgreSQL further, but to stand up a CMS with its own database that publishes finished, reviewed content to the app. The v1 schema only needs to keep published content cleanly separated from family data, so that split, if it ever comes, is cheap.
 
+Accounts are the first tables in place. Better Auth owns `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family, created at sign-up. The API creates missing tables at boot until the data model brings real migrations.
+
 The detailed schema is not settled. It is the next major piece of design work, and it is the backbone of the product, since the tags on activities, toys, goals, and tips determine what the app can actually do.
 
 Two data rules carry over from the constitution and shape the schema:
@@ -174,7 +177,7 @@ Version 1 runs a single environment. A separate staging environment is worth add
 - Which LLM provider or providers, and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
 - Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path.
 - Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
-- Authentication: how parents sign in and how the partner invite works.
+- How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
 - How the activity catalog and holiday calendar are versioned and deployed: as database records, as files in the repo, or both.
 
 ## 12. Change log
@@ -184,3 +187,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.1 | September 2026 | First draft. Established React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
 | 0.2 | September 2026 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets set (mid-range Android and iPhone; desktop not a target). Service worker and offline rules. `juguemos.local` for local development. Fastify for the API. PostgreSQL now, a CMS with its own database if content grows. First scaffold committed: Compose, Caddy, API, placeholder page. |
 | 0.3 | September 2026 | SPA built from the Plaza prototype in JavaScript with JSDoc (TypeScript tried and dropped): Vite, TanStack Router with per-route code splitting, npm workspaces (api, web) with no shared package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |
+| 0.4 | September 2026 | Authentication decided: Better Auth with email and password, sessions in PostgreSQL, sign-up behind an email allowlist. First tables: users, sessions, families, and family members. |

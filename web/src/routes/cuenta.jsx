@@ -73,7 +73,7 @@ function AccountScreen() {
         void navigate({ to: '/', replace: true })
       } else {
         await createAccount({ name: name.trim(), email: email.trim(), password })
-        void navigate({ to: '/verificar', replace: true })
+        void navigate({ to: '/familia/contanos', replace: true })
       }
     } catch (error) {
       setFailure(failureText(error))

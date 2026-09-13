@@ -23,16 +23,16 @@ const SIGNED_OUT = ['/entrada', '/cuenta']
 const FIRST_RUN = ['/familia/contanos', '/familia/revisar', '/familia/corregir']
 
 /**
- * Keeps the first run in order: account, verified email, family, then the
- * app. Returns where the parent belongs, or null when the path is fine.
+ * Keeps the first run in order: account, family, then the app. Returns where
+ * the parent belongs, or null when the path is fine. Verifying the email waits
+ * until the API sends email; /verificar stays reachable for the demo.
  * @param {string} path
  */
 function firstRunTarget(path) {
   if (path === '/demo') return null
   const account = read('account')
   if (!account) return SIGNED_OUT.includes(path) ? null : '/entrada'
-  if (!account.emailVerified) return path === '/verificar' || path === '/cuenta' ? null : '/verificar'
-  if (!read('family')) return FIRST_RUN.includes(path) ? null : '/familia/contanos'
+  if (!read('family')) return [...FIRST_RUN, '/verificar'].includes(path) ? null : '/familia/contanos'
   if ([...SIGNED_OUT, '/verificar', '/familia/contanos', '/familia/revisar'].includes(path)) return '/'
   return null
 }

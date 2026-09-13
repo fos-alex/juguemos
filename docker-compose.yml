@@ -22,6 +22,9 @@ services:
     environment:
       PORT: "3000"
       DATABASE_URL: postgres://${POSTGRES_USER:-juguemos}:${POSTGRES_PASSWORD:-juguemos}@db:5432/${POSTGRES_DB:-juguemos}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://juguemos.local:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-local-development-only-not-a-real-secret}
+      SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
     depends_on:
       db:
         condition: service_healthy
