@@ -7,11 +7,17 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "dev": "node --env-file-if-exists=../.env --watch src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node --env-file-if-exists=../.env src/migrate.js",
+    "seed": "node --env-file-if-exists=../.env src/seed.js",
+    "migration:create":"node-pg-migrate create --migrations-dir migrations --migration-file-language sql",
+    "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
+    "better-auth": "^1.7.4",
     "fastify": "^5.0.0",
+    "node-pg-migrate": "^9.0.0",
     "pg": "^8.12.0"
   },
   "devDependencies": {

@@ -1,37 +1,28 @@
-import Fastify from 'fastify'
 import pg from 'pg'
+import { buildApp } from './app.js'
+import { ConfigError, loadConfig } from './config.js'
 
-const port = Number(process.env.PORT ?? 3000)
-const databaseUrl =
-  process.env.DATABASE_URL ?? 'postgres://juguemos:juguemos@localhost:5432/juguemos'
+let config
+try {
+  config = loadConfig()
+} catch (error) {
+  if (!(error instanceof ConfigError)) throw error
+  console.error(`Configuration error: ${error.message}`)
+  process.exit(1)
+}
 
-const pool = new pg.Pool({ connectionString: databaseUrl })
-
-const app = Fastify({ logger: true })
+const db = new pg.Pool({ connectionString: config.databaseUrl })
+const app = buildApp({ config, db })
 
 app.addHook('onClose', async () => {
-  await pool.end()
-})
-
-app.get('/health', async (_request, reply) => {
-  try {
-    await pool.query('select 1')
-    return { status: 'ok', db: 'up' }
-  } catch (error) {
-    app.log.error({ err: error }, 'database health check failed')
-    return reply.code(503).send({ status: 'ok', db: 'down' })
-  }
-})
-
-app.setNotFoundHandler((_request, reply) => {
-  reply.code(501).send({ error: 'not implemented yet' })
+  await db.end()
 })
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, async () => {
+  process.once(signal, async () => {
     await app.close()
     process.exit(0)
   })
 }
 
-await app.listen({ port, host: '0.0.0.0' })
+await app.listen({ port: config.port, host: '0.0.0.0' })

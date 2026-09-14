@@ -31,7 +31,13 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': { target: 'https://juguemos.local:3000', changeOrigin: true, secure: false },
+      // The API trusts only its own origin, so the dev server passes as it.
+      '/api': {
+        target: 'https://juguemos.local:3000',
+        changeOrigin: true,
+        secure: false,
+        headers: { origin: 'https://juguemos.local:3000' },
+      },
     },
   },
 })

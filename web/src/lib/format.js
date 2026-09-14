@@ -1,4 +1,4 @@
-import { OfflineError } from '../api'
+import { AccountError, OfflineError } from '../api'
 
 /** @typedef {import('../api/fixtures').Family} Family */
 
@@ -20,5 +20,6 @@ export function clockText(seconds) {
 
 /** What to tell the parent when a request fails: no blame, no error codes. @param {unknown} error */
 export function failureText(error) {
+  if (error instanceof AccountError) return error.message
   return error instanceof OfflineError ? 'Estás sin conexión.' : 'Uy, algo falló. ¿Probamos de nuevo?'
 }

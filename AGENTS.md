@@ -22,7 +22,7 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 
 ## The app today
 
-`web/` is the React SPA (Vite, TanStack Router file routes, plain JavaScript with JSDoc). Every 0.1 screen from the Plaza handoff is built and runs on mocked data. The API has only its health route so far.
+`web/` is the React SPA (Vite, TanStack Router file routes, plain JavaScript with JSDoc). Every 0.1 screen from the Plaza handoff is built. Accounts are real (sign-up, sign-in, sign-out, and `/api/me`); everything else runs on mocked data.
 
 | Route | Screen (mockup id) |
 |---|---|
@@ -44,9 +44,12 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 How it fits together:
 
 - **Primitives** live in `web/src/components/`: `Screen` (with `Header`, `Body`, `Footer`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build new screens from them rather than one-off layouts.
-- **The mock API** is `web/src/api/mock.js`, re-exported by `web/src/api/index.js`. Screens import only from `web/src/api`. Moving to the real API means changing `api/index.js` and keeping the same function shapes. The example family, activities, and stories are in `api/fixtures.js`.
+- **The mock API** is `web/src/api/mock.js`, re-exported by `web/src/api/index.js`. Screens import only from `web/src/api`. Moving an endpoint to the real API means adding it next to `api/auth.js` (the account functions, already real) and re-exporting it from `api/index.js` with the same function shape. The example family, activities, and stories are in `api/fixtures.js`.
 - **Local state** is in `web/src/lib/store.js`: one localStorage key per piece of state, read with `useStored(key)`. It caches the account, the family, activities, stories, the timer, and story positions. That cache is what keeps the last idea and the open story readable offline.
-- **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, with an unverified email to `/verificar`, and with no family to `/familia/contanos`.
+- **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, and with no family to `/familia/contanos`. Email verification is skipped until the API can send email; `/verificar` stays reachable from `/demo`.
+- **The API** in `api/src` is layered by domain (`accounts/`, `families/`, `health/`, `auth/`). Routes map URLs to controllers, controllers handle HTTP, and services hold the business logic and the SQL. Wire new dependencies in `app.js` only, and read the environment only in `config.js`. Give every route a response schema, because it also decides which fields leave the server. Cover new endpoints with integration tests in `api/test/`.
+- **Schema changes are migrations.** Create one with `npm run migration:create -w api -- <name>` and write plain SQL with an up and a down section. Never create tables from application code, and never edit a migration that has already run anywhere; add a new one. Better Auth's tables are part of the migrations too: plural names and snake_case columns, mapped in `api/src/auth/schema.js`.
+- **Data for exploring the app comes from seeds,** never from application code. No placeholder records or side effects that exist only to have data. Add development data to `api/seeds/development.js`; `npm run seed -w api` loads it through Better Auth and the services, skips what already exists, and refuses to run in production.
 - **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values, so nothing depends on a light background.
 - **Night mode** lives in React:
   - **The rule** is plain functions in `web/src/lib/theme.js`: dark from 19:00 to 07:00 local time, unless a one-tap choice still holds. A choice lasts until the next 19:00 or 07:00.
