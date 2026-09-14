@@ -3,7 +3,6 @@ import { after, before, test } from 'node:test'
 import { cookiesFrom, ORIGIN, startApi } from './helpers.js'
 
 const PASSWORD = 'una-clave-larga'
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
@@ -25,7 +24,7 @@ const signIn = (email, password = PASSWORD) =>
 /** @param {string} cookie */
 const me = (cookie) => api.app.inject({ method: 'GET', url: '/me', headers: { cookie } })
 
-test('signing up with an allowed email starts a family', async () => {
+test('signing up with an allowed email creates the account and nothing else', async () => {
   const response = await signUp('Ana@Example.com')
   assert.equal(response.statusCode, 200)
 
@@ -35,8 +34,7 @@ test('signing up with an allowed email starts a family', async () => {
   assert.deepEqual(Object.keys(user).sort(), ['email', 'emailVerified', 'id', 'name'])
   assert.equal(user.email, 'ana@example.com')
   assert.equal(user.emailVerified, false)
-  assert.match(family.id, UUID)
-  assert.equal(family.name, null)
+  assert.equal(family, null)
 })
 
 test('an email outside the allowlist cannot sign up', async () => {
@@ -54,20 +52,17 @@ test('the same email cannot sign up twice', async () => {
   assert.equal(again.statusCode, 422)
   assert.equal(again.json().code, 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')
 
-  const { rows } = await api.db.query(
-    `select count(*)::int as families from family_members m join users u on u.id = m.user_id where u.email = $1`,
-    ['beto@example.com'],
-  )
-  assert.equal(rows[0].families, 1)
+  const { rowCount } = await api.db.query('select 1 from users where email = $1', ['beto@example.com'])
+  assert.equal(rowCount, 1)
 })
 
-test('signing in comes back to the same family', async () => {
+test('signing in comes back to the same account', async () => {
   const signedUp = await me(cookiesFrom(await signUp('carla@example.com')))
   const response = await signIn('carla@example.com')
   assert.equal(response.statusCode, 200)
 
   const signedIn = await me(cookiesFrom(response))
-  assert.equal(signedIn.json().family.id, signedUp.json().family.id)
+  assert.equal(signedIn.json().user.id, signedUp.json().user.id)
 })
 
 test('a wrong password is refused', async () => {

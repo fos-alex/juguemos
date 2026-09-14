@@ -3,11 +3,10 @@ import { APIError } from 'better-auth/api'
 import { authSchema } from './schema.js'
 
 /** @typedef {import('../config.js').AuthConfig} AuthConfig */
-/** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {ReturnType<typeof createAuth>} Auth */
 
-/** @param {{ config: AuthConfig, db: import('pg').Pool, families: FamiliesService }} deps */
-export function createAuth({ config, db, families }) {
+/** @param {{ config: AuthConfig, db: import('pg').Pool }} deps */
+export function createAuth({ config, db }) {
   return betterAuth({
     baseURL: config.url,
     secret: config.secret,
@@ -23,10 +22,6 @@ export function createAuth({ config, db, families }) {
             if (!config.signupEmails.has(user.email.toLowerCase())) {
               throw new APIError('FORBIDDEN', { code: 'SIGNUP_NOT_ALLOWED', message: 'Sign-up is by invitation only' })
             }
-          },
-          // Runs once the user row has committed.
-          after: async (user) => {
-            await families.createFor(user.id)
           },
         },
       },

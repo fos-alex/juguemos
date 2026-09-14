@@ -21,7 +21,7 @@ import { healthRoutes } from './health/health.routes.js'
  */
 export function buildApp({ config, db, logger = true }) {
   const families = createFamiliesService({ db })
-  const auth = createAuth({ config: config.auth, db, families })
+  const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
 
   const app = Fastify({ logger })

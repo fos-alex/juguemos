@@ -3,6 +3,7 @@
  * now; the second parent joins in 0.6, and kids, the pet, and toys arrive
  * with the data model.
  */
+import { withTransaction } from '../db/transaction.js'
 
 /** @typedef {{ id: string, name: string | null }} Family */
 /** @typedef {ReturnType<typeof createFamiliesService>} FamiliesService */
@@ -11,16 +12,19 @@
 export function createFamiliesService({ db }) {
   return {
     /**
-     * Starts a family for a new adult. One statement, so a failure leaves
-     * neither the family nor the membership behind.
+     * Creates a family with this adult as its first member. Both rows are
+     * written in one transaction, so a family never exists without a member.
      * @param {string} userId
+     * @param {{ name?: string | null }} [details]
+     * @returns {Promise<Family>}
      */
-    async createFor(userId) {
-      await db.query(
-        `with family as (insert into families default values returning id)
-         insert into family_members (family_id, user_id) select id, $1 from family`,
-        [userId],
-      )
+    async create(userId, { name = null } = {}) {
+      return withTransaction(db, async (client) => {
+        const { rows } = await client.query('insert into families (name) values ($1) returning id, name', [name])
+        const family = rows[0]
+        await client.query('insert into family_members (family_id, user_id) values ($1, $2)', [family.id, userId])
+        return family
+      })
     },
 
     /** @param {string} userId @returns {Promise<Family | null>} */

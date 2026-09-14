@@ -24,20 +24,19 @@ export async function startApi({ signupEmails = [] } = {}) {
   await migrate({ databaseUrl: databaseUrl.href })
 
   const db = new pg.Pool({ connectionString: databaseUrl.href })
-  const app = buildApp({
-    config: {
-      port: 0,
-      databaseUrl: databaseUrl.href,
-      auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
-    },
-    db,
-    logger: false,
-  })
+  /** @type {import('../src/config.js').Config} */
+  const config = {
+    port: 0,
+    databaseUrl: databaseUrl.href,
+    auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
+  }
+  const app = buildApp({ config, db, logger: false })
   await app.ready()
 
   return {
     app,
     db,
+    config,
     databaseUrl: databaseUrl.href,
     async close() {
       await app.close()
