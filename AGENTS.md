@@ -54,7 +54,9 @@ Agents reach Linear through its MCP server; for opencode, that is the `linear` e
 
 **Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
 
-**Be succinct in Linear.** Linear is for status and for seeing which tasks need Alex's input. It isn't a work log: nobody reads long reports, and writing them wastes tokens. Keep descriptions to a few lines and comments to a sentence or two. Write a fuller comment only when another agent will pick the task up later and needs the context to continue.
+**Be succinct in Linear.** Linear is for status and for seeing which tasks need Alex's input. It isn't a work log: nobody reads long reports, and writing them wastes tokens. Keep comments to a sentence or two, and task descriptions to a few lines. Write a fuller comment only when another agent will pick the task up later and needs the context to continue.
+
+**Feature issues are specs.** A feature's description is what an agent builds from, so it says what to build, not how: what the feature is, how it behaves, the rules it must keep, what's out of scope, and when it's done. When a feature needs more than one PR, split it into sub-issues an agent can finish in one PR each, and link them with blocking relations. When a decision changes a feature, update its spec.
 
 Every task has a Linear issue:
 
