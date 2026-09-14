@@ -4,8 +4,10 @@
 // not listed here are never serialized.
 const meResponse = {
   type: 'object',
-  required: ['user', 'family'],
+  required: ['user', 'family', 'familyFromText'],
   properties: {
+    // Whether first run can start from the parent's own words (JUG-11).
+    familyFromText: { type: 'boolean' },
     user: {
       type: 'object',
       required: ['id', 'name', 'email', 'emailVerified'],

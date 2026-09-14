@@ -1,7 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { understandFamily } from '../api'
 import { PrimaryButton, TertiaryButton } from '../components/Buttons'
 import { Body, Footer, Screen } from '../components/Screen'
+import { failureText } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/familia/contanos')({
@@ -16,19 +18,36 @@ const EXAMPLE =
  * brief's example as hint text; no counter, no validation. The mic is a 0.2
  * placeholder: it holds its position and does nothing yet.
  *
- * Reading the family's own words needs the LLM (JUG-11), so for now first run
- * skips this screen and "Listo" continues to the form. The draft is kept for
- * when reading arrives.
+ * "Listo" sends the text to the API, whose LLM reads the family in it (JUG-11),
+ * and opens the review card. If that fails, the text stays for another try.
+ * With nothing written, "Listo" opens the form.
  */
 function TellUsScreen() {
   const navigate = useNavigate()
   const draft = useStored('familyDraft') ?? ''
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
 
   useEffect(() => {
     document.title = 'Contame de tu familia · Juguemos'
   }, [])
 
   const toForm = () => void navigate({ to: '/familia/corregir' })
+
+  const understand = async () => {
+    if (busy) return
+    const text = draft.trim()
+    if (!text) return toForm()
+    setBusy(true)
+    setFailure(null)
+    try {
+      await understandFamily(text)
+      void navigate({ to: '/familia/revisar' })
+    } catch (error) {
+      setFailure(failureText(error))
+      setBusy(false)
+    }
+  }
 
   return (
     <Screen className="tell">
@@ -46,8 +65,14 @@ function TellUsScreen() {
           className="tell__text"
           value={draft}
           placeholder={EXAMPLE}
+          readOnly={busy}
           onChange={(event) => write('familyDraft', event.target.value)}
         />
+        {failure && (
+          <p className="status-line" role="alert">
+            {failure}
+          </p>
+        )}
         {/* Voice pass pending: "Listo" and "Prefiero un formulario". */}
         <p className="tell__help">Escribilo, o mantené apretado el micrófono y contámelo.</p>
         <TertiaryButton size="inline" onClick={toForm}>
@@ -55,7 +80,7 @@ function TellUsScreen() {
         </TertiaryButton>
       </Body>
       <Footer row>
-        <PrimaryButton className="grow" onClick={toForm}>
+        <PrimaryButton className="grow" busy={busy} busyLabel="Leyendo" onClick={() => void understand()}>
           Listo
         </PrimaryButton>
         <button type="button" className="mic" aria-disabled="true" aria-label="Nota de voz. Llega en la versión 0.2.">

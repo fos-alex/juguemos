@@ -51,6 +51,21 @@ export async function loadFamily() {
   }
 }
 
+/**
+ * Sends the parent's own words to the API, whose LLM reads the family in them,
+ * and keeps the result for the review card. Nothing is saved until the parent
+ * confirms it.
+ * @param {string} text
+ * @returns {Promise<import('./types').ParseResult>}
+ */
+export async function understandFamily(text) {
+  const { family, unsure, note } = await request('POST', '/family/understanding', { text })
+  /** @type {import('./types').ParseResult} */
+  const parse = { family: toFamily(family), flagged: unsure, note }
+  write('parseResult', parse)
+  return parse
+}
+
 /** @param {Family} family @returns {Promise<Family>} */
 export async function saveFamily(family) {
   const saved = toFamily(await request('PUT', '/family', toProfile(family)))

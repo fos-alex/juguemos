@@ -2,10 +2,24 @@ import { NotFoundError } from '../errors.js'
 
 /** @typedef {import('./families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('./families.service.js').ProfileInput} ProfileInput */
+/** @typedef {import('./understanding.js').UnderstandingService} UnderstandingService */
 
-/** The signed-in adult's family profile. @param {{ families: FamiliesService }} deps */
-export function createFamiliesController({ families }) {
+/**
+ * The signed-in adult's family profile.
+ * @param {{ families: FamiliesService, understanding: UnderstandingService }} deps
+ */
+export function createFamiliesController({ families, understanding }) {
   return {
+    /**
+     * Reads a family from the parent's own words and returns it to confirm.
+     * Nothing is saved.
+     * @type {import('fastify').RouteHandlerMethod}
+     */
+    async understand(request) {
+      const { text } = /** @type {{ text: string }} */ (request.body)
+      return understanding.understand(text)
+    },
+
     /** @type {import('fastify').RouteHandlerMethod} */
     async get(request) {
       const familyId = await families.idOf(request.session.user.id)

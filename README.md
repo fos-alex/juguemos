@@ -98,6 +98,6 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 They exist only on a development database: the passwords are in the repo, and the seed refuses to run in production.
 
-Still mocked, because they need a service Juguemos doesn't have yet: Google sign-in (0.3) and email verification. Reading the family from free text and bespoke stories wait on the LLM decision (JUG-7, JUG-71), so first run starts at the family form.
+Still mocked, because they need a service Juguemos doesn't have yet: Google sign-in (0.3) and email verification. Reading the family from the parent's own words (JUG-11) and bespoke stories (JUG-71) use the LLM set in `.env` (JUG-115). Without an LLM key, first run starts at the family form and stories come from templates.
 
 Next step: Alex reviews the first templates, and the catalog grows to 30–40 activities (JUG-14).
