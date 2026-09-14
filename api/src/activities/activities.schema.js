@@ -70,6 +70,9 @@ export const activities = pgTable(
     steps: text().array().notNull(),
     easier: text().notNull(),
     harder: text().notNull(),
+    // The kids who played (JUG-107), for the recommendations and the journal.
+    // No foreign key: the record outlives a kid removed from the profile.
+    kidIds: uuid().array().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
   },
   (table) => [index('activities_family_id_created_at_idx').on(table.familyId, table.createdAt.desc())],

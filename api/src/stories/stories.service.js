@@ -11,6 +11,7 @@ import { fillFor, render, seededRandom, shuffle, unknownPlaceholders } from '../
 import { stories, storyPlots, storyTemplates } from './stories.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 import { UpstreamError } from '../llm/opencode.js'
+import { kidIdsOf, withKids } from '../families/families.service.js'
 import { anchorOf, familyLines, moodAt, momentOf, parseOptions, partsOf, StoryParser } from './storytelling.js'
 import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storyteller } from './prompts.js'
 
@@ -117,12 +118,15 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
   /** A saved story, shaped for the reading screen. @param {typeof stories.$inferSelect} row */
   const toStory = (row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) })
 
-  /** @param {string} familyId @param {string} templateId @returns {Promise<Story | null>} */
-  const findWritten = async (familyId, templateId) => {
+  /**
+   * A template's story is written once for each set of kids playing.
+   * @param {string} familyId @param {string} templateId @param {string[]} kidIds @returns {Promise<Story | null>}
+   */
+  const findWritten = async (familyId, templateId, kidIds) => {
     const [story] = await db
       .select(storyColumns)
       .from(stories)
-      .where(and(eq(stories.familyId, familyId), eq(stories.templateId, templateId)))
+      .where(and(eq(stories.familyId, familyId), eq(stories.templateId, templateId), eq(stories.kidIds, kidIds)))
     return story ? toStory(story) : null
   }
 
@@ -186,7 +190,7 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       const saved = plots.map((plot) => ({ id: randomUUID(), ...plot }))
       await db.transaction(async (tx) => {
         await tx.delete(storyPlots).where(stale)
-        await tx.insert(storyPlots).values(saved.map((plot) => ({ ...plot, familyId, mood })))
+        await tx.insert(storyPlots).values(saved.map((plot) => ({ ...plot, familyId, mood, kidIds: kidIdsOf(profile) })))
       })
       return saved
     }
@@ -245,37 +249,41 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
     },
 
     /**
-     * Three stories the family could read. With the LLM configured these are
-     * plot options written for them; without it, catalog templates with
-     * their slots filled. The ones in `exclude` (already on screen) come
-     * last, only if they still fit. When the model fails the family hears
-     * about it, so a quiet outage stays quiet.
+     * Three stories the family could read, starring the kids playing. With
+     * the LLM configured these are plot options written for them; without
+     * it, catalog templates with their slots filled. The ones in `exclude`
+     * (already on screen) come last, only if they still fit. When the model
+     * fails the family hears about it, so a quiet outage stays quiet.
      * @param {string} familyId
-     * @param {{ exclude?: string[] }} [options]
+     * @param {{ exclude?: string[], userId?: string | null }} [options] `userId` is the adult
+     *   asking, whose kids sitting out are left out; without one, every kid plays
      * @returns {Promise<StoryOption[]>}
      */
-    async options(familyId, { exclude = [] } = {}) {
-      const profile = await families.profileOf(familyId)
+    async options(familyId, { exclude = [], userId = null } = {}) {
+      const profile = await families.playingProfile(familyId, userId)
       if (!llm) return templateOptions(profile, exclude)
       const plots = await generateOptions(profile, familyId, exclude)
       return plots.map((plot) => ({ id: plot.id, title: plot.title, teaser: plot.teaser, minutes: plot.minutes }))
     },
 
     /**
-     * The story from this template, written for the family. Written once and
-     * saved; asking again returns the saved story.
+     * The story from this template, written for the kids playing. Written
+     * once for each set of kids and saved; asking again returns the saved story.
      * @param {string} familyId
      * @param {string} templateId
+     * @param {{ userId?: string | null }} [options] the adult asking; without one, every kid plays
      * @returns {Promise<Story>}
      */
-    async write(familyId, templateId) {
-      const written = await findWritten(familyId, templateId)
+    async write(familyId, templateId, { userId = null } = {}) {
+      const profile = await families.playingProfile(familyId, userId)
+      const kidIds = kidIdsOf(profile)
+      const written = await findWritten(familyId, templateId, kidIds)
       if (written) return written
 
       const [row] = await db.select(templateColumns).from(storyTemplates).where(eq(storyTemplates.id, templateId))
       if (!row) throw new NotFoundError('No such story')
       const template = { ...row, parts: /** @type {string[][]} */ (row.parts) }
-      const fill = fillOf(await families.profileOf(familyId), template)
+      const fill = fillOf(profile, template)
       if (!fill) throw new ConflictError('This story needs someone or something the family profile does not have')
 
       await db
@@ -283,15 +291,19 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
         .values({
           familyId,
           templateId,
+          kidIds,
           source: 'template',
           title: render(template.title, fill),
           teaser: render(template.teaser, fill),
           minutes: template.minutes,
           parts: template.parts.map((part) => part.map((paragraph) => render(paragraph, fill))),
         })
-        .onConflictDoNothing({ target: [stories.familyId, stories.templateId], where: sql`${stories.templateId} is not null` })
+        .onConflictDoNothing({
+          target: [stories.familyId, stories.templateId, stories.kidIds],
+          where: sql`${stories.templateId} is not null`,
+        })
       // Whether this call or one running alongside it wrote the story.
-      return /** @type {Story} */ (await findWritten(familyId, templateId))
+      return /** @type {Story} */ (await findWritten(familyId, templateId, kidIds))
     },
 
     /**
@@ -301,10 +313,11 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      * A reader who leaves early hears no more and nothing is saved.
      * @param {string} familyId
      * @param {string} id a plot or a template
-     * @param {{ signal?: AbortSignal }} [options]
+     * @param {{ signal?: AbortSignal, userId?: string | null }} [options] `userId` is the adult
+     *   asking: a template story stars their kids playing, a plot's the kids it was written for
      * @returns {Promise<AsyncGenerator<StoryEvent, void, void>>}
      */
-    async writeStream(familyId, id, { signal } = {}) {
+    async writeStream(familyId, id, { signal, userId = null } = {}) {
       const [plot] = await db
         .select({ id: storyPlots.id })
         .from(storyPlots)
@@ -312,21 +325,29 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       if (plot) return this.writePlot(familyId, id, { signal })
 
       const [template] = await db.select({ id: storyTemplates.id }).from(storyTemplates).where(eq(storyTemplates.id, id))
-      if (template) return this.streamTemplate(familyId, id, { signal })
+      if (template) return this.streamTemplate(familyId, id, { signal, userId })
 
       throw new NotFoundError('No such story')
     },
 
     /**
      * A plot the family chose, coming out of the model paragraph by
-     * paragraph, then once more as the whole saved story.
+     * paragraph, then once more as the whole saved story. It stars the kids
+     * the plot was proposed for.
      * @param {string} familyId
      * @param {string} plotId
      * @param {{ signal?: AbortSignal }} [options]
      */
     async *writePlot(familyId, plotId, { signal } = {}) {
       const [plot] = await db
-        .select({ title: storyPlots.title, teaser: storyPlots.teaser, minutes: storyPlots.minutes, premise: storyPlots.premise, mood: storyPlots.mood })
+        .select({
+          title: storyPlots.title,
+          teaser: storyPlots.teaser,
+          minutes: storyPlots.minutes,
+          premise: storyPlots.premise,
+          mood: storyPlots.mood,
+          kidIds: storyPlots.kidIds,
+        })
         .from(storyPlots)
         .where(and(eq(storyPlots.id, plotId), eq(storyPlots.familyId, familyId)))
       if (!plot) throw new NotFoundError('No such story')
@@ -337,7 +358,7 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
         return
       }
 
-      const profile = await families.profileOf(familyId)
+      const profile = withKids(await families.profileOf(familyId), plot.kidIds)
       const { anchorAge, band } = anchorOf(profile)
       const lines = familyLines(profile)
       const user = renderPrompt(storyTemplate(), {
@@ -379,7 +400,16 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
 
       await db
         .insert(stories)
-        .values({ familyId, plotId, source: 'generated', title: plot.title, teaser: plot.teaser, minutes: plot.minutes, parts })
+        .values({
+          familyId,
+          plotId,
+          kidIds: kidIdsOf(profile),
+          source: 'generated',
+          title: plot.title,
+          teaser: plot.teaser,
+          minutes: plot.minutes,
+          parts,
+        })
         .onConflictDoNothing({ target: [stories.familyId, stories.plotId], where: sql`${stories.plotId} is not null` })
       const story = await findPlotWritten(familyId, plotId)
       if (!story) throw new UpstreamError('The story did not save')
@@ -391,10 +421,10 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      * story so the web never tells the kinds apart.
      * @param {string} familyId
      * @param {string} templateId
-     * @param {{ signal?: AbortSignal }} [options]
+     * @param {{ signal?: AbortSignal, userId?: string | null }} [options]
      */
-    async *streamTemplate(familyId, templateId, { signal } = {}) {
-      const story = await this.write(familyId, templateId)
+    async *streamTemplate(familyId, templateId, { signal, userId = null } = {}) {
+      const story = await this.write(familyId, templateId, { userId })
       yield* replayEvents(story, { signal })
     },
 

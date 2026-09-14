@@ -10,12 +10,18 @@ export function createFamiliesController({ families }) {
     async get(request) {
       const familyId = await families.idOf(request.session.user.id)
       if (!familyId) throw new NotFoundError('No family yet')
-      return families.profileOf(familyId)
+      return families.profileOf(familyId, request.session.user.id)
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
     async save(request) {
       return families.saveProfile(request.session.user.id, /** @type {ProfileInput} */ (request.body))
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async choosePlaying(request) {
+      const { kids } = /** @type {{ kids: string[] }} */ (request.body)
+      return families.choosePlaying(request.session.user.id, kids)
     },
   }
 }

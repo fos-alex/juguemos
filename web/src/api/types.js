@@ -3,7 +3,11 @@
  * the API's own shapes, so screens never see them.
  */
 
-/** @typedef {{ name: string, age: number | null }} Kid */
+/**
+ * @typedef {{ id?: string, name: string, age: number | null, playing?: boolean }} Kid
+ * `id` is missing only for a kid the form hasn't saved yet. `playing` is whether
+ * the kid plays with this parent (JUG-107); a kid without it plays.
+ */
 /** @typedef {{ kids: Kid[], pet: string, interests: string[], toys: string[] }} Family */
 /**
  * @typedef {{ family: Family, flagged: string[], note: string | null }} ParseResult

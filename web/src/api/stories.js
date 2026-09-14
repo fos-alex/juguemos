@@ -6,7 +6,7 @@
  * streams the same way, from the saved copy.
  */
 import { read, write } from '../lib/store'
-import { ApiError, OfflineError, request } from './http'
+import { ApiError, endSession, OfflineError, request } from './http'
 
 /** @typedef {import('./types').StoryOption} StoryOption */
 /** @typedef {import('./types').Story} Story */
@@ -47,6 +47,7 @@ export async function writeStory(id, { signal, onParagraph } = {}) {
     throw new OfflineError('Sin conexión')
   }
   if (!response.ok) {
+    if (response.status === 401) endSession()
     const data = await response.json().catch(() => null)
     throw new ApiError(data?.message ?? data?.error ?? `HTTP ${response.status}`, response.status, data?.code)
   }

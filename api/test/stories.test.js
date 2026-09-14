@@ -28,7 +28,9 @@ const TEMPLATES = [
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({ signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com'] })
+  api = await startApi({
+    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eli@example.com'],
+  })
   const stories = createStoriesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
   for (const each of TEMPLATES) await stories.addTemplate(each)
 })
@@ -87,6 +89,33 @@ test('a story reads like its option, and reading it again returns the saved stor
   assert.equal(again.id, story.id)
   const { rows } = await api.pool.query('select count(*)::int as n from stories where template_id = $1', [option.id])
   assert.equal(rows[0].n, 1)
+})
+
+test('stories star the kids playing, and each set of kids gets its own story', async () => {
+  const { cookie } = await signUpAs(api, 'eli@example.com')
+  const profile = (
+    await putFamily(api, cookie, {
+      ...EXAMPLE_PROFILE,
+      kids: [
+        { name: 'Milán', age: 1 },
+        { name: 'Sofi', age: 4 },
+      ],
+    })
+  ).json()
+  const sofi = profile.kids[1]
+
+  const [option] = (await options(cookie)).json()
+  assert.equal(option.teaser, 'Con Milán.')
+  const both = (await write(cookie, option.id)).json()
+  assert.equal(both.parts[0][1], 'Milán lo vio.')
+
+  await api.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids: [sofi.id] } })
+  for (const each of (await options(cookie)).json()) assert.equal(each.teaser, 'Con Sofi.')
+  const alone = (await write(cookie, option.id)).json()
+  assert.notEqual(alone.id, both.id)
+  assert.equal(alone.parts[0][1], 'Sofi lo vio.')
+  const { rows } = await api.pool.query('select kid_ids::text[] as kids from stories where id = $1', [alone.id])
+  assert.deepEqual(rows[0].kids, [sofi.id])
 })
 
 test('an unknown story is a 404', async () => {

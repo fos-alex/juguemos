@@ -47,7 +47,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/familia/corregir` | Corregir (`2h`). `?campo=` focuses one field |
 | `/familia` | Mi familia, the card's permanent home after onboarding |
 | `/ajustes` | Ajustes, not designed yet and kept minimal |
-| `/` | Home: `2j`, or `2i` when there is no last juego. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home |
+| `/` | Home: `2j`, or `2i` when there is no last juego. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home. With more than one kid, who's playing sits above the buttons (JUG-107, not in the handoff) and replaces the kids line under the wordmark |
 | `/idea/$id` | Actividad (`2m`). Otro juego swaps in place (`2p`) and pushes history, so back returns to the previous one |
 | `/idea/$id/reloj` | El reloj (`2o`) |
 | `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
@@ -61,7 +61,9 @@ The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), 
 
 - **The root layout** (`routes/__root.jsx`) holds the session guard and `ThemeProvider`.
   - Before each navigation the guard awaits `ensureSession()` from `api/auth.js`, which confirms the session with `/api/me` at most every five minutes and again when the app returns to the foreground.
-  - A 401 signs the device out. No answer (offline, a weak signal, a server failure) keeps the cached account, so the last juego stays readable offline.
+  - A 401 signs the device out, whether it answers that check or any other call: `request` in `api/http.js` (and the story stream) calls `endSession()`, except under `/auth`, where a 401 means a wrong password. The root layout sees the account go and runs the guard again. No answer (offline, a weak signal, a server failure) keeps the cached account, so the last juego stays readable offline.
+  - A device whose session ended goes to sign-in (`/cuenta?modo=entrar`); one that never had an account, or signed out, goes to `/entrada`.
+  - **Cerrar sesión** lives in Ajustes (the handoff's `2k`: Ajustes is account, not navigation). `signOut()` waits for the API, because only the server can end the httpOnly session cookie; offline it says so and the parent stays signed in.
   - Then the first run holds its order: no account goes to `/entrada`, and no family to the family form, `/familia/corregir`. Reading a family from free text needs the LLM (JUG-11), so `/familia/contanos` and `/familia/revisar` wait.
 - **Primitives** live in `components/`: `Screen` (with `Header`, `Body`, `Footer`, and `BackButton`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build screens from them rather than one-off layouts. `Screen`'s `tone` sets the page background.
 - **Data comes only from `src/api`.** It has one module per area (`auth.js`, `family.js`, `activities.js`, `stories.js`, `admin.js`), all calling through `request` in `http.js`, re-exported by `index.js`. Screens work with the shapes in `api/types.js`, and the modules translate the API's shapes to them. `mock.js` holds only email verification. Screens never call `fetch` themselves, and the web hardcodes no data.

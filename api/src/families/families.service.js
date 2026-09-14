@@ -4,11 +4,14 @@
  * now; the second parent joins in 0.6.
  */
 import { and, eq, notInArray, sql } from 'drizzle-orm'
-import { families, familyMembers, interests, kids, pets, toys } from './families.schema.js'
-import { NotFoundError } from '../errors.js'
+import { families, familyMembers, interests, kids, kidsSittingOut, pets, toys } from './families.schema.js'
+import { NotFoundError, ValidationError } from '../errors.js'
 
 /** @typedef {{ id: string, name: string | null }} Family */
-/** @typedef {{ id: string, name: string, age: number | null }} Kid */
+/**
+ * @typedef {{ id: string, name: string, age: number | null, playing: boolean }} Kid
+ * `playing` is for the adult asking (JUG-107); with no adult named, every kid plays.
+ */
 /** @typedef {{ id: string, name: string }} Named */
 /**
  * @typedef {{ id: string, name: string | null, kids: Kid[], pets: Named[], interests: string[], toys: Named[] }} Profile
@@ -38,10 +41,29 @@ const byPosition = (
   /** @type {{ asc: typeof import('drizzle-orm').asc }} */ { asc },
 ) => asc(row.position)
 
+/** The kids a story or a juego is for, in one canonical order. @param {Pick<Profile, 'kids'>} profile */
+export const kidIdsOf = (profile) => profile.kids.map((kid) => kid.id).sort()
+
+/**
+ * The profile with only these kids, or with all of them when none of these
+ * is in the family any more.
+ * @param {Profile} profile
+ * @param {string[]} kidIds
+ * @returns {Profile}
+ */
+export function withKids(profile, kidIds) {
+  const chosen = profile.kids.filter((kid) => kidIds.includes(kid.id))
+  return { ...profile, kids: chosen.length > 0 ? chosen : profile.kids }
+}
+
 /** @param {{ db: Db }} deps */
 export function createFamiliesService({ db }) {
-  /** @param {string} familyId @returns {Promise<Profile>} */
-  async function profileOf(familyId) {
+  /**
+   * @param {string} familyId
+   * @param {string | null} [userId] the adult asking, whose kids sitting out come back not playing
+   * @returns {Promise<Profile>}
+   */
+  async function profileOf(familyId, userId = null) {
     const family = await db.query.families.findFirst({
       columns: { id: true, name: true },
       where: eq(families.id, familyId),
@@ -57,11 +79,57 @@ export function createFamiliesService({ db }) {
       },
     })
     if (!family) throw new NotFoundError('No such family')
-    return { ...family, interests: family.interests.map((row) => row.label) }
+    const out = new Set()
+    if (userId) {
+      const rows = await db.select({ kidId: kidsSittingOut.kidId }).from(kidsSittingOut).where(eq(kidsSittingOut.userId, userId))
+      for (const row of rows) out.add(row.kidId)
+    }
+    // At least one kid always plays: when the one left playing was removed, everyone plays again.
+    const nobodyPlays = family.kids.every((kid) => out.has(kid.id))
+    return {
+      ...family,
+      kids: family.kids.map((kid) => ({ ...kid, playing: nobodyPlays || !out.has(kid.id) })),
+      interests: family.interests.map((row) => row.label),
+    }
   }
 
   return {
     profileOf,
+
+    /**
+     * The profile as this adult plays right now: only the kids playing.
+     * @param {string} familyId
+     * @param {string | null} userId
+     * @returns {Promise<Profile>}
+     */
+    async playingProfile(familyId, userId) {
+      const profile = await profileOf(familyId, userId)
+      return { ...profile, kids: profile.kids.filter((kid) => kid.playing) }
+    },
+
+    /**
+     * Says which of the family's kids play with this adult, from now on and on
+     * every device; the rest sit out. At least one of them must play. Ids that
+     * aren't the family's kids (one removed since the screen loaded) are ignored.
+     * @param {string} userId
+     * @param {string[]} kidIds
+     * @returns {Promise<Profile>}
+     */
+    async choosePlaying(userId, kidIds) {
+      const familyId = await familyIdOf(db, userId)
+      if (!familyId) throw new NotFoundError('No family yet')
+      const familyKids = await db.select({ id: kids.id }).from(kids).where(eq(kids.familyId, familyId))
+      const chosen = new Set(kidIds)
+      if (!familyKids.some((kid) => chosen.has(kid.id))) {
+        throw new ValidationError('At least one of the family kids plays', 'NO_KID_PLAYING')
+      }
+      const out = familyKids.filter((kid) => !chosen.has(kid.id))
+      await db.transaction(async (tx) => {
+        await tx.delete(kidsSittingOut).where(eq(kidsSittingOut.userId, userId))
+        if (out.length > 0) await tx.insert(kidsSittingOut).values(out.map((kid) => ({ userId, kidId: kid.id })))
+      })
+      return profileOf(familyId, userId)
+    },
 
     /**
      * Creates a family with this adult as its first member. Both rows are
@@ -130,7 +198,7 @@ export function createFamiliesService({ db }) {
         }
         return familyId
       })
-      return profileOf(familyId)
+      return profileOf(familyId, userId)
     },
   }
 }

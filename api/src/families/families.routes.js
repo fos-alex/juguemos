@@ -20,8 +20,14 @@ const profile = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['id', 'name', 'age'],
-        properties: { id: { type: 'string' }, name: { type: 'string' }, age: { type: ['integer', 'null'] } },
+        required: ['id', 'name', 'age', 'playing'],
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          age: { type: ['integer', 'null'] },
+          // Whether the kid plays with the signed-in adult (JUG-107).
+          playing: { type: 'boolean' },
+        },
       },
     },
     pets: { type: 'array', items: named },
@@ -62,6 +68,14 @@ const profileInput = {
   },
 }
 
+// The kids playing with the signed-in adult; the family's other kids sit out.
+const playingInput = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kids'],
+  properties: { kids: { type: 'array', minItems: 1, maxItems: 12, uniqueItems: true, items: id } },
+}
+
 /**
  * @param {import('fastify').FastifyInstance} app
  * @param {{ controller: FamiliesController }} options
@@ -69,4 +83,5 @@ const profileInput = {
 export async function familiesRoutes(app, { controller }) {
   app.get('/family', { schema: { response: { 200: profile } } }, controller.get)
   app.put('/family', { schema: { body: profileInput, response: { 200: profile } } }, controller.save)
+  app.put('/family/playing', { schema: { body: playingInput, response: { 200: profile } } }, controller.choosePlaying)
 }

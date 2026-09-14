@@ -5,7 +5,7 @@
  */
 import { clearAll, read, write } from '../lib/store'
 import { loadFamily } from './family'
-import { ApiError, request } from './http'
+import { ApiError, endSession, request } from './http'
 
 /** @typedef {import('./types').Account} Account */
 
@@ -46,6 +46,7 @@ function remember(user) {
   /** @type {Account} */
   const account = { name: user.name, email: user.email, provider: 'email', emailVerified: user.emailVerified }
   write('account', account)
+  write('sessionEnded', null)
   lastCheck = { at: Date.now(), account: Promise.resolve(account) }
   return account
 }
@@ -63,11 +64,21 @@ export async function signIn(input) {
   return remember(user)
 }
 
-/** Forgets the device's copy at once; the server session ends in the background. */
-export function signOut() {
+/**
+ * Ends the session on the server, then forgets the device's copy. It waits for
+ * the API because the session cookie is httpOnly: only the server can end it,
+ * and a device that forgot early would be signed back in by the next check.
+ * Offline, or when the API fails, it throws and the parent stays signed in.
+ */
+export async function signOut() {
+  try {
+    await post('/sign-out', {})
+  } catch (error) {
+    // A refusal means there was no session left to end.
+    if (!(error instanceof ApiError && error.status < 500)) throw error
+  }
   clearAll()
   lastCheck = { at: Date.now(), account: Promise.resolve(null) }
-  post('/sign-out', {}).catch(() => {})
 }
 
 /**
@@ -82,7 +93,8 @@ export function ensureSession() {
   if (!lastCheck || Date.now() - lastCheck.at > RECHECK_MS) {
     lastCheck = { at: Date.now(), account: checkSession() }
   }
-  return lastCheck.account
+  // A 401 from any call clears the store between checks, and that counts too.
+  return lastCheck.account.then((account) => (account && read('account') ? account : null))
 }
 
 /** @returns {Promise<Account | null>} */
@@ -91,7 +103,7 @@ async function checkSession() {
   try {
     const response = await fetch('/api/me', { signal: AbortSignal.timeout(CHECK_TIMEOUT_MS) })
     if (response.status === 401) {
-      clearAll()
+      endSession()
       return null
     }
     if (!response.ok) return read('account')
