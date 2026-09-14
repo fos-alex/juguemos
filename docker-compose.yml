@@ -40,6 +40,11 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://juguemos.local:3000}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
+      # The opencode gateway's key, from ~/.local/share/opencode/auth.json
+      # ("opencode-go.key"): without it stories come from templates.
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
+      OPENCODE_BASE_URL: ${OPENCODE_BASE_URL:-}
+      OPENCODE_MODEL: ${OPENCODE_MODEL:-}
       ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
     depends_on:
       migrate:

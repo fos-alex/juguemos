@@ -19,6 +19,9 @@ build/
 .next/
 coverage/
 
+# drizzle-kit snapshots (regenerated locally via `drizzle-kit push` or `generate`)
+api/migrations/meta/
+
 # Logs
 *.log
 npm-debug.log*

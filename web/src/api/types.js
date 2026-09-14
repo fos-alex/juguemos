@@ -19,6 +19,7 @@
  */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption */
 /** @typedef {StoryOption & { parts: string[][] }} Story */
+/** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStorySummary */
 /**
  * @typedef {{
  *   title: string, active: boolean, minutes: number, place: 'indoor' | 'outdoor',

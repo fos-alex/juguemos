@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, Navigate } from '@tanstack/react-router'
-import { writeStory } from '../api'
+import { savedStory, writeStory } from '../api'
 import { Dots, TertiaryButton } from '../components/Buttons'
 import { MetaLabel, Skeleton } from '../components/Card'
 import { Body, Footer, Header, Screen } from '../components/Screen'
@@ -30,17 +30,33 @@ function ReadingScreen() {
   const [paragraphs, setParagraphs] = useState(/** @type {{ part: number, text: string }[]} */ ([]))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [attempt, setAttempt] = useState(0)
+  // An id that is neither an option nor an already-read story may still be a
+  // saved story opened by its own id; wait for that answer before leaving.
+  const [looking, setLooking] = useState(!story && !option)
 
   useEffect(() => {
     if (read('stories')?.[id]) return
     const controller = new AbortController()
     setParagraphs([])
     setFailure(null)
+    setLooking(true)
     writeStory(id, {
       signal: controller.signal,
       onParagraph: (paragraph) => setParagraphs((list) => [...list, paragraph]),
     }).catch((error) => {
-      if (error.name !== 'AbortError') setFailure(failureText(error))
+      // An id that is not an option is a saved story opened by its own id.
+      if (error.status === 404) {
+        void savedStory(id).catch((savedError) => {
+          if (savedError.name !== 'AbortError') {
+            setFailure(failureText(savedError))
+            setLooking(false)
+          }
+        })
+        return
+      }
+      if (error.name === 'AbortError') return
+      setFailure(failureText(error))
+      setLooking(false)
     })
     return () => controller.abort()
   }, [id, attempt])
@@ -52,7 +68,7 @@ function ReadingScreen() {
     if (title) document.title = `${title} · Juguemos`
   }, [title])
 
-  if (!title) return <Navigate to="/cuentos" replace />
+  if (!title && !looking) return <Navigate to="/cuentos" replace />
 
   const parts = story ? story.parts : groupByPart(paragraphs)
 
