@@ -9,7 +9,7 @@ import { useCountdown } from '../hooks/useCountdown'
 import { useGoBack } from '../hooks/useGoBack'
 import { useOnline } from '../hooks/useOnline'
 import { useDemo } from '../lib/demo'
-import { clockText, failureText } from '../lib/format'
+import { clockText, failureText, placeText } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/idea/$id/')({
@@ -79,7 +79,7 @@ function ActivityScreen() {
     </button>
   ) : (
     <MetaLabel tone="grass">
-      {activity.minutes} min · {activity.place}
+      {activity.minutes} min · {placeText(activity.place)}
     </MetaLabel>
   )
 

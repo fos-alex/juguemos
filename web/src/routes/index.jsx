@@ -8,7 +8,7 @@ import { Footer, Screen } from '../components/Screen'
 import { Wordmark } from '../components/Wordmark'
 import { useOnline } from '../hooks/useOnline'
 import { useTheme } from '../hooks/useTheme'
-import { familyLine } from '../lib/format'
+import { familyLine, placeText } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/')({
@@ -108,7 +108,7 @@ function HomeScreen() {
               </MetaLabel>
               <span className="card-title">{last.title}</span>
               <span className="card-meta">
-                {last.minutes} min · {last.place}
+                {last.minutes} min · {placeText(last.place)}
               </span>
             </Card>
           )}

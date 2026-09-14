@@ -15,13 +15,14 @@ services:
     depends_on:
       - api
 
-  # Applies pending migrations, then exits. Every `docker compose up` runs it
-  # after building and before the API starts; running it again is a no-op.
+  # Applies pending migrations and loads catalog templates the database doesn't
+  # have yet, then exits. Every `docker compose up` runs it after building and
+  # before the API starts; running it again is a no-op.
   migrate:
     build:
       context: .
       dockerfile: api/Dockerfile
-    command: ["node", "api/src/migrate.js"]
+    command: ["sh", "-c", "node api/src/migrate.js && node api/src/seed.js catalog"]
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-juguemos}:${POSTGRES_PASSWORD:-juguemos}@db:5432/${POSTGRES_DB:-juguemos}
     depends_on:

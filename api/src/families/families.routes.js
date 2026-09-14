@@ -1,0 +1,76 @@
+/** @typedef {ReturnType<typeof import('./families.controller.js').createFamiliesController>} FamiliesController */
+
+const id = { type: 'string', format: 'uuid' }
+/** @param {number} maxLength */
+const text = (maxLength) => ({ type: 'string', minLength: 1, maxLength })
+
+const named = {
+  type: 'object',
+  required: ['id', 'name'],
+  properties: { id: { type: 'string' }, name: { type: 'string' } },
+}
+
+const profile = {
+  type: 'object',
+  required: ['id', 'name', 'kids', 'pets', 'interests', 'toys'],
+  properties: {
+    id: { type: 'string' },
+    name: { type: ['string', 'null'] },
+    kids: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'name', 'age'],
+        properties: { id: { type: 'string' }, name: { type: 'string' }, age: { type: ['integer', 'null'] } },
+      },
+    },
+    pets: { type: 'array', items: named },
+    interests: { type: 'array', items: { type: 'string' } },
+    toys: { type: 'array', items: named },
+  },
+}
+
+// The whole profile, as the parent last saw it. Items that carry the id of an
+// existing row update it; the rest are new.
+const profileInput = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kids', 'pets', 'interests', 'toys'],
+  properties: {
+    name: { type: ['string', 'null'], maxLength: 80 },
+    kids: {
+      type: 'array',
+      maxItems: 12,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['name', 'age'],
+        properties: { id, name: text(80), age: { type: ['integer', 'null'], minimum: 0, maximum: 17 } },
+      },
+    },
+    pets: {
+      type: 'array',
+      maxItems: 10,
+      items: { type: 'object', additionalProperties: false, required: ['name'], properties: { id, name: text(80) } },
+    },
+    interests: { type: 'array', maxItems: 30, items: text(80) },
+    toys: {
+      type: 'array',
+      maxItems: 200,
+      items: { type: 'object', additionalProperties: false, required: ['name'], properties: { id, name: text(120) } },
+    },
+  },
+}
+
+/**
+ * @param {import('fastify').FastifyInstance} app
+ * @param {{ controller: FamiliesController, requireSession: import('fastify').preHandlerAsyncHookHandler }} options
+ */
+export async function familiesRoutes(app, { controller, requireSession }) {
+  app.get('/family', { preHandler: requireSession, schema: { response: { 200: profile } } }, controller.get)
+  app.put(
+    '/family',
+    { preHandler: requireSession, schema: { body: profileInput, response: { 200: profile } } },
+    controller.save,
+  )
+}

@@ -1,12 +1,21 @@
 import Fastify from 'fastify'
 import { createAccountsController } from './accounts/accounts.controller.js'
 import { accountsRoutes } from './accounts/accounts.routes.js'
+import { createActivitiesController } from './activities/activities.controller.js'
+import { activitiesRoutes } from './activities/activities.routes.js'
+import { createActivitiesService } from './activities/activities.service.js'
 import { createAuth } from './auth/auth.js'
 import { authRoutes } from './auth/auth.routes.js'
 import { createRequireSession } from './auth/session.js'
+import { createFamiliesController } from './families/families.controller.js'
+import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
+import { createRequireFamily } from './families/require-family.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
+import { createStoriesController } from './stories/stories.controller.js'
+import { storiesRoutes } from './stories/stories.routes.js'
+import { createStoriesService } from './stories/stories.service.js'
 
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
@@ -17,21 +26,29 @@ import { healthRoutes } from './health/health.routes.js'
  *   config: import('./config.js').Config,
  *   db: import('pg').Pool,
  *   logger?: import('fastify').FastifyServerOptions['logger'],
- * }} options
+ *   random?: () => number,
+ * }} options `random` drives which template comes next; tests can pin it
  */
-export function buildApp({ config, db, logger = true }) {
+export function buildApp({ config, db, logger = true, random = Math.random }) {
   const families = createFamiliesService({ db })
+  const activities = createActivitiesService({ db, families, random })
+  const stories = createStoriesService({ db, families, random })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
+  const familyGuards = [requireSession, createRequireFamily(families)]
 
   const app = Fastify({ logger })
   app.decorateRequest('session', null)
+  app.decorateRequest('familyId', null)
   app.setErrorHandler(handleError)
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'not found' }))
 
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
   app.register(accountsRoutes, { controller: createAccountsController({ families }), requireSession })
+  app.register(familiesRoutes, { controller: createFamiliesController({ families }), requireSession })
+  app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
+  app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
 
   return app
 }

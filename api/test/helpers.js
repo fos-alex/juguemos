@@ -8,12 +8,25 @@ const SERVER_URL = process.env.TEST_DATABASE_URL ?? 'postgres://juguemos:juguemo
 
 export const ORIGIN = 'http://localhost:3000'
 
+/** A profile close to the brief's example family. */
+export const EXAMPLE_PROFILE = {
+  kids: [{ name: 'Milán', age: 2 }],
+  pets: [{ name: 'Inca' }],
+  interests: ['los dinosaurios', 'los caballos'],
+  toys: [
+    { name: 'el dinosaurio chiquito' },
+    { name: 'el tren grandote' },
+    { name: 'el osito marrón' },
+    { name: 'el caballo percherón' },
+  ],
+}
+
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[] }} [options]
+ * @param {{ signupEmails?: string[], random?: () => number }} [options]
  */
-export async function startApi({ signupEmails = [] } = {}) {
+export async function startApi({ signupEmails = [], random } = {}) {
   const name = `juguemos_test_${randomUUID().replaceAll('-', '')}`
   const admin = new pg.Client({ connectionString: SERVER_URL })
   await admin.connect()
@@ -30,7 +43,7 @@ export async function startApi({ signupEmails = [] } = {}) {
     databaseUrl: databaseUrl.href,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
   }
-  const app = buildApp({ config, db, logger: false })
+  const app = buildApp({ config, db, logger: false, random })
   await app.ready()
 
   return {
@@ -41,10 +54,41 @@ export async function startApi({ signupEmails = [] } = {}) {
     async close() {
       await app.close()
       await db.end()
-      await admin.query(`drop database ${name} with (force)`)
+      // pool.end() resolves before every socket has closed. Wait for the server
+      // to see them go instead of forcing them, so a real leak still fails the drop.
+      for (let tries = 0; tries < 100; tries++) {
+        const { rows } = await admin.query('select count(*)::int as open from pg_stat_activity where datname = $1', [name])
+        if (rows[0].open === 0) break
+        await new Promise((resolve) => setTimeout(resolve, 20))
+      }
+      await admin.query(`drop database ${name}`)
       await admin.end()
     },
   }
+}
+
+/**
+ * Signs up through the API and returns the user's id and session cookie.
+ * @param {Awaited<ReturnType<typeof startApi>>} api
+ * @param {string} email
+ */
+export async function signUpAs(api, email) {
+  const response = await api.app.inject({
+    method: 'POST',
+    url: '/auth/sign-up/email',
+    payload: { name: 'Alex', email, password: 'una-clave-larga' },
+  })
+  return { id: response.json().user.id, cookie: cookiesFrom(response) }
+}
+
+/**
+ * Saves the signed-in adult's family profile.
+ * @param {Awaited<ReturnType<typeof startApi>>} api
+ * @param {string} cookie
+ * @param {object} profile
+ */
+export function putFamily(api, cookie, profile) {
+  return api.app.inject({ method: 'PUT', url: '/family', headers: { cookie }, payload: profile })
 }
 
 /**

@@ -1,6 +1,7 @@
 import { AccountError, OfflineError } from '../api'
 
-/** @typedef {import('../api/fixtures').Family} Family */
+/** @typedef {import('../api/types').Family} Family */
+/** @typedef {import('../api/types').Activity} Activity */
 
 /** @param {number} age */
 export function ageText(age) {
@@ -10,6 +11,11 @@ export function ageText(age) {
 /** The Home header line: the kids only. The pet turns up in ideas and stories. @param {Family} family */
 export function familyLine(family) {
   return family.kids.map((kid) => (kid.age == null ? kid.name : `${kid.name}, ${ageText(kid.age)}`)).join(' · ')
+}
+
+/** Where an activity happens, as the parent reads it. @param {Activity['place']} place */
+export function placeText(place) {
+  return place === 'outdoor' ? 'afuera' : 'adentro'
 }
 
 /** @param {number} seconds */

@@ -1,7 +1,7 @@
 import { MetaLabel } from './Card'
 import { ageText } from '../lib/format'
 
-/** @typedef {import('../api/fixtures').Family} Family */
+/** @typedef {import('../api/types').Family} Family */
 
 /**
  * What the app understood about the family, in the family's own words, one

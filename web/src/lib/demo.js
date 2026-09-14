@@ -1,13 +1,12 @@
 /**
  * Switches for the /demo page, so states that are hard to reach by hand can be
- * reviewed against the mockups. Only the mock API, the online check, and the
- * night-mode clock read them; the product screens never know they exist.
+ * reviewed against the mockups. Only the API client, the online check, and
+ * the night-mode clock read them; the product screens never know they exist.
  */
 import { read, useStored, write } from './store'
 
 /**
  * @typedef {{
- *   misread: boolean,
  *   offline: boolean,
  *   slow: boolean,
  *   failNext: boolean,
@@ -18,7 +17,6 @@ import { read, useStored, write } from './store'
 
 /** @type {DemoSettings} */
 const DEFAULTS = {
-  misread: false,
   offline: false,
   slow: false,
   failNext: false,

@@ -26,7 +26,8 @@ function EntryScreen() {
     setFailure(null)
     try {
       await continueWithGoogle()
-      void navigate({ to: '/familia/contanos', replace: true })
+      // The first-run guard knows where a new account goes next.
+      void navigate({ to: '/', replace: true })
     } catch (error) {
       setFailure(failureText(error))
       setGoogle('idle')

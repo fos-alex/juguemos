@@ -10,7 +10,8 @@
     "dev": "node --env-file-if-exists=../.env --watch src/server.js",
     "start": "node src/server.js",
     "migrate": "node --env-file-if-exists=../.env src/migrate.js",
-    "seed": "node --env-file-if-exists=../.env src/seed.js",
+    "seed": "node --env-file-if-exists=../.env src/seed.js development",
+    "seed:catalog": "node --env-file-if-exists=../.env src/seed.js catalog",
     "migration:create": "node-pg-migrate create --migrations-dir migrations --migration-file-language sql",
     "test": "node --test \"test/**/*.test.js\""
   },
