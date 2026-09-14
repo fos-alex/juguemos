@@ -618,6 +618,21 @@
   min-height: 122px;
 }
 
+/* The family's own shelf, below the three options. */
+
+.story-library {
+  margin-top: 30px;
+  display: grid;
+  gap: 14px;
+}
+
+.story-library__heading {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-body-soft);
+}
+
 /* 2s / 2t / 2u Lectura */
 
 .screen--reading .header {

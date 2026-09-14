@@ -50,9 +50,9 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], random?: () => number }} [options]
+ * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown }} [options]
  */
-export async function startApi({ signupEmails = [], random } = {}) {
+export async function startApi({ signupEmails = [], random, now, llm } = {}) {
   const database = await createDatabase()
   await migrate({ databaseUrl: database.url })
 
@@ -62,8 +62,10 @@ export async function startApi({ signupEmails = [], random } = {}) {
     port: 0,
     databaseUrl: database.url,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
+    // No key: template stories, unless a test passes its own `llm`.
+    llm: { apiKey: null, baseUrl: '', model: '' },
   }
-  const app = buildApp({ config, db, logger: false, random })
+  const app = buildApp({ config, db, logger: false, random, now, llm })
   await app.ready()
 
   return {

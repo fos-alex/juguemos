@@ -19,6 +19,7 @@
  */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption */
 /** @typedef {StoryOption & { parts: string[][] }} Story */
+/** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStorySummary */
 /**
  * @typedef {{ name: string, email: string, provider: 'email' | 'google', emailVerified: boolean }} Account
  */

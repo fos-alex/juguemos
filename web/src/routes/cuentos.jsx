@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { storyOptions } from '../api'
+import { savedStories, savedStory, storyOptions } from '../api'
 import { TertiaryButton } from '../components/Buttons'
 import { Card, MetaLabel, Skeleton } from '../components/Card'
 import { Body, Footer, Header, Screen } from '../components/Screen'
@@ -9,14 +9,18 @@ import { useOnline } from '../hooks/useOnline'
 import { failureText } from '../lib/format'
 import { useStored } from '../lib/store'
 
+/** @typedef {import('../api/types').SavedStorySummary} SavedStorySummary */
+
 export const Route = createFileRoute('/cuentos')({
   component: StoryOptionsScreen,
 })
 
 /**
- * 2r. Three plots of equal weight: the app suggests, it doesn't recommend.
- * Reading time is always the last line, because it decides things at 8 pm.
- * No cover art, no illustration, no mascot.
+ * 2r, and the family's own shelf of already-written stories below it. Three
+ * plots of equal weight: the app suggests, it doesn't recommend. Reading
+ * time is always the last line, because it decides things at 8 pm. No cover
+ * art, no illustration, no mascot. The library is offscreen content, so its
+ * fetch may come and go quietly — the options are the story.
  */
 function StoryOptionsScreen() {
   const navigate = useNavigate()
@@ -25,6 +29,7 @@ function StoryOptionsScreen() {
   const options = useStored('storyOptions')
   const stories = useStored('stories')
   const [loading, setLoading] = useState(!options)
+  const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))
   const [notice, setNotice] = useState(/** @type {string | null} */ (null))
   const started = useRef(false)
 
@@ -48,6 +53,16 @@ function StoryOptionsScreen() {
     void load([])
   }, [])
 
+  useEffect(() => {
+    if (!online) {
+      setLibrary(null)
+      return
+    }
+    savedStories()
+      .then(setLibrary)
+      .catch(() => setLibrary(null))
+  }, [online])
+
   /** @param {string} id */
   const pick = (id) => {
     if (!online && !stories?.[id]) {
@@ -55,6 +70,18 @@ function StoryOptionsScreen() {
       return
     }
     void navigate({ to: '/cuento/$id', params: { id } })
+  }
+
+  /** @param {SavedStorySummary} saved */
+  const openLibraryStory = async (saved) => {
+    if (!online && !stories?.[saved.id]) {
+      setNotice('Estás sin conexión.')
+      return
+    }
+    if (!stories?.[saved.id]) {
+      await savedStory(saved.id).catch(() => {})
+    }
+    void navigate({ to: '/cuento/$id', params: { id: saved.id } })
   }
 
   return (
@@ -79,6 +106,20 @@ function StoryOptionsScreen() {
           <p className="status-line" role="alert">
             {notice}
           </p>
+        )}
+        {library && library.length > 0 && (
+          <section className="story-library">
+            {/* Voice pass pending: "Para volver a leer". */}
+            <h2 className="story-library__heading">Para volver a leer</h2>
+            {library.map((saved) => (
+              <Card key={saved.id} className="story-option" onClick={() => void openLibraryStory(saved)}>
+                <span className="story-option__title">{saved.title}</span>
+                <MetaLabel as="span" className="story-option__time">
+                  {saved.minutes} min
+                </MetaLabel>
+              </Card>
+            ))}
+          </section>
         )}
       </Body>
       <Footer>

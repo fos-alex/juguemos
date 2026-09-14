@@ -14,10 +14,18 @@ const LOCAL_DATABASE_URL = 'postgres://juguemos:juguemos@localhost:5432/juguemos
  */
 
 /**
+ * @typedef {object} LlmConfig
+ * @property {string | null} apiKey the opencode gateway's key; without it stories come from templates
+ * @property {string} baseUrl
+ * @property {string} model
+ */
+
+/**
  * @typedef {object} Config
  * @property {number} port
  * @property {string} databaseUrl
  * @property {AuthConfig} auth
+ * @property {LlmConfig} llm
  */
 
 export class ConfigError extends Error {}
@@ -40,10 +48,18 @@ export function loadConfig(env = process.env) {
     throw new ConfigError('BETTER_AUTH_SECRET must be at least 32 characters (openssl rand -base64 32)')
   }
 
+  const baseUrl = (env.OPENCODE_BASE_URL || 'https://opencode.ai/zen/go/v1').trim()
+  if (!baseUrl) throw new ConfigError(`OPENCODE_BASE_URL must be a URL, not "${env.OPENCODE_BASE_URL}"`)
+
   return {
     port,
     databaseUrl: loadDatabaseUrl(env),
     auth: { url, secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
+    llm: {
+      apiKey: env.OPENCODE_API_KEY?.trim() || null,
+      baseUrl,
+      model: (env.OPENCODE_MODEL || 'glm-5.3-flash').trim() || 'glm-5.3-flash',
+    },
   }
 }
 
