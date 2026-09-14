@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test'
 import { createAuth } from '../src/auth/auth.js'
 import { seedAccounts } from '../src/db/seed.js'
 import { createFamiliesService } from '../src/families/families.service.js'
+import { accounts as demoAccounts } from '../seeds/development.js'
 import { cookiesFrom, startApi } from './helpers.js'
 
 /** @type {import('../seeds/development.js').SeedAccount[]} */
@@ -68,4 +69,28 @@ test('a seeded account signs in and finds its family', async () => {
     family.json().toys.map((toy) => toy.name),
     ['el tren grandote'],
   )
+})
+
+test('each demo account signs in and finds its own family, exactly as seeded', async () => {
+  const demo = await startApi({ signupEmails: demoAccounts.map(({ email }) => email) })
+  try {
+    await seedAccounts({
+      auth: createAuth({ config: demo.config.auth, db: demo.db }),
+      families: createFamiliesService({ db: demo.db }),
+      accounts: demoAccounts,
+    })
+    for (const { email, password, family } of demoAccounts) {
+      const signedIn = await demo.app.inject({ method: 'POST', url: '/auth/sign-in/email', payload: { email, password } })
+      assert.equal(signedIn.statusCode, 200, email)
+
+      const profile = (await demo.app.inject({ method: 'GET', url: '/family', headers: { cookie: cookiesFrom(signedIn) } })).json()
+      assert.equal(profile.name, family?.name, email)
+      assert.deepEqual(profile.kids.map(({ name, age }) => ({ name, age })), family?.kids, email)
+      assert.deepEqual(profile.pets.map(({ name }) => ({ name })), family?.pets, email)
+      assert.deepEqual(profile.interests, family?.interests, email)
+      assert.deepEqual(profile.toys.map(({ name }) => ({ name })), family?.toys, email)
+    }
+  } finally {
+    await demo.close()
+  }
 })
