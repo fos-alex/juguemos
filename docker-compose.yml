@@ -40,6 +40,7 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://juguemos.local:3000}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
+      ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
     depends_on:
       migrate:
         condition: service_completed_successfully

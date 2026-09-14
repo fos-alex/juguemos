@@ -6,4 +6,5 @@ export { AccountError, createAccount, ensureSession, signIn, signOut } from './a
 export { loadFamily, saveFamily } from './family'
 export { NothingFitsError, suggestActivity } from './activities'
 export { storyOptions, writeStory } from './stories'
+export { createTemplate, deleteTemplate, listTemplates, loadTemplate, saveTemplate } from './admin'
 export { resendCode, verifyEmail, WrongCodeError } from './mock'

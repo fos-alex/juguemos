@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.6 · September 2026 · Owner: Alex Otero
+**Version:** 0.7 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -140,6 +140,8 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **The catalog lives in the database** (JUG-9): `activity_templates`, tagged with the full taxonomy (age range in months, minutes, place, energy, categories, small space, materials, skills, and safety), and `story_templates`. Templates have slots (`{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, `{interest}`) that code fills from the profile (`api/src/catalog/slots.js`); there is no LLM in 0.1. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
 
+**The catalog admin** (JUG-109) is how a loaded template is revised before 0.7's content backend: a page at `/admin` that adds, edits, switches off, and deletes activity templates. A template switched off stays out of the suggestions. Deleting one marks its row `deleted_at` instead of removing it, so the catalog seed, which skips slugs already in the database, never brings it back. The admin has no login yet, so the API serves it only when `ADMIN_ENABLED` is true, and it's never turned on where anyone outside the family can reach it. 0.7 still brings review states, versions, and reviewer accounts.
+
 **What a family was given is saved as they saw it.** `activities` holds each suggestion as it was tailored, and `stories` each story as it was written, so a story reads again exactly the same. Stories written by an LLM (JUG-71) will be saved to `stories` too, marked by `source`.
 
 **Seeds.** Data never comes from application code; seeds load it through Better Auth and the services, the same way the app does, and skip whatever already exists. The catalog seed (`api/seeds/catalog/`) runs on every `docker compose up`, right after the migrations, and never overwrites a template already in the database, since the database is the catalog's home. The development seed (`api/seeds/development.js`, an account for the example family) refuses to run in production.
@@ -194,7 +196,6 @@ Version 1 runs a single environment. A separate staging environment is worth add
 - Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
 - How the holiday calendar is versioned and deployed. The activity and story catalog lives in the database, loaded by seeds (JUG-9).
-- How a template already in the database is revised before the 0.7 content backend exists: a migration, or a reviewed seed that updates on purpose.
 
 ## 12. Change log
 
@@ -206,3 +207,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.4 | September 2026 | Authentication decided: Better Auth with email and password, sessions in PostgreSQL, sign-up behind an email allowlist. First tables: users, sessions, families, and family members. API foundations: layered by domain (routes, controllers, services), validated config, versioned SQL migrations with node-pg-migrate run by a one-shot service before the API starts, and integration tests against a real database. |
 | 0.5 | September 2026 | The web runs on the API with no hardcoded data. Family profile (kids, pets, interests, toys), the activity and story catalog in the database with code-filled slots (no LLM in 0.1), and every suggested activity and written story saved per family. Catalog seeds load on every deploy; development seeds stay local. |
 | 0.6 | September 2026 | Database access moves to Drizzle ORM: the schema is code, drizzle-kit generates the migrations from it, and they run under a lock that also refuses edited or skipped migrations. Better Auth uses its Drizzle adapter. node-pg-migrate and the hand-written SQL are gone. |
+| 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |

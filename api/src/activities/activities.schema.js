@@ -30,8 +30,13 @@ export const activityTemplates = pgTable(
     steps: text().array().notNull(),
     easier: text().notNull(),
     harder: text().notNull(),
+    // Off keeps a template out of the suggestions without deleting it.
+    active: boolean().notNull().default(true),
     createdAt: createdAt(),
     updatedAt: timestamptz().notNull().defaultNow(),
+    // Deleted from the admin. The row stays so the catalog seed, which skips
+    // slugs already in the database, never adds it back.
+    deletedAt: timestamptz(),
   },
   (table) => [
     check('activity_templates_minutes_check', sql`${table.minutes} > 0`),

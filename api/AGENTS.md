@@ -32,6 +32,7 @@ src/
     <domain>.service.js     business logic and queries
     <domain>.schema.js      the domain's tables and relations, in Drizzle
   catalog/            template slots, filled from the family's own words
+  admin/              the catalog admin's routes and controller, on the activities service
   auth/               Better Auth: the instance, its tables, its /auth/* routes, the session preHandler
   db/                 the Drizzle client, schema.js (every domain's tables, for the client and drizzle-kit), the migration runner, the seeder
   migrate.js          entry point for `npm run migrate` and the migrate service
@@ -52,6 +53,7 @@ test/                 integration tests, with helpers.js
 - **Every route has a response schema.** The schema is also the allowlist of what leaves the server, since fields not listed are never serialized. That is how private data stays in.
 - **Errors have one shape**, `{ error }`, from `handleError` in `app.js`. Throw an error with a 4xx `statusCode` for a client's own mistake, and its message is sent back. Anything else becomes a logged 500 with the message "internal error", so internals are never described.
 - **Every route needs a session by default.** A `preHandler` hook in `app.js` runs `requireSession` (`auth/session.js`) on every route: without a session it answers 401, and with one the signed-in adult is on `request.session` (`{ user, session }`). A route open to anyone sets `config: { public: true }`, as health and Better Auth's routes do. Make a route public only when it truly must be. Routes about the family also run `requireFamily` (`families/require-family.js`), which answers 409 until the adult has saved a family and puts it on `request.familyId`.
+- **The catalog admin has no login yet** (JUG-109). Its routes under `/admin` are public, so `app.js` registers them only when `ADMIN_ENABLED` is true; otherwise they are a 404. Never turn it on where anyone outside the family can reach it, and remind Alex of the rule when work touches it.
 - **Queries go through Drizzle,** on the `db` that `db/client.js` creates: the query builder for most things, `db.query` to load a row with its relations, and the `sql` template for what is Postgres-specific (the advisory lock, a kid's current age). Values are always parameters: never build SQL from strings, and never put input in `sql.raw`. Columns are camelCase in code and snake_case in the database. Writes that must succeed or fail together go through `db.transaction(async (tx) => …)`.
 - **A failed query throws `DrizzleQueryError`,** whose message includes the query's parameters, which can be a family's names. The Postgres error, with its `code`, is its `cause`, and that is what `handleError` logs.
 - **Families:** each adult has one family for now, and the second parent joins in 0.6. The profile holds kids, pets, interests, and toys.
@@ -69,7 +71,7 @@ test/                 integration tests, with helpers.js
 - **Migrations only go forward.** To undo one that has run anywhere, generate another. Never edit a migration that has run, and never create tables from application code. The runner (`db/migrate.js`) takes a lock and records what it applied, so running it twice is safe, and it refuses a database whose applied migrations were since edited.
 - **Generate on top of main.** Drizzle applies only the migrations newer than the latest one applied, so a migration from a branch that main has moved past would be skipped; the runner stops instead. If main gains a migration while your branch has one, delete yours (its `.sql`, its snapshot, and its entry in `meta/_journal.json`), then merge main and generate it again.
 - **Data comes from the database, loaded by seeds,** never from application code or the web. No placeholder records or side effects that exist only to have data.
-  - **Catalog templates** are in `seeds/catalog/` and load on every `docker compose up`, right after the migrations. A template already in the database is never overwritten: the database is the catalog's home (JUG-9).
+  - **Catalog templates** are in `seeds/catalog/` and load on every `docker compose up`, right after the migrations. A template already in the database is never overwritten: the database is the catalog's home (JUG-9). Once loaded, a template changes in the admin. One deleted there keeps its row, marked `deleted_at`, so the seed still skips its slug and never brings it back.
   - **Demo accounts** are in `seeds/development.js`, each with a different family, and the README lists their logins. `npm run seed` loads them with the catalog, through Better Auth and the services, the way the app does, and skips whatever already exists. Their passwords are in the repo, so they never run anywhere real. Add a family setup there, and to the README's table, when exploring the app needs one.
 
 ## Tests

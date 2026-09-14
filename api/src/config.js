@@ -18,6 +18,7 @@ const LOCAL_DATABASE_URL = 'postgres://juguemos:juguemos@localhost:5432/juguemos
  * @property {number} port
  * @property {string} databaseUrl
  * @property {AuthConfig} auth
+ * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
  */
 
 export class ConfigError extends Error {}
@@ -44,7 +45,15 @@ export function loadConfig(env = process.env) {
     port,
     databaseUrl: loadDatabaseUrl(env),
     auth: { url, secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
+    admin: { enabled: flag(env, 'ADMIN_ENABLED') },
   }
+}
+
+/** A true or false setting, false when unset. @param {NodeJS.ProcessEnv} env @param {string} name */
+function flag(env, name) {
+  const value = env[name]?.trim().toLowerCase() || 'false'
+  if (value !== 'true' && value !== 'false') throw new ConfigError(`${name} must be true or false, not "${env[name]}"`)
+  return value === 'true'
 }
 
 /** @param {NodeJS.ProcessEnv} env @param {string} name */

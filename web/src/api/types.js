@@ -20,6 +20,16 @@
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption */
 /** @typedef {StoryOption & { parts: string[][] }} Story */
 /**
+ * @typedef {{
+ *   title: string, active: boolean, minutes: number, place: 'indoor' | 'outdoor',
+ *   minAgeMonths: number, maxAgeMonths: number, energy: 'low' | 'medium' | 'high',
+ *   categories: string[], smallSpace: boolean, materials: string[], skills: string[], safety: string[],
+ *   why: string, needs: string, steps: string[], easier: string, harder: string,
+ * }} ActivityTemplateFields
+ * A catalog template as the admin edits it, with its slots ({kid}, {toy}…) unfilled.
+ */
+/** @typedef {ActivityTemplateFields & { id: string, slug: string, updatedAt: string }} ActivityTemplate */
+/**
  * @typedef {{ name: string, email: string, provider: 'email' | 'google', emailVerified: boolean }} Account
  */
 

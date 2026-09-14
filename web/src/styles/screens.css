@@ -707,3 +707,123 @@
   white-space: nowrap;
   color: var(--ink-faint);
 }
+
+/* Admin: the catalog's tool, for a grown-up at a desk as much as a phone */
+
+.screen.admin {
+  max-width: 720px;
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 36px;
+  list-style: none;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+/* Off reads as off without colour: a dashed edge, muted text, and the switch's words. */
+.admin-row.is-off {
+  border-style: dashed;
+  border-color: var(--dashed);
+  background: none;
+}
+
+.admin-row__main {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.admin-row__title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.admin-row.is-off .admin-row__title {
+  color: var(--ink-muted);
+}
+
+.admin-switch {
+  flex: none;
+  min-width: 104px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--secondary-border);
+  border-radius: 999px;
+  background: var(--secondary-bg);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--secondary-text);
+}
+
+.admin-switch[aria-checked='false'] {
+  border-style: dashed;
+  border-color: var(--dashed);
+  background: none;
+  color: var(--ink-muted);
+}
+
+.admin-switch:disabled {
+  cursor: progress;
+  color: var(--ink-disabled);
+}
+
+/* minmax(0, …) lets the fields shrink below their inputs' natural width at 390 px. */
+.admin-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-area {
+  align-items: stretch;
+}
+
+/* Grows with its text where the browser can; elsewhere it can be dragged taller. */
+.admin-area .field__input {
+  field-sizing: content;
+  resize: vertical;
+  font-size: 16px;
+}
+
+.admin select.field__input {
+  font-family: inherit;
+}
+
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.admin-check input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.admin-chip[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: var(--surface-accent);
+  font-weight: 700;
+}

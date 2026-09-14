@@ -17,7 +17,7 @@ export class ApiError extends Error {
 }
 
 /**
- * @param {'GET' | 'POST' | 'PUT'} method
+ * @param {'GET' | 'POST' | 'PUT' | 'DELETE'} method
  * @param {string} path under /api
  * @param {unknown} [body]
  */

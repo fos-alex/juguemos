@@ -7,8 +7,11 @@ import { read } from '../lib/store'
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
+    const path = location.pathname.replace(/\/+$/, '') || '/'
+    // The catalog admin has no login yet, and needs no family.
+    if (path === '/admin' || path.startsWith('/admin/')) return
     const account = await ensureSession()
-    const target = firstRunTarget(location.pathname.replace(/\/+$/, '') || '/', account)
+    const target = firstRunTarget(path, account)
     if (target) throw redirect({ to: target, replace: true })
   },
   component: RootLayout,

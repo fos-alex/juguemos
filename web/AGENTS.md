@@ -52,6 +52,10 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/idea/$id/reloj` | El reloj (`2o`) |
 | `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
 | `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` at night) |
+| `/admin` | The catalog admin: every activity template, with a switch that takes it out of *¡Juguemos!*. Not in the handoff |
+| `/admin/$id` | Edits one template. `/admin/nuevo` adds one |
+
+The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), so the guard lets `/admin` through without an account, and the API serves it only when `ADMIN_ENABLED` is true. It is wider than the app (720 px) and may show how many templates are in use, but it still uses the tokens and the primitives.
 
 ## How it fits together
 
@@ -60,7 +64,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
   - A 401 signs the device out. No answer (offline, a weak signal, a server failure) keeps the cached account, so the last juego stays readable offline.
   - Then the first run holds its order: no account goes to `/entrada`, and no family to the family form, `/familia/corregir`. Reading a family from free text needs the LLM (JUG-11), so `/familia/contanos` and `/familia/revisar` wait.
 - **Primitives** live in `components/`: `Screen` (with `Header`, `Body`, `Footer`, and `BackButton`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build screens from them rather than one-off layouts. `Screen`'s `tone` sets the page background.
-- **Data comes only from `src/api`.** It has one module per area (`auth.js`, `family.js`, `activities.js`, `stories.js`), all calling through `request` in `http.js`, re-exported by `index.js`. Screens work with the shapes in `api/types.js`, and the modules translate the API's shapes to them. `mock.js` holds only email verification. Screens never call `fetch` themselves, and the web hardcodes no data.
+- **Data comes only from `src/api`.** It has one module per area (`auth.js`, `family.js`, `activities.js`, `stories.js`, `admin.js`), all calling through `request` in `http.js`, re-exported by `index.js`. Screens work with the shapes in `api/types.js`, and the modules translate the API's shapes to them. `mock.js` holds only email verification. Screens never call `fetch` themselves, and the web hardcodes no data.
 - **Local state** is `lib/store.js`: one localStorage key per piece of state, listed in its `Key` typedef, read with `useStored(key)` and written with `write(key, value)`. It caches the account, the family, activities, stories, the timer, and story positions, which is what keeps the last juego and the open story readable offline. A new key goes in the typedef.
 - **Failures** go through `failureText()` in `lib/format.js`: "Uy, algo falló. ¿Probamos de nuevo?", the offline line, or an `AccountError`'s own words. No error codes reach the screen.
 - **Styles** use the tokens in `styles/tokens.css`, which have light and dark sets. Never write a hex value in a component or screen, so nothing depends on a light background. Screen-specific CSS goes in `styles/screens.css`.
