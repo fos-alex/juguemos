@@ -24,9 +24,9 @@ export const EXAMPLE_PROFILE = {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], random?: () => number }} [options]
+ * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown }} [options]
  */
-export async function startApi({ signupEmails = [], random } = {}) {
+export async function startApi({ signupEmails = [], random, now, llm } = {}) {
   const name = `juguemos_test_${randomUUID().replaceAll('-', '')}`
   const admin = new pg.Client({ connectionString: SERVER_URL })
   await admin.connect()
@@ -43,7 +43,7 @@ export async function startApi({ signupEmails = [], random } = {}) {
     databaseUrl: databaseUrl.href,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
   }
-  const app = buildApp({ config, db, logger: false, random })
+  const app = buildApp({ config, db, logger: false, random, now, llm })
   await app.ready()
 
   return {
