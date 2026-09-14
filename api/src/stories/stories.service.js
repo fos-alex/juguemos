@@ -3,7 +3,9 @@
  * filled from the family profile; written stories are saved, so a story
  * reads again exactly as it did, and LLM stories will be saved the same way.
  */
+import { and, eq, sql } from 'drizzle-orm'
 import { fillFor, render, seededRandom, shuffle, unknownPlaceholders } from '../catalog/slots.js'
+import { stories, storyTemplates } from '../db/schema/index.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 
 /**
@@ -21,6 +23,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 /**
  * @typedef {{ id: string, templateId: string | null, title: string, teaser: string, minutes: number, parts: string[][] }} Story
  */
+/** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../families/families.service.js').Profile} Profile */
 /** @typedef {ReturnType<typeof createStoriesService>} StoriesService */
@@ -30,9 +33,17 @@ const OPTIONS = 3
 /** @param {Pick<StoryTemplateInput, 'title' | 'teaser' | 'parts'>} template */
 const textsOf = (template) => [template.title, template.teaser, ...template.parts.flat()]
 
-const TEMPLATE_COLUMNS = `id, title, teaser, minutes, min_age_months as "minAgeMonths", max_age_months as "maxAgeMonths", parts`
+const templateColumns = {
+  id: storyTemplates.id,
+  title: storyTemplates.title,
+  teaser: storyTemplates.teaser,
+  minutes: storyTemplates.minutes,
+  minAgeMonths: storyTemplates.minAgeMonths,
+  maxAgeMonths: storyTemplates.maxAgeMonths,
+  parts: storyTemplates.parts,
+}
 
-/** @param {unknown} parts */
+/** @param {unknown} parts @returns {parts is string[][]} */
 const isParts = (parts) =>
   Array.isArray(parts) &&
   parts.length > 0 &&
@@ -40,7 +51,7 @@ const isParts = (parts) =>
     (part) => Array.isArray(part) && part.length > 0 && part.every((paragraph) => typeof paragraph === 'string' && paragraph),
   )
 
-/** @param {{ db: import('pg').Pool, families: FamiliesService, random?: () => number }} deps */
+/** @param {{ db: Db, families: FamiliesService, random?: () => number }} deps */
 export function createStoriesService({ db, families, random = Math.random }) {
   /**
    * A template's slots filled for this family. Seeded by family and
@@ -53,13 +64,18 @@ export function createStoriesService({ db, families, random = Math.random }) {
 
   /** @param {string} familyId @param {string} templateId @returns {Promise<Story | null>} */
   const findWritten = async (familyId, templateId) => {
-    const { rows } = await db.query(
-      `select id, template_id as "templateId", title, teaser, minutes, parts
-       from stories
-       where family_id = $1 and template_id = $2`,
-      [familyId, templateId],
-    )
-    return rows[0] ?? null
+    const [story] = await db
+      .select({
+        id: stories.id,
+        templateId: stories.templateId,
+        title: stories.title,
+        teaser: stories.teaser,
+        minutes: stories.minutes,
+        parts: stories.parts,
+      })
+      .from(stories)
+      .where(and(eq(stories.familyId, familyId), eq(stories.templateId, templateId)))
+    return /** @type {Story | undefined} */ (story) ?? null
   }
 
   return {
@@ -73,22 +89,12 @@ export function createStoriesService({ db, families, random = Math.random }) {
       if (!isParts(template.parts)) throw new ValidationError(`${template.slug} needs parts, each a list of paragraphs`)
       const unknown = unknownPlaceholders(textsOf(template))
       if (unknown.length > 0) throw new ValidationError(`Unknown slots in ${template.slug}: ${unknown.join(', ')}`)
-      const { rowCount } = await db.query(
-        `insert into story_templates (slug, title, teaser, minutes, mood, min_age_months, max_age_months, parts)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
-         on conflict (slug) do nothing`,
-        [
-          template.slug,
-          template.title,
-          template.teaser,
-          template.minutes,
-          template.mood,
-          template.minAgeMonths,
-          template.maxAgeMonths,
-          JSON.stringify(template.parts),
-        ],
-      )
-      return { created: rowCount === 1 }
+      const added = await db
+        .insert(storyTemplates)
+        .values(template)
+        .onConflictDoNothing({ target: storyTemplates.slug })
+        .returning({ id: storyTemplates.id })
+      return { created: added.length === 1 }
     },
 
     /**
@@ -99,20 +105,22 @@ export function createStoriesService({ db, families, random = Math.random }) {
      * @returns {Promise<StoryOption[]>}
      */
     async options(familyId, { exclude = [] } = {}) {
-      const [profile, { rows: templates }] = await Promise.all([
+      const [profile, rows] = await Promise.all([
         families.profileOf(familyId),
-        db.query(`select ${TEMPLATE_COLUMNS} from story_templates order by slug`),
+        db.select(templateColumns).from(storyTemplates).orderBy(storyTemplates.slug),
       ])
+      const templates = rows.map((row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) }))
       const excluded = new Set(exclude)
-      const fitting = templates
-        .map((template) => ({ template, fill: fillOf(profile, template) }))
-        .filter((candidate) => candidate.fill !== null)
+      const fitting = templates.flatMap((template) => {
+        const fill = fillOf(profile, template)
+        return fill ? [{ template, fill }] : []
+      })
       const fresh = fitting.filter((candidate) => !excluded.has(candidate.template.id))
       const seen = fitting.filter((candidate) => excluded.has(candidate.template.id))
       return [...shuffle(fresh, random), ...shuffle(seen, random)].slice(0, OPTIONS).map(({ template, fill }) => ({
         id: template.id,
-        title: render(template.title, /** @type {NonNullable<typeof fill>} */ (fill)),
-        teaser: render(template.teaser, /** @type {NonNullable<typeof fill>} */ (fill)),
+        title: render(template.title, fill),
+        teaser: render(template.teaser, fill),
         minutes: template.minutes,
       }))
     },
@@ -128,25 +136,24 @@ export function createStoriesService({ db, families, random = Math.random }) {
       const written = await findWritten(familyId, templateId)
       if (written) return written
 
-      const { rows } = await db.query(`select ${TEMPLATE_COLUMNS} from story_templates where id = $1`, [templateId])
-      const template = rows[0]
-      if (!template) throw new NotFoundError('No such story')
+      const [row] = await db.select(templateColumns).from(storyTemplates).where(eq(storyTemplates.id, templateId))
+      if (!row) throw new NotFoundError('No such story')
+      const template = { ...row, parts: /** @type {string[][]} */ (row.parts) }
       const fill = fillOf(await families.profileOf(familyId), template)
       if (!fill) throw new ConflictError('This story needs someone or something the family profile does not have')
 
-      await db.query(
-        `insert into stories (family_id, template_id, source, title, teaser, minutes, parts)
-         values ($1, $2, 'template', $3, $4, $5, $6)
-         on conflict (family_id, template_id) where template_id is not null do nothing`,
-        [
+      await db
+        .insert(stories)
+        .values({
           familyId,
           templateId,
-          render(template.title, fill),
-          render(template.teaser, fill),
-          template.minutes,
-          JSON.stringify(template.parts.map((/** @type {string[]} */ part) => part.map((paragraph) => render(paragraph, fill)))),
-        ],
-      )
+          source: 'template',
+          title: render(template.title, fill),
+          teaser: render(template.teaser, fill),
+          minutes: template.minutes,
+          parts: template.parts.map((part) => part.map((paragraph) => render(paragraph, fill))),
+        })
+        .onConflictDoNothing({ target: [stories.familyId, stories.templateId], where: sql`${stories.templateId} is not null` })
       // Whether this call or one running alongside it wrote the story.
       return /** @type {Story} */ (await findWritten(familyId, templateId))
     },

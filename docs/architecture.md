@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.5 · September 2026 · Owner: Alex Otero
+**Version:** 0.6 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -21,6 +21,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | Offline | Service worker for the app shell; an app-owned store for offline data | Decided |
 | Server | Node.js HTTP API (Fastify), long-running | Decided |
 | Database | PostgreSQL. If content grows heavy, a CMS with its own database joins later | Decided |
+| Database access | Drizzle ORM in plain JavaScript: the schema is code, drizzle-kit generates the SQL migrations from it, and Better Auth uses its Drizzle adapter (JUG-105) | Decided |
 | Hosting | Existing DigitalOcean droplet | Decided |
 | Local development | Docker Compose, same as production, at `https://juguemos.local` | Decided |
 | TLS and reverse proxy | Caddy: automatic certificates in production, internal CA locally | Decided |
@@ -121,7 +122,7 @@ Responsibilities that belong to the server and nowhere else:
 - Calls to the weather and maps providers, with responses cached so the same neighborhood is not queried repeatedly.
 - The holiday calendar, maintained per country and per year, starting with Argentina.
 
-The code is layered by domain. Routes map URLs to controllers, controllers handle HTTP (parsing, status codes, and response schemas that also decide which fields leave the server), and services hold the business logic and the SQL. `app.js` builds the app with every dependency passed in, which is what lets the integration tests build it against a scratch database. Configuration is read and validated once at startup, and a missing secret stops the process. One error handler gives every failure the same shape and never describes server errors to the client.
+The code is layered by domain. Routes map URLs to controllers, controllers handle HTTP (parsing, status codes, and response schemas that also decide which fields leave the server), and services hold the business logic and the queries. `app.js` builds the app with every dependency passed in, which is what lets the integration tests build it against a scratch database. Configuration is read and validated once at startup, and a missing secret stops the process. One error handler gives every failure the same shape and never describes server errors to the client.
 
 Long-running AI work is the main performance concern. Story generation should stream to the client where possible, so the parent sees text appear rather than waiting on a blank screen.
 
@@ -133,7 +134,7 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **If content grows heavy, a CMS with its own database joins later.** The product side of the catalog — drafts, review states, versions, reviewer accounts, the whole content factory described in the release plan's 0.7 — may one day be more than the app database wants to hold. The answer when we get there is not to stretch PostgreSQL further, but to stand up a CMS with its own database that publishes finished, reviewed content to the app. The v1 schema only needs to keep published content cleanly separated from family data, so that split, if it ever comes, is cheap.
 
-**Accounts.** Better Auth uses `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family. Signing up creates only the account; a family is created explicitly, never as a side effect. Every table uses plural names and snake_case columns, Better Auth's included (mapped in `api/src/auth/schema.js`).
+**Accounts.** Better Auth uses `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family. Signing up creates only the account; a family is created explicitly, never as a side effect. Every table uses plural names and snake_case columns, Better Auth's included (defined with the rest of the schema in `api/src/db/schema/`).
 
 **The family profile** is `kids`, `pets`, `interests`, and `toys`, each kept in the parent's order and with names exactly as typed. A kid's age is stored as the years the parent gave and the day they gave it, so it stays current without asking for a birthday. Saving the profile updates rows by id, so ids stay stable for what will reference them later.
 
@@ -143,7 +144,9 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **Seeds.** Data never comes from application code; seeds load it through Better Auth and the services, the same way the app does, and skip whatever already exists. The catalog seed (`api/seeds/catalog/`) runs on every `docker compose up`, right after the migrations, and never overwrites a template already in the database, since the database is the catalog's home. The development seed (`api/seeds/development.js`, an account for the example family) refuses to run in production.
 
-**Migrations.** The schema is only ever changed by versioned SQL files in `api/migrations/`, applied in order by node-pg-migrate and recorded in a `pgmigrations` table. Each runs in its own transaction, and an advisory lock makes concurrent runs wait their turn, so applying them is idempotent. A one-shot `migrate` service runs them on every `docker compose up`, after the image builds and before the API starts, and the API only starts if they succeed. They can't run inside `docker build` itself, because the database isn't reachable there. Application code never creates tables, and a migration that has run anywhere is never edited.
+**Database access.** The API reaches Postgres through Drizzle ORM (JUG-105). The schema is defined once, in code (`api/src/db/schema/`), and the queries and migrations follow from it. Drizzle was chosen because it stays close to SQL: the schema expresses the check constraints and partial indexes the model relies on, raw SQL remains available for what's Postgres-specific, and it needs neither TypeScript nor a code generator. Prisma would have kept check constraints out of its schema, and the class-based ORMs only pay off with TypeScript.
+
+**Migrations.** The schema is only ever changed by SQL migrations that drizzle-kit generates from the schema into `api/migrations/`, and a test fails if they fall behind it. Drizzle applies pending migrations in one transaction and records them in `drizzle.__drizzle_migrations`. The runner wraps it in an advisory lock, so concurrent runs wait their turn and applying is idempotent. It also refuses a database whose applied migrations were since edited, or where an older migration never ran, which Drizzle alone would skip. A one-shot `migrate` service runs them on every `docker compose up`, after the image builds and before the API starts, and the API only starts if they succeed. They can't run inside `docker build` itself, because the database isn't reachable there. Application code never creates tables, a migration that has run anywhere is never edited, and migrations only go forward.
 
 The rest of the schema (goals, tips, moments, special days, toy descriptions) arrives with the releases that need it. The tags on activities, toys, goals, and tips stay the backbone of the product, since they determine what the app can actually do.
 
@@ -202,3 +205,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.3 | September 2026 | SPA built from the Plaza prototype in JavaScript with JSDoc (TypeScript tried and dropped): Vite, TanStack Router with per-route code splitting, npm workspaces (api, web) with no shared package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |
 | 0.4 | September 2026 | Authentication decided: Better Auth with email and password, sessions in PostgreSQL, sign-up behind an email allowlist. First tables: users, sessions, families, and family members. API foundations: layered by domain (routes, controllers, services), validated config, versioned SQL migrations with node-pg-migrate run by a one-shot service before the API starts, and integration tests against a real database. |
 | 0.5 | September 2026 | The web runs on the API with no hardcoded data. Family profile (kids, pets, interests, toys), the activity and story catalog in the database with code-filled slots (no LLM in 0.1), and every suggested activity and written story saved per family. Catalog seeds load on every deploy; development seeds stay local. |
+| 0.6 | September 2026 | Database access moves to Drizzle ORM: the schema is code, drizzle-kit generates the migrations from it, and they run under a lock that also refuses edited or skipped migrations. Better Auth uses its Drizzle adapter. node-pg-migrate and the hand-written SQL are gone. |

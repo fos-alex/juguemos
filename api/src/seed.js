@@ -1,10 +1,10 @@
-import pg from 'pg'
 import { activityTemplates } from '../seeds/catalog/activities.js'
 import { storyTemplates } from '../seeds/catalog/stories.js'
 import { accounts } from '../seeds/development.js'
 import { createActivitiesService } from './activities/activities.service.js'
 import { createAuth } from './auth/auth.js'
 import { loadConfig, loadDatabaseUrl } from './config.js'
+import { createDb } from './db/client.js'
 import { seedAccounts, seedCatalog } from './db/seed.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createStoriesService } from './stories/stories.service.js'
@@ -23,7 +23,7 @@ if (target === 'development' && process.env.NODE_ENV === 'production') {
   process.exit(1)
 }
 
-const db = new pg.Pool({ connectionString: loadDatabaseUrl() })
+const db = createDb(loadDatabaseUrl())
 const families = createFamiliesService({ db })
 
 try {
@@ -47,5 +47,5 @@ try {
     })
   }
 } finally {
-  await db.end()
+  await db.$client.end()
 }

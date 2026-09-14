@@ -3,7 +3,9 @@
  * a template that fits the family, with its slots filled from their profile,
  * saved as the parent saw it.
  */
+import { desc, eq, sql } from 'drizzle-orm'
 import { fillFor, render, unknownPlaceholders } from '../catalog/slots.js'
+import { activities, activityTemplates } from '../db/schema/index.js'
 import { NotFoundError, ValidationError } from '../errors.js'
 
 /**
@@ -32,6 +34,7 @@ import { NotFoundError, ValidationError } from '../errors.js'
  *   why: string, needs: string, steps: string[], easier: string, harder: string,
  * }} Activity
  */
+/** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {ReturnType<typeof createActivitiesService>} ActivitiesService */
 
@@ -48,7 +51,7 @@ const textsOf = (template) => [
   template.harder,
 ]
 
-/** @param {{ db: import('pg').Pool, families: FamiliesService, random?: () => number }} deps */
+/** @param {{ db: Db, families: FamiliesService, random?: () => number }} deps */
 export function createActivitiesService({ db, families, random = Math.random }) {
   return {
     /**
@@ -61,34 +64,12 @@ export function createActivitiesService({ db, families, random = Math.random }) 
     async addTemplate(template) {
       const unknown = unknownPlaceholders(textsOf(template))
       if (unknown.length > 0) throw new ValidationError(`Unknown slots in ${template.slug}: ${unknown.join(', ')}`)
-      const { rowCount } = await db.query(
-        `insert into activity_templates (
-           slug, title, minutes, place, min_age_months, max_age_months, energy, categories, small_space,
-           materials, skills, safety, why, needs, steps, easier, harder
-         )
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-         on conflict (slug) do nothing`,
-        [
-          template.slug,
-          template.title,
-          template.minutes,
-          template.place,
-          template.minAgeMonths,
-          template.maxAgeMonths,
-          template.energy,
-          template.categories,
-          template.smallSpace,
-          template.materials,
-          template.skills,
-          template.safety,
-          template.why,
-          template.needs,
-          template.steps,
-          template.easier,
-          template.harder,
-        ],
-      )
-      return { created: rowCount === 1 }
+      const added = await db
+        .insert(activityTemplates)
+        .values(template)
+        .onConflictDoNothing({ target: activityTemplates.slug })
+        .returning({ id: activityTemplates.id })
+      return { created: added.length === 1 }
     },
 
     /**
@@ -101,27 +82,17 @@ export function createActivitiesService({ db, families, random = Math.random }) 
      * @returns {Promise<Activity>}
      */
     async suggest(familyId, { after = null } = {}) {
+      const isAfter = sql`${activities.id} = ${after}`
       const [profile, templates, recent] = await Promise.all([
         families.profileOf(familyId),
-        db
-          .query(
-            `select id, title, minutes, place, min_age_months as "minAgeMonths", max_age_months as "maxAgeMonths",
-                    why, needs, steps, easier, harder
-             from activity_templates
-             order by slug`,
-          )
-          .then(({ rows }) => rows),
+        db.select().from(activityTemplates).orderBy(activityTemplates.slug),
         // The latest few, with the one being moved on from always among them.
         db
-          .query(
-            `select template_id as "templateId", id = $2 as "isAfter"
-             from activities
-             where family_id = $1
-             order by id = $2 desc nulls last, created_at desc
-             limit $3`,
-            [familyId, after, RECENT + 1],
-          )
-          .then(({ rows }) => rows),
+          .select({ templateId: activities.templateId, isAfter: isAfter.mapWith(Boolean) })
+          .from(activities)
+          .where(eq(activities.familyId, familyId))
+          .orderBy(sql`${isAfter} desc nulls last`, desc(activities.createdAt))
+          .limit(RECENT + 1),
       ])
 
       const fitting = templates.flatMap((template) => {
@@ -147,28 +118,15 @@ export function createActivitiesService({ db, families, random = Math.random }) 
         place: template.place,
         why: render(template.why, fill),
         needs: render(template.needs, fill, { keepStart: true }),
-        steps: template.steps.map((/** @type {string} */ step) => render(step, fill)),
+        steps: template.steps.map((step) => render(step, fill)),
         easier: render(template.easier, fill),
         harder: render(template.harder, fill),
       }
-      const { rows } = await db.query(
-        `insert into activities (family_id, template_id, title, minutes, place, why, needs, steps, easier, harder)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         returning id`,
-        [
-          familyId,
-          template.id,
-          activity.title,
-          activity.minutes,
-          activity.place,
-          activity.why,
-          activity.needs,
-          activity.steps,
-          activity.easier,
-          activity.harder,
-        ],
-      )
-      return { id: rows[0].id, ...activity }
+      const [{ id }] = await db
+        .insert(activities)
+        .values({ familyId, templateId: template.id, ...activity })
+        .returning({ id: activities.id })
+      return { id, ...activity }
     },
   }
 }

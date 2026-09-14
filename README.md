@@ -58,19 +58,19 @@ npm run build      # production build to web/dist (Caddy serves this)
 
 ### API
 
-`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the SQL. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
+`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
 
-The schema lives in versioned SQL files in `api/migrations/`, applied in order and recorded in the `pgmigrations` table. `docker compose up --build` runs them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
+The schema is code, in `api/src/db/schema/`, and drizzle-kit generates the SQL migrations in `api/migrations/` from it. `docker compose up --build` applies them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
 
 ```bash
-npm run migration:create -w api -- add-goals  # new api/migrations/<timestamp>_add-goals.sql
-npm run migrate -w api                        # apply pending migrations outside Docker
-npm run seed -w api                           # the catalog plus the demo accounts below (idempotent, never in production)
-npm run seed:catalog -w api                   # only the catalog
-docker compose up -d db && npm test -w api    # integration tests, each file on a fresh database
+npm run migration:generate -w api -- --name add-goals  # after changing the schema: api/migrations/0001_add-goals.sql
+npm run migrate -w api                                 # apply pending migrations outside Docker
+npm run seed -w api                                    # the catalog plus the demo accounts below (idempotent, never in production)
+npm run seed:catalog -w api                            # only the catalog
+docker compose up -d db && npm test -w api             # integration tests, each file on a fresh database
 ```
 
-Never edit a migration that has run anywhere; add a new one.
+Never edit a migration that has run anywhere; change the schema and generate a new one.
 
 ## Status
 

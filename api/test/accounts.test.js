@@ -49,7 +49,7 @@ test('an email outside the allowlist cannot sign up', async () => {
   assert.equal(response.statusCode, 403)
   assert.equal(response.json().code, 'SIGNUP_NOT_ALLOWED')
 
-  const { rowCount } = await api.db.query('select 1 from users where email = $1', ['stranger@example.com'])
+  const { rowCount } = await api.pool.query('select 1 from users where email = $1', ['stranger@example.com'])
   assert.equal(rowCount, 0)
 })
 
@@ -59,7 +59,7 @@ test('the same email cannot sign up twice', async () => {
   assert.equal(again.statusCode, 422)
   assert.equal(again.json().code, 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')
 
-  const { rowCount } = await api.db.query('select 1 from users where email = $1', ['beto@example.com'])
+  const { rowCount } = await api.pool.query('select 1 from users where email = $1', ['beto@example.com'])
   assert.equal(rowCount, 1)
 })
 

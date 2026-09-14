@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm'
 import Fastify from 'fastify'
 import { createAccountsController } from './accounts/accounts.controller.js'
 import { accountsRoutes } from './accounts/accounts.routes.js'
@@ -21,11 +22,11 @@ import { createStoriesService } from './stories/stories.service.js'
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
  * Routes map URLs to controllers, controllers speak HTTP, and services hold
- * the business logic and the SQL. server.js runs the result; tests build
+ * the business logic and the queries. server.js runs the result; tests build
  * their own on a scratch database.
  * @param {{
  *   config: import('./config.js').Config,
- *   db: import('pg').Pool,
+ *   db: import('./db/client.js').Db,
  *   logger?: import('fastify').FastifyServerOptions['logger'],
  *   random?: () => number,
  * }} options `random` drives which template comes next; tests can pin it
@@ -69,7 +70,10 @@ export function buildApp({ config, db, logger = true, random = Math.random }) {
 function handleError(error, request, reply) {
   const status = error.statusCode ?? 500
   if (status >= 500) {
-    request.log.error({ err: error }, 'request failed')
+    // A failed query's message carries its parameters, which can be a family's
+    // names; log the query and what Postgres said instead.
+    const logged = error instanceof DrizzleQueryError ? { err: error.cause, query: error.query } : { err: error }
+    request.log.error(logged, 'request failed')
     return reply.code(500).send({ error: 'internal error' })
   }
   const code = error instanceof AppError ? error.code : undefined

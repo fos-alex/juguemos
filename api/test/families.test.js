@@ -30,10 +30,10 @@ test('a family is created with its first member, and /me shows it', async () => 
 test('an adult already in a family cannot start another, and nothing is left behind', async () => {
   const user = await signUpAs(api, 'beto@example.com')
   await families.create(user.id)
-  const { rows: before } = await api.db.query('select count(*)::int as n from families')
+  const { rows: before } = await api.pool.query('select count(*)::int as n from families')
 
-  await assert.rejects(families.create(user.id), { code: '23505' })
-  const { rows: after } = await api.db.query('select count(*)::int as n from families')
+  await assert.rejects(families.create(user.id), (/** @type {any} */ error) => error.cause?.code === '23505')
+  const { rows: after } = await api.pool.query('select count(*)::int as n from families')
   assert.equal(after[0].n, before[0].n)
 })
 
@@ -86,7 +86,7 @@ test('saving again updates rows by id, adds new ones, and drops the rest', async
     ['el dino', 'la pelota'],
   )
   assert.equal(second.toys[0].id, dino.id)
-  const { rows } = await api.db.query('select count(*)::int as n from toys where family_id = $1', [first.id])
+  const { rows } = await api.pool.query('select count(*)::int as n from toys where family_id = $1', [first.id])
   assert.equal(rows[0].n, 2)
 })
 
@@ -94,14 +94,14 @@ test('an age keeps counting from the day it was given', async () => {
   const { cookie } = await signUpAs(api, 'eva@example.com')
   const profile = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
   const [kid] = profile.kids
-  await api.db.query(`update kids set age_set_on = current_date - interval '1 year' where id = $1`, [kid.id])
+  await api.pool.query(`update kids set age_set_on = current_date - interval '1 year' where id = $1`, [kid.id])
 
   const aged = (await getFamily(cookie)).json()
   assert.equal(aged.kids[0].age, 3)
 
   // Saving the form again sends the age it showed, which must not restart the count.
   await putFamily(api, cookie, { ...EXAMPLE_PROFILE, kids: aged.kids })
-  const { rows } = await api.db.query(`select age_years, age_set_on < current_date as counting from kids where id = $1`, [
+  const { rows } = await api.pool.query(`select age_years, age_set_on < current_date as counting from kids where id = $1`, [
     kid.id,
   ])
   assert.deepEqual(rows[0], { age_years: 2, counting: true })
