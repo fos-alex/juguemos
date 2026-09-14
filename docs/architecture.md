@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.8 · September 2026 · Owner: Alex Otero
+**Version:** 0.9 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -162,7 +162,7 @@ Two data rules carry over from the constitution and shape the schema:
 
 | Service | Used for | Notes |
 |---|---|---|
-| LLM provider | Activity tailoring, story generation, onboarding extraction, agent conversation | Provider not yet chosen. Calls are server-side only. |
+| LLM provider | Activity tailoring, story generation, onboarding extraction, agent conversation | Stories use OpenCode Go or OpenRouter, chosen with `LLM_PROVIDER`, and the model with `LLM_MODEL` (JUG-115). Which to keep is still open (JUG-7). OpenRouter requests only go to upstream providers that don't store or train on prompts. Calls are server-side only. |
 | Speech-to-text | Voice onboarding and voice input | Must handle Rioplatense Spanish, children's names, and background noise. Audio is discarded after transcription. |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas, parks, and kid-friendly places | Maps data is considered sufficient for v1; no curated event listings. |
@@ -192,7 +192,7 @@ Version 1 runs a single environment. A separate staging environment is worth add
 
 ## 11. Open questions
 
-- Which LLM provider or providers, and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
+- Which LLM provider to keep, OpenCode Go or OpenRouter (either works, set in the environment), and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
 - Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path.
 - Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
@@ -210,3 +210,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.6 | September 2026 | Database access moves to Drizzle ORM: the schema is code, drizzle-kit generates the migrations from it, and they run under a lock that also refuses edited or skipped migrations. Better Auth uses its Drizzle adapter. node-pg-migrate and the hand-written SQL are gone. |
 | 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |
 | 0.8 | September 2026 | Caddy's image builds the web app, so every deploy ships it. The service worker updates itself: each deploy's worker takes over, and the page reloads at a safe moment, never mid-story. |
+| 0.9 | September 2026 | Stories can use OpenCode Go or OpenRouter, switched with `LLM_PROVIDER`, with the model set by `LLM_MODEL`. One client serves both. OpenRouter requests refuse upstream providers that store or train on prompts. |

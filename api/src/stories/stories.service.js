@@ -10,7 +10,7 @@ import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
 import { fillFor, render, seededRandom, shuffle, unknownPlaceholders } from '../catalog/slots.js'
 import { stories, storyPlots, storyTemplates } from './stories.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
-import { UpstreamError } from '../llm/opencode.js'
+import { UpstreamError } from '../llm/llm.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { anchorOf, familyLines, moodAt, momentOf, parseOptions, partsOf, StoryParser } from './storytelling.js'
 import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storyteller } from './prompts.js'
@@ -47,7 +47,7 @@ import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storytelle
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../families/families.service.js').Profile} Profile */
 /** @typedef {ReturnType<typeof createStoriesService>} StoriesService */
-/** @typedef {import('../llm/opencode.js').Llm} Llm */
+/** @typedef {import('../llm/llm.js').Llm} Llm */
 
 const OPTIONS = 3
 const LIBRARY_CAP = 20
