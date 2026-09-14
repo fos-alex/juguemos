@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.7 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.9 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -49,8 +49,10 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Family onboarding.** Conversational, by text, for one parent. The parent writes about the family in their own words, and the AI extracts the kids (name and age), the pet, interests, and toys by their family names. It shows a *"¿Está bien así?"* card to confirm, and a plain form covers corrections.
 - **Suggest an activity.** The one-tap *"¡Juguemos!"* button. It picks one activity from the catalog that fits the kids' ages and fills it in with their names, interests, and the pet. *"Otro juego"* shows a different one.
 - **Tell a story.** *"Hora del cuento"* offers three plot options starring the kids, the pet, and their toys by family name. The parent picks one and reads it on a screen with large text that stays awake. Until the LLM provider is chosen, stories come from templates filled in by code.
+- **Who's playing.** Home shows the kids, all marked. The parent unmarks whoever isn't playing, and games and stories are made for the kids who are. Juguemos remembers the choice for next time.
 - **Night mode.** Dark from 19:00 to 07:00 local time, switching on its own, and one tap to change between light and dark, above all on the reading screen. It uses the handoff's dark palette; warming it is still open.
 - **First iteration of content.** 30–40 activity templates for ages 1–3, drafted with AI, reviewed by Alex, loaded into the database by the catalog seeds, and tagged with the full taxonomy. A short guideline for story length and tone.
+- **Admin for the catalog.** A page where Alex adds, edits, switches off, and deletes activity templates while playtesting. It has no login yet, so it's off unless turned on, and never on where anyone outside the family can reach it.
 - **Spanish only.** Rioplatense Spanish with *vos*, throughout.
 
 **Done when** we have used it for a couple of weeks and can answer: Did we reach for it on our own? Did the ideas and stories feel made for us? Which ones did we actually play or read? What annoyed us?
@@ -83,6 +85,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Smart goal proposals.** Based on age, interests, and family situation.
 - **Activity categories.** Move, Create, Pretend, Explore, Learn, Low-energy, Helpers, and Out & About.
 - **Filtering and choosing a type of activity.** For when the parent wants something specific.
+- **A colour for each kid.** Each kid gets a colour that goes with their name on Home, on the games and stories they took part in, and on their goals. When one kid is playing, Home takes a light accent in that kid's colour. It's a marker, not a theme.
 - **More activities and content.**
 
 ### 0.5 — *Con cuidado*
@@ -160,8 +163,13 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Night mode in 0.1, pulled forward from the handoff's 0.3 target | Stories are read at bedtime, and the dark palette was already wired. Alex asked for it in 0.1. |
 | The activity catalog lives in the database, loaded by seeds | Alex's call while building 0.1. The database is the catalog's home, not files in the repo. |
 | 0.1 starts without an LLM | The provider decision is deferred. Until then, activities and stories come from templates filled in by code. |
+| Who's playing in 0.1 | Games and stories should fit the kids who are actually playing. Remembering the choice keeps it to one tap, or none. |
+| A colour for each kid in 0.4, as a marker rather than a theme | 0.4 brings each kid's goals, and the story library from 0.3 can show whose stories they were. The colour matters once there's more than one kid to tell apart. |
+| A minimal admin for activity templates in 0.1, ahead of 0.7's content backend | Alex asked for it, to shape the playtest's catalog from the browser. 0.7 still brings review states, versions, and reviewer accounts. |
 
 ## 6. Open questions
+
+- **Styling by age.** Should Home's look change with the age of the kid who's playing? The recommendation is no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which the design handoff rules out.
 
 - **The LLM in 0.1.** Does the playtest wait for the LLM provider, or start with template stories and the family form, adding conversational onboarding and bespoke stories when they're ready?
 - **Friends and guardrails.** The first target for friends was 0.3 or 0.4, but guardrails complete in 0.5. Should guardrails move earlier so friends can join sooner, or do friends wait for 0.5?
@@ -180,3 +188,5 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.5 draft | September 2026 | Added Sign in with Google to 0.3. |
 | 0.6 draft | September 2026 | Added night mode to 0.1. |
 | 0.7 draft | September 2026 | Synced 0.1 with decisions made while building: the catalog lives in the database, sign-in uses Better Auth, the LLM is deferred, and Home says *¡Juguemos!* and *Otro juego*. |
+| 0.8 draft | September 2026 | Added who's playing to 0.1, and a colour for each kid to 0.4. |
+| 0.9 draft | September 2026 | Added an admin for the activity templates to 0.1. |
