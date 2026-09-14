@@ -45,6 +45,7 @@ services:
       OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
       OPENCODE_BASE_URL: ${OPENCODE_BASE_URL:-}
       OPENCODE_MODEL: ${OPENCODE_MODEL:-}
+      ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
     depends_on:
       migrate:
         condition: service_completed_successfully

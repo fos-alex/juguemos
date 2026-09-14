@@ -58,7 +58,7 @@ npm run build      # production build to web/dist (Caddy serves this)
 
 ### API
 
-`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
+`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots and `admin/` for the catalog admin): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
 
 The schema is code, in each domain's `<domain>.schema.js`, and drizzle-kit generates the SQL migrations in `api/migrations/` from it. `docker compose up --build` applies them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
 
@@ -71,6 +71,12 @@ docker compose up -d db && npm test -w api             # integration tests, each
 ```
 
 Never edit a migration that has run anywhere; change the schema and generate a new one.
+
+### Catalog admin
+
+`/admin` manages the activity templates: add, edit, switch off, and delete. A template switched off stays out of *¡Juguemos!*, and a deleted one is gone for good, since the catalog seed never adds a deleted slug back. An edit changes the next suggestions, never the activities a family already saw.
+
+The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true` (then `docker compose up -d --build`). Never turn it on where anyone outside the family can reach it.
 
 ## Status
 

@@ -15,6 +15,8 @@ import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as CuentosRouteImport } from './routes/cuentos'
 import { Route as EntradaRouteImport } from './routes/entrada'
 import { Route as VerificarRouteImport } from './routes/verificar'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminIdRouteImport } from './routes/admin.$id'
 import { Route as CuentoIdRouteImport } from './routes/cuento.$id'
 import { Route as FamiliaIndexRouteImport } from './routes/familia.index'
 import { Route as FamiliaContanosRouteImport } from './routes/familia.contanos'
@@ -51,6 +53,16 @@ const EntradaRoute = EntradaRouteImport.update({
 const VerificarRoute = VerificarRouteImport.update({
   id: '/verificar',
   path: '/verificar',
+  getParentRoute: () => rootRouteImport,
+})
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+})
+const AdminIdRoute = AdminIdRouteImport.update({
+  id: '/admin/$id',
+  path: '/admin/$id',
   getParentRoute: () => rootRouteImport,
 })
 const CuentoIdRoute = CuentoIdRouteImport.update({
@@ -96,10 +108,12 @@ const rootRouteChildren = {
   CuentosRoute: CuentosRoute,
   EntradaRoute: EntradaRoute,
   VerificarRoute: VerificarRoute,
+  AdminIdRoute: AdminIdRoute,
   CuentoIdRoute: CuentoIdRoute,
   FamiliaContanosRoute: FamiliaContanosRoute,
   FamiliaCorregirRoute: FamiliaCorregirRoute,
   FamiliaRevisarRoute: FamiliaRevisarRoute,
+  AdminIndexRoute: AdminIndexRoute,
   FamiliaIndexRoute: FamiliaIndexRoute,
   IdeaIdRelojRoute: IdeaIdRelojRoute,
   IdeaIdIndexRoute: IdeaIdIndexRoute,

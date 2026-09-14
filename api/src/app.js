@@ -5,6 +5,8 @@ import { accountsRoutes } from './accounts/accounts.routes.js'
 import { createActivitiesController } from './activities/activities.controller.js'
 import { activitiesRoutes } from './activities/activities.routes.js'
 import { createActivitiesService } from './activities/activities.service.js'
+import { createAdminController } from './admin/admin.controller.js'
+import { adminRoutes } from './admin/admin.routes.js'
 import { createAuth } from './auth/auth.js'
 import { authRoutes } from './auth/auth.routes.js'
 import { createRequireSession } from './auth/session.js'
@@ -63,6 +65,8 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
+  // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
+  if (config.admin.enabled) app.register(adminRoutes, { controller: createAdminController({ activities }) })
 
   return app
 }
