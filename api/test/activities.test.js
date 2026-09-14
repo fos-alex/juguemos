@@ -52,6 +52,7 @@ before(async () => {
       'dani@example.com',
       'eva@example.com',
       'fede@example.com',
+      'gabi@example.com',
     ],
   })
   activities = createActivitiesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
@@ -138,6 +139,34 @@ test('a template with an unknown slot is refused', async () => {
   await assert.rejects(activities.addTemplate(template({ slug: 'mal', title: 'Con {perro}' })), {
     name: 'ValidationError',
   })
+})
+
+test('a juego suits only the kids playing, names them, and records who played', async () => {
+  await activities.addTemplate(template({ slug: 'para-cuatro', title: '{kid} arma una torre', minAgeMonths: 36, maxAgeMonths: 71 }))
+  const { cookie } = await signUpAs(api, 'gabi@example.com')
+  const profile = (
+    await putFamily(api, cookie, {
+      ...EXAMPLE_PROFILE,
+      kids: [
+        { name: 'Milán', age: 1 },
+        { name: 'Sofi', age: 4 },
+      ],
+    })
+  ).json()
+  const sofi = profile.kids[1]
+  await api.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids: [sofi.id] } })
+
+  // Without Milán (1), a 4-year-old's juegos open up: "para-cuatro" (36 to 71 months) as well as "juntos".
+  const titles = new Set()
+  let previous = null
+  for (let round = 0; round < 4; round++) {
+    const activity = (await suggest(cookie, previous)).json()
+    titles.add(activity.title)
+    previous = activity.id
+  }
+  assert.deepEqual([...titles].sort(), ['Juntos con Inca', 'Sofi arma una torre'])
+  const { rows } = await api.pool.query('select kid_ids::text[] as kids from activities where id = $1', [previous])
+  assert.deepEqual(rows[0].kids, [sofi.id])
 })
 
 test('adding a template again keeps the one in the database', async () => {

@@ -338,6 +338,38 @@ test('the library lists the family stories, newest first, and opens one', async 
   assert.deepEqual(open.parts, story.parts)
 })
 
+test('plots are for the kids playing, and their story stars and records those kids', async () => {
+  const kidsLlm = fakeLlm(({ user }) => (user.includes('Contestá solo con un objeto JSON') ? OPTIONS_JSON('de a uno') : STORY))
+  const api2 = await startApi({ signupEmails: ['hana@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: kidsLlm })
+  const { cookie } = await signUpAs(api2, 'hana@example.com')
+  const profile = (
+    await putFamily(api2, cookie, {
+      ...EXAMPLE_PROFILE,
+      kids: [
+        { name: 'Milán', age: 1 },
+        { name: 'Sofi', age: 4 },
+      ],
+    })
+  ).json()
+  const [milan, sofi] = profile.kids
+  /** @param {string[]} kids */
+  const choosePlaying = (kids) =>
+    api2.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids } })
+
+  await choosePlaying([sofi.id])
+  const [option] = (await options(cookie, [], api2)).json()
+  assert.match(kidsLlm.prompts[0].user, /Los chicos: Sofi, de 4 años\./)
+
+  // Milán joining after the plot was proposed doesn't change who its story is for.
+  await choosePlaying([milan.id, sofi.id])
+  const response = await api2.app.inject({ method: 'POST', url: '/stories/write', headers: { cookie }, payload: { id: option.id } })
+  assert.ok(events(response.body.toString()).some((event) => event.type === 'story'))
+  assert.match(kidsLlm.prompts[1].user, /Los chicos: Sofi, de 4 años\./)
+  const { rows } = await api2.pool.query('select kid_ids::text[] as kids from stories where plot_id = $1', [option.id])
+  assert.deepEqual(rows[0].kids, [sofi.id])
+  await api2.close()
+})
+
 test('a family can only open its own stories', async () => {
   const { cookie: familyA } = await signUp()
   await putFamily(api, familyA, EXAMPLE_PROFILE)

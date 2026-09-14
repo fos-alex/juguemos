@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { randomUUID } from 'node:crypto'
 import { after, before, test } from 'node:test'
 import { createFamiliesService } from '../src/families/families.service.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
@@ -9,7 +10,15 @@ let api
 let families
 before(async () => {
   api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eva@example.com'],
+    signupEmails: [
+      'ana@example.com',
+      'beto@example.com',
+      'carla@example.com',
+      'dani@example.com',
+      'eva@example.com',
+      'fede@example.com',
+      'gabi@example.com',
+    ],
   })
   families = createFamiliesService({ db: api.db })
 })
@@ -128,4 +137,75 @@ test('a malformed profile is refused', async () => {
 
 test('the profile needs a session', async () => {
   assert.equal((await api.app.inject({ method: 'GET', url: '/family' })).statusCode, 401)
+})
+
+/** @param {string} cookie @param {string[]} kids */
+const choosePlaying = (cookie, kids) =>
+  api.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids } })
+
+const TWO_KIDS = {
+  ...EXAMPLE_PROFILE,
+  kids: [
+    { name: 'Milán', age: 1 },
+    { name: 'Sofi', age: 4 },
+  ],
+}
+
+/** @param {{ kids: { name: string, playing: boolean }[] }} profile */
+const playing = (profile) => profile.kids.map((kid) => [kid.name, kid.playing])
+
+test('every kid starts playing, and the choice holds for the adult across saves and new kids', async () => {
+  const { cookie } = await signUpAs(api, 'fede@example.com')
+  const profile = (await putFamily(api, cookie, TWO_KIDS)).json()
+  assert.deepEqual(playing(profile), [
+    ['Milán', true],
+    ['Sofi', true],
+  ])
+  const [milan, sofi] = profile.kids
+
+  const chosen = await choosePlaying(cookie, [sofi.id])
+  assert.equal(chosen.statusCode, 200)
+  assert.deepEqual(playing(chosen.json()), [
+    ['Milán', false],
+    ['Sofi', true],
+  ])
+  assert.deepEqual(playing((await getFamily(cookie)).json()), playing(chosen.json()), 'another phone reads the same')
+
+  // Saving the family with the kids' ids keeps the choice, and a kid added later plays.
+  const kept = profile.kids.map(({ id, name, age }) => ({ id, name, age }))
+  const saved = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [...kept, { name: 'Lupe', age: 3 }] })).json()
+  assert.deepEqual(playing(saved), [
+    ['Milán', false],
+    ['Sofi', true],
+    ['Lupe', true],
+  ])
+
+  // A kid removed from the family leaves the choice with them.
+  await putFamily(api, cookie, { ...TWO_KIDS, kids: saved.kids.slice(1).map(({ id, name, age }) => ({ id, name, age })) })
+  const { rows } = await api.pool.query('select count(*)::int as n from kids_sitting_out where kid_id = $1', [milan.id])
+  assert.equal(rows[0].n, 0)
+})
+
+test('at least one kid always plays', async () => {
+  const { cookie } = await signUpAs(api, 'gabi@example.com')
+  const profile = (await putFamily(api, cookie, TWO_KIDS)).json()
+  const [milan, sofi] = profile.kids
+
+  assert.equal((await choosePlaying(cookie, [])).statusCode, 400)
+  const stranger = await choosePlaying(cookie, [randomUUID()])
+  assert.equal(stranger.statusCode, 400)
+  assert.equal(stranger.json().code, 'NO_KID_PLAYING')
+
+  // Sofi, the only one playing, leaves the family: Milán plays again rather than nobody.
+  await choosePlaying(cookie, [sofi.id])
+  const left = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [{ id: milan.id, name: 'Milán', age: 1 }] })).json()
+  assert.deepEqual(playing(left), [['Milán', true]])
+})
+
+test('choosing who plays needs a session and a family', async () => {
+  const noSession = await api.app.inject({ method: 'PUT', url: '/family/playing', payload: { kids: [randomUUID()] } })
+  assert.equal(noSession.statusCode, 401)
+  const { cookie } = await signUpAs(api, 'ana@example.com').catch(() => ({ cookie: '' }))
+  if (!cookie) return
+  assert.equal((await choosePlaying(cookie, [randomUUID()])).statusCode, 404)
 })

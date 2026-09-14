@@ -9,7 +9,7 @@ import { ApiError, request } from './http'
 /** @typedef {import('./types').Family} Family */
 /**
  * @typedef {{
- *   kids: { name: string, age: number | null }[], pets: { name: string }[],
+ *   kids: { id?: string, name: string, age: number | null, playing?: boolean }[], pets: { name: string }[],
  *   interests: string[], toys: { name: string }[],
  * }} Profile
  */
@@ -17,17 +17,21 @@ import { ApiError, request } from './http'
 /** @param {Profile} profile @returns {Family} */
 function toFamily(profile) {
   return {
-    kids: profile.kids.map(({ name, age }) => ({ name, age })),
+    kids: profile.kids.map(({ id, name, age, playing }) => ({ id, name, age, playing })),
     pet: profile.pets[0]?.name ?? '',
     interests: profile.interests,
     toys: profile.toys.map((toy) => toy.name),
   }
 }
 
-/** @param {Family} family @returns {Profile} */
+/**
+ * A kid keeps their id, so the API updates them instead of adding someone new
+ * and forgetting who's playing.
+ * @param {Family} family @returns {Profile}
+ */
 function toProfile(family) {
   return {
-    kids: family.kids.map(({ name, age }) => ({ name, age })),
+    kids: family.kids.map(({ id, name, age }) => (id ? { id, name, age } : { name, age })),
     pets: family.pet ? [{ name: family.pet }] : [],
     interests: family.interests,
     toys: family.toys.map((name) => ({ name })),
@@ -54,4 +58,16 @@ export async function saveFamily(family) {
   write('parseResult', null)
   write('familyDraft', null)
   return saved
+}
+
+/**
+ * Says which kids are playing, for this parent on every device; the rest sit
+ * out. Juegos and stories are for these kids until the parent changes it.
+ * @param {string[]} kidIds
+ * @returns {Promise<Family>}
+ */
+export async function choosePlaying(kidIds) {
+  const family = toFamily(await request('PUT', '/family/playing', { kids: kidIds }))
+  write('family', family)
+  return family
 }

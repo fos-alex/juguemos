@@ -98,6 +98,23 @@ export const toys = pgTable(
   (table) => [index('toys_family_id_idx').on(table.familyId), check('toys_name_check', sql`${table.name} <> ''`)],
 )
 
+// The kids each adult marked as not playing (JUG-107). Keeping who sits out,
+// rather than who plays, is what makes a kid added later start out playing,
+// and a kid removed from the family takes their rows along.
+export const kidsSittingOut = pgTable(
+  'kids_sitting_out',
+  {
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kidId: uuid()
+      .notNull()
+      .references(() => kids.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.kidId] })],
+)
+
 export const familiesRelations = relations(families, ({ many }) => ({
   members: many(familyMembers),
   kids: many(kids),
