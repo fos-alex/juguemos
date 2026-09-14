@@ -41,6 +41,10 @@ Every 0.1 screen is built and runs on the API: accounts with a required session,
 
 **JSDoc guides, nothing enforces it.** Both projects are plain JavaScript. JSDoc types are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or a `tsconfig` or `jsconfig`.
 
+## Writing
+
+**No mannered prose.** Code comments, docs, commit messages, PR descriptions, and Linear are written plainly: say what something does or why, in ordinary words. No literary turns, aphorisms, personification, or clever phrasing, like "the reader never waits" or "lets whoever listens step in". If a sentence reads like a slogan, rewrite it as a plain statement.
+
 ## Tracking work in Linear
 
 Alex follows the build in Linear, so Linear must always show what is being built and what has finished.
@@ -70,6 +74,8 @@ Don't cancel issues, move them between releases, or change a release's scope wit
 ## Git
 
 We work on `main`, and every PR targets `main`.
+
+**No `Co-Authored-By` trailers.** Don't add `Co-Authored-By` lines, or any other agent attribution, to commit messages, including the ones you suggest to Alex. Alex doesn't want them.
 
 **Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it. Suggest a commit message that includes the issue ID, so Linear links the commit.
 
