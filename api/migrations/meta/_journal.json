@@ -8,13 +8,6 @@
       "when": 1789391029609,
       "tag": "0000_initial-schema",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1789404308366,
-      "tag": "0001_activity-template-admin",
-      "breakpoints": true
     }
   ]
 }
