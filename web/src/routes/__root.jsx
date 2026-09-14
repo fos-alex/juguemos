@@ -1,4 +1,5 @@
 import { createRootRoute, Outlet, redirect } from '@tanstack/react-router'
+import { ThemeProvider } from '../components/ThemeProvider'
 import { UpdateBanner } from '../components/UpdateBanner'
 import { read } from '../lib/store'
 
@@ -12,10 +13,10 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <>
+    <ThemeProvider>
       <Outlet />
       <UpdateBanner />
-    </>
+    </ThemeProvider>
   )
 }
 

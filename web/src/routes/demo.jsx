@@ -4,7 +4,7 @@ import { signOut, WRONG_CODE } from '../api'
 import { ACTIVITIES, EXAMPLE_FAMILY, MISREAD_PARSE, STORIES } from '../api/fixtures'
 import { Body, Header, Screen } from '../components/Screen'
 import { useGoBack } from '../hooks/useGoBack'
-import { toggleTheme, useTheme } from '../hooks/useTheme'
+import { useTheme } from '../hooks/useTheme'
 import { updateDemo, useDemo } from '../lib/demo'
 import { write } from '../lib/store'
 
@@ -21,7 +21,7 @@ function DemoScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const demo = useDemo()
-  const dark = useTheme()
+  const { dark, toggle: toggleTheme } = useTheme()
 
   useEffect(() => {
     document.title = 'Demo · Juguemos'
@@ -72,8 +72,8 @@ function DemoScreen() {
       },
     },
     { id: '2h', name: 'Corregir, desde cero', open: () => (signedIn({ family: false }), navigate({ to: '/familia/corregir' })) },
-    { id: '2i', name: 'Home, sin última idea', open: () => (signedIn(), navigate({ to: '/' })) },
-    { id: '2j', name: 'Home, con la última idea', open: () => (withActivity(), navigate({ to: '/' })) },
+    { id: '2i', name: 'Home, sin último juego', open: () => (signedIn(), navigate({ to: '/' })) },
+    { id: '2j', name: 'Home, con el último juego', open: () => (withActivity(), navigate({ to: '/' })) },
     {
       id: demo.activityLayout === 'pasos' ? '2n' : '2m',
       name: 'Actividad',
@@ -129,7 +129,12 @@ function DemoScreen() {
             checked={demo.activityLayout === 'pasos'}
             onChange={(steps) => updateDemo({ activityLayout: steps ? 'pasos' : 'porque' })}
           />
-          <Switch label="Modo oscuro (0.3, 2u)" checked={dark} onChange={() => toggleTheme()} />
+          <Switch label="Modo noche, hasta el próximo cambio (2u)" checked={dark} onChange={() => toggleTheme()} />
+          <Switch
+            label="Simular que es de noche (después de las 19)"
+            checked={demo.night}
+            onChange={(night) => updateDemo({ night })}
+          />
           <p className="demo__note">El código {WRONG_CODE} siempre falla en la verificación del email.</p>
         </section>
 
@@ -146,7 +151,7 @@ function DemoScreen() {
             ))}
           </ul>
           <p className="demo__note">
-            Se llega tocando: 2k (el menú en Home), 2l (¿Qué hacemos ahora?), 2p (Otra idea), 2q (Home con “Sin
+            Se llega tocando: 2k (el menú en Home), 2l (¡Juguemos!), 2p (Otro juego), 2q (Home con “Sin
             conexión”). 2e es de la 0.2 y no está construida.
           </p>
         </section>

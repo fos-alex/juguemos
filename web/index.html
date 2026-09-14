@@ -6,11 +6,6 @@
     <meta name="theme-color" content="#FFF9F0" />
     <title>Juguemos</title>
     <link rel="icon" href="data:," />
-    <script>
-      const tema = new URLSearchParams(location.search).get('tema')
-      const theme = tema ? (tema === 'oscuro' ? 'dark' : 'light') : localStorage.getItem('theme')
-      document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light'
-    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.5 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.6 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -49,6 +49,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Family onboarding.** Conversational, by text, for one parent. The parent writes about the family in their own words, and the AI extracts the kids (name and age), the pet, interests, and toys by their family names. It shows a *"¿Está bien así?"* card to confirm, and a plain form covers corrections.
 - **Suggest an activity.** The one-tap *"¿Qué hacemos ahora?"* button. It picks one activity from the catalog that fits the kids' ages and fills it in with their names, interests, and the pet. *"Otra idea"* shows a different one.
 - **Tell a story.** *"Hora del cuento"* offers three plot options starring the kids, the pet, and their toys by family name. The parent picks one and reads it on a screen with large text that stays awake.
+- **Night mode.** Dark from 19:00 to 07:00 local time, switching on its own, and one tap to change between light and dark, above all on the reading screen. It uses the handoff's dark palette; warming it is still open.
 - **First iteration of content.** 30–40 activity templates for ages 1–3, drafted with AI, reviewed by Alex, stored as files in the repo, and tagged with the full taxonomy. A short guideline for story length and tone.
 - **Spanish only.** Rioplatense Spanish with *vos*, throughout.
 
@@ -156,6 +157,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Story series and the story library in 0.3 | A series needs its chapters saved, and toddlers love hearing the same story again. 0.3 already improves stories, so they arrive together. |
 | Sound guessing games in 0.8, as a nice-to-have | Like live voice conversation, they're audio-first and keep the phone out of sight. |
 | Sign in with Google in 0.3, limited to the family's accounts | Nobody outside the family gets in until the guardrails are complete, whatever the sign-in method. |
+| Night mode in 0.1, pulled forward from the handoff's 0.3 target | Stories are read at bedtime, and the dark palette was already wired. Alex asked for it in 0.1. |
 
 ## 6. Open questions
 
@@ -173,3 +175,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.3 draft | September 2026 | Added Story series to 0.3, and moved the story library out of Parked into 0.3 with it. |
 | 0.4 draft | September 2026 | Added sound guessing games to 0.8 as a nice-to-have. |
 | 0.5 draft | September 2026 | Added Sign in with Google to 0.3. |
+| 0.6 draft | September 2026 | Added night mode to 0.1. |
