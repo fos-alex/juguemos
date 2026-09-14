@@ -104,7 +104,7 @@ function HomeScreen() {
     void navigate({ to: '/cuentos' })
   }
 
-  /** @param {'/familia' | '/ajustes'} to */
+  /** @param {'/familia' | '/juguetes' | '/ajustes'} to */
   const go = (to) => {
     setMenuOpen(false)
     void navigate({ to })
@@ -198,7 +198,11 @@ function HomeScreen() {
           <button type="button" className="drawer__item" onClick={() => go('/familia')}>
             Mi familia
           </button>
-          {/* Where el baúl de juguetes, el diario, and recuerdos land after 0.1. */}
+          {/* JUG-94, before the 0.2 design. Voice pass pending. */}
+          <button type="button" className="drawer__item" onClick={() => go('/juguetes')}>
+            El baúl de juguetes
+          </button>
+          {/* Where el diario and recuerdos land. */}
           <div className="drawer__upcoming">próximas funciones</div>
         </nav>
         <div className="drawer__footer">

@@ -8,7 +8,7 @@ import { useSyncExternalStore } from 'react'
 
 /**
  * @typedef {'account' | 'family' | 'familyDraft' | 'parseResult' | 'activities' | 'lastActivityId'
- *   | 'timer' | 'storyOptions' | 'stories' | 'storyPositions' | 'theme' | 'sessionEnded'} Key
+ *   | 'timer' | 'storyOptions' | 'stories' | 'storyPositions' | 'theme' | 'sessionEnded' | 'toyBox'} Key
  */
 
 const PREFIX = 'juguemos:'
