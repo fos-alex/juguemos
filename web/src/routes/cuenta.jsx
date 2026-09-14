@@ -19,6 +19,20 @@ export const Route = createFileRoute('/cuenta')({
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
+ * Hands the browser the email and password that just worked, so it offers to
+ * save them. The form never reloads the page, which some browsers don't read
+ * as a sign-in; where the Credential Management API exists (Chrome, Edge,
+ * Android) this asks for the save prompt directly. Elsewhere the browser
+ * relies on the fields' autocomplete hints and the form leaving the page.
+ * @param {{ email: string, password: string, name: string }} credentials
+ */
+function offerToSave({ email, password, name }) {
+  if (!('PasswordCredential' in window)) return
+  const credential = new window.PasswordCredential({ id: email, password, name })
+  navigator.credentials.store(credential).catch(() => {})
+}
+
+/**
  * 2b. Three fields and that's the whole account. "Ya tengo cuenta" reuses the
  * same screen in sign-in mode (`?modo=entrar`), with no name field. The
  * Google button comes back with Sign in with Google (0.3).
@@ -70,10 +84,12 @@ function AccountScreen() {
     setFailure(null)
     try {
       if (signingIn) {
-        await signIn({ email: email.trim(), password })
+        const account = await signIn({ email: email.trim(), password })
+        offerToSave({ email: email.trim(), password, name: account.name })
         void navigate({ to: '/', replace: true })
       } else {
         await createAccount({ name: name.trim(), email: email.trim(), password })
+        offerToSave({ email: email.trim(), password, name: name.trim() })
         // The first-run guard knows where a new account goes next.
         void navigate({ to: '/', replace: true })
       }
@@ -112,7 +128,8 @@ function AccountScreen() {
             name="email"
             type="email"
             inputMode="email"
-            autoComplete="email"
+            // "username", not "email": it's what password managers look for, even when the account is an email.
+            autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
             autoFocus={campo === 'email'}
