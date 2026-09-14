@@ -13,7 +13,6 @@
     "seed": "node --env-file-if-exists=../.env src/seed.js development",
     "seed:catalog": "node --env-file-if-exists=../.env src/seed.js catalog",
     "migration:generate": "drizzle-kit generate",
-    "migration:check": "drizzle-kit check",
     "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
