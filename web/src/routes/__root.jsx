@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { createRootRoute, Outlet, redirect, useRouter } from '@tanstack/react-router'
 import { ensureSession } from '../api'
 import { ThemeProvider } from '../components/ThemeProvider'
-import { UpdateBanner } from '../components/UpdateBanner'
 import { read, useStored } from '../lib/store'
 
 export const Route = createRootRoute({
