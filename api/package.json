@@ -11,7 +11,7 @@
     "start": "node src/server.js",
     "migrate": "node --env-file-if-exists=../.env src/migrate.js",
     "seed": "node --env-file-if-exists=../.env src/seed.js",
-    "migration:create":"node-pg-migrate create --migrations-dir migrations --migration-file-language sql",
+    "migration:create": "node-pg-migrate create --migrations-dir migrations --migration-file-language sql",
     "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
@@ -19,10 +19,5 @@
     "fastify": "^5.0.0",
     "node-pg-migrate": "^9.0.0",
     "pg": "^8.12.0"
-  },
-  "devDependencies": {
-    "@types/node": "^24.0.0",
-    "@types/pg": "^8.11.0",
-    "typescript": "^5.6.0"
   }
 }

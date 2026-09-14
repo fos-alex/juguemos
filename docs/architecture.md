@@ -24,7 +24,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | Hosting | Existing DigitalOcean droplet | Decided |
 | Local development | Docker Compose, same as production, at `https://juguemos.local` | Decided |
 | TLS and reverse proxy | Caddy: automatic certificates in production, internal CA locally | Decided |
-| Language | JavaScript with JSDoc across client and server (TypeScript tried and dropped; Node 24 can still run `.ts` natively if a module ever wants it) | Decided |
+| Language | JavaScript with JSDoc across client and server. JSDoc guides agents and readers and is not typechecked; TypeScript was tried and dropped, and its packages removed (JUG-70). Node 24 can still run `.ts` natively if a module ever wants it | Decided |
 | Repo layout | Single repo. npm workspaces (api, web): one install, separate codebases, no shared package; no heavier tooling | Decided |
 | Native mobile apps | Not in v1. After 1.0: native Android/iOS or React Native, TBD | Decided |
 | Authentication | Better Auth in the API: email and password, sessions in PostgreSQL behind an httpOnly cookie. Sign-up limited to an email allowlist until invitations (0.5); Google sign-in (0.3) is a plugin on the same library | Decided |

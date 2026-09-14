@@ -5,7 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
-    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    // Plain JS route tree: JSDoc guides, nothing typechecks.
+    tanstackRouter({ target: 'react', autoCodeSplitting: true, disableTypes: true }),
     react(),
     VitePWA({
       registerType: 'prompt',

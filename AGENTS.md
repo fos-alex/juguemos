@@ -58,6 +58,7 @@ How it fits together:
   - **Components** read it with `useTheme()`, which returns `{ dark, toggle }`. `ThemeToggle` is the reading footer's button, and Home's drawer has a row.
   - **Overrides:** `?tema=oscuro` or `?tema=claro` counts as a tap, and `/demo` can simulate night.
 - **No inline scripts in `index.html`.** App logic goes in `web/src`, where it is built, tested, and cached with the rest.
+- **JSDoc guides, nothing enforces it.** Types in JSDoc are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or `tsconfig`/`jsconfig`. The router's generated `web/src/routeTree.gen.js` is plain JS for the same reason; never edit it by hand.
 - **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity defaults to `2m` (why-first), and `2n` can be switched on from `/demo` until Alex picks one.
 - **Google sign-in** appears on `2a` and `2b` as designed but is mocked. `docs/releases.md` schedules Sign in with Google for 0.3.
 
