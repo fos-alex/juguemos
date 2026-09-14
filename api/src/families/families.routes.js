@@ -64,13 +64,9 @@ const profileInput = {
 
 /**
  * @param {import('fastify').FastifyInstance} app
- * @param {{ controller: FamiliesController, requireSession: import('fastify').preHandlerAsyncHookHandler }} options
+ * @param {{ controller: FamiliesController }} options
  */
-export async function familiesRoutes(app, { controller, requireSession }) {
-  app.get('/family', { preHandler: requireSession, schema: { response: { 200: profile } } }, controller.get)
-  app.put(
-    '/family',
-    { preHandler: requireSession, schema: { body: profileInput, response: { 200: profile } } },
-    controller.save,
-  )
+export async function familiesRoutes(app, { controller }) {
+  app.get('/family', { schema: { response: { 200: profile } } }, controller.get)
+  app.put('/family', { schema: { body: profileInput, response: { 200: profile } } }, controller.save)
 }

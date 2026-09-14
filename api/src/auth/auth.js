@@ -1,18 +1,24 @@
+import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth'
 import { APIError } from 'better-auth/api'
-import { authSchema } from './schema.js'
+import { accounts, sessions, users, verifications } from './auth.schema.js'
 
 /** @typedef {import('../config.js').AuthConfig} AuthConfig */
 /** @typedef {ReturnType<typeof createAuth>} Auth */
 
-/** @param {{ config: AuthConfig, db: import('pg').Pool }} deps */
+const DAY_SECONDS = 60 * 60 * 24
+
+/** @param {{ config: AuthConfig, db: import('../db/client.js').Db }} deps */
 export function createAuth({ config, db }) {
   return betterAuth({
     baseURL: config.url,
     secret: config.secret,
-    database: db,
+    // Its tables are ours, in auth.schema.js, with plural names like every other table.
+    database: drizzleAdapter(db, { provider: 'pg', schema: { users, sessions, accounts, verifications }, usePlural: true }),
     emailAndPassword: { enabled: true },
-    ...authSchema,
+    // A parent who opens the app once a month stays signed in: the session
+    // lasts 30 days and starts over on the first use of each day.
+    session: { expiresIn: 30 * DAY_SECONDS, updateAge: DAY_SECONDS },
     databaseHooks: {
       user: {
         create: {

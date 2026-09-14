@@ -65,7 +65,7 @@ test('seeding the catalog twice adds each template once', async () => {
   await seedCatalog({ ...services(), catalog })
   await seedCatalog({ ...services(), catalog })
 
-  const { rows } = await api.db.query(
+  const { rows } = await api.pool.query(
     `select (select count(*)::int from activity_templates) as activities, (select count(*)::int from story_templates) as stories`,
   )
   assert.deepEqual(rows[0], { activities: activityTemplates.length, stories: storyTemplates.length })

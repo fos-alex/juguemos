@@ -1,10 +1,8 @@
 /**
  * Every call to the Juguemos API goes through `request`: JSON in and out,
  * with the session cookie, and failures turned into errors the screens know
- * how to word. The /demo switches (offline, slow, fail the next request)
- * apply here, so those states stay reviewable against the real API.
+ * how to word.
  */
-import { demoSettings, updateDemo } from '../lib/demo'
 
 export class OfflineError extends Error {}
 
@@ -18,21 +16,13 @@ export class ApiError extends Error {
   }
 }
 
-const SLOW_MS = 7500
-
 /**
  * @param {'GET' | 'POST' | 'PUT'} method
  * @param {string} path under /api
  * @param {unknown} [body]
  */
 export async function request(method, path, body) {
-  const demo = demoSettings()
-  if (!navigator.onLine || demo.offline) throw new OfflineError('Sin conexión')
-  if (demo.slow) await new Promise((resolve) => setTimeout(resolve, SLOW_MS))
-  if (demo.failNext) {
-    updateDemo({ failNext: false })
-    throw new ApiError('Falla simulada', 0)
-  }
+  if (!navigator.onLine) throw new OfflineError('Sin conexión')
 
   let response
   try {

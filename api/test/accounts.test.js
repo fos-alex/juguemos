@@ -8,7 +8,14 @@ const PASSWORD = 'una-clave-larga'
 let api
 before(async () => {
   api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eva@example.com'],
+    signupEmails: [
+      'ana@example.com',
+      'beto@example.com',
+      'carla@example.com',
+      'dani@example.com',
+      'eva@example.com',
+      'fede@example.com',
+    ],
   })
 })
 after(() => api.close())
@@ -42,7 +49,7 @@ test('an email outside the allowlist cannot sign up', async () => {
   assert.equal(response.statusCode, 403)
   assert.equal(response.json().code, 'SIGNUP_NOT_ALLOWED')
 
-  const { rowCount } = await api.db.query('select 1 from users where email = $1', ['stranger@example.com'])
+  const { rowCount } = await api.pool.query('select 1 from users where email = $1', ['stranger@example.com'])
   assert.equal(rowCount, 0)
 })
 
@@ -52,7 +59,7 @@ test('the same email cannot sign up twice', async () => {
   assert.equal(again.statusCode, 422)
   assert.equal(again.json().code, 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')
 
-  const { rowCount } = await api.db.query('select 1 from users where email = $1', ['beto@example.com'])
+  const { rowCount } = await api.pool.query('select 1 from users where email = $1', ['beto@example.com'])
   assert.equal(rowCount, 1)
 })
 
@@ -82,6 +89,12 @@ test('signing out ends the session', async () => {
   })
   assert.equal(response.statusCode, 200)
   assert.equal((await me(cookie)).statusCode, 401)
+})
+
+test('a session lasts 30 days', async () => {
+  const response = await signUp('fede@example.com')
+  const session = [response.headers['set-cookie'] ?? []].flat().find((cookie) => cookie.includes('session_token='))
+  assert.match(session ?? '', /Max-Age=2592000/)
 })
 
 test('/me needs a session', async () => {

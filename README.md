@@ -58,29 +58,39 @@ npm run build      # production build to web/dist (Caddy serves this)
 
 ### API
 
-`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the SQL. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
+`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
 
-The schema lives in versioned SQL files in `api/migrations/`, applied in order and recorded in the `pgmigrations` table. `docker compose up --build` runs them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
+The schema is code, in each domain's `<domain>.schema.js`, and drizzle-kit generates the SQL migrations in `api/migrations/` from it. `docker compose up --build` applies them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
 
 ```bash
-npm run migration:create -w api -- add-goals  # new api/migrations/<timestamp>_add-goals.sql
-npm run migrate -w api                        # apply pending migrations outside Docker
-npm run seed -w api                           # the catalog plus an account for the example family (idempotent, never in production)
-npm run seed:catalog -w api                   # only the catalog
-docker compose up -d db && npm test -w api    # integration tests, each file on a fresh database
+npm run migration:generate -w api -- --name add-goals  # after changing the schema: api/migrations/0001_add-goals.sql
+npm run migrate -w api                                 # apply pending migrations outside Docker
+npm run seed -w api                                    # the catalog plus the demo accounts below (idempotent, never in production)
+npm run seed:catalog -w api                            # only the catalog
+docker compose up -d db && npm test -w api             # integration tests, each file on a fresh database
 ```
 
-Never edit a migration that has run anywhere; add a new one.
+Never edit a migration that has run anywhere; change the schema and generate a new one.
 
 ## Status
 
 Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) is built in `web/` and runs on the API:
 
-- **Accounts** through Better Auth (`/api/auth/*`, `/api/me`).
+- **Accounts** through Better Auth (`/api/auth/*`, `/api/me`). The app needs a valid session: it confirms it with `/api/me` and signs the device out when the API says the session has ended. Every API route except health and `/api/auth/*` needs a session too. Sessions last 30 days and renew with use.
 - **The family profile** (`/api/family`): kids, pets, interests, and toys, saved from the family form.
 - **Activities** (`/api/activities/suggestions`) and **stories** (`/api/stories`), from templates in the database whose slots are filled with the family's own words. The first 4 activities and 6 stories are waiting for Alex's review (JUG-14).
 
-`npm run seed -w api` adds an account for the example family (`prueba@juguemos.local` / `juguemos-local`). Signed in, `/demo` switches hard-to-reach states (offline, slow, a failed request, the two Activity layouts, night mode) and jumps to any screen by its mockup id.
+### Demo accounts
+
+`npm run seed -w api` loads the catalog and these accounts, each with a different family. All of them use the password `juguemos-local`.
+
+| Email | Family |
+|---|---|
+| `prueba@juguemos.local` | A toddler and a pet: Milán, 2, and the dog Inca. Likes dinosaurs and horses, with four named toys |
+| `bebe@juguemos.local` | A baby and no pet: Olivia, under 1. Likes songs and water, with two toys |
+| `hermanos@juguemos.local` | Two kids far apart in age: Tomás, 8, and Emma, 4, and the cat Michi. Likes football, pirates, and drawing |
+
+They exist only on a development database: the passwords are in the repo, and the seed refuses to run in production.
 
 Still mocked, because they need a service Juguemos doesn't have yet: Google sign-in (0.3) and email verification. Reading the family from free text and bespoke stories wait on the LLM decision (JUG-7, JUG-71), so first run starts at the family form.
 

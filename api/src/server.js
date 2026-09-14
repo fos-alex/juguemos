@@ -1,6 +1,6 @@
-import pg from 'pg'
 import { buildApp } from './app.js'
 import { ConfigError, loadConfig } from './config.js'
+import { createDb } from './db/client.js'
 
 let config
 try {
@@ -11,11 +11,11 @@ try {
   process.exit(1)
 }
 
-const db = new pg.Pool({ connectionString: config.databaseUrl })
+const db = createDb(config.databaseUrl)
 const app = buildApp({ config, db })
 
 app.addHook('onClose', async () => {
-  await db.end()
+  await db.$client.end()
 })
 
 for (const signal of ['SIGINT', 'SIGTERM']) {

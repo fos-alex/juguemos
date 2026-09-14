@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { continueWithGoogle, createAccount, signIn } from '../api'
-import { GoogleButton, PrimaryButton } from '../components/Buttons'
+import { createAccount, signIn } from '../api'
+import { PrimaryButton } from '../components/Buttons'
 import { Field } from '../components/Field'
 import { Body, Footer, Header, Screen } from '../components/Screen'
 import { useGoBack } from '../hooks/useGoBack'
@@ -20,7 +20,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
  * 2b. Three fields and that's the whole account. "Ya tengo cuenta" reuses the
- * same screen in sign-in mode (`?modo=entrar`), with no name field.
+ * same screen in sign-in mode (`?modo=entrar`), with no name field. The
+ * Google button comes back with Sign in with Google (0.3).
  * Account copy still needs a voice pass.
  */
 function AccountScreen() {
@@ -36,7 +37,7 @@ function AccountScreen() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}))
-  const [request, setRequest] = useState(/** @type {'idle' | 'email' | 'google'} */ ('idle'))
+  const [request, setRequest] = useState(/** @type {'idle' | 'busy'} */ ('idle'))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
 
   useEffect(() => {
@@ -65,7 +66,7 @@ function AccountScreen() {
       if (input instanceof HTMLInputElement) input.focus()
       return
     }
-    setRequest('email')
+    setRequest('busy')
     setFailure(null)
     try {
       if (signingIn) {
@@ -76,19 +77,6 @@ function AccountScreen() {
         // The first-run guard knows where a new account goes next.
         void navigate({ to: '/', replace: true })
       }
-    } catch (error) {
-      setFailure(failureText(error))
-      setRequest('idle')
-    }
-  }
-
-  const withGoogle = async () => {
-    if (request !== 'idle') return
-    setRequest('google')
-    setFailure(null)
-    try {
-      await continueWithGoogle({ existing: signingIn })
-      void navigate({ to: '/', replace: true })
     } catch (error) {
       setFailure(failureText(error))
       setRequest('idle')
@@ -165,10 +153,9 @@ function AccountScreen() {
           )}
         </Body>
         <Footer>
-          <PrimaryButton type="submit" busy={request === 'email'} busyLabel="Un momento">
+          <PrimaryButton type="submit" busy={request === 'busy'} busyLabel="Un momento">
             {signingIn ? 'Entrar' : 'Crear cuenta'}
           </PrimaryButton>
-          <GoogleButton size="sm" busy={request === 'google'} onClick={withGoogle} />
         </Footer>
       </form>
     </Screen>

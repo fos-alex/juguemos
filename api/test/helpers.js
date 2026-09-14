@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import { buildApp } from '../src/app.js'
+import { createDb } from '../src/db/client.js'
 import { migrate } from '../src/db/migrate.js'
 
 // A Postgres the tests can create databases in. `docker compose up db` is one.
@@ -21,39 +22,18 @@ export const EXAMPLE_PROFILE = {
   ],
 }
 
-/**
- * A fresh database with every migration applied, and the API built on it.
- * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown }} [options]
- */
-export async function startApi({ signupEmails = [], random, now, llm } = {}) {
+/** A new, empty database on the test server; `drop` removes it. */
+export async function createDatabase() {
   const name = `juguemos_test_${randomUUID().replaceAll('-', '')}`
   const admin = new pg.Client({ connectionString: SERVER_URL })
   await admin.connect()
   await admin.query(`create database ${name}`)
 
-  const databaseUrl = new URL(SERVER_URL)
-  databaseUrl.pathname = `/${name}`
-  await migrate({ databaseUrl: databaseUrl.href })
-
-  const db = new pg.Pool({ connectionString: databaseUrl.href })
-  /** @type {import('../src/config.js').Config} */
-  const config = {
-    port: 0,
-    databaseUrl: databaseUrl.href,
-    auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
-  }
-  const app = buildApp({ config, db, logger: false, random, now, llm })
-  await app.ready()
-
+  const url = new URL(SERVER_URL)
+  url.pathname = `/${name}`
   return {
-    app,
-    db,
-    config,
-    databaseUrl: databaseUrl.href,
-    async close() {
-      await app.close()
-      await db.end()
+    url: url.href,
+    async drop() {
       // pool.end() resolves before every socket has closed. Wait for the server
       // to see them go instead of forcing them, so a real leak still fails the drop.
       for (let tries = 0; tries < 100; tries++) {
@@ -63,6 +43,40 @@ export async function startApi({ signupEmails = [], random, now, llm } = {}) {
       }
       await admin.query(`drop database ${name}`)
       await admin.end()
+    },
+  }
+}
+
+/**
+ * A fresh database with every migration applied, and the API built on it.
+ * Each test file starts its own, and `close` drops it.
+ * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown }} [options]
+ */
+export async function startApi({ signupEmails = [], random, now, llm } = {}) {
+  const database = await createDatabase()
+  await migrate({ databaseUrl: database.url })
+
+  const db = createDb(database.url)
+  /** @type {import('../src/config.js').Config} */
+  const config = {
+    port: 0,
+    databaseUrl: database.url,
+    auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
+  }
+  const app = buildApp({ config, db, logger: false, random, now, llm })
+  await app.ready()
+
+  return {
+    app,
+    db,
+    // The pool under `db`, for checking rows in plain SQL.
+    pool: db.$client,
+    config,
+    databaseUrl: database.url,
+    async close() {
+      await app.close()
+      await db.$client.end()
+      await database.drop()
     },
   }
 }

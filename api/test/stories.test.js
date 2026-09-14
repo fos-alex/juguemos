@@ -85,7 +85,7 @@ test('a story reads like its option, and reading it again returns the saved stor
 
   const again = (await write(cookie, option.id)).json()
   assert.equal(again.id, story.id)
-  const { rows } = await api.db.query('select count(*)::int as n from stories where template_id = $1', [option.id])
+  const { rows } = await api.pool.query('select count(*)::int as n from stories where template_id = $1', [option.id])
   assert.equal(rows[0].n, 1)
 })
 

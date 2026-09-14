@@ -114,7 +114,7 @@ test('with the LLM, options are plot options written for the family and saved', 
   assert.equal(list[0].title, 'Milán y el turno de la mañana primera')
   assert.equal(list[0].minutes, 4)
 
-  const { rows } = await api.db.query('select count(*)::int as n from story_plots')
+  const { rows } = await api.pool.query('select count(*)::int as n from story_plots')
   assert.equal(rows[0].n, 3)
 })
 
@@ -138,7 +138,7 @@ test('asking for other options retires the older plots and keeps the ones on scr
   assert.equal(second.length, 3)
   assert.equal(third.length, 3)
 
-  const { rows } = await api.db.query('select id from story_plots where family_id = $1', [family.id])
+  const { rows } = await api.pool.query('select id from story_plots where family_id = $1', [family.id])
   const alive = new Set(rows.map((row) => row.id))
   assert.equal(rows.length, 6, 'the screen being chosen from, plus three fresh ones')
   assert.ok(second.every((option) => alive.has(option.id)), 'the plots on screen stay pickable')
@@ -166,7 +166,7 @@ test('when the model will not answer, the family hears about it, not a template'
 
   const response = await options(cookie, [], api2)
   assert.equal(response.statusCode, 500)
-  const { rows } = await api2.db.query('select count(*)::int as n from story_plots')
+  const { rows } = await api2.pool.query('select count(*)::int as n from story_plots')
   assert.equal(rows[0].n, 0)
   await api2.close()
 })
@@ -194,7 +194,7 @@ test('the chosen plot streams paragraph by paragraph and then saves the story', 
   assert.equal(final.story.parts.length, 3)
   assert.equal(final.story.parts[1].length, 2)
 
-  const { rows } = await api.db.query('select source from stories where plot_id = $1', [option.id])
+  const { rows } = await api.pool.query('select source from stories where plot_id = $1', [option.id])
   assert.deepEqual(rows, [{ source: 'generated' }])
 })
 
@@ -213,7 +213,7 @@ test('reading the same plot again replays the saved story, without the model', a
 test('a catalog story streams through the same route', async () => {
   const { cookie } = await signUp()
   await putFamily(api, cookie, EXAMPLE_PROFILE)
-  const { rows } = await api.db.query(`select id from story_templates where slug = 'para-streaming'`)
+  const { rows } = await api.pool.query(`select id from story_templates where slug = 'para-streaming'`)
   const templateId = rows[0].id
 
   const list = events((await stream(cookie, templateId)).body.toString())

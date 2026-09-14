@@ -5,15 +5,12 @@
  * reading screen fills while the model still talks; an already-written story
  * streams the same way, from the saved copy.
  */
-import { demoSettings, updateDemo } from '../lib/demo'
 import { read, write } from '../lib/store'
 import { ApiError, OfflineError } from './http'
 
 /** @typedef {import('./types').StoryOption} StoryOption */
 /** @typedef {import('./types').Story} Story */
 /** @typedef {import('./types').SavedStorySummary} SavedStorySummary */
-
-const SLOW_MS = 7500
 
 /** Three options, leaving out the ones on screen. @param {{ exclude?: string[] }} [options] @returns {Promise<StoryOption[]>} */
 export async function storyOptions({ exclude = [] } = {}) {
@@ -27,8 +24,8 @@ export async function storyOptions({ exclude = [] } = {}) {
  * The story behind an option, coming out of the API paragraph by paragraph.
  * `onParagraph` is called as each one lands, so the reading screen fills
  * while the model still talks; the whole saved story comes back once and is
- * cached for offline. The demo's offline, slow, and fail-next switches apply
- * like they do to every API call.
+ * cached for offline. The stream reads `fetch` directly because `request`
+ * only speaks JSON; like it, no network means `OfflineError`.
  * @param {string} id the option's id
  * @param {{ signal?: AbortSignal, onParagraph?: (paragraph: { part: number, text: string }) => void }} [options]
  * @returns {Promise<Story>}
@@ -36,14 +33,7 @@ export async function storyOptions({ exclude = [] } = {}) {
 export async function writeStory(id, { signal, onParagraph } = {}) {
   const cached = read('stories')?.[id]
   if (cached) return cached
-
-  const demo = demoSettings()
-  if (!navigator.onLine || demo.offline) throw new OfflineError('Sin conexión')
-  if (demo.slow) await new Promise((resolve) => setTimeout(resolve, SLOW_MS))
-  if (demo.failNext) {
-    updateDemo({ failNext: false })
-    throw new ApiError('Falla simulada', 0)
-  }
+  if (!navigator.onLine) throw new OfflineError('Sin conexión')
 
   let response
   try {

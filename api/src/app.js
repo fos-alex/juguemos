@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm'
 import Fastify from 'fastify'
 import { createAccountsController } from './accounts/accounts.controller.js'
 import { accountsRoutes } from './accounts/accounts.routes.js'
@@ -22,11 +23,11 @@ import { createStoriesService } from './stories/stories.service.js'
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
  * Routes map URLs to controllers, controllers speak HTTP, and services hold
- * the business logic and the SQL. server.js runs the result; tests build
+ * the business logic and the queries. server.js runs the result; tests build
  * their own on a scratch database.
  * @param {{
  *   config: import('./config.js').Config,
- *   db: import('pg').Pool,
+ *   db: import('./db/client.js').Db,
  *   logger?: import('fastify').FastifyServerOptions['logger'],
  *   random?: () => number,
  *   now?: () => Date,
@@ -41,7 +42,8 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const stories = createStoriesService({ db, families, random, now, llm: llm ?? createOpenCodeLlm({ config: config.llm }) })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
-  const familyGuards = [requireSession, createRequireFamily(families)]
+  // After the session hook below: routes about the family need one saved.
+  const familyGuards = [createRequireFamily(families)]
 
   const app = Fastify({ logger })
   app.decorateRequest('session', null)
@@ -49,10 +51,16 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.setErrorHandler(handleError)
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'not found' }))
 
+  // Every route needs a signed-in adult unless its config says `public: true`.
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.is404 || request.routeOptions.config.public) return
+    return requireSession(request, reply)
+  })
+
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
-  app.register(accountsRoutes, { controller: createAccountsController({ families }), requireSession })
-  app.register(familiesRoutes, { controller: createFamiliesController({ families }), requireSession })
+  app.register(accountsRoutes, { controller: createAccountsController({ families }) })
+  app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
 
@@ -67,7 +75,10 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
 function handleError(error, request, reply) {
   const status = error.statusCode ?? 500
   if (status >= 500) {
-    request.log.error({ err: error }, 'request failed')
+    // A failed query's message carries its parameters, which can be a family's
+    // names; log the query and what Postgres said instead.
+    const logged = error instanceof DrizzleQueryError ? { err: error.cause, query: error.query } : { err: error }
+    request.log.error(logged, 'request failed')
     return reply.code(500).send({ error: 'internal error' })
   }
   const code = error instanceof AppError ? error.code : undefined

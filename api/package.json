@@ -12,13 +12,18 @@
     "migrate": "node --env-file-if-exists=../.env src/migrate.js",
     "seed": "node --env-file-if-exists=../.env src/seed.js development",
     "seed:catalog": "node --env-file-if-exists=../.env src/seed.js catalog",
-    "migration:create": "node-pg-migrate create --migrations-dir migrations --migration-file-language sql",
+    "migration:generate": "drizzle-kit generate",
+    "migration:check": "drizzle-kit check",
     "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.4",
     "better-auth": "^1.7.4",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.0.0",
-    "node-pg-migrate": "^9.0.0",
     "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
   }
 }

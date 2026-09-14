@@ -74,7 +74,7 @@ test('a suggestion is a template filled with the family words, and it is saved',
   assert.ok(['La búsqueda del dinosaurio chiquito', 'El dinosaurio chiquito tiene hambre'].includes(activity.title))
   assert.equal(activity.place, 'indoor')
 
-  const { rows } = await api.db.query('select title from activities where id = $1', [activity.id])
+  const { rows } = await api.pool.query('select title from activities where id = $1', [activity.id])
   assert.equal(rows[0].title, activity.title)
 })
 
@@ -143,6 +143,6 @@ test('a template with an unknown slot is refused', async () => {
 test('adding a template again keeps the one in the database', async () => {
   const again = await activities.addTemplate(template({ slug: 'la-busqueda', title: 'Otro título' }))
   assert.deepEqual(again, { created: false })
-  const { rows } = await api.db.query(`select title from activity_templates where slug = 'la-busqueda'`)
+  const { rows } = await api.pool.query(`select title from activity_templates where slug = 'la-busqueda'`)
   assert.equal(rows[0].title, 'La búsqueda de {toy}')
 })

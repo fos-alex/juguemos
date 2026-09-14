@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.6 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.7 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -47,15 +47,15 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 
 - **Basic branding.** Name, wordmark, a small color palette and type scale, and a short voice-and-tone guide with sample lines in Rioplatense Spanish.
 - **Family onboarding.** Conversational, by text, for one parent. The parent writes about the family in their own words, and the AI extracts the kids (name and age), the pet, interests, and toys by their family names. It shows a *"¿Está bien así?"* card to confirm, and a plain form covers corrections.
-- **Suggest an activity.** The one-tap *"¿Qué hacemos ahora?"* button. It picks one activity from the catalog that fits the kids' ages and fills it in with their names, interests, and the pet. *"Otra idea"* shows a different one.
-- **Tell a story.** *"Hora del cuento"* offers three plot options starring the kids, the pet, and their toys by family name. The parent picks one and reads it on a screen with large text that stays awake.
+- **Suggest an activity.** The one-tap *"¡Juguemos!"* button. It picks one activity from the catalog that fits the kids' ages and fills it in with their names, interests, and the pet. *"Otro juego"* shows a different one.
+- **Tell a story.** *"Hora del cuento"* offers three plot options starring the kids, the pet, and their toys by family name. The parent picks one and reads it on a screen with large text that stays awake. Until the LLM provider is chosen, stories come from templates filled in by code.
 - **Night mode.** Dark from 19:00 to 07:00 local time, switching on its own, and one tap to change between light and dark, above all on the reading screen. It uses the handoff's dark palette; warming it is still open.
-- **First iteration of content.** 30–40 activity templates for ages 1–3, drafted with AI, reviewed by Alex, stored as files in the repo, and tagged with the full taxonomy. A short guideline for story length and tone.
+- **First iteration of content.** 30–40 activity templates for ages 1–3, drafted with AI, reviewed by Alex, loaded into the database by the catalog seeds, and tagged with the full taxonomy. A short guideline for story length and tone.
 - **Spanish only.** Rioplatense Spanish with *vos*, throughout.
 
 **Done when** we have used it for a couple of weeks and can answer: Did we reach for it on our own? Did the ideas and stories feel made for us? Which ones did we actually play or read? What annoyed us?
 
-**Decisions needed before building:** the LLM provider, how the parent signs in (a single account is enough), and the file format for activity templates.
+**Decisions before building:** how the parent signs in (Better Auth, with email and password) and the activity template format (rows in the database, loaded by the catalog seeds) are decided. The LLM provider is deferred: 0.1 starts with templates filled in by code, and understanding the family's own words and bespoke stories wait for it.
 
 ### 0.2 — *Nos conoce*
 
@@ -158,9 +158,12 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Sound guessing games in 0.8, as a nice-to-have | Like live voice conversation, they're audio-first and keep the phone out of sight. |
 | Sign in with Google in 0.3, limited to the family's accounts | Nobody outside the family gets in until the guardrails are complete, whatever the sign-in method. |
 | Night mode in 0.1, pulled forward from the handoff's 0.3 target | Stories are read at bedtime, and the dark palette was already wired. Alex asked for it in 0.1. |
+| The activity catalog lives in the database, loaded by seeds | Alex's call while building 0.1. The database is the catalog's home, not files in the repo. |
+| 0.1 starts without an LLM | The provider decision is deferred. Until then, activities and stories come from templates filled in by code. |
 
 ## 6. Open questions
 
+- **The LLM in 0.1.** Does the playtest wait for the LLM provider, or start with template stories and the family form, adding conversational onboarding and bespoke stories when they're ready?
 - **Friends and guardrails.** The first target for friends was 0.3 or 0.4, but guardrails complete in 0.5. Should guardrails move earlier so friends can join sooner, or do friends wait for 0.5?
 - **Timing.** How long should each release take?
 - **Catalog size.** Are 30–40 activities enough for a couple of weeks of 0.1 without repeats feeling obvious?
@@ -176,3 +179,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.4 draft | September 2026 | Added sound guessing games to 0.8 as a nice-to-have. |
 | 0.5 draft | September 2026 | Added Sign in with Google to 0.3. |
 | 0.6 draft | September 2026 | Added night mode to 0.1. |
+| 0.7 draft | September 2026 | Synced 0.1 with decisions made while building: the catalog lives in the database, sign-in uses Better Auth, the LLM is deferred, and Home says *¡Juguemos!* and *Otro juego*. |

@@ -6,7 +6,9 @@
  * as they come out of the model.
  */
 import { randomUUID } from 'node:crypto'
+import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
 import { fillFor, render, seededRandom, shuffle, unknownPlaceholders } from '../catalog/slots.js'
+import { stories, storyPlots, storyTemplates } from './stories.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 import { UpstreamError } from '../llm/opencode.js'
 import { anchorOf, familyLines, moodAt, momentOf, parseOptions, partsOf, StoryParser } from './storytelling.js'
@@ -40,6 +42,7 @@ import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storytelle
  * @property {Story} story
  */
 /** @typedef {StoryParagraph | StoryDone} StoryEvent what the reading screen draws, one at a time */
+/** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../families/families.service.js').Profile} Profile */
 /** @typedef {ReturnType<typeof createStoriesService>} StoriesService */
@@ -51,11 +54,27 @@ const LIBRARY_CAP = 20
 /** @param {Pick<StoryTemplateInput, 'title' | 'teaser' | 'parts'>} template */
 const textsOf = (template) => [template.title, template.teaser, ...template.parts.flat()]
 
-const TEMPLATE_COLUMNS = `id, title, teaser, minutes, min_age_months as "minAgeMonths", max_age_months as "maxAgeMonths", parts`
+const templateColumns = {
+  id: storyTemplates.id,
+  title: storyTemplates.title,
+  teaser: storyTemplates.teaser,
+  minutes: storyTemplates.minutes,
+  minAgeMonths: storyTemplates.minAgeMonths,
+  maxAgeMonths: storyTemplates.maxAgeMonths,
+  parts: storyTemplates.parts,
+}
 
-const STORY_COLUMNS = `id, template_id as "templateId", plot_id as "plotId", title, teaser, minutes, parts, created_at as "createdAt"`
+const storyColumns = {
+  id: stories.id,
+  templateId: stories.templateId,
+  plotId: stories.plotId,
+  title: stories.title,
+  teaser: stories.teaser,
+  minutes: stories.minutes,
+  parts: stories.parts,
+}
 
-/** @param {unknown} parts */
+/** @param {unknown} parts @returns {parts is string[][]} */
 const isParts = (parts) =>
   Array.isArray(parts) &&
   parts.length > 0 &&
@@ -78,7 +97,7 @@ const tick = async (signal) => {
 
 /**
  * @param {{
- *   db: import('pg').Pool,
+ *   db: Db,
  *   families: FamiliesService,
  *   llm?: Llm | null,
  *   random?: () => number,
@@ -95,26 +114,25 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
   const fillOf = (profile, template) =>
     fillFor(profile, { ...template, texts: textsOf(template) }, seededRandom(`${profile.id}:${template.id}`))
 
+  /** A saved story, shaped for the reading screen. @param {typeof stories.$inferSelect} row */
+  const toStory = (row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) })
+
   /** @param {string} familyId @param {string} templateId @returns {Promise<Story | null>} */
   const findWritten = async (familyId, templateId) => {
-    const { rows } = await db.query(
-      `select ${STORY_COLUMNS}
-       from stories
-       where family_id = $1 and template_id = $2`,
-      [familyId, templateId],
-    )
-    return rows[0] ?? null
+    const [story] = await db
+      .select(storyColumns)
+      .from(stories)
+      .where(and(eq(stories.familyId, familyId), eq(stories.templateId, templateId)))
+    return story ? toStory(story) : null
   }
 
   /** @param {string} familyId @param {string} plotId @returns {Promise<Story | null>} */
   const findPlotWritten = async (familyId, plotId) => {
-    const { rows } = await db.query(
-      `select ${STORY_COLUMNS}
-       from stories
-       where family_id = $1 and plot_id = $2`,
-      [familyId, plotId],
-    )
-    return rows[0] ?? null
+    const [story] = await db
+      .select(storyColumns)
+      .from(stories)
+      .where(and(eq(stories.familyId, familyId), eq(stories.plotId, plotId)))
+    return story ? toStory(story) : null
   }
 
   /** The model's plot options for the family, saved on screen-fresh rows. */
@@ -123,11 +141,13 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
     const anchor = anchorOf(profile)
     const lines = familyLines(profile)
     const size = anchor.band.minutes[1]
-    const latest = await db.query(
-      `select title from stories where family_id = $1 order by created_at desc limit 12`,
-      [familyId],
-    )
-    const recent = latest.rows.map((row) => row.title)
+    const latest = await db
+      .select({ title: stories.title })
+      .from(stories)
+      .where(eq(stories.familyId, familyId))
+      .orderBy(desc(stories.createdAt))
+      .limit(12)
+    const recent = latest.map((row) => row.title)
     const avoid =
       recent.length > 0 ? `Títulos ya usados, para no repetir: ${recent.slice(0, 3).map((title) => `«${title}»`).join(', ')}.` : ''
     let text = ''
@@ -157,14 +177,16 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
         continue
       }
       if (plots.length > 0) {
-        await db.query(`delete from story_plots where family_id = $1 and not (id = any($2))`, [familyId, exclude])
+        // The plots on screen stay pickable; the rest retire.
+        const stale =
+          exclude.length > 0
+            ? and(eq(storyPlots.familyId, familyId), notInArray(storyPlots.id, exclude))
+            : eq(storyPlots.familyId, familyId)
+        await db.delete(storyPlots).where(stale)
         for (const plot of plots) {
+          // The id is ours so the options keep the model's order.
           const id = randomUUID()
-          await db.query(
-            `insert into story_plots (id, family_id, title, teaser, minutes, premise, mood)
-             values ($1, $2, $3, $4, $5, $6, $7)`,
-            [id, familyId, plot.title, plot.teaser, plot.minutes, plot.premise, mood],
-          )
+          await db.insert(storyPlots).values({ id, familyId, title: plot.title, teaser: plot.teaser, minutes: plot.minutes, premise: plot.premise, mood })
           plot.id = id
         }
         return plots
@@ -174,18 +196,20 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
   }
 
   /** Three options from the catalog templates, filled for the family. */
-  const templateOptions = async (familyId, profile, exclude) => {
-    const { rows: templates } = await db.query(`select ${TEMPLATE_COLUMNS} from story_templates order by slug`)
+  const templateOptions = async (profile, exclude) => {
+    const rows = await db.select(templateColumns).from(storyTemplates).orderBy(storyTemplates.slug)
+    const templates = rows.map((row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) }))
     const excluded = new Set(exclude)
-    const fitting = templates
-      .map((template) => ({ template, fill: fillOf(profile, template) }))
-      .filter((candidate) => candidate.fill !== null)
+    const fitting = templates.flatMap((template) => {
+      const fill = fillOf(profile, template)
+      return fill ? [{ template, fill }] : []
+    })
     const fresh = fitting.filter((candidate) => !excluded.has(candidate.template.id))
     const seen = fitting.filter((candidate) => excluded.has(candidate.template.id))
     return [...shuffle(fresh, random), ...shuffle(seen, random)].slice(0, OPTIONS).map(({ template, fill }) => ({
       id: template.id,
-      title: render(template.title, /** @type {NonNullable<typeof fill>} */ (fill)),
-      teaser: render(template.teaser, /** @type {NonNullable<typeof fill>} */ (fill)),
+      title: render(template.title, fill),
+      teaser: render(template.teaser, fill),
       minutes: template.minutes,
     }))
   }
@@ -214,22 +238,12 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       if (!isParts(template.parts)) throw new ValidationError(`${template.slug} needs parts, each a list of paragraphs`)
       const unknown = unknownPlaceholders(textsOf(template))
       if (unknown.length > 0) throw new ValidationError(`Unknown slots in ${template.slug}: ${unknown.join(', ')}`)
-      const { rowCount } = await db.query(
-        `insert into story_templates (slug, title, teaser, minutes, mood, min_age_months, max_age_months, parts)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
-         on conflict (slug) do nothing`,
-        [
-          template.slug,
-          template.title,
-          template.teaser,
-          template.minutes,
-          template.mood,
-          template.minAgeMonths,
-          template.maxAgeMonths,
-          JSON.stringify(template.parts),
-        ],
-      )
-      return { created: rowCount === 1 }
+      const added = await db
+        .insert(storyTemplates)
+        .values(template)
+        .onConflictDoNothing({ target: storyTemplates.slug })
+        .returning({ id: storyTemplates.id })
+      return { created: added.length === 1 }
     },
 
     /**
@@ -244,7 +258,7 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      */
     async options(familyId, { exclude = [] } = {}) {
       const profile = await families.profileOf(familyId)
-      if (!llm) return templateOptions(familyId, profile, exclude)
+      if (!llm) return templateOptions(profile, exclude)
       const plots = await generateOptions(profile, familyId, exclude)
       return plots.map((plot) => ({ id: plot.id, title: plot.title, teaser: plot.teaser, minutes: plot.minutes }))
     },
@@ -260,25 +274,24 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       const written = await findWritten(familyId, templateId)
       if (written) return written
 
-      const { rows } = await db.query(`select ${TEMPLATE_COLUMNS} from story_templates where id = $1`, [templateId])
-      const template = rows[0]
-      if (!template) throw new NotFoundError('No such story')
+      const [row] = await db.select(templateColumns).from(storyTemplates).where(eq(storyTemplates.id, templateId))
+      if (!row) throw new NotFoundError('No such story')
+      const template = { ...row, parts: /** @type {string[][]} */ (row.parts) }
       const fill = fillOf(await families.profileOf(familyId), template)
       if (!fill) throw new ConflictError('This story needs someone or something the family profile does not have')
 
-      await db.query(
-        `insert into stories (family_id, template_id, source, title, teaser, minutes, parts)
-         values ($1, $2, 'template', $3, $4, $5, $6)
-         on conflict (family_id, template_id) where template_id is not null do nothing`,
-        [
+      await db
+        .insert(stories)
+        .values({
           familyId,
           templateId,
-          render(template.title, fill),
-          render(template.teaser, fill),
-          template.minutes,
-          JSON.stringify(template.parts.map((/** @type {string[]} */ part) => part.map((paragraph) => render(paragraph, fill)))),
-        ],
-      )
+          source: 'template',
+          title: render(template.title, fill),
+          teaser: render(template.teaser, fill),
+          minutes: template.minutes,
+          parts: template.parts.map((part) => part.map((paragraph) => render(paragraph, fill))),
+        })
+        .onConflictDoNothing({ target: [stories.familyId, stories.templateId], where: sql`${stories.templateId} is not null` })
       // Whether this call or one running alongside it wrote the story.
       return /** @type {Story} */ (await findWritten(familyId, templateId))
     },
@@ -294,14 +307,14 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      * @returns {Promise<AsyncGenerator<StoryEvent, void, void>>}
      */
     async writeStream(familyId, id, { signal } = {}) {
-      const { rows: plots } = await db.query(
-        `select id from story_plots where id = $1 and family_id = $2`,
-        [id, familyId],
-      )
-      if (plots[0]) return this.writePlot(familyId, id, { signal })
+      const [plot] = await db
+        .select({ id: storyPlots.id })
+        .from(storyPlots)
+        .where(and(eq(storyPlots.id, id), eq(storyPlots.familyId, familyId)))
+      if (plot) return this.writePlot(familyId, id, { signal })
 
-      const { rows: templates } = await db.query(`select id from story_templates where id = $1`, [id])
-      if (templates[0]) return this.streamTemplate(familyId, id, { signal })
+      const [template] = await db.select({ id: storyTemplates.id }).from(storyTemplates).where(eq(storyTemplates.id, id))
+      if (template) return this.streamTemplate(familyId, id, { signal })
 
       throw new NotFoundError('No such story')
     },
@@ -314,11 +327,10 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      * @param {{ signal?: AbortSignal }} [options]
      */
     async *writePlot(familyId, plotId, { signal } = {}) {
-      const { rows } = await db.query(
-        `select title, teaser, minutes, premise, mood from story_plots where id = $1 and family_id = $2`,
-        [plotId, familyId],
-      )
-      const plot = rows[0]
+      const [plot] = await db
+        .select({ title: storyPlots.title, teaser: storyPlots.teaser, minutes: storyPlots.minutes, premise: storyPlots.premise, mood: storyPlots.mood })
+        .from(storyPlots)
+        .where(and(eq(storyPlots.id, plotId), eq(storyPlots.familyId, familyId)))
       if (!plot) throw new NotFoundError('No such story')
 
       const replay = await findPlotWritten(familyId, plotId)
@@ -365,12 +377,10 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       const parts = partsOf(paragraphs)
       if (!parts) throw new UpstreamError('The story model wrote nothing readable')
 
-      await db.query(
-        `insert into stories (family_id, plot_id, source, title, teaser, minutes, parts)
-         values ($1, $2, 'generated', $3, $4, $5, $6)
-         on conflict (family_id, plot_id) where plot_id is not null do nothing`,
-        [familyId, plotId, plot.title, plot.teaser, plot.minutes, JSON.stringify(parts)],
-      )
+      await db
+        .insert(stories)
+        .values({ familyId, plotId, source: 'generated', title: plot.title, teaser: plot.teaser, minutes: plot.minutes, parts })
+        .onConflictDoNothing({ target: [stories.familyId, stories.plotId], where: sql`${stories.plotId} is not null` })
       const story = await findPlotWritten(familyId, plotId)
       if (!story) throw new UpstreamError('The story did not save')
       yield { type: 'story', story }
@@ -395,15 +405,13 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      * @returns {Promise<SavedStory[]>}
      */
     async list(familyId) {
-      const { rows } = await db.query(
-        `select id, title, teaser, minutes, created_at as "createdAt"
-         from stories
-         where family_id = $1
-         order by created_at desc, id desc
-         limit $2`,
-        [familyId, LIBRARY_CAP],
-      )
-      return rows
+      const rows = await db
+        .select({ id: stories.id, title: stories.title, teaser: stories.teaser, minutes: stories.minutes, createdAt: stories.createdAt })
+        .from(stories)
+        .where(eq(stories.familyId, familyId))
+        .orderBy(desc(stories.createdAt), desc(stories.id))
+        .limit(LIBRARY_CAP)
+      return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))
     },
 
     /**
@@ -413,14 +421,12 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
      * @returns {Promise<Story>}
      */
     async find(familyId, storyId) {
-      const { rows } = await db.query(
-        `select ${STORY_COLUMNS}
-         from stories
-         where family_id = $1 and id = $2`,
-        [familyId, storyId],
-      )
-      if (!rows[0]) throw new NotFoundError('No such story')
-      return rows[0]
+      const [story] = await db
+        .select(storyColumns)
+        .from(stories)
+        .where(and(eq(stories.familyId, familyId), eq(stories.id, storyId)))
+      if (!story) throw new NotFoundError('No such story')
+      return toStory(story)
     },
   }
 }
