@@ -6,27 +6,6 @@
     <meta name="theme-color" content="#FFF9F0" />
     <title>Juguemos</title>
     <link rel="icon" href="data:," />
-    <script>
-      // Night mode before the first paint, by the same rule as src/hooks/useTheme.js:
-      // ?tema= or a one-tap choice that hasn't expired, else dark from 19:00 to 07:00.
-      ;(() => {
-        const load = (key) => {
-          try {
-            return JSON.parse(localStorage.getItem('juguemos:' + key))
-          } catch {
-            return null
-          }
-        }
-        const tema = new URLSearchParams(location.search).get('tema')
-        const choice = load('theme')
-        const hour = new Date().getHours()
-        const night = load('demo')?.night || hour >= 19 || hour < 7
-        let theme = night ? 'dark' : 'light'
-        if (choice && Date.now() < choice.until) theme = choice.theme
-        if (tema) theme = tema === 'oscuro' ? 'dark' : 'light'
-        document.documentElement.dataset.theme = theme
-      })()
-    </script>
   </head>
   <body>
     <div id="root"></div>

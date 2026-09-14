@@ -7,7 +7,7 @@ import { Drawer } from '../components/Drawer'
 import { Footer, Screen } from '../components/Screen'
 import { Wordmark } from '../components/Wordmark'
 import { useOnline } from '../hooks/useOnline'
-import { toggleTheme, useTheme } from '../hooks/useTheme'
+import { useTheme } from '../hooks/useTheme'
 import { familyLine } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
@@ -33,7 +33,7 @@ function HomeScreen() {
   const [request, setRequest] = useState(/** @type {'idle' | 'loading' | 'slow' | 'error'} */ ('idle'))
   const [offlineTaps, setOfflineTaps] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
-  const dark = useTheme()
+  const { dark, toggle: toggleTheme } = useTheme()
 
   useEffect(() => {
     document.title = 'Juguemos'

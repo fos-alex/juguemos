@@ -57,7 +57,7 @@ p {
   white-space: nowrap;
 }
 
-/* Night mode cross-fades (useTheme.js skips it when motion is reduced). */
+/* Night mode cross-fades (ThemeProvider skips it when motion is reduced). */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 200ms;

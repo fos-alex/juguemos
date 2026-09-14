@@ -48,7 +48,13 @@ How it fits together:
 - **Local state** is in `web/src/lib/store.js`: one localStorage key per piece of state, read with `useStored(key)`. It caches the account, the family, activities, stories, the timer, and story positions. That cache is what keeps the last idea and the open story readable offline.
 - **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, with an unverified email to `/verificar`, and with no family to `/familia/contanos`.
 - **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values, so nothing depends on a light background.
-- **Night mode** is in `web/src/hooks/useTheme.js`. It is dark from 19:00 to 07:00 local time and flips live at the switch; `index.html` runs the same rule before the first paint, so keep the two in step. One tap (`ThemeToggle` in the reading footer, or the row in the Home drawer) switches it until the next 19:00 or 07:00, and then the clock takes over again. `?tema=oscuro` or `?tema=claro` forces it the same way, and `/demo` can simulate night.
+- **Night mode** lives in React:
+  - **The rule** is plain functions in `web/src/lib/theme.js`: dark from 19:00 to 07:00 local time, unless a one-tap choice still holds. A choice lasts until the next 19:00 or 07:00.
+  - **`ThemeProvider`**, in the root layout, re-checks the rule at each switch and when the app returns to the foreground, then paints it on `<html>`.
+  - **`applyInitialTheme()`** in `main.jsx` sets the theme once, before React renders.
+  - **Components** read it with `useTheme()`, which returns `{ dark, toggle }`. `ThemeToggle` is the reading footer's button, and Home's drawer has a row.
+  - **Overrides:** `?tema=oscuro` or `?tema=claro` counts as a tap, and `/demo` can simulate night.
+- **No inline scripts in `index.html`.** App logic goes in `web/src`, where it is built, tested, and cached with the rest.
 - **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity defaults to `2m` (why-first), and `2n` can be switched on from `/demo` until Alex picks one.
 - **Google sign-in** appears on `2a` and `2b` as designed but is mocked. `docs/releases.md` schedules Sign in with Google for 0.3.
 

@@ -4,7 +4,7 @@ import { signOut, WRONG_CODE } from '../api'
 import { ACTIVITIES, EXAMPLE_FAMILY, MISREAD_PARSE, STORIES } from '../api/fixtures'
 import { Body, Header, Screen } from '../components/Screen'
 import { useGoBack } from '../hooks/useGoBack'
-import { refreshTheme, toggleTheme, useTheme } from '../hooks/useTheme'
+import { useTheme } from '../hooks/useTheme'
 import { updateDemo, useDemo } from '../lib/demo'
 import { write } from '../lib/store'
 
@@ -21,7 +21,7 @@ function DemoScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const demo = useDemo()
-  const dark = useTheme()
+  const { dark, toggle: toggleTheme } = useTheme()
 
   useEffect(() => {
     document.title = 'Demo · Juguemos'
@@ -133,10 +133,7 @@ function DemoScreen() {
           <Switch
             label="Simular que es de noche (después de las 19)"
             checked={demo.night}
-            onChange={(night) => {
-              updateDemo({ night })
-              refreshTheme()
-            }}
+            onChange={(night) => updateDemo({ night })}
           />
           <p className="demo__note">El código {WRONG_CODE} siempre falla en la verificación del email.</p>
         </section>

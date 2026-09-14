@@ -1,4 +1,4 @@
-import { toggleTheme, useTheme } from '../hooks/useTheme'
+import { useTheme } from '../hooks/useTheme'
 
 /**
  * Night mode's one tap. The glyph shows where the tap goes: a moon by day, a
@@ -6,9 +6,9 @@ import { toggleTheme, useTheme } from '../hooks/useTheme'
  * Voice pass pending: "Modo noche" / "Modo día".
  */
 export function ThemeToggle() {
-  const dark = useTheme()
+  const { dark, toggle } = useTheme()
   return (
-    <button type="button" className="theme-toggle" aria-label={dark ? 'Modo día' : 'Modo noche'} onClick={toggleTheme}>
+    <button type="button" className="theme-toggle" aria-label={dark ? 'Modo día' : 'Modo noche'} onClick={toggle}>
       <svg
         viewBox="0 0 24 24"
         fill="none"
