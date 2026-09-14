@@ -93,11 +93,13 @@ opencode connects to Linear through the `linear` MCP server (`opencode.json`), a
 
 **Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
 
-Every task has a Linear issue, and the issue is updated at each step:
+**Be succinct in Linear.** Linear is for status and for seeing which tasks need Alex's input. It isn't a work log: nobody reads long reports, and writing them wastes tokens. Keep descriptions to a few lines and comments to a sentence or two. Write a fuller comment only when another agent will pick the task up later and needs the context to continue.
 
-1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress**, assign it to Alex, and comment with what you are about to do and which agent is doing it (Claude Code or opencode).
-2. **While working.** Comment when something meaningful happens: a decision, a change of plan, a blocker, or a question for Alex.
-3. **Ready for review.** Move it to **In Review** and comment with what changed, how it was verified, and anything left open. For uncommitted changes, list the files and suggest a commit message. For a PR, check that the integration linked it.
+Every task has a Linear issue:
+
+1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress** and assign it to Alex.
+2. **While working.** Comment only for a question for Alex, a blocker, or a decision Alex should know about. Say plainly what you need from them.
+3. **Ready for review.** Move it to **In Review**. Comment only if something needs Alex: a decision, something to try, or the commit message for uncommitted changes. For a PR, check that the integration linked it.
 4. **Finished.** Merged PRs move to **Done** through the integration. Uncommitted changes move to **Done** once Alex has committed them.
 
 Don't cancel issues, move them between releases, or change a release's scope without asking Alex. When scope changes, update `docs/releases.md` and Linear together so they stay in sync.
