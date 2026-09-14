@@ -84,6 +84,7 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 - **Accounts** through Better Auth (`/api/auth/*`, `/api/me`). The app needs a valid session: it confirms it with `/api/me` and signs the device out when the API says the session has ended. Every API route except health and `/api/auth/*` needs a session too. Sessions last 30 days and renew with use.
 - **The family profile** (`/api/family`): kids, pets, interests, and toys, saved from the family form. Each adult picks which kids are playing on Home (`/api/family/playing`), and juegos and stories are for those kids.
+- **The toy box** (`/api/family/toys`, `/api/family/materials`): each toy's family name, aliases, description for the AI, whose it is, favorite, and linked toys, plus the household materials the family has. The screens come next (JUG-94).
 - **Activities** (`/api/activities/suggestions`) and **stories** (`/api/stories`), from templates in the database whose slots are filled with the family's own words. The first 15 activities and 6 stories are waiting for Alex's review (JUG-14).
 
 ### Demo accounts
@@ -92,7 +93,7 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 | Email | Family |
 |---|---|
-| `prueba@juguemos.local` | A toddler and a pet: Milán, 2, and the dog Inca. Likes dinosaurs and horses, with four named toys |
+| `prueba@juguemos.local` | A toddler and a pet: Milán, 2, and the dog Inca. Likes dinosaurs and horses, with five named toys: some described, and a linked pair of horses |
 | `bebe@juguemos.local` | A baby and no pet: Olivia, under 1. Likes songs and water, with two toys |
 | `hermanos@juguemos.local` | Two kids far apart in age: Tomás, 8, and Emma, 4, and the cat Michi. Likes football, pirates, and drawing |
 

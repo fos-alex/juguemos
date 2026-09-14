@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test'
 import { createAuth } from '../src/auth/auth.js'
 import { seedAccounts } from '../src/db/seed.js'
 import { createFamiliesService } from '../src/families/families.service.js'
+import { createToysService } from '../src/toys/toys.service.js'
 import { accounts as demoAccounts } from '../seeds/development.js'
 import { cookiesFrom, startApi } from './helpers.js'
 
@@ -34,6 +35,7 @@ const runSeed = () =>
   seedAccounts({
     auth: createAuth({ config: api.config.auth, db: api.db }),
     families: createFamiliesService({ db: api.db }),
+    toys: createToysService({ db: api.db }),
     accounts,
   })
 
@@ -77,13 +79,21 @@ test('each demo account signs in and finds its own family, exactly as seeded', a
     await seedAccounts({
       auth: createAuth({ config: demo.config.auth, db: demo.db }),
       families: createFamiliesService({ db: demo.db }),
+      toys: createToysService({ db: demo.db }),
       accounts: demoAccounts,
     })
-    for (const { email, password, family } of demoAccounts) {
+    for (const { email, password, family, toyBox } of demoAccounts) {
       const signedIn = await demo.app.inject({ method: 'POST', url: '/auth/sign-in/email', payload: { email, password } })
       assert.equal(signedIn.statusCode, 200, email)
+      const cookie = cookiesFrom(signedIn)
 
-      const profile = (await demo.app.inject({ method: 'GET', url: '/family', headers: { cookie: cookiesFrom(signedIn) } })).json()
+      const box = (await demo.app.inject({ method: 'GET', url: '/family/toys', headers: { cookie } })).json().toys
+      for (const [name, { description = null, favorite = false }] of Object.entries(toyBox?.details ?? {})) {
+        const toy = box.find((/** @type {{ name: string }} */ candidate) => candidate.name === name)
+        assert.deepEqual({ description: toy?.description, favorite: toy?.favorite }, { description, favorite }, `${email}: ${name}`)
+      }
+
+      const profile = (await demo.app.inject({ method: 'GET', url: '/family', headers: { cookie } })).json()
       assert.equal(profile.name, family?.name, email)
       assert.deepEqual(profile.kids.map(({ name, age }) => ({ name, age })), family?.kids, email)
       assert.deepEqual(profile.pets.map(({ name }) => ({ name })), family?.pets, email)
