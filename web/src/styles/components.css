@@ -875,37 +875,3 @@ body[data-tone='reading'] .screen__footer--sticky {
   width: 8px;
   height: 8px;
 }
-
-/* Update banner */
-
-.update-banner {
-  position: fixed;
-  right: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  left: 16px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  max-width: 448px;
-  margin: 0 auto;
-  padding: 14px 16px;
-  border: 1px solid var(--hairline-strong);
-  border-radius: 16px;
-  background: var(--surface);
-  font-size: 16px;
-  color: var(--ink);
-}
-
-.update-banner__reload {
-  min-height: 48px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 500;
-}

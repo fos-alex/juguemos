@@ -31,9 +31,9 @@ An npm workspace with two projects, run locally by Docker Compose behind Caddy:
 
 | Path | What it is |
 |---|---|
-| `web/` | The React SPA, built to `web/dist` |
+| `web/` | The React SPA |
 | `api/` | The Fastify API and its PostgreSQL migrations |
-| `caddy/Caddyfile` | Serves `web/dist` and proxies `/api` to the API, at `https://juguemos.local:3000` and on `127.0.0.1:3001` for phones over Tailscale |
+| `caddy/` | Caddy's image, which builds the web app (`Dockerfile`), and its `Caddyfile`, which serves it and proxies `/api` to the API, at `https://juguemos.local:3000` and on `127.0.0.1:3001` for phones over Tailscale |
 | `docker-compose.yml` | Postgres, the one-shot migrations, the API, and Caddy |
 | `docs/` | Product, architecture, releases, and the Plaza design handoff |
 

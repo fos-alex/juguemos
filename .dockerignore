@@ -7,3 +7,7 @@
 !api/src/**
 !web
 !web/package.json
+
+# Installed and built inside the images, never copied from the host
+**/node_modules
+web/dist

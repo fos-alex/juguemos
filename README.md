@@ -53,7 +53,7 @@ The client lives in `web/` as a Vite SPA in an npm workspace alongside `api/`. B
 ```bash
 npm install
 npm run dev        # Vite dev server at http://localhost:5173 (no service worker)
-npm run build      # production build to web/dist (Caddy serves this)
+npm run build      # production build to web/dist, to check it; `docker compose up --build` builds the one Caddy serves
 ```
 
 ### API
