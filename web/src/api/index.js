@@ -4,6 +4,6 @@
 export { ApiError, OfflineError } from './http'
 export { AccountError, createAccount, signIn, signOut } from './auth'
 export { loadFamily, saveFamily } from './family'
-export { suggestActivity } from './activities'
+export { NothingFitsError, suggestActivity } from './activities'
 export { storyOptions, writeStory } from './stories'
 export { continueWithGoogle, resendCode, verifyEmail, WRONG_CODE, WrongCodeError } from './mock'

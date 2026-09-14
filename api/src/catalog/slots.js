@@ -50,16 +50,19 @@ export function fitsAge(kid, { minAgeMonths, maxAgeMonths }) {
  * The values for a template's slots, or null when the family can't fill them:
  * no kid in the age range, or no pet, enough toys, or an interest where the
  * template needs one. Choices are drawn from `random`, so a seeded random
- * always fills the same way.
+ * always fills the same way. `everyKid` asks that every kid fits the age
+ * range, not just one: an activity's safety rules hold only within its range.
  * @param {Profile} profile
  * @param {Slotted} template
  * @param {() => number} random
+ * @param {{ everyKid?: boolean }} [options]
  * @returns {Fill | null}
  */
-export function fillFor(profile, template, random) {
+export function fillFor(profile, template, random, { everyKid = false } = {}) {
   const used = placeholdersIn(template.texts)
   const kid = profile.kids.find((candidate) => fitsAge(candidate, template))
   if (!kid) return null
+  if (everyKid && !profile.kids.every((candidate) => fitsAge(candidate, template))) return null
 
   const toysNeeded = TOY_SLOTS.findLastIndex((slot) => used.has(slot)) + 1
   if (profile.toys.length < toysNeeded) return null

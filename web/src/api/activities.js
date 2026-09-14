@@ -3,16 +3,25 @@
  * local store, which is what keeps the last one readable offline.
  */
 import { read, write } from '../lib/store'
-import { request } from './http'
+import { ApiError, request } from './http'
 
 /** @typedef {import('./types').Activity} Activity */
+
+/** Nothing in the catalog fits this family yet: a state to word plainly, not a failure. */
+export class NothingFitsError extends Error {}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** @param {{ after?: string | null }} [options] the activity to move on from @returns {Promise<Activity>} */
 export async function suggestActivity({ after = null } = {}) {
-  // Ids cached before activities came from the API aren't the API's.
-  const activity = await request('POST', '/activities/suggestions', { after: after && UUID.test(after) ? after : null })
+  let activity
+  try {
+    // Ids cached before activities came from the API aren't the API's.
+    activity = await request('POST', '/activities/suggestions', { after: after && UUID.test(after) ? after : null })
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'NO_FITTING_ACTIVITY') throw new NothingFitsError(error.message)
+    throw error
+  }
   write('activities', { ...read('activities'), [activity.id]: activity })
   write('lastActivityId', activity.id)
   return activity

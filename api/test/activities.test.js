@@ -36,6 +36,7 @@ const TEMPLATES = [
   template({ slug: 'con-la-mascota', title: 'A correr con {pet}' }),
   template({ slug: 'para-grandes', title: 'Para grandes', minAgeMonths: 60, maxAgeMonths: 95 }),
   template({ slug: 'a-comer', title: '{toy} tiene hambre' }),
+  template({ slug: 'juntos', title: 'Juntos con {pet}', minAgeMonths: 12, maxAgeMonths: 71 }),
 ]
 
 /** @type {Awaited<ReturnType<typeof startApi>>} */
@@ -44,7 +45,14 @@ let api
 let activities
 before(async () => {
   api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eva@example.com'],
+    signupEmails: [
+      'ana@example.com',
+      'beto@example.com',
+      'carla@example.com',
+      'dani@example.com',
+      'eva@example.com',
+      'fede@example.com',
+    ],
   })
   activities = createActivitiesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
   for (const each of TEMPLATES) await activities.addTemplate(each)
@@ -92,10 +100,31 @@ test('another suggestion moves on to a different template', async () => {
   assert.notEqual(next.title, first.title)
 })
 
-test('when nothing in the catalog fits, it says so', async () => {
+test('an activity must suit every kid, not just one', async () => {
+  const { cookie } = await signUpAs(api, 'fede@example.com')
+  await putFamily(api, cookie, {
+    ...EXAMPLE_PROFILE,
+    kids: [
+      { name: 'Milán', age: 1 },
+      { name: 'Sofi', age: 4 },
+    ],
+  })
+
+  // Only "juntos" (12 to 71 months) covers both a 1-year-old and a 4-year-old.
+  let previous = null
+  for (let round = 0; round < 4; round++) {
+    const activity = (await suggest(cookie, previous)).json()
+    assert.equal(activity.title, 'Juntos con Inca')
+    previous = activity.id
+  }
+})
+
+test('when nothing in the catalog fits, it says so with a code', async () => {
   const { cookie } = await signUpAs(api, 'dani@example.com')
   await putFamily(api, cookie, { ...EXAMPLE_PROFILE, kids: [{ name: 'Sofi', age: 12 }] })
-  assert.equal((await suggest(cookie)).statusCode, 404)
+  const response = await suggest(cookie)
+  assert.equal(response.statusCode, 404)
+  assert.equal(response.json().code, 'NO_FITTING_ACTIVITY')
 })
 
 test('suggestions need a family', async () => {

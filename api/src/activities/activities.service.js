@@ -92,9 +92,10 @@ export function createActivitiesService({ db, families, random = Math.random }) 
     },
 
     /**
-     * Picks a template that fits the family, fills its slots, and saves the
-     * result. It avoids the family's latest activities when it can, and never
-     * repeats the one being moved on from unless nothing else fits.
+     * Picks a template whose age range covers every kid and whose slots the
+     * family can fill, fills them, and saves the result. It avoids the
+     * family's latest activities when it can, and never repeats the one being
+     * moved on from unless nothing else fits.
      * @param {string} familyId
      * @param {{ after?: string | null }} [options] the activity to move on from
      * @returns {Promise<Activity>}
@@ -124,10 +125,12 @@ export function createActivitiesService({ db, families, random = Math.random }) 
       ])
 
       const fitting = templates.flatMap((template) => {
-        const fill = fillFor(profile, { ...template, texts: textsOf(template) }, random)
+        const fill = fillFor(profile, { ...template, texts: textsOf(template) }, random, { everyKid: true })
         return fill ? [{ template, fill }] : []
       })
-      if (fitting.length === 0) throw new NotFoundError('No activity in the catalog fits this family yet')
+      if (fitting.length === 0) {
+        throw new NotFoundError('No activity in the catalog fits this family yet', 'NO_FITTING_ACTIVITY')
+      }
 
       const afterTemplate = recent.find((row) => row.isAfter)?.templateId
       const avoid = new Set(recent.map((row) => row.templateId))

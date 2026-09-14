@@ -63,6 +63,18 @@ test('a template is filled only when the family has what it needs', () => {
   assert.notEqual(toys?.toy, toys?.toy2)
 })
 
+test('everyKid needs the whole family in the age range', () => {
+  const kids = [
+    { id: 'k1', name: 'Milán', age: 1 },
+    { id: 'k2', name: 'Sofi', age: 4 },
+  ]
+  const toddlers = { texts: ['{kid}'], minAgeMonths: 12, maxAgeMonths: 47 }
+  assert.equal(fillFor(profile({ kids }), toddlers, Math.random)?.kid, 'Milán')
+  assert.equal(fillFor(profile({ kids }), toddlers, Math.random, { everyKid: true }), null)
+  const wide = { ...toddlers, maxAgeMonths: 71 }
+  assert.equal(fillFor(profile({ kids }), wide, Math.random, { everyKid: true })?.kid, 'Milán')
+})
+
 test('the kid in the slot is the first one in the age range', () => {
   const kids = [
     { id: 'k1', name: 'Sofi', age: 6 },

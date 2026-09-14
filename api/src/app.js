@@ -11,6 +11,7 @@ import { createFamiliesController } from './families/families.controller.js'
 import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
+import { AppError } from './errors.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
 import { createStoriesController } from './stories/stories.controller.js'
@@ -54,8 +55,8 @@ export function buildApp({ config, db, logger = true, random = Math.random }) {
 }
 
 /**
- * One shape for every failure. A client's own mistake gets its message; ours
- * are logged and never described.
+ * One shape for every failure. A client's own mistake gets its message, plus
+ * the code a service gave it; ours are logged and never described.
  * @type {Parameters<import('fastify').FastifyInstance['setErrorHandler']>[0]}
  */
 function handleError(error, request, reply) {
@@ -64,5 +65,6 @@ function handleError(error, request, reply) {
     request.log.error({ err: error }, 'request failed')
     return reply.code(500).send({ error: 'internal error' })
   }
-  return reply.code(status).send({ error: error.message })
+  const code = error instanceof AppError ? error.code : undefined
+  return reply.code(status).send(code ? { error: error.message, code } : { error: error.message })
 }
