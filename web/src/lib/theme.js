@@ -25,12 +25,12 @@ export function nextSwitch(now) {
 }
 
 /**
- * @param {{ now: Date, choice?: ThemeChoice | null, night?: boolean }} input `night` forces night (/demo)
+ * @param {{ now: Date, choice?: ThemeChoice | null }} input
  * @returns {Theme}
  */
-export function resolveTheme({ now, choice = null, night = false }) {
+export function resolveTheme({ now, choice = null }) {
   if (choice && now.getTime() < choice.until) return choice.theme
-  return night || isNight(now) ? 'dark' : 'light'
+  return isNight(now) ? 'dark' : 'light'
 }
 
 /** A choice of `theme` that holds until the next switch. @param {Theme} theme @param {Date} now @returns {ThemeChoice} */

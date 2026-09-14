@@ -28,22 +28,6 @@ export const EXAMPLE_FAMILY = {
   toys: ['el dinosaurio chiquito', 'el tren grandote', 'el osito marrón', 'el caballo percherón'],
 }
 
-/** The two realistic failures from the wireframes: the dog read as a sibling, a toy losing its house name. */
-/** @type {ParseResult} */
-export const MISREAD_PARSE = {
-  family: {
-    kids: [
-      { name: 'Milán', age: 2 },
-      { name: 'Inca', age: null },
-    ],
-    pet: '',
-    interests: ['los dinosaurios', 'los caballos'],
-    toys: ['un tren de madera'],
-  },
-  flagged: ['kids.1', 'toys'],
-  note: 'Inca quedó como hermana en vez de mascota, y el tren perdió su nombre de casa.',
-}
-
 /** @type {Activity[]} */
 export const ACTIVITIES = [
   {

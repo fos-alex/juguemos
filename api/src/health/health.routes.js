@@ -2,5 +2,5 @@
 
 /** @param {import('fastify').FastifyInstance} app @param {{ controller: HealthController }} options */
 export async function healthRoutes(app, { controller }) {
-  app.get('/health', controller.check)
+  app.get('/health', { config: { public: true } }, controller.check)
 }

@@ -4,9 +4,8 @@
  * waiting, failure, and being offline. Successful results are written to the
  * local store, the way the real client will cache them for offline use.
  */
-import { demoSettings, updateDemo } from '../lib/demo'
-import { clearAll, read, write } from '../lib/store'
-import { ACTIVITIES, EXAMPLE_FAMILY, MISREAD_PARSE, STORIES } from './fixtures'
+import { read, write } from '../lib/store'
+import { ACTIVITIES, EXAMPLE_FAMILY, STORIES } from './fixtures'
 
 /** @typedef {import('./fixtures').Family} Family */
 /** @typedef {import('./fixtures').ParseResult} ParseResult */
@@ -18,70 +17,30 @@ import { ACTIVITIES, EXAMPLE_FAMILY, MISREAD_PARSE, STORIES } from './fixtures'
  */
 
 export class OfflineError extends Error {}
+/** What the real verification will throw for a code that doesn't match. */
 export class WrongCodeError extends Error {}
 
-/** A code that the mock always rejects, to show the wrong-code state. */
-export const WRONG_CODE = '000000'
-
-const SLOW_MS = 7500
 const PARAGRAPH_MS = 450
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const clone = (value) => structuredClone(value)
 
 async function respond(ms) {
-  if (!navigator.onLine || demoSettings().offline) throw new OfflineError('Sin conexión')
-  await wait(demoSettings().slow ? SLOW_MS : ms)
-  if (demoSettings().failNext) {
-    updateDemo({ failNext: false })
-    throw new Error('Falla simulada')
-  }
+  if (!navigator.onLine) throw new OfflineError('Sin conexión')
+  await wait(ms)
 }
 
-/* Account */
-
-/** @param {{ name: string, email: string, password: string }} input @returns {Promise<Account>} */
-export async function createAccount({ name, email }) {
-  await respond(900)
-  /** @type {Account} */
-  const account = { name, email, provider: 'email', emailVerified: false }
-  write('account', account)
-  return account
-}
-
-/** Signing in lands on an account that already has a family. @param {{ email: string, password: string }} input */
-export async function signIn({ email }) {
-  await respond(900)
-  /** @type {Account} */
-  const account = { name: 'Alex', email, provider: 'email', emailVerified: true }
-  write('account', account)
-  write('family', clone(EXAMPLE_FAMILY))
-  return account
-}
-
-/** @param {{ existing?: boolean }} [options] */
-export async function continueWithGoogle({ existing = false } = {}) {
-  await respond(1100)
-  /** @type {Account} */
-  const account = { name: 'Alex', email: 'alex@mail.com', provider: 'google', emailVerified: true }
-  write('account', account)
-  if (existing) write('family', clone(EXAMPLE_FAMILY))
-  return account
-}
+/* Account: signing up, in, and out is real, in ./auth */
 
 /** @param {string} code */
 export async function verifyEmail(code) {
   await respond(700)
-  if (code === WRONG_CODE) throw new WrongCodeError('Código incorrecto')
+  void code
   write('account', { ...read('account'), emailVerified: true })
 }
 
 export async function resendCode() {
   await respond(500)
-}
-
-export function signOut() {
-  clearAll(['demo'])
 }
 
 /* Family */
@@ -90,9 +49,8 @@ export function signOut() {
 export async function understandFamily(text) {
   await respond(1600)
   void text
-  const result = demoSettings().misread
-    ? clone(MISREAD_PARSE)
-    : { family: clone(EXAMPLE_FAMILY), flagged: [], note: null }
+  /** @type {ParseResult} */
+  const result = { family: clone(EXAMPLE_FAMILY), flagged: [], note: null }
   write('parseResult', result)
   return result
 }

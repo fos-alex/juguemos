@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react'
-import { useDemo } from '../lib/demo'
 
 function subscribe(listener) {
   window.addEventListener('online', listener)
@@ -10,8 +9,7 @@ function subscribe(listener) {
   }
 }
 
-/** The browser's connection, or the offline switch on /demo. */
+/** The browser's connection. */
 export function useOnline() {
-  const online = useSyncExternalStore(subscribe, () => navigator.onLine)
-  return online && !useDemo().offline
+  return useSyncExternalStore(subscribe, () => navigator.onLine)
 }

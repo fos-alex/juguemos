@@ -29,8 +29,8 @@ const meResponse = {
 
 /**
  * @param {import('fastify').FastifyInstance} app
- * @param {{ controller: AccountsController, requireSession: import('fastify').preHandlerAsyncHookHandler }} options
+ * @param {{ controller: AccountsController }} options
  */
-export async function accountsRoutes(app, { controller, requireSession }) {
-  app.get('/me', { preHandler: requireSession, schema: { response: { 200: meResponse } } }, controller.me)
+export async function accountsRoutes(app, { controller }) {
+  app.get('/me', { schema: { response: { 200: meResponse } } }, controller.me)
 }

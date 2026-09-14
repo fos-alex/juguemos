@@ -22,7 +22,7 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 
 ## The app today
 
-`web/` is the React SPA (Vite, TanStack Router file routes, plain JavaScript with JSDoc). Every 0.1 screen from the Plaza handoff is built. Accounts are real (sign-up, sign-in, sign-out, and `/api/me`); everything else runs on mocked data.
+`web/` is the React SPA (Vite, TanStack Router file routes, plain JavaScript with JSDoc). Every 0.1 screen from the Plaza handoff is built. Accounts are real (sign-up, sign-in, sign-out, and `/api/me`), and using the app needs a valid session; everything else runs on mocked data.
 
 | Route | Screen (mockup id) |
 |---|---|
@@ -35,19 +35,18 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 | `/familia` | Mi familia, the card's permanent home after onboarding |
 | `/ajustes` | Ajustes, not designed yet and kept minimal |
 | `/` | Home: `2j`, or `2i` when there is no last idea. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home |
-| `/idea/$id` | Actividad (`2m` or `2n`). Otro juego swaps in place (`2p`) and pushes history, so back returns to the previous one |
+| `/idea/$id` | Actividad (`2m`). Otro juego swaps in place (`2p`) and pushes history, so back returns to the previous one |
 | `/idea/$id/reloj` | El reloj (`2o`) |
 | `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
 | `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` at night) |
-| `/demo` | Review scaffolding, not part of the app. It has switches for hard-to-reach states and shortcuts to every screen by mockup id |
 
 How it fits together:
 
 - **Primitives** live in `web/src/components/`: `Screen` (with `Header`, `Body`, `Footer`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build new screens from them rather than one-off layouts.
 - **The mock API** is `web/src/api/mock.js`, re-exported by `web/src/api/index.js`. Screens import only from `web/src/api`. Moving an endpoint to the real API means adding it next to `api/auth.js` (the account functions, already real) and re-exporting it from `api/index.js` with the same function shape. The example family, activities, and stories are in `api/fixtures.js`.
 - **Local state** is in `web/src/lib/store.js`: one localStorage key per piece of state, read with `useStored(key)`. It caches the account, the family, activities, stories, the timer, and story positions. That cache is what keeps the last idea and the open story readable offline.
-- **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, and with no family to `/familia/contanos`. Email verification is skipped until the API can send email; `/verificar` stays reachable from `/demo`.
-- **The API** in `api/src` is layered by domain (`accounts/`, `families/`, `health/`, `auth/`). Routes map URLs to controllers, controllers handle HTTP, and services hold the business logic and the SQL. Wire new dependencies in `app.js` only, and read the environment only in `config.js`. Give every route a response schema, because it also decides which fields leave the server. Cover new endpoints with integration tests in `api/test/`.
+- **The session guard** is in `routes/__root.jsx`. Before each navigation it awaits `ensureSession()` from `api/auth.js`, which confirms the session with `/api/me` at most every five minutes and again when the app returns to the foreground. A 401 signs the device out. No answer (offline, a weak signal, a server failure) keeps the cached account, so the last juego stays readable offline. Then the first run holds its order: no account goes to `/entrada`, and no family to `/familia/contanos`. Email verification is skipped until the API can send email, so `/verificar` redirects.
+- **The API** in `api/src` is layered by domain (`accounts/`, `families/`, `health/`, `auth/`). Routes map URLs to controllers, controllers handle HTTP, and services hold the business logic and the SQL. Every route needs a session, found on `request.session`, unless it sets `config: { public: true }` as health and Better Auth's routes do. Wire new dependencies in `app.js` only, and read the environment only in `config.js`. Give every route a response schema, because it also decides which fields leave the server. Cover new endpoints with integration tests in `api/test/`.
 - **Schema changes are migrations.** Create one with `npm run migration:create -w api -- <name>` and write plain SQL with an up and a down section. Never create tables from application code, and never edit a migration that has already run anywhere; add a new one. Better Auth's tables are part of the migrations too: plural names and snake_case columns, mapped in `api/src/auth/schema.js`.
 - **Data for exploring the app comes from seeds,** never from application code. No placeholder records or side effects that exist only to have data. Add development data to `api/seeds/development.js`; `npm run seed -w api` loads it through Better Auth and the services, skips what already exists, and refuses to run in production.
 - **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values, so nothing depends on a light background.
@@ -56,11 +55,11 @@ How it fits together:
   - **`ThemeProvider`**, in the root layout, re-checks the rule at each switch and when the app returns to the foreground, then paints it on `<html>`.
   - **`applyInitialTheme()`** in `main.jsx` sets the theme once, before React renders.
   - **Components** read it with `useTheme()`, which returns `{ dark, toggle }`. `ThemeToggle` is the reading footer's button, and Home's drawer has a row.
-  - **Overrides:** `?tema=oscuro` or `?tema=claro` counts as a tap, and `/demo` can simulate night.
+  - **Overrides:** `?tema=oscuro` or `?tema=claro` counts as a tap.
 - **No inline scripts in `index.html`.** App logic goes in `web/src`, where it is built, tested, and cached with the rest.
 - **JSDoc guides, nothing enforces it.** Types in JSDoc are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or `tsconfig`/`jsconfig`. The router's generated `web/src/routeTree.gen.js` is plain JS for the same reason; never edit it by hand.
-- **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity defaults to `2m` (why-first), and `2n` can be switched on from `/demo` until Alex picks one.
-- **Google sign-in** appears on `2a` and `2b` as designed but is mocked. `docs/releases.md` schedules Sign in with Google for 0.3.
+- **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity shows `2m` (why-first); `ActivityView` keeps the `2n` layout until Alex picks one.
+- **Google sign-in** is hidden on `2a` and `2b` until Sign in with Google arrives in 0.3 (`docs/releases.md`); `GoogleButton` waits for it. A sign-in without a real session would only bounce back to `/entrada`.
 
 ## Design rules from the Plaza handoff
 
@@ -93,11 +92,13 @@ opencode connects to Linear through the `linear` MCP server (`opencode.json`), a
 
 **Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
 
-Every task has a Linear issue, and the issue is updated at each step:
+**Be succinct in Linear.** Linear is for status and for seeing which tasks need Alex's input. It isn't a work log: nobody reads long reports, and writing them wastes tokens. Keep descriptions to a few lines and comments to a sentence or two. Write a fuller comment only when another agent will pick the task up later and needs the context to continue.
 
-1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress**, assign it to Alex, and comment with what you are about to do and which agent is doing it (Claude Code or opencode).
-2. **While working.** Comment when something meaningful happens: a decision, a change of plan, a blocker, or a question for Alex.
-3. **Ready for review.** Move it to **In Review** and comment with what changed, how it was verified, and anything left open. For uncommitted changes, list the files and suggest a commit message. For a PR, check that the integration linked it.
+Every task has a Linear issue:
+
+1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress** and assign it to Alex.
+2. **While working.** Comment only for a question for Alex, a blocker, or a decision Alex should know about. Say plainly what you need from them.
+3. **Ready for review.** Move it to **In Review**. Comment only if something needs Alex: a decision, something to try, or the commit message for uncommitted changes. For a PR, check that the integration linked it.
 4. **Finished.** Merged PRs move to **Done** through the integration. Uncommitted changes move to **Done** once Alex has committed them.
 
 Don't cancel issues, move them between releases, or change a release's scope without asking Alex. When scope changes, update `docs/releases.md` and Linear together so they stay in sync.
