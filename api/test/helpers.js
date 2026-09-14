@@ -54,28 +54,20 @@ export async function createDatabase() {
  */
 export async function startApi({ signupEmails = [], random, now, llm, admin = false } = {}) {
   const database = await createDatabase()
+  await migrate({ databaseUrl: database.url })
+
   const db = createDb(database.url)
   /** @type {import('../src/config.js').Config} */
   const config = {
     port: 0,
     databaseUrl: database.url,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
-    // No key, so no LLM: stories come from templates unless a test passes its own `llm`.
+    // No key: template stories, unless a test passes its own `llm`.
     llm: { apiKey: null, baseUrl: '', model: '' },
     admin: { enabled: admin },
   }
-  /** @type {ReturnType<typeof buildApp>} */
-  let app
-  try {
-    await migrate({ databaseUrl: database.url })
-    app = buildApp({ config, db, logger: false, random, now, llm })
-    await app.ready()
-  } catch (error) {
-    // Left open, these connections would keep the test file running forever.
-    await db.$client.end()
-    await database.drop()
-    throw error
-  }
+  const app = buildApp({ config, db, logger: false, random, now, llm })
+  await app.ready()
 
   return {
     app,
