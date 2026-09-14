@@ -84,7 +84,7 @@ function ActivityScreen() {
   )
 
   const notice =
-    swap === 'offline' && !online ? 'Estás sin conexión. La última idea sigue acá.' : swap === 'error' ? failure : null
+    swap === 'offline' && !online ? 'Estás sin conexión. El último juego sigue acá.' : swap === 'error' ? failure : null
 
   return (
     <Screen>
@@ -106,11 +106,11 @@ function ActivityScreen() {
           <SecondaryButton
             className="grow-2 btn--text-19"
             busy={loading}
-            busyLabel="Buscando otra idea"
+            busyLabel="Buscando otro juego"
             unavailable={!online}
             onClick={another}
           >
-            Otra idea
+            Otro juego
           </SecondaryButton>
         </div>
       </Footer>

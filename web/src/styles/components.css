@@ -97,7 +97,8 @@ body[data-tone='reading'] .screen__footer--sticky {
 }
 
 .back-button,
-.close-button {
+.close-button,
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -117,6 +118,11 @@ body[data-tone='reading'] .screen__footer--sticky {
 
 .close-button {
   font-size: 22px;
+}
+
+.theme-toggle svg {
+  width: 22px;
+  height: 22px;
 }
 
 /* Buttons */

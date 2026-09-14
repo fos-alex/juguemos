@@ -7,6 +7,7 @@ import { Drawer } from '../components/Drawer'
 import { Footer, Screen } from '../components/Screen'
 import { Wordmark } from '../components/Wordmark'
 import { useOnline } from '../hooks/useOnline'
+import { useTheme } from '../hooks/useTheme'
 import { familyLine } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
@@ -32,6 +33,7 @@ function HomeScreen() {
   const [request, setRequest] = useState(/** @type {'idle' | 'loading' | 'slow' | 'error'} */ ('idle'))
   const [offlineTaps, setOfflineTaps] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { dark, toggle: toggleTheme } = useTheme()
 
   useEffect(() => {
     document.title = 'Juguemos'
@@ -96,13 +98,13 @@ function HomeScreen() {
         <div className="home__memory">
           {!online && (
             <p key={offlineTaps} className="home__offline" role="status">
-              {last ? 'Estás sin conexión. La última idea sigue acá.' : 'Estás sin conexión.'}
+              {last ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
             </p>
           )}
           {last && (
             <Card onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}>
               <MetaLabel as="span" wide>
-                La última idea
+                El último juego
               </MetaLabel>
               <span className="card-title">{last.title}</span>
               <span className="card-meta">
@@ -116,8 +118,8 @@ function HomeScreen() {
       <div className="home__spacer" />
 
       <Footer className="home__actions">
-        <PrimaryButton size="home" busy={busy} busyLabel="Pensando una idea" unavailable={!online} onClick={suggest}>
-          ¿Qué hacemos ahora?
+        <PrimaryButton size="home" busy={busy} busyLabel="Pensando un juego" unavailable={!online} onClick={suggest}>
+          ¡Juguemos!
         </PrimaryButton>
         {/* Voice pass pending: the line shown after ~6 s of thinking. */}
         {request === 'slow' && (
@@ -150,7 +152,7 @@ function HomeScreen() {
         )}
         <nav className="drawer__nav" aria-label="Secciones">
           <button type="button" className="drawer__item is-current" aria-current="page" onClick={() => setMenuOpen(false)}>
-            ¿Qué hacemos ahora?
+            ¡Juguemos!
           </button>
           <button type="button" className="drawer__item" onClick={openStories}>
             Hora del cuento
@@ -162,6 +164,10 @@ function HomeScreen() {
           <div className="drawer__upcoming">próximas funciones</div>
         </nav>
         <div className="drawer__footer">
+          {/* Voice pass pending. Stays open, so the parent sees the switch happen. */}
+          <button type="button" className="drawer__item drawer__item--muted" onClick={toggleTheme}>
+            {dark ? 'Modo día' : 'Modo noche'}
+          </button>
           <button type="button" className="drawer__item drawer__item--muted" onClick={() => go('/ajustes')}>
             Ajustes
           </button>

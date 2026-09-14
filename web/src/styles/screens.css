@@ -674,10 +674,17 @@
   padding: 16px 30px calc(38px + env(safe-area-inset-bottom));
 }
 
+/* While the story is written: the night toggle on the left, the dots centred. */
 .reading-footer--waiting {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
   align-items: center;
-  justify-content: center;
+  justify-items: center;
   padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+
+.reading-footer--waiting .theme-toggle {
+  justify-self: start;
 }
 
 .progress {

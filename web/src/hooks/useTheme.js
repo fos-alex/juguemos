@@ -1,30 +1,15 @@
-import { useSyncExternalStore } from 'react'
+import { createContext, use } from 'react'
 
-const listeners = new Set()
+/** Provided by ThemeProvider in the root layout. */
+export const ThemeContext = createContext({ dark: false, toggle: () => {} })
 
-function isDark() {
-  return document.documentElement.dataset.theme === 'dark'
+/** The current theme and night mode's one tap. @returns {{ dark: boolean, toggle: () => void }} */
+export function useTheme() {
+  return use(ThemeContext)
 }
 
-function subscribe(listener) {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
-
-export function toggleTheme() {
-  document.documentElement.dataset.theme = isDark() ? 'light' : 'dark'
-  localStorage.setItem('theme', document.documentElement.dataset.theme)
-  syncThemeColor()
-  for (const listener of listeners) listener()
-}
-
+/** The phone's status bar takes the page's background. */
 export function syncThemeColor() {
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', getComputedStyle(document.body).backgroundColor)
-}
-
-export function useTheme() {
-  return useSyncExternalStore(subscribe, isDark)
 }

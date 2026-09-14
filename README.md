@@ -66,7 +66,7 @@ Never edit a migration that has run anywhere; add a new one.
 
 ## Status
 
-Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) is built in `web/` and runs on mocked data from `web/src/api/mock.js`. Open `/demo` to switch hard-to-reach states (the AI misreading the family, offline, slow, a failed request, the two Activity layouts, dark mode) and to jump to any screen by its mockup id.
+Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) is built in `web/` and runs on mocked data from `web/src/api/mock.js`. Open `/demo` to switch hard-to-reach states (the AI misreading the family, offline, slow, a failed request, the two Activity layouts, night mode) and to jump to any screen by its mockup id.
 
 Accounts are real: creating an account, signing in, and signing out go through Better Auth in the API (`/api/auth/*`). `/api/me` returns the signed-in user and their family, if they have one. `npm run seed -w api` adds a local account with a family (`prueba@juguemos.local` / `juguemos-local`). Email verification and Google sign-in are still mocked, and the family's details still live only on the device.
 

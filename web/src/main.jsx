@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
 import { announceUpdate, setApplyUpdate } from './lib/updates'
-import { syncThemeColor } from './hooks/useTheme'
+import { applyInitialTheme } from './components/ThemeProvider'
 import '@fontsource-variable/fredoka'
 import '@fontsource-variable/nunito-sans'
 import './styles/index.css'
@@ -17,7 +17,7 @@ if (import.meta.env.PROD) {
   })
 }
 
-syncThemeColor()
+applyInitialTheme()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
