@@ -5,11 +5,11 @@ import { StepList } from './StepList'
 
 /**
  * One idea, in either of the two layouts still open in the handoff:
- * `porque` (2m) earns trust before the steps; `pasos` (2n) is playable in
- * the first screenful.
- * @param {{ activity: Activity, layout: 'porque' | 'pasos' }} props
+ * `porque` (2m) earns trust before the steps, and is the one the app shows;
+ * `pasos` (2n) is playable in the first screenful.
+ * @param {{ activity: Activity, layout?: 'porque' | 'pasos' }} props
  */
-export function ActivityView({ activity, layout }) {
+export function ActivityView({ activity, layout = 'porque' }) {
   return layout === 'pasos' ? <StepsFirst activity={activity} /> : <WhyFirst activity={activity} />
 }
 

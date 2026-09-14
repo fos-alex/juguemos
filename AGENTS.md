@@ -1,6 +1,11 @@
 # Working on Juguemos
 
-Rules for any agent working in this repo. Claude Code reads this through `CLAUDE.md`, and opencode reads it directly.
+Rules for any agent working in this repo. Claude Code reads this through `CLAUDE.md`, and opencode reads it directly. Each project has its own guide as well, so read the one for the code you are changing:
+
+| Guide | Covers |
+|---|---|
+| [web/AGENTS.md](web/AGENTS.md) | The React SPA: routes, components, local state, night mode, and the Plaza design rules |
+| [api/AGENTS.md](api/AGENTS.md) | The Fastify API: layers, auth and the sign-up allowlist, migrations, seeds, and tests |
 
 ## The project
 
@@ -20,68 +25,21 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 
 **Start simple.** Build a solid core loop first. Don't add features from the product concept that `docs/releases.md` hasn't scheduled, and don't pull parked features forward without asking.
 
-## The app today
+## The repo
 
-`web/` is the React SPA (Vite, TanStack Router file routes, plain JavaScript with JSDoc). Every 0.1 screen from the Plaza handoff is built and runs on the API. Only Google sign-in and email verification are mocked, in `web/src/api/mock.js`.
+An npm workspace with two projects, run locally by Docker Compose behind Caddy:
 
-| Route | Screen (mockup id) |
+| Path | What it is |
 |---|---|
-| `/entrada` | Entrada (`2a`) |
-| `/cuenta` | Crear cuenta (`2b`). `?modo=entrar` switches it to sign-in mode, and `?campo=email` focuses the email field |
-| `/verificar` | Verificar el email (`2c`) |
-| `/familia/contanos` | Contame de tu familia (`2d`) |
-| `/familia/revisar` | ¿Está bien así? (`2f`), or Entendió mal (`2g`) when the parse flags fields |
-| `/familia/corregir` | Corregir (`2h`). `?campo=` focuses one field |
-| `/familia` | Mi familia, the card's permanent home after onboarding |
-| `/ajustes` | Ajustes, not designed yet and kept minimal |
-| `/` | Home: `2j`, or `2i` when there is no last idea. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home |
-| `/idea/$id` | Actividad (`2m` or `2n`). Otro juego swaps in place (`2p`) and pushes history, so back returns to the previous one |
-| `/idea/$id/reloj` | El reloj (`2o`) |
-| `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
-| `/cuento/$id` | Escribiendo (`2s`), then the reading screen (`2t`, or `2u` at night) |
-| `/demo` | Review scaffolding, not part of the app. It has switches for hard-to-reach states and shortcuts to every screen by mockup id, using the signed-in account's real data |
+| `web/` | The React SPA, built to `web/dist` |
+| `api/` | The Fastify API and its PostgreSQL migrations |
+| `caddy/Caddyfile` | Serves `web/dist` and proxies `/api` to the API, at `https://juguemos.local:3000` and on `127.0.0.1:3001` for phones over Tailscale |
+| `docker-compose.yml` | Postgres, the one-shot migrations, the API, and Caddy |
+| `docs/` | Product, architecture, releases, and the Plaza design handoff |
 
-How it fits together:
+Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, and activities and stories from templates in the database. Only Google sign-in (0.3) and email verification are still missing, since they need services Juguemos doesn't have yet.
 
-- **Primitives** live in `web/src/components/`: `Screen` (with `Header`, `Body`, `Footer`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build new screens from them rather than one-off layouts.
-- **The API client** is `web/src/api/`: one module per area (`auth.js`, `family.js`, `activities.js`, `stories.js`), all calling through `request` in `http.js`, and re-exported by `index.js`. Screens import only from `web/src/api` and work with the shapes in `api/types.js`; the modules translate the API's shapes to them. `mock.js` holds only what needs a service Juguemos doesn't have yet (Google sign-in, email verification). The web hardcodes no data.
-- **Local state** is in `web/src/lib/store.js`: one localStorage key per piece of state, read with `useStored(key)`. It caches the account, the family, activities, stories, the timer, and story positions. That cache is what keeps the last idea and the open story readable offline.
-- **The first-run guard** is in `routes/__root.jsx`. With no account it sends the parent to `/entrada`, and with no family to `/familia/corregir`. Reading a family from free text needs the LLM (JUG-11), so `/familia/contanos` and `/familia/revisar` wait, reachable from `/demo`. Email verification is skipped until the API can send email.
-- **The API** in `api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots). Routes map URLs to controllers, controllers handle HTTP, and services hold the business logic and the SQL. Wire new dependencies in `app.js` only, and read the environment only in `config.js`. Give every route a response schema, because it also decides which fields leave the server. Cover new endpoints with integration tests in `api/test/`.
-- **Schema changes are migrations.** Create one with `npm run migration:create -w api -- <name>` and write plain SQL with an up and a down section. Never create tables from application code, and never edit a migration that has already run anywhere; add a new one. Better Auth's tables are part of the migrations too: plural names and snake_case columns, mapped in `api/src/auth/schema.js`.
-- **Data comes from the database, loaded by seeds,** never from application code or the web. No placeholder records or side effects that exist only to have data.
-  - **Catalog templates** are in `api/seeds/catalog/` and load on every `docker compose up`, right after the migrations. A template already in the database is never overwritten: the database is the catalog's home (JUG-9).
-  - **Development data** (an account for the example family) is in `api/seeds/development.js`. `npm run seed -w api` loads it with the catalog, through Better Auth and the services, and refuses to run in production.
-- **Templates have slots,** `{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, and `{interest}`, filled by code in `api/src/catalog/slots.js` (no LLM in 0.1). Toys are known only by name, so write templates any toy fits, never make a word agree in gender with a slot, and never address anyone by a toy's name. "a {toy}" and "de {toy}" contract to "al" and "del" on their own. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
-- **Tokens** are in `web/src/styles/tokens.css`, with light and dark sets. Components use tokens, never hex values, so nothing depends on a light background.
-- **Night mode** lives in React:
-  - **The rule** is plain functions in `web/src/lib/theme.js`: dark from 19:00 to 07:00 local time, unless a one-tap choice still holds. A choice lasts until the next 19:00 or 07:00.
-  - **`ThemeProvider`**, in the root layout, re-checks the rule at each switch and when the app returns to the foreground, then paints it on `<html>`.
-  - **`applyInitialTheme()`** in `main.jsx` sets the theme once, before React renders.
-  - **Components** read it with `useTheme()`, which returns `{ dark, toggle }`. `ThemeToggle` is the reading footer's button, and Home's drawer has a row.
-  - **Overrides:** `?tema=oscuro` or `?tema=claro` counts as a tap, and `/demo` can simulate night.
-- **No inline scripts in `index.html`.** App logic goes in `web/src`, where it is built, tested, and cached with the rest.
-- **JSDoc guides, nothing enforces it.** Types in JSDoc are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or `tsconfig`/`jsconfig`. The router's generated `web/src/routeTree.gen.js` is plain JS for the same reason; never edit it by hand.
-- **The handoff's two open decisions:** Home uses `2j`, whose last-idea card hides when there is no idea yet. Activity defaults to `2m` (why-first), and `2n` can be switched on from `/demo` until Alex picks one.
-- **Google sign-in** appears on `2a` and `2b` as designed; until it arrives in 0.3 (`docs/releases.md`), the button says it's coming.
-
-## Design rules from the Plaza handoff
-
-The spec is `docs/design_handoff_juguemos_plaza/`. Its README has the tokens, the type scale, and every screen. The mockups (`2a`–`2u`) are the spec, and the wireframes' notes (`1a`–`1t`) say what each screen must never do. Read the README before changing any UI. These are the rules that are easiest to undo by accident:
-
-- **A tool for grown-ups, about play.** No mascot, character, or cartoon. The wordmark's three dots never get a face and never grow past splash size. Fredoka 600 is already at its limit: no heavier weight and no rounded body font.
-- **No sound, ever.** That includes the moment the activity timer ends. No vibration either.
-- **Motion guides and never demands.** Use 120–200 ms ease-out with no bounce, spring, or confetti, and respect `prefers-reduced-motion`.
-- **Flat.** No gradients, glossy or 3D buttons, or drop-shadow buttons. The palette is the token set and nothing more.
-- **Never clinical and never a scoreboard.** No progress rings, streaks, points, badges, counts, percentages, "you stopped early", or days since the family last played. The only progress bar in the app marks position in a story. The timer never logs or compares sessions.
-- **One idea, never a list or a feed.** The wait for an idea happens on Home, and Home's last-idea card is capped at one.
-- **The family's words stay exactly as typed.** Toy names are never normalised, capitalised, or autocorrected, so those inputs set `autoCorrect="off"` and `autoCapitalize="none"`.
-- **Colour is never the only signal.** Flagged rows use a tint, a bar, and words. The current drawer item uses a filled row.
-- **No art on the reading screen,** even after 0.2 brings illustration. The wake lock holds from the moment a story starts being written until the parent leaves it.
-- **Thumb zone.** Primary actions sit in the lower half, and every tap target is at least 48 px. The design width is 390 px, capped with `max-width`.
-- **Copy is Rioplatense Spanish with *vos*,** taken verbatim from the mockups. Failures say "Uy, algo falló. ¿Probamos de nuevo?" with no blame and no error codes. Field errors go under the field, in words, never in a red banner. Offline is "Estás sin conexión. El último juego sigue acá." What Juguemos suggests is a *juego*, never an *idea*, and Home's button says "¡Juguemos!". That is Alex's change (JUG-69); the mockups still say *idea* and "¿Qué hacemos ahora?".
-- **Copy still needs a voice pass** in these places, marked `Voice pass pending` in code: Listo, Prefiero un formulario, Guardar, the line after six seconds of thinking, Empezar, the timer screen, Otras opciones, and all account-screen copy.
-- **Out of scope for 0.1, so don't build it:** the toy box, voice recording (the mic is a placeholder), goals, categories and filters, weather, the journal, tips, recaps, holidays, the partner invite, post-activity feedback, and an English interface.
+**JSDoc guides, nothing enforces it.** Both projects are plain JavaScript. JSDoc types are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or a `tsconfig` or `jsconfig`.
 
 ## Tracking work in Linear
 
@@ -92,15 +50,17 @@ Alex follows the build in Linear, so Linear must always show what is being built
 - **Labels:** Feature, Content, Infrastructure, Decision, Guardrails, Improvement, Bug
 - **Statuses:** Backlog → Todo → In Progress → In Review → Done, plus Canceled and Duplicate
 
-opencode connects to Linear through the `linear` MCP server (`opencode.json`), authenticated by the `LINEAR_API_KEY` environment variable. Use its tools to find, create, update, and comment on issues directly; don't ask Alex to do in Linear what the MCP can do.
+Agents reach Linear through its MCP server; for opencode, that is the `linear` entry in `opencode.json`, which signs in with OAuth. Use its tools to find, create, update, and comment on issues directly; don't ask Alex to do in Linear what the MCP can do.
 
 **Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
 
-Every task has a Linear issue, and the issue is updated at each step:
+**Be succinct in Linear.** Linear is for status and for seeing which tasks need Alex's input. It isn't a work log: nobody reads long reports, and writing them wastes tokens. Keep descriptions to a few lines and comments to a sentence or two. Write a fuller comment only when another agent will pick the task up later and needs the context to continue.
 
-1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress**, assign it to Alex, and comment with what you are about to do and which agent is doing it (Claude Code or opencode).
-2. **While working.** Comment when something meaningful happens: a decision, a change of plan, a blocker, or a question for Alex.
-3. **Ready for review.** Move it to **In Review** and comment with what changed, how it was verified, and anything left open. For uncommitted changes, list the files and suggest a commit message. For a PR, check that the integration linked it.
+Every task has a Linear issue:
+
+1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress** and assign it to Alex.
+2. **While working.** Comment only for a question for Alex, a blocker, or a decision Alex should know about. Say plainly what you need from them.
+3. **Ready for review.** Move it to **In Review**. Comment only if something needs Alex: a decision, something to try, or the commit message for uncommitted changes. For a PR, check that the integration linked it.
 4. **Finished.** Merged PRs move to **Done** through the integration. Uncommitted changes move to **Done** once Alex has committed them.
 
 Don't cancel issues, move them between releases, or change a release's scope without asking Alex. When scope changes, update `docs/releases.md` and Linear together so they stay in sync.

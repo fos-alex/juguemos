@@ -13,6 +13,7 @@ export async function authRoutes(app, { auth, baseURL }) {
   app.route({
     method: ['GET', 'POST'],
     url: '/auth/*',
+    config: { public: true },
     async handler(request, reply) {
       const headers = fromNodeHeaders(request.headers)
       headers.delete('content-length')

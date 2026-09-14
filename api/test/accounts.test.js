@@ -8,7 +8,14 @@ const PASSWORD = 'una-clave-larga'
 let api
 before(async () => {
   api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eva@example.com'],
+    signupEmails: [
+      'ana@example.com',
+      'beto@example.com',
+      'carla@example.com',
+      'dani@example.com',
+      'eva@example.com',
+      'fede@example.com',
+    ],
   })
 })
 after(() => api.close())
@@ -82,6 +89,12 @@ test('signing out ends the session', async () => {
   })
   assert.equal(response.statusCode, 200)
   assert.equal((await me(cookie)).statusCode, 401)
+})
+
+test('a session lasts 30 days', async () => {
+  const response = await signUp('fede@example.com')
+  const session = [response.headers['set-cookie'] ?? []].flat().find((cookie) => cookie.includes('session_token='))
+  assert.match(session ?? '', /Max-Age=2592000/)
 })
 
 test('/me needs a session', async () => {

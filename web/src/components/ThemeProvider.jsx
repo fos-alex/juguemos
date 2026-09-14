@@ -1,20 +1,18 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { syncThemeColor, ThemeContext } from '../hooks/useTheme'
-import { demoSettings, useDemo } from '../lib/demo'
 import { read, useStored, write } from '../lib/store'
 import { chooseTheme, nextSwitch, resolveTheme } from '../lib/theme'
 
 /**
- * Night mode. Resolves the theme from the clock, the parent's one-tap choice,
- * and /demo; re-checks at every 19:00 and 07:00 and whenever the app comes
- * back to the foreground; and paints it on <html>.
+ * Night mode. Resolves the theme from the clock and the parent's one-tap
+ * choice; re-checks at every 19:00 and 07:00 and whenever the app comes back
+ * to the foreground; and paints it on <html>.
  * @param {{ children: React.ReactNode }} props
  */
 export function ThemeProvider({ children }) {
   const now = useSwitchClock()
   const choice = useStored('theme')
-  const { night } = useDemo()
-  const theme = resolveTheme({ now, choice, night })
+  const theme = resolveTheme({ now, choice })
 
   useLayoutEffect(() => {
     paint(theme)
@@ -39,7 +37,7 @@ export function applyInitialTheme() {
   const now = new Date()
   const tema = new URLSearchParams(location.search).get('tema')
   if (tema) write('theme', chooseTheme(tema === 'oscuro' ? 'dark' : 'light', now))
-  document.documentElement.dataset.theme = resolveTheme({ now, choice: read('theme'), night: demoSettings().night })
+  document.documentElement.dataset.theme = resolveTheme({ now, choice: read('theme') })
 }
 
 /** The time, refreshed at each switch and on return to the foreground (phones pause timers in the background). */

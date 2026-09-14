@@ -3,8 +3,9 @@ import { fromNodeHeaders } from 'better-auth/node'
 /** @typedef {import('./auth.js').Auth} Auth */
 
 /**
- * A preHandler for routes that need a signed-in adult. It puts their session
- * on `request.session`, or answers 401.
+ * A preHandler for routes that need a signed-in adult, which app.js runs on
+ * every route not marked public. It puts their session on `request.session`,
+ * or answers 401.
  * @param {Auth} auth
  * @returns {import('fastify').preHandlerAsyncHookHandler}
  */

@@ -36,7 +36,8 @@ export function buildApp({ config, db, logger = true, random = Math.random }) {
   const stories = createStoriesService({ db, families, random })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
-  const familyGuards = [requireSession, createRequireFamily(families)]
+  // After the session hook below: routes about the family need one saved.
+  const familyGuards = [createRequireFamily(families)]
 
   const app = Fastify({ logger })
   app.decorateRequest('session', null)
@@ -44,10 +45,16 @@ export function buildApp({ config, db, logger = true, random = Math.random }) {
   app.setErrorHandler(handleError)
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'not found' }))
 
+  // Every route needs a signed-in adult unless its config says `public: true`.
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.is404 || request.routeOptions.config.public) return
+    return requireSession(request, reply)
+  })
+
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
-  app.register(accountsRoutes, { controller: createAccountsController({ families }), requireSession })
-  app.register(familiesRoutes, { controller: createFamiliesController({ families }), requireSession })
+  app.register(accountsRoutes, { controller: createAccountsController({ families }) })
+  app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
 
