@@ -5,7 +5,7 @@
  */
 import { desc, eq, sql } from 'drizzle-orm'
 import { fillFor, render, unknownPlaceholders } from '../catalog/slots.js'
-import { activities, activityTemplates } from '../db/schema/index.js'
+import { activities, activityTemplates } from './activities.schema.js'
 import { NotFoundError, ValidationError } from '../errors.js'
 
 /**

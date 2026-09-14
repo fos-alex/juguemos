@@ -5,7 +5,7 @@
  * them here and generates a migration.
  */
 import { boolean, index, pgTable, text } from 'drizzle-orm/pg-core'
-import { createdAt, timestamptz } from './columns.js'
+import { createdAt, timestamptz } from '../db/columns.js'
 
 export const users = pgTable('users', {
   id: text().primaryKey(),

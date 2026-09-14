@@ -5,8 +5,8 @@
  */
 import { relations, sql } from 'drizzle-orm'
 import { check, date, index, pgTable, primaryKey, smallint, text, uuid } from 'drizzle-orm/pg-core'
-import { users } from './auth.js'
-import { createdAt } from './columns.js'
+import { users } from '../auth/auth.schema.js'
+import { createdAt } from '../db/columns.js'
 
 export const families = pgTable('families', {
   id: uuid().primaryKey().defaultRandom(),

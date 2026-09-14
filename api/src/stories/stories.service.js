@@ -5,7 +5,7 @@
  */
 import { and, eq, sql } from 'drizzle-orm'
 import { fillFor, render, seededRandom, shuffle, unknownPlaceholders } from '../catalog/slots.js'
-import { stories, storyTemplates } from '../db/schema/index.js'
+import { stories, storyTemplates } from './stories.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 
 /**

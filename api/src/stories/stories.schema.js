@@ -3,8 +3,8 @@
  */
 import { sql } from 'drizzle-orm'
 import { check, jsonb, pgTable, smallint, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
-import { createdAt, timestamptz } from './columns.js'
-import { families } from './families.js'
+import { createdAt, timestamptz } from '../db/columns.js'
+import { families } from '../families/families.schema.js'
 
 export const storyTemplates = pgTable(
   'story_templates',

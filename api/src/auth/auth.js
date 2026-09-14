@@ -1,7 +1,7 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth'
 import { APIError } from 'better-auth/api'
-import { accounts, sessions, users, verifications } from '../db/schema/index.js'
+import { accounts, sessions, users, verifications } from './auth.schema.js'
 
 /** @typedef {import('../config.js').AuthConfig} AuthConfig */
 /** @typedef {ReturnType<typeof createAuth>} Auth */
@@ -13,8 +13,7 @@ export function createAuth({ config, db }) {
   return betterAuth({
     baseURL: config.url,
     secret: config.secret,
-    // Its tables are defined with the rest of the schema (src/db/schema/auth.js),
-    // with plural names like every other table.
+    // Its tables are ours, in auth.schema.js, with plural names like every other table.
     database: drizzleAdapter(db, { provider: 'pg', schema: { users, sessions, accounts, verifications }, usePlural: true }),
     emailAndPassword: { enabled: true },
     // A parent who opens the app once a month stays signed in: the session

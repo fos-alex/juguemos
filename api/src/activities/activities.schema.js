@@ -3,8 +3,8 @@
  */
 import { sql } from 'drizzle-orm'
 import { boolean, check, index, pgTable, smallint, text, uuid } from 'drizzle-orm/pg-core'
-import { createdAt, timestamptz } from './columns.js'
-import { families } from './families.js'
+import { createdAt, timestamptz } from '../db/columns.js'
+import { families } from '../families/families.schema.js'
 
 // Reviewed templates tagged with the full taxonomy, whose slots ({kid}, {pet},
 // {toy}, {toy2}, {toy3}, {interest}) code fills for each family. Safety rules
