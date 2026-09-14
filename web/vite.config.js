@@ -9,7 +9,9 @@ export default defineConfig({
     tanstackRouter({ target: 'react', autoCodeSplitting: true, disableTypes: true }),
     react(),
     VitePWA({
-      registerType: 'prompt',
+      // Each deploy's worker takes over on its own and deletes the old caches;
+      // lib/updates.js reloads the page at a safe moment.
+      registerType: 'autoUpdate',
       injectRegister: false,
       manifest: {
         name: 'Juguemos',
@@ -26,6 +28,8 @@ export default defineConfig({
         // Spanish needs Latin and Latin-Ext only; other subsets still load on demand via unicode-range.
         globIgnores: ['**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew,math,symbols}-*.woff2'],
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         navigateFallback: 'index.html',
       },
     }),

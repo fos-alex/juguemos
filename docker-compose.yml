@@ -1,8 +1,12 @@
 name: juguemos
 
 services:
+  # Serves the web app, which its image builds (caddy/Dockerfile), and proxies
+  # /api to the API. `docker compose up --build` rebuilds both.
   caddy:
-    image: caddy:2-alpine
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:443"
@@ -11,7 +15,6 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-      - ./web/dist:/srv:ro
     depends_on:
       - api
 

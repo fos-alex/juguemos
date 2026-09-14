@@ -10,11 +10,11 @@ Run from the repo root:
 
 ```bash
 npm run dev        # Vite at http://localhost:5173, no service worker
-npm run build      # production build to web/dist, which Caddy serves
+npm run build      # production build to web/dist, to check it compiles; Caddy's image builds its own
 ```
 
 - **The dev server proxies `/api`** to the Docker stack at `https://juguemos.local:3000`, so signing in needs `docker compose up`.
-- **The service worker exists only in production builds.** To see a change at `juguemos.local` or on a phone, run `npm run build`.
+- **The service worker exists only in production builds.** Caddy's image builds the web app, so to see a change at `juguemos.local` or on a phone, run `docker compose up -d --build`. Open apps pick it up on their own.
 - **There are no automated tests yet.** Check changes in a browser at the 390 px design width, signed in with a demo account (`npm run seed -w api`; the logins are in the README), including offline, night mode, and reduced motion.
 
 ## Layout
@@ -59,7 +59,7 @@ The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), 
 
 ## How it fits together
 
-- **The root layout** (`routes/__root.jsx`) holds the session guard, `ThemeProvider`, and `UpdateBanner`.
+- **The root layout** (`routes/__root.jsx`) holds the session guard and `ThemeProvider`.
   - Before each navigation the guard awaits `ensureSession()` from `api/auth.js`, which confirms the session with `/api/me` at most every five minutes and again when the app returns to the foreground.
   - A 401 signs the device out, whether it answers that check or any other call: `request` in `api/http.js` (and the story stream) calls `endSession()`, except under `/auth`, where a 401 means a wrong password. The root layout sees the account go and runs the guard again. No answer (offline, a weak signal, a server failure) keeps the cached account, so the last juego stays readable offline.
   - A device whose session ended goes to sign-in (`/cuenta?modo=entrar`); one that never had an account, or signed out, goes to `/entrada`.
@@ -76,7 +76,8 @@ The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), 
   - `applyInitialTheme()` in `main.jsx` sets it once before React renders.
   - Components read it with `useTheme()`, which returns `{ dark, toggle }`. `?tema=oscuro` or `?tema=claro` counts as a tap.
 - **No inline scripts in `index.html`.** App logic goes in `src`, where it is built, cached, and reviewed with the rest.
-- **Updates** are offered, never forced: `lib/updates.js` hears from the service worker and `UpdateBanner` asks the parent.
+- **Updates apply themselves** (`lib/updates.js`). Each deploy's service worker takes over on its own and deletes the old caches, and the page reloads at the next safe moment: never while a story is read or the timer runs, but once the parent leaves that screen or the app goes to the background. A new screen that a reload would interrupt goes in `BUSY` there. A chunk the new deploy replaced reloads the page instead of breaking it.
+
 ## Adding a screen
 
 1. Add `src/routes/<path>.jsx` exporting `Route = createFileRoute('<path>')({ component })`. The dev server regenerates the route tree.

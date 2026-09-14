@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
-import { announceUpdate, setApplyUpdate } from './lib/updates'
+import { keepUpToDate } from './lib/updates'
 import { applyInitialTheme } from './components/ThemeProvider'
 import '@fontsource-variable/fredoka'
 import '@fontsource-variable/nunito-sans'
@@ -10,12 +10,7 @@ import './styles/index.css'
 
 const router = createRouter({ routeTree, defaultPreload: 'intent' })
 
-if (import.meta.env.PROD) {
-  import('virtual:pwa-register').then(({ registerSW }) => {
-    const updateSW = registerSW({ onNeedRefresh: announceUpdate })
-    setApplyUpdate(() => updateSW(true))
-  })
-}
+if (import.meta.env.PROD) void keepUpToDate(router)
 
 applyInitialTheme()
 

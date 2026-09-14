@@ -23,7 +23,6 @@ function RootLayout() {
   return (
     <ThemeProvider>
       <Outlet />
-      <UpdateBanner />
     </ThemeProvider>
   )
 }

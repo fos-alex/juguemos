@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.7 · September 2026 · Owner: Alex Otero
+**Version:** 0.8 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -59,7 +59,7 @@ Key rules:
 - The same Compose file runs locally, so there is no drift between a developer machine and the server.
 - Caddy serves the app with `immutable` long-caching for hashed assets and `no-cache` for everything else, which is what makes every deploy refresh cleanly on clients.
 - Locally, the same stack serves `https://juguemos.local` with a certificate from Caddy's internal CA. On the droplet, the same Caddyfile swaps the site address for the real domain.
-- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (the React SPA, whose Vite build output Caddy serves from `web/dist`). The repo is an npm workspace: `api` and `web`, sharing one install with separate codebases.
+- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (the React SPA, which Caddy's image builds with Vite and serves, so `docker compose up --build` ships it along with the API). The repo is an npm workspace: `api` and `web`, sharing one install with separate codebases.
 
 ## 5. Client
 
@@ -88,7 +88,8 @@ Play happens in plazas and bedrooms with weak signal, so the app keeps working w
 - Assets are content-hashed. Each build produces new filenames and a new precache manifest; the new worker diffs the manifests, downloads the new files, and deletes the old caches.
 - Entry points always revalidate. Caddy sends `no-cache` for `index.html` and the service worker file and `immutable` for hashed assets — already the case in the scaffold's Caddyfile. If any HTTP cache can serve a stale worker, the whole system breaks silently; this is the rule that most often goes wrong.
 - Open tabs survive a deploy. A tab running yesterday's code may request a lazy chunk the new deploy replaced; the chunk-load error is caught and turned into a single page reload, which lands on the new version instead of a broken screen.
-- Updates never interrupt. New versions download in the background, checked on load and on returning to the app; when one is ready, a small banner offers a refresh. A parent mid-story is never force-reloaded.
+- Every deploy ships the web app. Caddy's image builds it (`caddy/Dockerfile`), so the stack never serves a build left over from before a pull.
+- Updates apply themselves, and never interrupt (JUG-111). Each deploy's worker takes over on its own and deletes the old caches; open apps look for it on load, on returning to the foreground, and every half hour. The page then reloads at the next safe moment: right away, or, while a story is read or the timer runs, once the parent leaves that screen or the app goes to the background. A parent mid-story is never reloaded. An earlier banner that asked first let an old version run for as long as nobody tapped it.
 - **Offline data is not the service worker's job.** The worker precaches the app shell so the app opens offline. Product data — current suggestions, active goals, the last story opened — lives in a small app-owned store (IndexedDB) written on every successful fetch and read when the network fails. The worker never caches API responses: that is the origin of most stale-data horror stories, and the app knows better than the worker what may be served stale.
 - **A kill switch always exists.** If a bad worker ever ships, the next deploy can ship one that unregisters all previous workers and tears down their caches.
 
@@ -208,3 +209,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.5 | September 2026 | The web runs on the API with no hardcoded data. Family profile (kids, pets, interests, toys), the activity and story catalog in the database with code-filled slots (no LLM in 0.1), and every suggested activity and written story saved per family. Catalog seeds load on every deploy; development seeds stay local. |
 | 0.6 | September 2026 | Database access moves to Drizzle ORM: the schema is code, drizzle-kit generates the migrations from it, and they run under a lock that also refuses edited or skipped migrations. Better Auth uses its Drizzle adapter. node-pg-migrate and the hand-written SQL are gone. |
 | 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |
+| 0.8 | September 2026 | Caddy's image builds the web app, so every deploy ships it. The service worker updates itself: each deploy's worker takes over, and the page reloads at a safe moment, never mid-story. |
