@@ -1,8 +1,8 @@
 /**
  * The LLM Juguemos talks to: OpenCode Go, an OpenAI-compatible gateway the
- * self-hosted `opencode` account fronts (default GLM-5.3-Flash). Server-side
- * only; the browser never sees the key. Without a key there is no client and
- * stories fall back to the seeded templates.
+ * self-hosted `opencode` account fronts. Server-side only; the browser never
+ * sees the key. Without a key there is no client and stories fall back to the
+ * seeded templates.
  *
  * The gateway asks two things of its clients (opencode.ai/docs/go): identify
  * with our own user agent, and send a stable `x-opencode-session` id per
@@ -15,8 +15,8 @@ import { AppError } from '../errors.js'
 /**
  * @typedef {object} LlmConfig
  * @property {string | null} apiKey no key, no LLM: template stories only
- * @property {string} baseUrl
- * @property {string} model
+ * @property {string} baseUrl required when apiKey is set
+ * @property {string} model required when apiKey is set
  */
 
 /** @typedef {object} LlmCall @property {string} system @property {string} user */
@@ -25,19 +25,18 @@ import { AppError } from '../errors.js'
  * @property {(call: LlmCall & { signal?: AbortSignal }) => AsyncGenerator<string>} stream
  */
 
-const DEFAULT_BASE_URL = 'https://opencode.ai/zen/go/v1'
-const DEFAULT_MODEL = 'glm-5.3-flash'
 const USER_AGENT = 'juguemos-api/0.1'
 
 /**
- * @param {{ config: Partial<LlmConfig> }} deps
+ * @param {{ config: LlmConfig }} deps
  * @returns {Llm | null} null when no key is configured
  */
-export function createOpenCodeLlm({ config = {} }) {
+export function createOpenCodeLlm({ config }) {
   const apiKey = config.apiKey?.trim()
   if (!apiKey) return null
-  const baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '')
-  const model = config.model ?? DEFAULT_MODEL
+  if (!config.baseUrl) throw new Error('llm.baseUrl is required when a key is configured')
+  if (!config.model) throw new Error('llm.model is required when a key is configured')
+  const baseUrl = config.baseUrl.replace(/\/$/, '')
 
   return {
     /**
@@ -56,7 +55,7 @@ export function createOpenCodeLlm({ config = {} }) {
           'x-opencode-session': `juguemos-${randomUUID()}`,
         },
         body: JSON.stringify({
-          model,
+          model: config.model,
           stream: true,
           messages: [
             { role: 'system', content: system },

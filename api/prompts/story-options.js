@@ -1,4 +1,4 @@
-La familia va a leer un cuento a {{moment}}.
+export default `La familia va a leer un cuento a {{moment}}.
 
 Los chicos: {{kids}}.
 La mascota: {{pet}}.
@@ -13,4 +13,4 @@ Contestá solo con un objeto JSON, sin markdown ni explicaciones, con una sola c
 - "title": el título del cuento, con los personajes, terminado en punto.
 - "teaser": una línea que dan ganas de leerlo, en presente, sin revelar el final.
 - "minutes": un número entero de minutos de lectura, dentro del largo de la banda.
-- "premise": dos o tres oraciones que cuentan la trama completa, final incluido, para que otro pueda escribir el cuento a partir de ahí.
+- "premise": dos o tres oraciones que cuentan la trama completa, final incluido, para que otro pueda escribir el cuento a partir de ahí.`

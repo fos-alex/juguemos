@@ -1,4 +1,4 @@
-Escribí el cuento para esta familia, a partir de la trama elegida.
+export default `Escribí el cuento para esta familia, a partir de la trama elegida.
 
 Los chicos: {{kids}}.
 La mascota: {{pet}}.
@@ -23,4 +23,4 @@ PARTE 2
 PARTE 3
 (los párrafos de la parte tres)
 
-Tres partes, ni más ni menos. Cada párrafo tiene una, dos o hasta tres oraciones cortas, de las que se dicen de corrido y cierran bien para respirar.
+Tres partes, ni más ni menos. Cada párrafo tiene una, dos o hasta tres oraciones cortas, de las que se dicen de corrido y cierran bien para respirar.`
