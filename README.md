@@ -84,7 +84,7 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 - **Accounts** through Better Auth (`/api/auth/*`, `/api/me`). The app needs a valid session: it confirms it with `/api/me` and signs the device out when the API says the session has ended. Every API route except health and `/api/auth/*` needs a session too. Sessions last 30 days and renew with use.
 - **The family profile** (`/api/family`): kids, pets, interests, and toys, saved from the family form.
-- **Activities** (`/api/activities/suggestions`) and **stories** (`/api/stories`), from templates in the database whose slots are filled with the family's own words. The first 4 activities and 6 stories are waiting for Alex's review (JUG-14).
+- **Activities** (`/api/activities/suggestions`) and **stories** (`/api/stories`), from templates in the database whose slots are filled with the family's own words. The first 15 activities and 6 stories are waiting for Alex's review (JUG-14).
 
 ### Demo accounts
 
