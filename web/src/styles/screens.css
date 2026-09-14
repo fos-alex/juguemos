@@ -174,50 +174,30 @@
   padding-top: 14px;
 }
 
-.mic {
+.tell__voice-message {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: none;
   gap: 4px;
-  width: 64px;
-  height: 64px;
-  padding: 0;
-  border: 2px dashed var(--dashed);
-  border-radius: 32px;
-  background: var(--surface);
-  cursor: default;
 }
 
-.mic__glyph {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+/* 2e: while a note records, the prompt dims and the box waits for its words. */
+.tell .prompt {
+  transition: color 150ms ease-out;
 }
 
-.mic__capsule {
-  display: block;
-  width: 11px;
-  height: 17px;
-  border: 2px solid var(--primary);
-  border-radius: 6px;
+.tell--recording .prompt {
+  color: var(--ink-disabled);
 }
 
-.mic__base {
-  display: block;
-  width: 17px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--primary);
+.tell--recording .tell__text {
+  opacity: 0.5;
 }
 
-.mic__tag {
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--ink-faint);
+/* The lock target sits over this space; keep the layout, hide what's under it. */
+.tell--recording .tell__help,
+.tell--recording .tell__voice-message,
+.tell--recording .tell__body > .btn--tertiary {
+  visibility: hidden;
 }
 
 /* 2f / 2g ¿Está bien así? */

@@ -49,9 +49,40 @@ services:
       OPENCODE_BASE_URL: ${OPENCODE_BASE_URL:-}
       OPENCODE_MODEL: ${OPENCODE_MODEL:-}
       ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
+      # Speech to text for voice notes: the stt service below, unless .env
+      # points at a hosted one with its model and key.
+      STT_URL: ${STT_URL:-http://stt:8000/v1}
+      STT_MODEL: ${STT_MODEL:-}
+      STT_API_KEY: ${STT_API_KEY:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
+
+  # Whisper (faster-whisper, through speaches) behind the OpenAI transcriptions
+  # API, for voice notes. Only the API reaches it, and it keeps no audio: each
+  # note is transcribed in memory and dropped, and nothing is logged below
+  # warnings. Before the server starts, the model is downloaded into
+  # stt_models (about 1.6 GB, once; later starts find it there), fetching the
+  # same files speaches itself would. The model is unloaded after ten idle
+  # minutes to free memory, so the first note after that waits a few seconds
+  # longer while it loads again.
+  stt:
+    image: ghcr.io/speaches-ai/speaches:0.8.3-cpu
+    restart: unless-stopped
+    command:
+      - sh
+      - -c
+      - >-
+        huggingface-cli download deepdml/faster-whisper-large-v3-turbo-ct2
+        config.json preprocessor_config.json model.bin tokenizer.json vocabulary.json README.md > /dev/null
+        && exec uvicorn --factory speaches.main:create_app
+    environment:
+      WHISPER__TTL: "600"
+      WHISPER__COMPUTE_TYPE: int8
+      ENABLE_UI: "false"
+      LOG_LEVEL: warning
+    volumes:
+      - stt_models:/home/ubuntu/.cache/huggingface/hub
 
   db:
     image: postgres:17-alpine
@@ -74,3 +105,4 @@ volumes:
   caddy_data:
   caddy_config:
   db_data:
+  stt_models:

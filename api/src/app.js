@@ -21,6 +21,10 @@ import { healthRoutes } from './health/health.routes.js'
 import { createStoriesController } from './stories/stories.controller.js'
 import { storiesRoutes } from './stories/stories.routes.js'
 import { createStoriesService } from './stories/stories.service.js'
+import { createTranscriber } from './voice/transcriber.js'
+import { createVoiceController } from './voice/voice.controller.js'
+import { voiceRoutes } from './voice/voice.routes.js'
+import { createVoiceService } from './voice/voice.service.js'
 
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
@@ -34,14 +38,18 @@ import { createStoriesService } from './stories/stories.service.js'
  *   random?: () => number,
  *   now?: () => Date,
  *   llm?: ReturnType<typeof createOpenCodeLlm> | null,
+ *   transcriber?: ReturnType<typeof createTranscriber> | null,
  * }} options `random` drives which template comes next; tests can pin it.
- * `now` picks the moment a story is written for; `llm` overrides the wire,
- * so tests can speak for the model. Without a key, stories come from templates.
+ * `now` picks the moment a story is written for; `llm` and `transcriber`
+ * override the wire, so tests can speak for the model and the speech-to-text
+ * service. Without a key, stories come from templates; without STT_URL, voice
+ * notes are off.
  */
-export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm }) {
+export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber }) {
   const families = createFamiliesService({ db })
   const activities = createActivitiesService({ db, families, random })
   const stories = createStoriesService({ db, families, random, now, llm: llm ?? createOpenCodeLlm({ config: config.llm }) })
+  const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
   // After the session hook below: routes about the family need one saved.
@@ -65,6 +73,8 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
+  // No family guard: onboarding records a note before the family exists.
+  app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
   if (config.admin.enabled) app.register(adminRoutes, { controller: createAdminController({ activities }) })
 
