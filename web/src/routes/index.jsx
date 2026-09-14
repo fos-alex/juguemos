@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { suggestActivity } from '../api'
+import { choosePlaying, loadFamily, suggestActivity } from '../api'
 import { PrimaryButton, SecondaryButton } from '../components/Buttons'
 import { Card, MetaLabel } from '../components/Card'
 import { Drawer } from '../components/Drawer'
@@ -17,11 +17,14 @@ export const Route = createFileRoute('/')({
 
 const SLOW_AFTER_MS = 6000
 
+/** @typedef {import('../api/types').Kid} Kid */
+
 /**
  * 2j (2i when there is no last idea yet), with 2l and 2q as its states. The
  * wait happens here: the pressed button holds three slow dots, and the story
  * button greys out so a second tap can't queue another request. Never a feed,
- * streaks, or a nudge about days since last played.
+ * streaks, or a nudge about days since last played. With more than one kid,
+ * the parent picks who's playing above the buttons (JUG-107).
  */
 function HomeScreen() {
   const navigate = useNavigate()
@@ -35,12 +38,41 @@ function HomeScreen() {
   const [offlineTaps, setOfflineTaps] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const { dark, toggle: toggleTheme } = useTheme()
+  // Choices are saved one after another, and a juego or a story waits for the last one.
+  const choosing = useRef(/** @type {Promise<unknown>} */ (Promise.resolve()))
+  const picking = (family?.kids.length ?? 0) > 1
 
   useEffect(() => {
     document.title = 'Juguemos'
+    // Who's playing may have changed on another phone.
+    if (navigator.onLine) loadFamily().catch(() => {})
   }, [])
 
   const busy = request === 'loading' || request === 'slow'
+
+  /** @param {Kid} kid */
+  const toggle = (kid) => {
+    if (!family || busy) return
+    if (!online) {
+      setOfflineTaps((taps) => taps + 1)
+      return
+    }
+    // A family cached before JUG-107 has no kid ids until the refresh above lands.
+    if (family.kids.some((each) => !each.id)) return
+    const playing = kid.playing !== false
+    if (playing && family.kids.filter((each) => each.playing !== false).length === 1) return
+    const kids = family.kids.map((each) => (each.id === kid.id ? { ...each, playing: !playing } : each))
+    write('family', { ...family, kids })
+    setRequest('idle')
+    const ids = kids.filter((each) => each.playing !== false).map((each) => /** @type {string} */ (each.id))
+    choosing.current = choosing.current
+      .then(() => choosePlaying(ids))
+      .catch((error) => {
+        setFailure(failureText(error))
+        setRequest('error')
+        return loadFamily().catch(() => {})
+      })
+  }
 
   const suggest = async () => {
     if (!online) {
@@ -50,6 +82,7 @@ function HomeScreen() {
     setRequest('loading')
     const slow = window.setTimeout(() => setRequest('slow'), SLOW_AFTER_MS)
     try {
+      await choosing.current
       const activity = await suggestActivity({ after: lastId })
       void navigate({ to: '/idea/$id', params: { id: activity.id } })
     } catch (error) {
@@ -60,12 +93,13 @@ function HomeScreen() {
     }
   }
 
-  const openStories = () => {
+  const openStories = async () => {
     setMenuOpen(false)
     if (!online) {
       setOfflineTaps((taps) => taps + 1)
       return
     }
+    await choosing.current
     write('storyOptions', null)
     void navigate({ to: '/cuentos' })
   }
@@ -93,7 +127,8 @@ function HomeScreen() {
           </button>
           <Wordmark />
         </div>
-        {family && <p className="home__family">{familyLine(family)}</p>}
+        {/* With the picker below, the kids are named there instead. */}
+        {family && !picking && <p className="home__family">{familyLine(family)}</p>}
       </header>
 
       {(!online || last) && (
@@ -120,6 +155,7 @@ function HomeScreen() {
       <div className="home__spacer" />
 
       <Footer className="home__actions">
+        {picking && family && <WhoPlays kids={family.kids} onToggle={toggle} />}
         <PrimaryButton size="home" busy={busy} busyLabel="Pensando un juego" unavailable={!online} onClick={suggest}>
           ¡Juguemos!
         </PrimaryButton>
@@ -134,7 +170,7 @@ function HomeScreen() {
             {failure}
           </p>
         )}
-        <SecondaryButton size="lg" disabled={busy} unavailable={!online} onClick={openStories}>
+        <SecondaryButton size="lg" disabled={busy} unavailable={!online} onClick={() => void openStories()}>
           Hora del cuento
         </SecondaryButton>
       </Footer>
@@ -156,7 +192,7 @@ function HomeScreen() {
           <button type="button" className="drawer__item is-current" aria-current="page" onClick={() => setMenuOpen(false)}>
             ¡Juguemos!
           </button>
-          <button type="button" className="drawer__item" onClick={openStories}>
+          <button type="button" className="drawer__item" onClick={() => void openStories()}>
             Hora del cuento
           </button>
           <button type="button" className="drawer__item" onClick={() => go('/familia')}>
@@ -176,5 +212,45 @@ function HomeScreen() {
         </div>
       </Drawer>
     </Screen>
+  )
+}
+
+/**
+ * Who's playing: every kid by name, marked unless the parent took them out.
+ * Marked is filled with a check and unmarked is outlined, so colour is never
+ * the only difference. The last kid playing stays in. No counts, no nudges.
+ * @param {{ kids: Kid[], onToggle: (kid: Kid) => void }} props
+ */
+function WhoPlays({ kids, onToggle }) {
+  const playingCount = kids.filter((kid) => kid.playing !== false).length
+  return (
+    <div className="who-plays" role="group" aria-labelledby="who-plays-label">
+      {/* Voice pass pending: "¿Quiénes juegan?". */}
+      <p id="who-plays-label" className="who-plays__label">
+        ¿Quiénes juegan?
+      </p>
+      <div className="chips">
+        {kids.map((kid, index) => {
+          const playing = kid.playing !== false
+          return (
+            <button
+              key={kid.id ?? index}
+              type="button"
+              className="chip chip--kid"
+              aria-pressed={playing}
+              aria-disabled={(playing && playingCount === 1) || undefined}
+              onClick={() => onToggle(kid)}
+            >
+              {playing && (
+                <span className="chip__check" aria-hidden="true">
+                  ✓
+                </span>
+              )}
+              {kid.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }

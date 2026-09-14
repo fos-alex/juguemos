@@ -6,7 +6,10 @@ export function createActivitiesController({ activities }) {
     /** @type {import('fastify').RouteHandlerMethod} */
     async suggest(request, reply) {
       const { after = null } = /** @type {{ after?: string | null }} */ (request.body ?? {})
-      const activity = await activities.suggest(/** @type {string} */ (request.familyId), { after })
+      const activity = await activities.suggest(/** @type {string} */ (request.familyId), {
+        after,
+        userId: request.session.user.id,
+      })
       return reply.code(201).send(activity)
     },
   }

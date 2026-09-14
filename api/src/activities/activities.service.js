@@ -7,6 +7,7 @@ import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { fillFor, render, unknownPlaceholders } from '../catalog/slots.js'
 import { activities, activityTemplates } from './activities.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
+import { kidIdsOf } from '../families/families.service.js'
 
 /**
  * @typedef {object} ActivityTemplateInput
@@ -159,19 +160,20 @@ export function createActivitiesService({ db, families, random = Math.random }) 
     },
 
     /**
-     * Picks a template that is switched on, whose age range covers every kid,
-     * and whose slots the family can fill, fills them, and saves the result.
-     * The pick is random. It avoids the family's latest activities when it
-     * can, and never repeats the one being moved on from unless nothing else
-     * fits.
+     * Picks a template that is switched on, whose age range covers every kid
+     * playing, and whose slots the family can fill, fills them, and saves the
+     * result with the kids who played. The pick is random. It avoids the
+     * family's latest activities when it can, and never repeats the one being
+     * moved on from unless nothing else fits.
      * @param {string} familyId
-     * @param {{ after?: string | null }} [options] the activity to move on from
+     * @param {{ after?: string | null, userId?: string | null }} [options] the activity to move on
+     *   from, and the adult asking, whose kids sitting out are left out (everyone plays without one)
      * @returns {Promise<Activity>}
      */
-    async suggest(familyId, { after = null } = {}) {
+    async suggest(familyId, { after = null, userId = null } = {}) {
       const isAfter = sql`${activities.id} = ${after}`
       const [profile, templates, recent] = await Promise.all([
-        families.profileOf(familyId),
+        families.playingProfile(familyId, userId),
         db
           .select()
           .from(activityTemplates)
@@ -215,7 +217,7 @@ export function createActivitiesService({ db, families, random = Math.random }) 
       }
       const [{ id }] = await db
         .insert(activities)
-        .values({ familyId, templateId: template.id, ...activity })
+        .values({ familyId, templateId: template.id, kidIds: kidIdsOf(profile), ...activity })
         .returning({ id: activities.id })
       return { id, ...activity }
     },

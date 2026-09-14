@@ -46,6 +46,8 @@ export const storyPlots = pgTable(
     minutes: smallint().notNull(),
     premise: text().notNull(),
     mood: text({ enum: ['calm', 'lively'] }).notNull(),
+    // The kids playing when the plot was proposed (JUG-107); its story stars them.
+    kidIds: uuid().array().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
   },
   (table) => [
@@ -60,7 +62,8 @@ export const storyPlots = pgTable(
 
 // Stories written for a family: from a template, or by the model from a plot
 // the family chose (`source`). Saved, so a story reads again exactly as it
-// did the first time.
+// did the first time. A template is written once for each set of kids
+// playing, since it stars them.
 export const stories = pgTable(
   'stories',
   {
@@ -75,13 +78,16 @@ export const stories = pgTable(
     teaser: text().notNull(),
     minutes: smallint().notNull(),
     parts: jsonb().notNull(),
+    // The kids who played (JUG-107), sorted, for the recommendations and the
+    // journal. No foreign key: the record outlives a kid removed from the profile.
+    kidIds: uuid().array().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
   },
   (table) => [
     check('stories_source_check', sql`${table.source} in ('template', 'generated')`),
     check('stories_parts_check', sql`jsonb_typeof(${table.parts}) = 'array'`),
-    uniqueIndex('stories_family_id_template_id_key')
-      .on(table.familyId, table.templateId)
+    uniqueIndex('stories_family_id_template_id_kid_ids_key')
+      .on(table.familyId, table.templateId, table.kidIds)
       .where(sql`${table.templateId} is not null`),
     uniqueIndex('stories_family_id_plot_id_key').on(table.familyId, table.plotId).where(sql`${table.plotId} is not null`),
     index('stories_family_id_created_at_idx').on(table.familyId, table.createdAt),

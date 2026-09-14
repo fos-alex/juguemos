@@ -9,7 +9,7 @@ import { failureText } from '../lib/format'
 import { read } from '../lib/store'
 
 /** @typedef {import('../api/types').Family} Family */
-/** @typedef {{ kids: { name: string, age: string }[], pet: string, interests: string[], toys: string[] }} FormState */
+/** @typedef {{ kids: { id?: string, name: string, age: string }[], pet: string, interests: string[], toys: string[] }} FormState */
 
 export const Route = createFileRoute('/familia/corregir')({
   validateSearch: (search) => ({
@@ -219,7 +219,7 @@ function CorrectScreen() {
 
 /** @param {Family | null | undefined} family @returns {FormState} */
 function toForm(family) {
-  const kids = family?.kids.map((kid) => ({ name: kid.name, age: kid.age == null ? '' : String(kid.age) })) ?? []
+  const kids = family?.kids.map((kid) => ({ id: kid.id, name: kid.name, age: kid.age == null ? '' : String(kid.age) })) ?? []
   return {
     kids: kids.length > 0 ? kids : [{ name: '', age: '' }],
     pet: family?.pet ?? '',
@@ -233,7 +233,7 @@ function toFamily(form) {
   return {
     kids: form.kids
       .filter((kid) => kid.name.trim())
-      .map((kid) => ({ name: kid.name.trim(), age: kid.age ? Number(kid.age) : null })),
+      .map((kid) => ({ id: kid.id, name: kid.name.trim(), age: kid.age ? Number(kid.age) : null })),
     pet: form.pet.trim(),
     interests: form.interests,
     toys: form.toys.map((toy) => toy.trim()).filter(Boolean),

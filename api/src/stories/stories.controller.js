@@ -28,13 +28,13 @@ export function createStoriesController({ stories }) {
     /** @type {import('fastify').RouteHandlerMethod} */
     async options(request) {
       const { exclude = [] } = /** @type {{ exclude?: string[] }} */ (request.query)
-      return stories.options(/** @type {string} */ (request.familyId), { exclude })
+      return stories.options(/** @type {string} */ (request.familyId), { exclude, userId: request.session.user.id })
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
     async write(request) {
       const { templateId } = /** @type {{ templateId: string }} */ (request.body)
-      return stories.write(/** @type {string} */ (request.familyId), templateId)
+      return stories.write(/** @type {string} */ (request.familyId), templateId, { userId: request.session.user.id })
     },
 
     /**
@@ -54,6 +54,7 @@ export function createStoriesController({ stories }) {
       reply.raw.on('close', () => controller.abort())
       const stream = await stories.writeStream(/** @type {string} */ (request.familyId), id, {
         signal: controller.signal,
+        userId: request.session.user.id,
       })
       const first = await stream.next()
       reply.hijack()

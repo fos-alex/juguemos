@@ -47,7 +47,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/familia/corregir` | Corregir (`2h`). `?campo=` focuses one field |
 | `/familia` | Mi familia, the card's permanent home after onboarding |
 | `/ajustes` | Ajustes, not designed yet and kept minimal |
-| `/` | Home: `2j`, or `2i` when there is no last juego. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home |
+| `/` | Home: `2j`, or `2i` when there is no last juego. The drawer (`2k`), thinking (`2l`), and offline (`2q`) are states of Home. With more than one kid, who's playing sits above the buttons (JUG-107, not in the handoff) and replaces the kids line under the wordmark |
 | `/idea/$id` | Actividad (`2m`). Otro juego swaps in place (`2p`) and pushes history, so back returns to the previous one |
 | `/idea/$id/reloj` | El reloj (`2o`) |
 | `/cuentos` | ¿Cuál leemos hoy? (`2r`) |
