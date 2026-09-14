@@ -41,7 +41,7 @@ test('seeding twice creates each account and family once', async () => {
   await runSeed()
   await runSeed()
 
-  const { rows } = await api.db.query(
+  const { rows } = await api.pool.query(
     `select u.email, f.name as family, (select count(*)::int from kids k where k.family_id = f.id) as kids
      from users u
      left join family_members m on m.user_id = u.id
