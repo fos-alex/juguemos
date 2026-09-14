@@ -22,7 +22,7 @@ export async function migrate({ databaseUrl, migrationsFolder = MIGRATIONS_DIR, 
   try {
     await client.query(`select pg_advisory_lock(hashtext('juguemos:migrations'))`)
     await client.query(`
-      create table if not exists public.juguemosigrations (
+      create table if not exists public.juguemos_migrations (
         name      text primary key,
         hash      text not null,
         applied_at timestamptz not null default now()
@@ -37,7 +37,7 @@ export async function migrate({ databaseUrl, migrationsFolder = MIGRATIONS_DIR, 
       await client.query('begin')
       try {
         await client.query(sql)
-        await client.query('insert into public.juguemosigrations (name, hash) values ($1, $2)', [name, hash])
+        await client.query('insert into public.juguemos_migrations (name, hash) values ($1, $2)', [name, hash])
         await client.query('commit')
       } catch (err) {
         await client.query('rollback')
@@ -63,9 +63,9 @@ async function pendingMigrations(client, migrationsFolder) {
 
   /** @type {Map<string, string>} applied migration name → hash */
   const applied = new Map()
-  const { rows } = await client.query('select to_regclass($1) is not null as "exists"', ['public.juguemosigrations'])
+  const { rows } = await client.query('select to_regclass($1) is not null as "exists"', ['public.juguemos_migrations'])
   if (rows[0].exists) {
-    const { rows: records } = await client.query('select name, hash from public.juguemosigrations')
+    const { rows: records } = await client.query('select name, hash from public.juguemos_migrations')
     for (const record of records) applied.set(record.name, record.hash)
   }
   let latestIndex = -1
