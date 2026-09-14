@@ -5,6 +5,7 @@ import { TertiaryButton } from '../components/Buttons'
 import { Card, MetaLabel } from '../components/Card'
 import { Body, Footer, Header, Screen } from '../components/Screen'
 import { useGoBack } from '../hooks/useGoBack'
+import { failureText } from '../lib/format'
 import { read } from '../lib/store'
 
 export const Route = createFileRoute('/ajustes')({
@@ -22,9 +23,21 @@ function SettingsScreen() {
     document.title = 'Ajustes · Juguemos'
   }, [])
 
-  const leave = () => {
-    signOut()
-    void navigate({ to: '/entrada', replace: true })
+  const [request, setRequest] = useState(/** @type {'idle' | 'busy'} */ ('idle'))
+  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+
+  // Signing out waits for the API; offline it says so and the parent stays signed in.
+  const leave = async () => {
+    if (request !== 'idle') return
+    setRequest('busy')
+    setFailure(null)
+    try {
+      await signOut()
+      void navigate({ to: '/entrada', replace: true })
+    } catch (error) {
+      setFailure(failureText(error))
+      setRequest('idle')
+    }
   }
 
   return (
@@ -38,7 +51,14 @@ function SettingsScreen() {
         </Card>
       </Body>
       <Footer>
-        <TertiaryButton onClick={leave}>Cerrar sesión</TertiaryButton>
+        {failure && (
+          <p className="status-line" role="alert">
+            {failure}
+          </p>
+        )}
+        <TertiaryButton disabled={request !== 'idle'} onClick={leave}>
+          Cerrar sesión
+        </TertiaryButton>
       </Footer>
     </Screen>
   )
