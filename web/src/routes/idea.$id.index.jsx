@@ -8,7 +8,6 @@ import { Body, Footer, Header, Screen } from '../components/Screen'
 import { useCountdown } from '../hooks/useCountdown'
 import { useGoBack } from '../hooks/useGoBack'
 import { useOnline } from '../hooks/useOnline'
-import { useDemo } from '../lib/demo'
 import { clockText, failureText } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
@@ -17,7 +16,7 @@ export const Route = createFileRoute('/idea/$id/')({
 })
 
 /**
- * 2m / 2n, with 2p as its swap state. "Otra idea" turns the blocks into
+ * 2m, with 2p as its swap state. "Otra idea" turns the blocks into
  * placeholders in place and pushes the next idea, so back returns to the
  * previous one. No counter of ideas seen, no shuffle animation.
  */
@@ -26,7 +25,6 @@ function ActivityScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const online = useOnline()
-  const { activityLayout } = useDemo()
   const activity = useStored('activities')?.[id]
   const timer = useStored('timer')
   const running = timer?.activityId === id ? timer : null
@@ -90,7 +88,7 @@ function ActivityScreen() {
     <Screen>
       <Header onBack={goBack} trailing={trailing} />
       <Body className="activity-body">
-        {loading ? <ActivitySkeleton /> : <ActivityView activity={activity} layout={activityLayout} />}
+        {loading ? <ActivitySkeleton /> : <ActivityView activity={activity} />}
       </Body>
       <Footer sticky className="activity-footer">
         {notice && (

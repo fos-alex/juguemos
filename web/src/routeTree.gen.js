@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AjustesRouteImport } from './routes/ajustes'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as CuentosRouteImport } from './routes/cuentos'
-import { Route as DemoRouteImport } from './routes/demo'
 import { Route as EntradaRouteImport } from './routes/entrada'
 import { Route as VerificarRouteImport } from './routes/verificar'
 import { Route as CuentoIdRouteImport } from './routes/cuento.$id'
@@ -42,11 +41,6 @@ const CuentaRoute = CuentaRouteImport.update({
 const CuentosRoute = CuentosRouteImport.update({
   id: '/cuentos',
   path: '/cuentos',
-  getParentRoute: () => rootRouteImport,
-})
-const DemoRoute = DemoRouteImport.update({
-  id: '/demo',
-  path: '/demo',
   getParentRoute: () => rootRouteImport,
 })
 const EntradaRoute = EntradaRouteImport.update({
@@ -100,7 +94,6 @@ const rootRouteChildren = {
   AjustesRoute: AjustesRoute,
   CuentaRoute: CuentaRoute,
   CuentosRoute: CuentosRoute,
-  DemoRoute: DemoRoute,
   EntradaRoute: EntradaRoute,
   VerificarRoute: VerificarRoute,
   CuentoIdRoute: CuentoIdRoute,
