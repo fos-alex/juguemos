@@ -39,6 +39,13 @@ docker compose exec caddy cat /data/caddy/pki/authorities/local/root.pem | sudo 
 sudo update-ca-trust
 ```
 
+To open the stack on a phone, Caddy also serves plain HTTP on `127.0.0.1:3001`, and Tailscale Serve puts the tailnet's HTTPS in front of it (443 is taken, so it uses 8443). The phone must be on the tailnet:
+
+```bash
+tailscale serve --bg --https=8443 http://127.0.0.1:3001   # https://<machine>.<tailnet>.ts.net:8443
+tailscale serve --https=8443 off                          # stop
+```
+
 `/api/health` reports database connectivity. Postgres is reachable from the dev machine on `127.0.0.1:5432`, and `docker compose exec db psql -U juguemos` opens a shell.
 
 The client lives in `web/` as a Vite SPA in an npm workspace alongside `api/`. Both are plain JavaScript with JSDoc types:

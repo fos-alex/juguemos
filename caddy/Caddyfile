@@ -1,5 +1,4 @@
-juguemos.local {
-	tls internal
+(app) {
 	encode zstd gzip
 
 	handle_path /api/* {
@@ -15,4 +14,14 @@ juguemos.local {
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+juguemos.local {
+	tls internal
+	import app
+}
+
+# Plain HTTP for Tailscale Serve, which terminates TLS in front so a phone on the tailnet can reach the stack
+:80 {
+	import app
 }
