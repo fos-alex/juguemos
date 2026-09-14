@@ -29,15 +29,22 @@ export function anchorOf(profile) {
   return { anchorAge, band }
 }
 
+// The families are in Buenos Aires; the server's clock may be anywhere (UTC in Docker).
+const hourInBuenosAires = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Argentina/Buenos_Aires',
+  hour: 'numeric',
+  hourCycle: 'h23',
+})
+
 /**
  * The story follows the moment: calm in the night-mode window (19:00 to
- * 07:00), lively the rest of the day. The child's own routine arrives with
- * the fuller data model and replaces the clock.
+ * 07:00 in Buenos Aires), lively the rest of the day. The child's own
+ * routine arrives with the fuller data model and replaces the clock.
  * @param {Date} now
  * @returns {'calm' | 'lively'}
  */
 export function moodAt(now) {
-  const hour = now.getHours()
+  const hour = Number(hourInBuenosAires.format(now))
   return hour >= 19 || hour < 7 ? 'calm' : 'lively'
 }
 
@@ -71,7 +78,8 @@ export function familyLines(profile) {
 /**
  * The options answer: JSON, with or without markdown fences, holding an
  * array or a `{ "tramas": [...] }` object. Minutes outside 2 to 6 sit back
- * inside; anything unreadable throws.
+ * inside; an option without a title, teaser or premise is dropped, and an
+ * answer with none left throws.
  * @param {string} text
  * @returns {Plot[]}
  */
@@ -84,14 +92,17 @@ export function parseOptions(text) {
     ? parsed
     : Array.isArray(parsed?.tramas)
       ? parsed.tramas
-      : null
-  if (!list || list.length === 0) throw new Error('The story model proposed no options')
-  return list.map((option) => ({
-    title: String(option?.title ?? '').trim(),
-    teaser: String(option?.teaser ?? '').trim(),
-    minutes: clampMinutes(option?.minutes),
-    premise: String(option?.premise ?? '').trim(),
-  }))
+      : []
+  const plots = list
+    .map((option) => ({
+      title: String(option?.title ?? '').trim(),
+      teaser: String(option?.teaser ?? '').trim(),
+      minutes: clampMinutes(option?.minutes),
+      premise: String(option?.premise ?? '').trim(),
+    }))
+    .filter((plot) => plot.title && plot.teaser && plot.premise)
+  if (plots.length === 0) throw new Error('The story model proposed no options')
+  return plots
 }
 
 /** @param {unknown} minutes */

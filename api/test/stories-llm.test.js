@@ -71,10 +71,10 @@ before(async () => {
   // The options call asks for JSON; the story call asks for PARTE 1.
   user.includes('Contestá solo con un objeto JSON') ? (call === 1 ? OPTIONS_JSON('primera') : OPTIONS_JSON('otra')) : STORY,
 )
-  // After 19:00 the stories are bedtime ones: TRANQUI.
+  // After 19:00 in Buenos Aires the stories are bedtime ones: TRANQUI.
   api = await startApi({
     signupEmails: emails,
-    now: () => new Date('2026-09-14T21:00:00'),
+    now: () => new Date('2026-09-14T21:00:00-03:00'),
     llm,
   })
   const stories = createStoriesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
@@ -147,7 +147,7 @@ test('asking for other options retires the older plots and keeps the ones on scr
 
 test('a malformed answer from the model is tried once more', async () => {
   llm = fakeLlm(({ call }) => (call === 1 ? 'eso no es json' : OPTIONS_JSON('de nuevo')))
-  const api2 = await startApi({ signupEmails: ['carla@example.com'], now: () => new Date('2026-09-14T10:00:00'), llm })
+  const api2 = await startApi({ signupEmails: ['carla@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm })
   const { cookie } = await signUpAs(api2, 'carla@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
@@ -158,9 +158,94 @@ test('a malformed answer from the model is tried once more', async () => {
   await api2.close()
 })
 
+test('the moment is Buenos Aires time, whatever the server clock says', async () => {
+  const dayLlm = fakeLlm(() => OPTIONS_JSON('de tarde'))
+  // 20:00 UTC is 17:00 in Buenos Aires: still daytime.
+  const api2 = await startApi({ signupEmails: ['eli@example.com'], now: () => new Date('2026-09-14T20:00:00Z'), llm: dayLlm })
+  const { cookie } = await signUpAs(api2, 'eli@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  await options(cookie, [], api2)
+  assert.match(dayLlm.prompts[0].user, /CON PILAS, de día/)
+  await api2.close()
+})
+
+test('an answer whose options all lack a field is tried once more, and only three options are kept', async () => {
+  const incomplete = JSON.stringify({ tramas: [{ title: 'Sin premisa', teaser: 'Nada más.', minutes: 3 }] })
+  const five = JSON.stringify({
+    tramas: [1, 2, 3, 4, 5].map((n) => ({ title: `Trama ${n}`, teaser: 'Un paseo.', minutes: 3, premise: 'Salen a la plaza.' })),
+  })
+  const sloppyLlm = fakeLlm(({ call }) => (call === 1 ? incomplete : five))
+  const api2 = await startApi({ signupEmails: ['fede@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: sloppyLlm })
+  const { cookie } = await signUpAs(api2, 'fede@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  const response = await options(cookie, [], api2)
+  assert.equal(response.statusCode, 200)
+  assert.deepEqual(
+    response.json().map((option) => option.title),
+    ['Trama 1', 'Trama 2', 'Trama 3'],
+  )
+  assert.equal(sloppyLlm.prompts.length, 2)
+  const { rows } = await api2.pool.query('select count(*)::int as n from story_plots')
+  assert.equal(rows[0].n, 3)
+  await api2.close()
+})
+
+// A handler stuck writing to a reader who left would hang the run instead of failing it.
+test('a reader who leaves mid-story stops the story, and nothing is saved', { timeout: 10_000 }, async () => {
+  /** @type {() => void} */
+  let release = () => {}
+  const readerLeft = new Promise((resolve) => (release = () => resolve(undefined)))
+  /** @type {() => void} */
+  let stopped = () => {}
+  const modelStopped = new Promise((resolve) => (stopped = () => resolve(undefined)))
+  // Holds the rest of the story until the reader has left.
+  const slowLlm = {
+    async *stream({ user }) {
+      if (user.includes('Contestá solo con un objeto JSON')) {
+        yield OPTIONS_JSON('lenta')
+        return
+      }
+      try {
+        yield 'PARTE 1\nMilán se despertó de golpe.\n\n'
+        await readerLeft
+        yield 'Inca movió la cola.\n\nPARTE 2\nFin.\n'
+      } finally {
+        stopped()
+      }
+    },
+  }
+  const api2 = await startApi({ signupEmails: ['gabi@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: slowLlm })
+  const { cookie } = await signUpAs(api2, 'gabi@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+  const [option] = (await options(cookie, [], api2)).json()
+
+  // A real connection, so the reader can hang up.
+  const address = await api2.app.listen({ port: 0, host: '127.0.0.1' })
+  const reader = new AbortController()
+  const response = await fetch(`${address}/stories/write`, {
+    method: 'POST',
+    headers: { cookie, 'content-type': 'application/json' },
+    body: JSON.stringify({ id: option.id }),
+    signal: reader.signal,
+  })
+  const { value } = await response.body.getReader().read()
+  assert.match(new TextDecoder().decode(value), /Milán se despertó de golpe/)
+  reader.abort()
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  release()
+  await modelStopped
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const { rows } = await api2.pool.query('select count(*)::int as n from stories where plot_id = $1', [option.id])
+  assert.equal(rows[0].n, 0)
+  await api2.close()
+})
+
 test('when the model will not answer, the family hears about it, not a template', async () => {
   const deadLlm = fakeLlm(() => '')
-  const api2 = await startApi({ signupEmails: ['dani@example.com'], now: () => new Date('2026-09-14T10:00:00'), llm: deadLlm })
+  const api2 = await startApi({ signupEmails: ['dani@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: deadLlm })
   const { cookie } = await signUpAs(api2, 'dani@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 

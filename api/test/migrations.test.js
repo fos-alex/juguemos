@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import pg from 'pg'
 import { migrate } from '../src/db/migrate.js'
 import { createDatabase, startApi } from './helpers.js'
 
@@ -58,6 +60,9 @@ test('two first runs at once apply each migration once', async () => {
   })
 })
 
+/** @param {string} sql */
+const sha256 = (sql) => createHash('sha256').update(sql).digest('hex')
+
 const first = { tag: '0000_first', sql: 'create table first (id int);' }
 const third = { tag: '0002_third', sql: 'create table third (id int);' }
 
@@ -75,6 +80,35 @@ test('a migration older than the latest one applied is refused, not skipped', as
     const second = { tag: '0001_second', sql: 'create table second (id int);' }
     const merged = await migrationsFolder([first, second, third])
     await assert.rejects(migrate({ databaseUrl, migrationsFolder: merged }), /0001_second is older than the latest/)
+  })
+})
+
+test('a database Drizzle migrated keeps what Drizzle applied and runs only the rest', async () => {
+  await withEmptyDatabase(async (databaseUrl) => {
+    // What Drizzle's migrator left behind: the table it created, and its record by the SQL's sha256.
+    const client = new pg.Client({ connectionString: databaseUrl })
+    await client.connect()
+    await client.query(first.sql)
+    await client.query('create schema drizzle')
+    await client.query('create table drizzle.__drizzle_migrations (id serial primary key, hash text not null, created_at bigint)')
+    await client.query('insert into drizzle.__drizzle_migrations (hash, created_at) values ($1, 1)', [sha256(first.sql)])
+    await client.end()
+
+    const second = { tag: '0001_second', sql: 'create table second (id int);' }
+    assert.deepEqual(await migrate({ databaseUrl, migrationsFolder: await migrationsFolder([first, second]) }), ['0001_second'])
+  })
+})
+
+test('a Drizzle record that matches no file is refused', async () => {
+  await withEmptyDatabase(async (databaseUrl) => {
+    const client = new pg.Client({ connectionString: databaseUrl })
+    await client.connect()
+    await client.query('create schema drizzle')
+    await client.query('create table drizzle.__drizzle_migrations (id serial primary key, hash text not null, created_at bigint)')
+    await client.query(`insert into drizzle.__drizzle_migrations (hash, created_at) values ('not-a-file', 1)`)
+    await client.end()
+
+    await assert.rejects(migrate({ databaseUrl, migrationsFolder: await migrationsFolder([first]) }), /matches no file/)
   })
 })
 

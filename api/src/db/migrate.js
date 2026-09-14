@@ -4,6 +4,10 @@ import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../migrations', import.meta.url))
+// Where Drizzle's migrator recorded what it applied, before this runner.
+const DRIZZLE_APPLIED = 'drizzle.__drizzle_migrations'
+
+/** @typedef {{ name: string, sql: string, hash: string }} Migration */
 
 /**
  * Applies the migrations in api/migrations that haven't run yet, in
@@ -29,11 +33,11 @@ export async function migrate({ databaseUrl, migrationsFolder = MIGRATIONS_DIR, 
       )
     `)
 
-    const pending = await pendingMigrations(client, migrationsFolder)
-    for (const name of pending) {
+    const migrations = readMigrations(migrationsFolder)
+    await adoptDrizzleRecords(client, migrations)
+    const pending = await pendingMigrations(client, migrations)
+    for (const { name, sql, hash } of pending) {
       log(`Applying ${name}`)
-      const sql = readFileSync(`${migrationsFolder}/${name}.sql`, 'utf8')
-      const hash = createHash('sha256').update(sql).digest('hex')
       await client.query('begin')
       try {
         await client.query(sql)
@@ -44,53 +48,78 @@ export async function migrate({ databaseUrl, migrationsFolder = MIGRATIONS_DIR, 
         throw err
       }
     }
-    return pending
+    return pending.map(({ name }) => name)
   } finally {
     await client.end()
   }
 }
 
 /**
- * The migrations that haven't been applied yet, by name.
- * Refuses edited or out-of-order migrations.
- * @param {pg.Client} client
+ * The .sql files in the folder, in order, each with its SHA-256.
  * @param {string} migrationsFolder
+ * @returns {Migration[]}
  */
-async function pendingMigrations(client, migrationsFolder) {
-  const files = readdirSync(migrationsFolder)
+function readMigrations(migrationsFolder) {
+  return readdirSync(migrationsFolder)
     .filter((f) => f.endsWith('.sql'))
     .sort()
+    .map((file) => {
+      const sql = readFileSync(`${migrationsFolder}/${file}`, 'utf8')
+      return { name: file.replace('.sql', ''), sql, hash: createHash('sha256').update(sql).digest('hex') }
+    })
+}
 
+/**
+ * A database Drizzle's migrator ran on keeps what it applied: the first time
+ * this runner sees it, Drizzle's records are copied over, matched to files by
+ * the same SHA-256 of the SQL, so no migration runs twice.
+ * @param {pg.Client} client
+ * @param {Migration[]} migrations
+ */
+async function adoptDrizzleRecords(client, migrations) {
+  const { rows } = await client.query(
+    `select to_regclass($1) is not null as "exists", (select count(*)::int from public.juguemos_migrations) as "recorded"`,
+    [DRIZZLE_APPLIED],
+  )
+  if (!rows[0].exists || rows[0].recorded > 0) return
+
+  const byHash = new Map(migrations.map((migration) => [migration.hash, migration.name]))
+  const { rows: records } = await client.query(`select hash from ${DRIZZLE_APPLIED} order by created_at`)
+  for (const { hash } of records) {
+    const name = byHash.get(hash)
+    if (!name) {
+      throw new Error(
+        `Drizzle recorded a migration that matches no file in api/migrations (sha256 ${hash}). Restore that file, or rebuild the database.`,
+      )
+    }
+    await client.query('insert into public.juguemos_migrations (name, hash) values ($1, $2)', [name, hash])
+  }
+}
+
+/**
+ * The migrations that haven't been applied yet.
+ * Refuses edited or out-of-order migrations.
+ * @param {pg.Client} client
+ * @param {Migration[]} migrations
+ */
+async function pendingMigrations(client, migrations) {
   /** @type {Map<string, string>} applied migration name → hash */
   const applied = new Map()
-  const { rows } = await client.query('select to_regclass($1) is not null as "exists"', ['public.juguemos_migrations'])
-  if (rows[0].exists) {
-    const { rows: records } = await client.query('select name, hash from public.juguemos_migrations')
-    for (const record of records) applied.set(record.name, record.hash)
-  }
-  let latestIndex = -1
-  for (const name of applied.keys()) {
-    const idx = files.indexOf(`${name}.sql`)
-    if (idx > latestIndex) latestIndex = idx
-  }
+  const { rows: records } = await client.query('select name, hash from public.juguemos_migrations')
+  for (const record of records) applied.set(record.name, record.hash)
+  const names = migrations.map(({ name }) => name)
+  const latestIndex = Math.max(-1, ...[...applied.keys()].map((name) => names.indexOf(name)))
 
-  const pending = []
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    const name = file.replace('.sql', '')
-    const sql = readFileSync(`${migrationsFolder}/${file}`, 'utf8')
-    const hash = createHash('sha256').update(sql).digest('hex')
-
+  return migrations.filter(({ name, hash }, index) => {
     if (applied.has(name)) {
-      if (applied.get(name) === hash) continue
+      if (applied.get(name) === hash) return false
       throw new Error(`Migration ${name} was edited after it ran. Undo the edit and put the change in a new migration.`)
     }
-    if (i <= latestIndex) {
+    if (index <= latestIndex) {
       throw new Error(
         `Migration ${name} is older than the latest one applied, so it would never run. Delete it and generate it again on top of main.`,
       )
     }
-    pending.push(name)
-  }
-  return pending
+    return true
+  })
 }

@@ -6,7 +6,7 @@
  * streams the same way, from the saved copy.
  */
 import { read, write } from '../lib/store'
-import { ApiError, OfflineError } from './http'
+import { ApiError, OfflineError, request } from './http'
 
 /** @typedef {import('./types').StoryOption} StoryOption */
 /** @typedef {import('./types').Story} Story */

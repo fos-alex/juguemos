@@ -62,6 +62,8 @@ export async function startApi({ signupEmails = [], random, now, llm } = {}) {
     port: 0,
     databaseUrl: database.url,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
+    // No key: template stories, unless a test passes its own `llm`.
+    llm: { apiKey: null, baseUrl: '', model: '' },
   }
   const app = buildApp({ config, db, logger: false, random, now, llm })
   await app.ready()

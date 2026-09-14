@@ -171,26 +171,24 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       text = chunks.join('')
       let plots
       try {
-        plots = parseOptions(text)
+        plots = parseOptions(text).slice(0, OPTIONS)
       } catch {
         // A malformed answer is tried once more.
         continue
       }
-      if (plots.length > 0) {
-        // The plots on screen stay pickable; the rest retire.
-        const stale =
-          exclude.length > 0
-            ? and(eq(storyPlots.familyId, familyId), notInArray(storyPlots.id, exclude))
-            : eq(storyPlots.familyId, familyId)
-        await db.delete(storyPlots).where(stale)
-        for (const plot of plots) {
-          // The id is ours so the options keep the model's order.
-          const id = randomUUID()
-          await db.insert(storyPlots).values({ id, familyId, title: plot.title, teaser: plot.teaser, minutes: plot.minutes, premise: plot.premise, mood })
-          plot.id = id
-        }
-        return plots
-      }
+      // The plots on screen stay pickable; the rest retire. One transaction,
+      // so a failed save never leaves the family with no plots at all.
+      const stale =
+        exclude.length > 0
+          ? and(eq(storyPlots.familyId, familyId), notInArray(storyPlots.id, exclude))
+          : eq(storyPlots.familyId, familyId)
+      // The ids are ours so the options keep the model's order.
+      const saved = plots.map((plot) => ({ id: randomUUID(), ...plot }))
+      await db.transaction(async (tx) => {
+        await tx.delete(storyPlots).where(stale)
+        await tx.insert(storyPlots).values(saved.map((plot) => ({ ...plot, familyId, mood })))
+      })
+      return saved
     }
     throw new UpstreamError(`The story model proposed no readable options: ${text}`)
   }
@@ -374,6 +372,8 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
         throw error
       }
 
+      // The reader may have left after the last paragraph was read out.
+      if (signal?.aborted) return
       const parts = partsOf(paragraphs)
       if (!parts) throw new UpstreamError('The story model wrote nothing readable')
 
