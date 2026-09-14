@@ -74,7 +74,8 @@ function AccountScreen() {
         void navigate({ to: '/', replace: true })
       } else {
         await createAccount({ name: name.trim(), email: email.trim(), password })
-        void navigate({ to: '/familia/contanos', replace: true })
+        // The first-run guard knows where a new account goes next.
+        void navigate({ to: '/', replace: true })
       }
     } catch (error) {
       setFailure(failureText(error))

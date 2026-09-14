@@ -48,7 +48,8 @@ function VerifyScreen() {
     setMessage(null)
     try {
       await verifyEmail(value)
-      void navigate({ to: '/familia/contanos', replace: true })
+      // The first-run guard knows where a new account goes next.
+      void navigate({ to: '/', replace: true })
     } catch (error) {
       setCode('')
       setMessage(error instanceof WrongCodeError ? 'Ese no es el código que te mandamos. Probá de nuevo.' : failureText(error))

@@ -6,6 +6,7 @@ COPY api/package.json api/package.json
 COPY web/package.json web/package.json
 RUN npm ci --workspace api --omit=dev
 COPY api/migrations api/migrations
+COPY api/seeds api/seeds
 COPY api/src api/src
 USER node
 CMD ["node", "api/src/server.js"]

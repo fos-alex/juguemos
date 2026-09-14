@@ -1,7 +1,7 @@
 import { Card, Label, MetaLabel, Skeleton } from './Card'
 import { StepList } from './StepList'
 
-/** @typedef {import('../api/fixtures').Activity} Activity */
+/** @typedef {import('../api/types').Activity} Activity */
 
 /**
  * One idea, in either of the two layouts still open in the handoff:

@@ -41,14 +41,16 @@ const FIRST_RUN = ['/familia/contanos', '/familia/revisar', '/familia/corregir']
 
 /**
  * Keeps the first run in order: a signed-in account, a family, then the app.
- * Returns where the parent belongs, or null when the path is fine. Verifying
- * the email waits until the API sends email, so /verificar sends them on.
+ * Returns where the parent belongs, or null when the path is fine. The family
+ * starts in the form until the app can read a family's own words (JUG-11).
+ * Verifying the email waits until the API sends email, so /verificar sends
+ * them on.
  * @param {string} path
- * @param {import('../api/mock').Account | null} account
+ * @param {import('../api/types').Account | null} account
  */
 function firstRunTarget(path, account) {
   if (!account) return SIGNED_OUT.includes(path) ? null : '/entrada'
-  if (!read('family')) return FIRST_RUN.includes(path) ? null : '/familia/contanos'
+  if (!read('family')) return FIRST_RUN.includes(path) ? null : '/familia/corregir'
   if ([...SIGNED_OUT, '/verificar', '/familia/contanos', '/familia/revisar'].includes(path)) return '/'
   return null
 }

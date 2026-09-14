@@ -2,7 +2,7 @@
 
 Rules for `web/`, on top of the repo-wide rules in the root [`AGENTS.md`](../AGENTS.md). Read both before changing anything here.
 
-`web/` is the React SPA: Vite 7, React 19, TanStack Router file routes, and plain JavaScript with JSDoc. Every 0.1 screen from the Plaza handoff is built. Accounts are real, and using the app needs a valid session; everything else runs on mocked data.
+`web/` is the React SPA: Vite 7, React 19, TanStack Router file routes, and plain JavaScript with JSDoc. Every 0.1 screen from the Plaza handoff is built and runs on the API, and using the app needs a valid session. Only email verification is mocked, and Google sign-in waits for 0.3.
 
 ## Commands
 
@@ -15,7 +15,7 @@ npm run build      # production build to web/dist, which Caddy serves
 
 - **The dev server proxies `/api`** to the Docker stack at `https://juguemos.local:3000`, so signing in needs `docker compose up`.
 - **The service worker exists only in production builds.** To see a change at `juguemos.local` or on a phone, run `npm run build`.
-- **There are no automated tests yet.** Check changes in a browser at the 390 px design width, signed in with the seeded account (`npm run seed -w api`), including offline, night mode, and reduced motion.
+- **There are no automated tests yet.** Check changes in a browser at the 390 px design width, signed in with a demo account (`npm run seed -w api`; the logins are in the README), including offline, night mode, and reduced motion.
 
 ## Layout
 
@@ -29,7 +29,7 @@ src/
   components/         the primitives every screen is built from
   hooks/              browser APIs as hooks: back, online, wake lock, countdown, theme
   lib/                plain logic: the local store, the night-mode rule, formatting, updates
-  api/                the only door to data: the real account API plus the mock of everything else
+  api/                the only door to data: one module per API area, plus the mock of email verification
   styles/             tokens, base, components, and screens CSS, imported in that order by index.css
 ```
 
@@ -58,9 +58,9 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 - **The root layout** (`routes/__root.jsx`) holds the session guard, `ThemeProvider`, and `UpdateBanner`.
   - Before each navigation the guard awaits `ensureSession()` from `api/auth.js`, which confirms the session with `/api/me` at most every five minutes and again when the app returns to the foreground.
   - A 401 signs the device out. No answer (offline, a weak signal, a server failure) keeps the cached account, so the last juego stays readable offline.
-  - Then the first run holds its order: no account goes to `/entrada`, and no family to `/familia/contanos`.
+  - Then the first run holds its order: no account goes to `/entrada`, and no family to the family form, `/familia/corregir`. Reading a family from free text needs the LLM (JUG-11), so `/familia/contanos` and `/familia/revisar` wait.
 - **Primitives** live in `components/`: `Screen` (with `Header`, `Body`, `Footer`, and `BackButton`), `PrimaryButton`, `SecondaryButton`, `QuietButton`, `TertiaryButton`, `GoogleButton`, `Dots`, `Card`, `MetaLabel`, `Label`, `Skeleton`, `Field`, `StepList`, `Drawer`, `Wordmark`, `FamilyCard`, `ActivityView`, and `ThemeToggle`. Build screens from them rather than one-off layouts. `Screen`'s `tone` sets the page background.
-- **Data comes only from `src/api`.** `api/index.js` re-exports the mock (`mock.js`, with fixtures in `fixtures.js`) and overrides it with what is real (`auth.js`, the account). Screens never call `fetch` themselves.
+- **Data comes only from `src/api`.** It has one module per area (`auth.js`, `family.js`, `activities.js`, `stories.js`), all calling through `request` in `http.js`, re-exported by `index.js`. Screens work with the shapes in `api/types.js`, and the modules translate the API's shapes to them. `mock.js` holds only email verification. Screens never call `fetch` themselves, and the web hardcodes no data.
 - **Local state** is `lib/store.js`: one localStorage key per piece of state, listed in its `Key` typedef, read with `useStored(key)` and written with `write(key, value)`. It caches the account, the family, activities, stories, the timer, and story positions, which is what keeps the last juego and the open story readable offline. A new key goes in the typedef.
 - **Failures** go through `failureText()` in `lib/format.js`: "Uy, algo falló. ¿Probamos de nuevo?", the offline line, or an `AccountError`'s own words. No error codes reach the screen.
 - **Styles** use the tokens in `styles/tokens.css`, which have light and dark sets. Never write a hex value in a component or screen, so nothing depends on a light background. Screen-specific CSS goes in `styles/screens.css`.
@@ -80,9 +80,9 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 5. If the screen must be reachable before the family exists, update the guard in `__root.jsx`.
 6. Add it to the routes table above.
 
-## Moving an endpoint from the mock to the API
+## Calling a new endpoint
 
-Write the real function next to `api/auth.js`, or in a new file for another domain, with the same name and shape as the mock's. Then re-export it from `api/index.js`; named exports win over the mock's `export *`. Keep the mock's error types (`OfflineError` when the network fails), so screens and `failureText()` keep working unchanged. The endpoint's side is in [`api/AGENTS.md`](../api/AGENTS.md).
+Write the function in its area's module in `api/`, or in a new one, calling `request` from `http.js`. Translate the API's shape to the one in `api/types.js`, and re-export the function from `api/index.js`. `request` throws `OfflineError` when the network fails and `ApiError`, with the status and code, when the API refuses, so screens and `failureText()` keep working unchanged. The endpoint's side is in [`api/AGENTS.md`](../api/AGENTS.md).
 
 ## Open decisions
 

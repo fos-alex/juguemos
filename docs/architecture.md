@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.4 · September 2026 · Owner: Alex Otero
+**Version:** 0.5 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -133,13 +133,19 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **If content grows heavy, a CMS with its own database joins later.** The product side of the catalog — drafts, review states, versions, reviewer accounts, the whole content factory described in the release plan's 0.7 — may one day be more than the app database wants to hold. The answer when we get there is not to stretch PostgreSQL further, but to stand up a CMS with its own database that publishes finished, reviewed content to the app. The v1 schema only needs to keep published content cleanly separated from family data, so that split, if it ever comes, is cheap.
 
-Accounts are the first tables in place. Better Auth uses `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family. Signing up creates only the account; a family is created explicitly, never as a side effect.
+**Accounts.** Better Auth uses `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family. Signing up creates only the account; a family is created explicitly, never as a side effect. Every table uses plural names and snake_case columns, Better Auth's included (mapped in `api/src/auth/schema.js`).
 
-**Seeds.** Data for exploring the app locally comes from a seeder (`api/seeds/`), never from application code. It creates records through Better Auth and the services, the same way the app does, skips whatever already exists, and refuses to run in production. Every table uses plural names and snake_case columns, Better Auth's included (mapped in `api/src/auth/schema.js`).
+**The family profile** is `kids`, `pets`, `interests`, and `toys`, each kept in the parent's order and with names exactly as typed. A kid's age is stored as the years the parent gave and the day they gave it, so it stays current without asking for a birthday. Saving the profile updates rows by id, so ids stay stable for what will reference them later.
+
+**The catalog lives in the database** (JUG-9): `activity_templates`, tagged with the full taxonomy (age range in months, minutes, place, energy, categories, small space, materials, skills, and safety), and `story_templates`. Templates have slots (`{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, `{interest}`) that code fills from the profile (`api/src/catalog/slots.js`); there is no LLM in 0.1. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
+
+**What a family was given is saved as they saw it.** `activities` holds each suggestion as it was tailored, and `stories` each story as it was written, so a story reads again exactly the same. Stories written by an LLM (JUG-71) will be saved to `stories` too, marked by `source`.
+
+**Seeds.** Data never comes from application code; seeds load it through Better Auth and the services, the same way the app does, and skip whatever already exists. The catalog seed (`api/seeds/catalog/`) runs on every `docker compose up`, right after the migrations, and never overwrites a template already in the database, since the database is the catalog's home. The development seed (`api/seeds/development.js`, an account for the example family) refuses to run in production.
 
 **Migrations.** The schema is only ever changed by versioned SQL files in `api/migrations/`, applied in order by node-pg-migrate and recorded in a `pgmigrations` table. Each runs in its own transaction, and an advisory lock makes concurrent runs wait their turn, so applying them is idempotent. A one-shot `migrate` service runs them on every `docker compose up`, after the image builds and before the API starts, and the API only starts if they succeed. They can't run inside `docker build` itself, because the database isn't reachable there. Application code never creates tables, and a migration that has run anywhere is never edited.
 
-The detailed schema is not settled. It is the next major piece of design work, and it is the backbone of the product, since the tags on activities, toys, goals, and tips determine what the app can actually do.
+The rest of the schema (goals, tips, moments, special days, toy descriptions) arrives with the releases that need it. The tags on activities, toys, goals, and tips stay the backbone of the product, since they determine what the app can actually do.
 
 Two data rules carry over from the constitution and shape the schema:
 
@@ -184,7 +190,8 @@ Version 1 runs a single environment. A separate staging environment is worth add
 - Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path.
 - Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
-- How the activity catalog and holiday calendar are versioned and deployed: as database records, as files in the repo, or both.
+- How the holiday calendar is versioned and deployed. The activity and story catalog lives in the database, loaded by seeds (JUG-9).
+- How a template already in the database is revised before the 0.7 content backend exists: a migration, or a reviewed seed that updates on purpose.
 
 ## 12. Change log
 
@@ -194,3 +201,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.2 | September 2026 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets set (mid-range Android and iPhone; desktop not a target). Service worker and offline rules. `juguemos.local` for local development. Fastify for the API. PostgreSQL now, a CMS with its own database if content grows. First scaffold committed: Compose, Caddy, API, placeholder page. |
 | 0.3 | September 2026 | SPA built from the Plaza prototype in JavaScript with JSDoc (TypeScript tried and dropped): Vite, TanStack Router with per-route code splitting, npm workspaces (api, web) with no shared package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |
 | 0.4 | September 2026 | Authentication decided: Better Auth with email and password, sessions in PostgreSQL, sign-up behind an email allowlist. First tables: users, sessions, families, and family members. API foundations: layered by domain (routes, controllers, services), validated config, versioned SQL migrations with node-pg-migrate run by a one-shot service before the API starts, and integration tests against a real database. |
+| 0.5 | September 2026 | The web runs on the API with no hardcoded data. Family profile (kids, pets, interests, toys), the activity and story catalog in the database with code-filled slots (no LLM in 0.1), and every suggested activity and written story saved per family. Catalog seeds load on every deploy; development seeds stay local. |

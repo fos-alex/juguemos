@@ -8,7 +8,7 @@ import { useGoBack } from '../hooks/useGoBack'
 import { failureText } from '../lib/format'
 import { read } from '../lib/store'
 
-/** @typedef {import('../api/fixtures').Family} Family */
+/** @typedef {import('../api/types').Family} Family */
 /** @typedef {{ kids: { name: string, age: string }[], pet: string, interests: string[], toys: string[] }} FormState */
 
 export const Route = createFileRoute('/familia/corregir')({

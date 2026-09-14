@@ -4,9 +4,10 @@
  * Email verification is still mocked in ./mock, and Google arrives in 0.3.
  */
 import { clearAll, read, write } from '../lib/store'
-import { OfflineError } from './mock'
+import { loadFamily } from './family'
+import { ApiError, request } from './http'
 
-/** @typedef {import('./mock').Account} Account */
+/** @typedef {import('./types').Account} Account */
 
 /** A failure the parent can fix, with the words to tell them. */
 export class AccountError extends Error {}
@@ -32,22 +33,12 @@ let lastCheck = null
 
 /** @param {string} path @param {object} body */
 async function post(path, body) {
-  let response
   try {
-    response = await fetch(`/api/auth${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-  } catch {
-    throw new OfflineError('Sin conexión')
+    return await request('POST', `/auth${path}`, body)
+  } catch (error) {
+    const message = error instanceof ApiError && error.code ? MESSAGES[error.code] : undefined
+    throw message ? new AccountError(message) : error
   }
-  const data = await response.json().catch(() => null)
-  if (!response.ok) {
-    const message = MESSAGES[data?.code]
-    throw message ? new AccountError(message) : new Error(data?.message ?? `HTTP ${response.status}`)
-  }
-  return data
 }
 
 /** @param {{ name: string, email: string, emailVerified: boolean }} user */
@@ -65,9 +56,10 @@ export async function createAccount(input) {
   return remember(user)
 }
 
-/** @param {{ email: string, password: string }} input @returns {Promise<Account>} */
+/** Signs in and brings the account's family into this browser. @param {{ email: string, password: string }} input @returns {Promise<Account>} */
 export async function signIn(input) {
   const { user } = await post('/sign-in/email', input)
+  await loadFamily()
   return remember(user)
 }
 
@@ -103,8 +95,11 @@ async function checkSession() {
       return null
     }
     if (!response.ok) return read('account')
-    const { user } = await response.json()
-    return remember(user)
+    const { user, family } = await response.json()
+    const account = remember(user)
+    // A family saved before this browser was cleared, or on another one, comes back too.
+    if (family && !read('family')) await loadFamily()
+    return account
   } catch {
     return read('account')
   }

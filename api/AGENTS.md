@@ -25,30 +25,33 @@ src/
   server.js           starts the app: loads config, opens the pool, listens, closes cleanly
   app.js              buildApp(): wires every dependency and route, here and nowhere else
   config.js           reads and validates the environment, once, at startup
-  <domain>/           one folder per domain: accounts/, families/, health/
+  <domain>/           one folder per domain: accounts/, families/, activities/, stories/, health/
     <domain>.routes.js      URLs, route config (`public`), and response schemas
     <domain>.controller.js  HTTP: reads the request, calls services, returns the body
     <domain>.service.js     business logic and SQL
+  catalog/            template slots, filled from the family's own words
   auth/               Better Auth: the instance, its /auth/* routes, the session preHandler, the table mapping
   db/                 withTransaction, the migration runner, the seeder
   migrate.js          entry point for `npm run migrate` and the migrate service
   seed.js             entry point for `npm run seed`
 migrations/           versioned plain-SQL migrations, applied in order
-seeds/development.js  the development data
+seeds/catalog/        the activity and story templates
+seeds/development.js  the demo accounts and their families
 test/                 integration tests, with helpers.js
 ```
 
 ## How it fits together
 
-- **Layers.** Routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the SQL. A domain may skip a layer it doesn't need: `families/` has only a service so far.
+- **Layers.** Routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the SQL. A domain may skip a layer it doesn't need.
 - **Factories with explicit dependencies.** Services are `createXService({ db })`, and controllers are `createXController({ ...services })`. Route plugins receive their controller as an option. Only `app.js` creates and passes them, so tests can build the whole app on a scratch database.
 - **Configuration** is read only in `config.js`. A missing or malformed setting stops the process at startup with a message saying what to set. A new setting goes in `config.js`, in `.env.example`, and in what `docker-compose.yml` passes to the `api` service.
 - **The `/api` prefix** is stripped by Caddy before the request reaches the API. Register routes without it: `/me` here is `/api/me` to the browser. `auth/auth.routes.js` puts it back for Better Auth, which routes on its full base path.
 - **Every route has a response schema.** The schema is also the allowlist of what leaves the server, since fields not listed are never serialized. That is how private data stays in.
 - **Errors have one shape**, `{ error }`, from `handleError` in `app.js`. Throw an error with a 4xx `statusCode` for a client's own mistake, and its message is sent back. Anything else becomes a logged 500 with the message "internal error", so internals are never described.
-- **Every route needs a session by default.** A `preHandler` hook in `app.js` runs `requireSession` (`auth/session.js`) on every route: without a session it answers 401, and with one the signed-in adult is on `request.session` (`{ user, session }`). A route open to anyone sets `config: { public: true }`, as health and Better Auth's routes do. Make a route public only when it truly must be.
+- **Every route needs a session by default.** A `preHandler` hook in `app.js` runs `requireSession` (`auth/session.js`) on every route: without a session it answers 401, and with one the signed-in adult is on `request.session` (`{ user, session }`). A route open to anyone sets `config: { public: true }`, as health and Better Auth's routes do. Make a route public only when it truly must be. Routes about the family also run `requireFamily` (`families/require-family.js`), which answers 409 until the adult has saved a family and puts it on `request.familyId`.
 - **SQL** is parameterised (`$1`, `$2`), never built from strings. Writes that must succeed or fail together go through `withTransaction(db, async (client) => …)`.
-- **Families:** each adult has one family for now. The second parent joins in 0.6, and kids, the pet, and toys arrive with the data model.
+- **Families:** each adult has one family for now, and the second parent joins in 0.6. The profile holds kids, pets, interests, and toys.
+- **Templates have slots,** `{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, and `{interest}`, filled by code in `catalog/slots.js` (no LLM in 0.1). Toys are known only by name, so write templates any toy fits, never make a word agree in gender with a slot, and never address anyone by a toy's name. "a {toy}" and "de {toy}" contract to "al" and "del" on their own. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
 
 ## Accounts and the guardrails
 
@@ -59,7 +62,9 @@ test/                 integration tests, with helpers.js
 ## Migrations and seeds
 
 - **Schema changes are migrations.** Create one with `npm run migration:create -w api -- <name>` and write plain SQL with an up and a down section. Never create tables from application code, and never edit a migration that has already run anywhere; add a new one. The runner takes a lock and records what it applied, so running it twice is safe.
-- **Data for exploring the app comes from seeds,** never from application code. No placeholder records or side effects that exist only to have data. Add development data to `seeds/development.js`. The seeder goes through Better Auth and the services, the way the app does, and skips whatever already exists. The seeded passwords are in the repo, so seeds never run anywhere real.
+- **Data comes from the database, loaded by seeds,** never from application code or the web. No placeholder records or side effects that exist only to have data.
+  - **Catalog templates** are in `seeds/catalog/` and load on every `docker compose up`, right after the migrations. A template already in the database is never overwritten: the database is the catalog's home (JUG-9).
+  - **Demo accounts** are in `seeds/development.js`, each with a different family, and the README lists their logins. `npm run seed` loads them with the catalog, through Better Auth and the services, the way the app does, and skips whatever already exists. Their passwords are in the repo, so they never run anywhere real. Add a family setup there, and to the README's table, when exploring the app needs one.
 
 ## Tests
 

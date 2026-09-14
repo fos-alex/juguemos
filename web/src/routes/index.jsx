@@ -8,7 +8,7 @@ import { Footer, Screen } from '../components/Screen'
 import { Wordmark } from '../components/Wordmark'
 import { useOnline } from '../hooks/useOnline'
 import { useTheme } from '../hooks/useTheme'
-import { familyLine } from '../lib/format'
+import { failureText, familyLine, placeText } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/')({
@@ -31,6 +31,7 @@ function HomeScreen() {
   const lastId = useStored('lastActivityId')
   const last = useStored('activities')?.[lastId]
   const [request, setRequest] = useState(/** @type {'idle' | 'loading' | 'slow' | 'error'} */ ('idle'))
+  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [offlineTaps, setOfflineTaps] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const { dark, toggle: toggleTheme } = useTheme()
@@ -51,7 +52,8 @@ function HomeScreen() {
     try {
       const activity = await suggestActivity({ after: lastId })
       void navigate({ to: '/idea/$id', params: { id: activity.id } })
-    } catch {
+    } catch (error) {
+      setFailure(failureText(error))
       setRequest('error')
     } finally {
       window.clearTimeout(slow)
@@ -108,7 +110,7 @@ function HomeScreen() {
               </MetaLabel>
               <span className="card-title">{last.title}</span>
               <span className="card-meta">
-                {last.minutes} min · {last.place}
+                {last.minutes} min · {placeText(last.place)}
               </span>
             </Card>
           )}
@@ -129,7 +131,7 @@ function HomeScreen() {
         )}
         {request === 'error' && (
           <p className="home__status" role="alert">
-            Uy, algo falló. ¿Probamos de nuevo?
+            {failure}
           </p>
         )}
         <SecondaryButton size="lg" disabled={busy} unavailable={!online} onClick={openStories}>

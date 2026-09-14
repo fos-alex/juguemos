@@ -37,7 +37,7 @@ An npm workspace with two projects, run locally by Docker Compose behind Caddy:
 | `docker-compose.yml` | Postgres, the one-shot migrations, the API, and Caddy |
 | `docs/` | Product, architecture, releases, and the Plaza design handoff |
 
-Every 0.1 screen is built. Accounts are real (sign-up, sign-in, sign-out, and `/api/me`), and using the app needs a valid session; everything else in the app still runs on mocked data.
+Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, and activities and stories from templates in the database. Only Google sign-in (0.3) and email verification are still missing, since they need services Juguemos doesn't have yet.
 
 **JSDoc guides, nothing enforces it.** Both projects are plain JavaScript. JSDoc types are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or a `tsconfig` or `jsconfig`.
 

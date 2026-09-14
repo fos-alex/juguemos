@@ -5,7 +5,7 @@ import { MetaLabel } from '../components/Card'
 import { Body, Footer, Header, Screen } from '../components/Screen'
 import { useCountdown } from '../hooks/useCountdown'
 import { useGoBack } from '../hooks/useGoBack'
-import { clockText } from '../lib/format'
+import { clockText, placeText } from '../lib/format'
 import { useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/idea/$id/reloj')({
@@ -44,7 +44,7 @@ function TimerScreen() {
         onBack={goBack}
         trailing={
           <MetaLabel tone="grass">
-            {activity.minutes} min · {activity.place}
+            {activity.minutes} min · {placeText(activity.place)}
           </MetaLabel>
         }
       />
