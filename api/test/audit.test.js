@@ -11,10 +11,22 @@ const llm = {
   },
 }
 
+const SPOKEN = 'Milán tiene un tren de madera que no suelta.'
+const transcriber = {
+  async transcribe() {
+    return SPOKEN
+  },
+}
+
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({ signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com'], llm, auditTranscripts: true })
+  api = await startApi({
+    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com'],
+    llm,
+    transcriber,
+    auditTranscripts: true,
+  })
 })
 after(() => api.close())
 
@@ -31,6 +43,18 @@ test('with the audit on, the family text is kept as the parent sent it', async (
   const response = await understand(api.app, cookie)
   assert.equal(response.statusCode, 200)
   assert.deepEqual(await rowsOf(id), [{ user_id: id, family_id: null, source: 'family_text', text: TEXT, redacted_at: null }])
+})
+
+test("with the audit on, a voice note's transcription is kept too", async () => {
+  const { id, cookie } = await signUpAs(api, 'dani@example.com')
+  const response = await api.app.inject({
+    method: 'POST',
+    url: '/voice/transcribe',
+    headers: { cookie, 'content-type': 'audio/webm;codecs=opus' },
+    payload: Buffer.alloc(4096, 7),
+  })
+  assert.equal(response.statusCode, 200)
+  assert.deepEqual(await rowsOf(id), [{ user_id: id, family_id: null, source: 'voice_note', text: SPOKEN, redacted_at: null }])
 })
 
 test('once the adult has a family, the row names it, and deleting the family deletes the rows', async () => {

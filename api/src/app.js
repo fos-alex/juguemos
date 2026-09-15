@@ -26,6 +26,10 @@ import { createStoriesService } from './stories/stories.service.js'
 import { createToysController } from './toys/toys.controller.js'
 import { toysRoutes } from './toys/toys.routes.js'
 import { createToysService } from './toys/toys.service.js'
+import { createTranscriber } from './voice/transcriber.js'
+import { createVoiceController } from './voice/voice.controller.js'
+import { voiceRoutes } from './voice/voice.routes.js'
+import { createVoiceService } from './voice/voice.service.js'
 
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
@@ -39,11 +43,14 @@ import { createToysService } from './toys/toys.service.js'
  *   random?: () => number,
  *   now?: () => Date,
  *   llm?: ReturnType<typeof createLlm> | null,
+ *   transcriber?: ReturnType<typeof createTranscriber> | null,
  * }} options `random` drives which template comes next; tests can pin it.
- * `now` picks the moment a story is written for; `llm` overrides the wire,
- * so tests can speak for the model. Without a key, stories come from templates.
+ * `now` picks the moment a story is written for; `llm` and `transcriber`
+ * override the wire, so tests can speak for the model and the speech-to-text
+ * service. Without a key, stories come from templates; without STT_URL, voice
+ * notes are off.
  */
-export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm }) {
+export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber }) {
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
   const activities = createActivitiesService({ db, families, random })
@@ -53,6 +60,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.
   const audit = createAuditService({ db, enabled: config.audit.transcripts })
   const understanding = createUnderstanding({ llm: model, audit })
+  const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families, audit })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
   // After the session hook below: routes about the family need one saved.
@@ -77,6 +85,8 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(toysRoutes, { controller: createToysController({ toys }), guards: familyGuards })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
+  // No family guard: onboarding records a note before the family exists.
+  app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
   if (config.admin.enabled) app.register(adminRoutes, { controller: createAdminController({ activities }) })
 

@@ -33,14 +33,25 @@ const LLM_PROVIDERS = {
  */
 
 /**
+ * @typedef {object} SttConfig
+ * @property {string | null} url an OpenAI-compatible transcriptions API, up to its /v1; without it voice notes are off
+ * @property {string} model as the service names it
+ * @property {string | null} apiKey for a hosted service; the self-hosted one needs none
+ */
+
+/**
  * @typedef {object} Config
  * @property {number} port
  * @property {string} databaseUrl
  * @property {AuthConfig} auth
  * @property {LlmConfig} llm
+ * @property {SttConfig} stt speech to text, for voice notes
  * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
  * @property {{ transcripts: boolean }} audit whether parents' own words are kept in audit_transcripts (JUG-116)
  */
+
+/** Whisper large-v3-turbo, as the self-hosted speaches server names it. */
+export const DEFAULT_STT_MODEL = 'deepdml/faster-whisper-large-v3-turbo-ct2'
 
 export class ConfigError extends Error {}
 
@@ -67,10 +78,23 @@ export function loadConfig(env = process.env) {
     databaseUrl: loadDatabaseUrl(env),
     auth: { url, secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
     llm: loadLlm(env, url),
+    stt: loadStt(env),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
     // Off unless set: the texts hold the family's names.
     audit: { transcripts: flag(env, 'AUDIT_TRANSCRIPTS') },
   }
+}
+
+/**
+ * The speech-to-text service for voice notes. Compose points STT_URL at its
+ * own Whisper server; a hosted service needs its URL, model, and key instead.
+ * @param {NodeJS.ProcessEnv} env
+ * @returns {SttConfig}
+ */
+function loadStt(env) {
+  const url = env.STT_URL?.trim() || null
+  if (url && !URL.canParse(url)) throw new ConfigError(`STT_URL must be a URL, not "${env.STT_URL}"`)
+  return { url, model: env.STT_MODEL?.trim() || DEFAULT_STT_MODEL, apiKey: env.STT_API_KEY?.trim() || null }
 }
 
 /**

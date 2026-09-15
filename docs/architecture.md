@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.10 · September 2026 · Owner: Alex Otero
+**Version:** 0.11 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -77,6 +77,8 @@ The interface is phone-first and one-handed, since a parent is often holding a t
 
 Voice is the primary input, captured in the browser and sent to the API for transcription. Browser support and permissions for microphone capture need to be validated early on a real iPhone, which is the riskiest target.
 
+**Voice notes** (JUG-95) are recorded by `web/src/lib/recorder.js`, a module with no React in it, so a native client can replace it. It uses `MediaRecorder` at 32 kbps: Chrome records Opus in WebM, Firefox Opus in Ogg, and Safari AAC in MP4, and the API takes all three. The microphone is released as soon as a note ends, a note stops at three minutes, and the audio is never stored on the device. The first press asks for permission, and on Safari the prompt takes the press with it, so that first attempt only asks and the next one records. The recorder has not yet been checked on a real iPhone (JUG-89); its findings go here.
+
 ### 5.2 Offline and the service worker
 
 Play happens in plazas and bedrooms with weak signal, so the app keeps working when the connection is poor: current suggestions, active goals, and the last story a parent opened remain readable offline. Two hard rules govern the how, born of experience with service worker pain:
@@ -119,7 +121,7 @@ Responsibilities that belong to the server and nowhere else:
 
 - All database access.
 - All AI calls, including activity tailoring and story generation, with the safety constraints of each activity template enforced server-side.
-- Voice transcription, after which the audio is discarded rather than stored.
+- Voice transcription, after which the audio is discarded rather than stored. `POST /voice/transcribe` reads the recording into memory (8 MB at most), passes it to the speech-to-text service with the family's names as hints, and returns only the words. The audio is never written to disk or logged.
 - Calls to the weather and maps providers, with responses cached so the same neighborhood is not queried repeatedly.
 - The holiday calendar, maintained per country and per year, starting with Argentina.
 
@@ -165,7 +167,7 @@ Two data rules carry over from the constitution and shape the schema:
 | Service | Used for | Notes |
 |---|---|---|
 | LLM provider | Activity tailoring, story generation, onboarding extraction, agent conversation | Stories use OpenCode Go or OpenRouter, chosen with `LLM_PROVIDER`, and the model with `LLM_MODEL` (JUG-115). Which to keep is still open (JUG-7). OpenRouter requests only go to upstream providers that don't store or train on prompts. Calls are server-side only. |
-| Speech-to-text | Voice onboarding and voice input | Must handle Rioplatense Spanish, children's names, and background noise. Audio is discarded after transcription. |
+| Speech-to-text | Voice onboarding and voice input | Must handle Rioplatense Spanish, children's names, and background noise. Audio is discarded after transcription. Proposed, pending Alex's choice (JUG-88): Whisper large-v3-turbo on the droplet, run by speaches as the `stt` service in Compose, so audio never leaves the server. The API speaks the OpenAI transcriptions API, so a hosted service (Groq, OpenAI) is a change of `STT_URL`, `STT_MODEL`, and `STT_API_KEY`. |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas, parks, and kid-friendly places | Maps data is considered sufficient for v1; no curated event listings. |
 
@@ -196,7 +198,7 @@ Version 1 runs a single environment. A separate staging environment is worth add
 ## 11. Open questions
 
 - Which LLM provider to keep, OpenCode Go or OpenRouter (either works, set in the environment), and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
-- Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path.
+- Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path, and whether the droplet's CPU transcribes fast enough to run Whisper itself (JUG-88).
 - Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
 - How the holiday calendar is versioned and deployed. The activity and story catalog lives in the database, loaded by seeds (JUG-9).
@@ -214,4 +216,5 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |
 | 0.8 | September 2026 | Caddy's image builds the web app, so every deploy ships it. The service worker updates itself: each deploy's worker takes over, and the page reloads at a safe moment, never mid-story. |
 | 0.9 | September 2026 | Stories can use OpenCode Go or OpenRouter, switched with `LLM_PROVIDER`, with the model set by `LLM_MODEL`. One client serves both. OpenRouter requests refuse upstream providers that store or train on prompts. |
-| 0.10 | September 2026 | `audit_transcripts` keeps the family text and voice note transcriptions for auditing the playtest, only while `AUDIT_TRANSCRIPTS` is on. |
+| 0.10 | September 2026 | Voice notes: a recorder module in the web, `POST /voice/transcribe` in the API, and a self-hosted Whisper server (speaches) as the `stt` service in Compose. Any OpenAI-compatible transcription service can replace it by env var. The audio is kept in memory only. |
+| 0.11 | September 2026 | `audit_transcripts` keeps the family text and voice note transcriptions for auditing the playtest, only while `AUDIT_TRANSCRIPTS` is on. |

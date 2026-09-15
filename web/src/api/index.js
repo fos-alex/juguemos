@@ -7,5 +7,6 @@ export { choosePlaying, loadFamily, saveFamily, understandFamily, upgradeCachedF
 export { addToy, chooseMaterials, editToy, linkToy, loadToyBox, removeToy } from './toys'
 export { NothingFitsError, suggestActivity } from './activities'
 export { storyOptions, writeStory, savedStories, savedStory } from './stories'
+export { transcribe, VoiceOffError } from './voice'
 export { createTemplate, deleteTemplate, listTemplates, loadTemplate, saveTemplate } from './admin'
 export { resendCode, verifyEmail, WrongCodeError } from './mock'

@@ -58,7 +58,7 @@ npm run build      # production build to web/dist, to check it; `docker compose 
 
 ### API
 
-`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `health/`, `auth/`, plus `catalog/` for template slots and `admin/` for the catalog admin): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
+`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `voice/`, `health/`, `auth/`, plus `catalog/` for template slots and `admin/` for the catalog admin): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
 
 The schema is code, in each domain's `<domain>.schema.js`, and drizzle-kit generates the SQL migrations in `api/migrations/` from it. `docker compose up --build` applies them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
 
@@ -86,6 +86,7 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 - **The family profile** (`/api/family`): kids, pets, interests, and toys, saved from the family form. Each adult picks which kids are playing on Home (`/api/family/playing`), and juegos and stories are for those kids.
 - **The toy box** (`/api/family/toys`, `/api/family/materials`): each toy's family name, aliases, description for the AI, whose it is, favorite, and linked toys, plus the household materials the family has. The screens come next (JUG-94).
 - **Activities** (`/api/activities/suggestions`) and **stories** (`/api/stories`), from templates in the database whose slots are filled with the family's own words. The first 15 activities and 6 stories are waiting for Alex's review (JUG-14).
+- **Voice notes** (`/api/voice/transcribe`) on *Contame de tu familia*: hold the mic, talk, and the words land in the text box to check. Compose runs Whisper as the `stt` service. Its first start downloads the model (about 1.6 GB) into a volume, and voice notes fail until that finishes. The audio is never kept.
 
 ### Demo accounts
 
