@@ -42,7 +42,7 @@ sudo update-ca-trust
 **Hot reload.** `.env.example` sets `COMPOSE_FILE=docker-compose.yml:compose.dev.yml`, which adds a development layer on top of the production Compose file:
 
 - Caddy proxies to Vite's dev server on your `web/` folder, so a saved change shows up in the open page without a reload.
-- The API runs your `api/` source with `node --watch` and restarts when a file changes.
+- The API runs your `api/` source and restarts when a file in `api/src` changes (`node --watch-path=api/src`).
 - New migrations and catalog templates apply on the next `docker compose up -d`.
 - There's no service worker in development. A browser that installed the production one, such as the phone, gets a script in its place that removes it and reloads the page.
 

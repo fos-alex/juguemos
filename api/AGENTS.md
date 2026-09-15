@@ -18,7 +18,7 @@ npm run seed -w api                                         # development data; 
 npm run dev -w api                                          # the API outside Docker, reading ../.env
 ```
 
-**Locally, the API hot-reloads.** `compose.dev.yml`, turned on by `COMPOSE_FILE` in `.env`, mounts `api/src`, `api/seeds`, and `api/migrations` into the containers and runs `node --watch`, so the API restarts when a file it imports changes. After a dependency changes in `package.json`, run `docker compose up -d --build`. The production image copies the source instead of mounting it, so on the droplet every change needs a rebuild. Every `up` runs the one-shot `migrate` service first, and the API starts only if it succeeds.
+**Locally, the API hot-reloads.** `compose.dev.yml`, turned on by `COMPOSE_FILE` in `.env`, mounts `api/src`, `api/seeds`, and `api/migrations` into the containers and runs `node --watch-path=api/src`, so the API restarts when a file in `api/src` changes. It watches the folder rather than each file, because a per-file watch misses a file that an editor saves by replacing it (JUG-143). After a dependency changes in `package.json`, run `docker compose up -d --build`. The production image copies the source instead of mounting it, so on the droplet every change needs a rebuild. Every `up` runs the one-shot `migrate` service first, and the API starts only if it succeeds.
 
 ## Layout
 

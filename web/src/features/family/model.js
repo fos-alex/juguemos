@@ -23,6 +23,19 @@ export function familyLine(family) {
   return family.kids.map((kid) => (kid.age == null ? kid.name : `${kid.name}, ${ageText(kid.age)}`)).join(' · ')
 }
 
+const SPANISH_LIST = new Intl.ListFormat('es', { type: 'conjunction' })
+
+/**
+ * Who's playing on this device, by name, joined in Spanish: "Milán",
+ * "Milán y Sofi", "Tomás, Emma y Milán", with "e" before an "i" sound
+ * ("Milán e Inés"). Names stay exactly as written; empty with no kids.
+ * @param {Family | null | undefined} family
+ */
+export function playingNames(family) {
+  const kids = family?.kids ?? []
+  return SPANISH_LIST.format(kids.filter((kid) => kid.playing !== false).map((kid) => kid.name))
+}
+
 /**
  * The family card's rows in a fixed order: each kid, the pet, what they love,
  * the toys. Toy names are joined exactly as typed; only the interests line is

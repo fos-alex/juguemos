@@ -18,7 +18,7 @@ import { ApiError, endSession, OfflineError, request } from '../../shared/http'
 /**
  * The options already on their way, so Home asking for them early and the
  * story screen asking on its own don't both reach the API (JUG-140).
- * @type {{ exclude: string, options: Promise<StoryOption[]> } | null}
+ * @type {{ exclude: string, options: Promise<StoryOption[]>, signal?: AbortSignal } | null}
  */
 let asking = null
 
@@ -34,9 +34,10 @@ let asking = null
  */
 export function storyOptions({ exclude = [], signal } = {}) {
   const key = exclude.join(',')
-  if (asking?.exclude === key) return asking.options
+  // A request its caller already stopped is no use to the next one.
+  if (asking?.exclude === key && !asking.signal?.aborted) return asking.options
   const options = askForOptions(exclude, signal)
-  asking = { exclude: key, options }
+  asking = { exclude: key, options, signal }
   void options
     .catch(() => {})
     .then(() => {

@@ -38,7 +38,6 @@ export function StoryOptionsScreen() {
   const [loading, setLoading] = useState(arrived === 0)
   const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))
   const [notice, setNotice] = useState(/** @type {string | null} */ (null))
-  const started = useRef(false)
   // The stream in flight, so asking for others, or leaving, stops the old one
   // instead of letting two of them write options over each other.
   const asking = useRef(/** @type {AbortController | null} */ (null))
@@ -62,11 +61,11 @@ export function StoryOptionsScreen() {
     }
   }
 
+  // Asks when there's nothing to show, and leaving stops the request. React's
+  // development mode runs this twice, stopping the first request; the second
+  // run asks again.
   useEffect(() => {
-    if (arrived === 0 && !started.current) {
-      started.current = true
-      void load([])
-    }
+    if (arrived === 0) void load([])
     return () => asking.current?.abort()
   }, [])
 

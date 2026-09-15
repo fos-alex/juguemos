@@ -25,9 +25,11 @@ services:
       - api
       - web
 
-  # The API runs your api/ source and restarts when a file it imports changes.
+  # The API runs your api/ source and restarts when a file in api/src changes.
+  # It watches the folder, not each file: an editor that saves by replacing a
+  # file would leave a per-file watch on the old copy (JUG-143).
   api:
-    command: ["node", "--watch", "api/src/server.js"]
+    command: ["node", "--watch-path=api/src", "api/src/server.js"]
     volumes: &api-source
       - ./api/src:/app/api/src:ro
       - ./api/seeds:/app/api/seeds:ro

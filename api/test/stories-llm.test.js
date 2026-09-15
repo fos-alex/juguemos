@@ -320,6 +320,51 @@ test('a reader who leaves mid-story stops the story, and nothing is saved', { ti
   await api2.close()
 })
 
+// The web's development mode stops its first request at once (JUG-142).
+test('a reader who leaves before the first option stops the model, and nothing is saved', { timeout: 10_000 }, async () => {
+  /** @type {() => void} */
+  let sawAbort = () => {}
+  const modelStopped = new Promise((resolve) => (sawAbort = () => resolve(undefined)))
+  // Answers nothing until the reader has gone, like a model still thinking.
+  const waitingLlm = {
+    /** @param {{ signal: AbortSignal }} call */
+    async *stream({ signal }) {
+      await new Promise((_resolve, reject) => {
+        signal.addEventListener(
+          'abort',
+          () => {
+            sawAbort()
+            reject(new DOMException('This operation was aborted', 'AbortError'))
+          },
+          { once: true },
+        )
+      })
+    },
+  }
+  const api2 = await startApi({
+    signupEmails: ['hugo@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('hugo'),
+    llm: waitingLlm,
+  })
+  const { cookie } = await signUpAs(api2, 'hugo@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  // A real connection, so the reader can hang up before any option exists.
+  const address = await api2.app.listen({ port: 0, host: '127.0.0.1' })
+  const reader = new AbortController()
+  const asked = fetch(`${address}/stories/options`, { headers: { cookie }, signal: reader.signal })
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  reader.abort()
+  await assert.rejects(asked)
+  await modelStopped
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const { rows } = await api2.pool.query('select count(*)::int as n from story_plots')
+  assert.equal(rows[0].n, 0)
+  await api2.close()
+})
+
 test('when the model will not answer, the family hears about it, not a template', async () => {
   const deadLlm = fakeLlm(() => '')
   const api2 = await startApi({

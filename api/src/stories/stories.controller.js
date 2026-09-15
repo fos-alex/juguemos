@@ -42,12 +42,23 @@ const leavingSignal = (reply) => {
  * regular response, so those failures keep their status and their body;
  * whatever happens after becomes one `error` event, since a server error is
  * never described and the failure line in the web does the talking.
+ * A reader who left before the first event isn't a failure: nobody is there
+ * to answer, so the stream just ends, with nothing logged.
  * @param {import('fastify').FastifyReply} reply
  * @param {AsyncGenerator<{ type: string }, void, void>} stream
  * @param {string} last the event type the stream ends with
+ * @param {AbortSignal} signal aborts when the reader leaves
  */
-const sendEvents = async (reply, stream, last) => {
-  const first = await stream.next()
+const sendEvents = async (reply, stream, last, signal) => {
+  let first
+  try {
+    first = await stream.next()
+  } catch (error) {
+    if (!signal.aborted) throw error
+    reply.hijack()
+    reply.raw.end()
+    return
+  }
   reply.hijack()
   reply.raw.writeHead(200, {
     'content-type': 'text/event-stream',
@@ -82,12 +93,9 @@ export function createStoriesController({ stories }) {
      */
     async options(request, reply) {
       const { exclude = [] } = /** @type {{ exclude?: string[] }} */ (request.query)
-      const stream = await stories.optionsStream(familyOf(request), {
-        exclude,
-        userId: userOf(request).id,
-        signal: leavingSignal(reply),
-      })
-      await sendEvents(reply, stream, 'done')
+      const signal = leavingSignal(reply)
+      const stream = await stories.optionsStream(familyOf(request), { exclude, userId: userOf(request).id, signal })
+      await sendEvents(reply, stream, 'done', signal)
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
@@ -109,11 +117,12 @@ export function createStoriesController({ stories }) {
      */
     async writeStream(request, reply) {
       const { id, keyword } = /** @type {{ id?: string, keyword?: string }} */ (request.body)
-      const asked = { signal: leavingSignal(reply), userId: userOf(request).id }
+      const signal = leavingSignal(reply)
+      const asked = { signal, userId: userOf(request).id }
       const stream = keyword
         ? await stories.writeKeywordStream(familyOf(request), keyword, asked)
         : await stories.writeStream(familyOf(request), /** @type {string} */ (id), asked)
-      await sendEvents(reply, stream, 'story')
+      await sendEvents(reply, stream, 'story', signal)
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */

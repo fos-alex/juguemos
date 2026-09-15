@@ -1,4 +1,5 @@
 import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
+import { playingNames } from '../../family'
 import { stopTimer } from '../api'
 import { placeText } from '../model'
 import { clockText } from '../../../shared/format'
@@ -20,6 +21,8 @@ export function TimerScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/idea/$id', { id })
   const activity = useStored('activities')?.[id]
+  // The kids playing on this device (JUG-107), for the hint (JUG-141).
+  const names = playingNames(useStored('family'))
   const timer = useStored('timer')
   const mine = timer?.activityId === id
   const remaining = useCountdown(mine ? timer.endsAt : null)
@@ -48,7 +51,11 @@ export function TimerScreen() {
         <p className="timer__clock" role="timer" aria-label={`Quedan ${clockText(remaining)}`}>
           {clockText(remaining)}
         </p>
-        <p className="timer__hint">Dejá el teléfono. El reloj sigue solo.</p>
+        <p className="timer__hint">
+          Dejá el teléfono y {names ? `disfrutá jugar con ${names}` : 'disfrutá el juego'}.
+          <br />
+          El reloj sigue solo.
+        </p>
       </Body>
       <Footer>
         <SecondaryButton size="lg" outline="primary" onClick={goBack}>

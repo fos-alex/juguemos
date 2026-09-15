@@ -270,9 +270,9 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
           {/* Tapping anywhere but the mic ends the spotlight. */}
           <button type="button" className="voice-spotlight" aria-label="Prefiero escribirlo" onClick={endSpotlight} />
           <div className="voice-spotlight__hint" role="note">
-            <p className="voice-spotlight__title">Lo más fácil: contámelo en un audio.</p>
+            <p className="voice-spotlight__title">Contámelo en un audio.</p>
             <p className="voice-spotlight__text">Mantené apretado el micrófono mientras hablás, y soltalo para mandarlo.</p>
-            <p className="voice-spotlight__skip">Tocá afuera para escribirlo.</p>
+            <p className="voice-spotlight__skip">También podés escribirlo.</p>
           </div>
         </>
       )}
