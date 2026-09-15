@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { after, before, test } from 'node:test'
-import { createFamiliesService } from '../src/families/families.service.js'
-import { createStoriesService } from '../src/stories/stories.service.js'
+import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
 /** @param {string} slug @param {string} title */
@@ -31,8 +30,8 @@ before(async () => {
   api = await startApi({
     signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eli@example.com'],
   })
-  const stories = createStoriesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
-  for (const each of TEMPLATES) await stories.addTemplate(each)
+  const catalog = createCatalogService({ db: api.db })
+  for (const each of TEMPLATES) await catalog.addStoryTemplate(each)
 })
 after(() => api.close())
 
