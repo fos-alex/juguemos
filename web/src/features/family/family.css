@@ -45,10 +45,23 @@
   color: transparent;
 }
 
+/* The help line, with "Reiniciar" (or "Deshacer") to its right. */
+.tell__help-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .tell__help {
+  flex: 1;
   font-size: 15px;
   line-height: 1.4;
   color: var(--ink-muted);
+}
+
+.tell__help-row > .btn--tertiary.btn--inline {
+  flex: none;
+  align-self: center;
 }
 
 .tell .screen__footer {
@@ -75,7 +88,7 @@
 }
 
 /* The lock target sits over this space; keep the layout, hide what's under it. */
-.tell--recording .tell__help,
+.tell--recording .tell__help-row,
 .tell--recording .tell__voice-message,
 .tell--recording .tell__body > .btn--tertiary {
   visibility: hidden;

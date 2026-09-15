@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { transcribe, VoiceOffError } from '../api'
+import { introSeen, markIntroSeen, transcribe, VoiceOffError } from '../api'
+import { haptic } from '../haptics'
 import { OfflineError } from '../../../shared/http'
 import { clockText, failureText } from '../../../shared/format'
 import { canRecord, MicDeniedError, startRecording } from '../recorder'
@@ -22,7 +23,7 @@ const TICK_MS = 90
  */
 /** @typedef {{ text: string, retry?: () => void }} VoiceMessage */
 
-// Voice pass pending: every line below, "Pasando a texto", and "Enviar".
+// Voice pass pending: every line below, "Transcribiendo", "Enviar", and the spotlight's lines.
 const HOLD_TO_TALK = 'Mantené apretado el micrófono mientras hablás.'
 const MIC_DENIED = 'No tengo permiso para usar el micrófono. Podés darlo en los ajustes del navegador, o escribirlo.'
 const CANNOT_RECORD = 'Este navegador no puede grabar. Escribilo y listo.'
@@ -32,27 +33,34 @@ const NOTHING_HEARD = 'No se escuchó nada. ¿Probamos de nuevo?'
 /**
  * The mic from 2e, and the composer row it turns into. Hold to record, slide
  * up to lock hands-free, slide left or lift on "cancelar" to drop the note,
- * and lift anywhere else to send it: no confirm step and no playback. Silent
- * throughout, with no sounds and no vibration. From the keyboard, the mic
- * starts a hands-free note.
+ * and lift anywhere else to send it: no confirm step and no playback. No
+ * sound; a short vibration marks a note starting, locking, being sent, and
+ * being dropped (JUG-135). From the keyboard, the mic starts a hands-free note.
  *
  * While idle it shows `children` beside the mic (Listo, on 2d), and while
  * recording the strip takes their place, so nothing sits beside the mic to be
  * hit by mistake. The words come back through `onText` for the parent to
  * check. `onMessage` says what went wrong, with a retry when the note is
  * still here to send again; the recording is held in memory only for that.
+ *
+ * With `introduce`, the first time this device shows the mic it's spotlighted:
+ * the rest of the screen sits behind a soft blur, and a hint above the mic
+ * says to hold it and talk. Pressing the mic, or tapping anywhere else, ends
+ * it for good.
  * @param {{
  *   children: React.ReactNode,
  *   onText: (text: string) => void,
  *   onMessage: (message: VoiceMessage | null) => void,
  *   onRecording?: (recording: boolean) => void,
+ *   introduce?: boolean,
  * }} props
  */
-export function VoiceNote({ children, onText, onMessage, onRecording }) {
+export function VoiceNote({ children, onText, onMessage, onRecording, introduce = false }) {
   const [phase, setPhase] = useState(/** @type {Phase} */ ('idle'))
   const [drag, setDrag] = useState({ x: 0, y: 0 })
   const [seconds, setSeconds] = useState(0)
   const [levels, setLevels] = useState(/** @type {number[]} */ ([]))
+  const [spotlight, setSpotlight] = useState(() => introduce && canRecord() && !introSeen())
 
   // Pointer handlers and timers read these, so they never see a stale render.
   const phaseRef = useRef(phase)
@@ -61,6 +69,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
   const skipClick = useRef(false)
   const origin = useRef({ x: 0, y: 0 })
   const cancelRef = useRef(/** @type {HTMLSpanElement | null} */ (null))
+  const micRef = useRef(/** @type {HTMLButtonElement | null} */ (null))
   const latest = useRef({ onText, onMessage, onRecording })
   useLayoutEffect(() => {
     latest.current = { onText, onMessage, onRecording }
@@ -73,6 +82,26 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
   }
   /** @param {VoiceMessage | null} message */
   const say = (message) => latest.current.onMessage(message)
+
+  const endSpotlight = () => {
+    if (!spotlight) return
+    setSpotlight(false)
+    markIntroSeen()
+  }
+
+  // The spotlit mic takes the focus, so Enter starts a note and Escape leaves.
+  useEffect(() => {
+    if (!spotlight) return
+    micRef.current?.focus({ preventScroll: true })
+    /** @param {KeyboardEvent} event */
+    const onKey = (event) => {
+      if (event.key === 'Escape') endSpotlight()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+    // endSpotlight only reads `spotlight`, which this effect depends on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spotlight])
 
   const active = phase === 'held' || phase === 'locked' || phase === 'sending'
   useEffect(() => {
@@ -92,6 +121,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
   }, [phase])
 
   const discard = () => {
+    if (recording.current) haptic('cancel')
     recording.current?.cancel()
     recording.current = null
     setDrag({ x: 0, y: 0 })
@@ -139,6 +169,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
       say({ text: HOLD_TO_TALK })
       return
     }
+    haptic('send')
     go('sending')
     await deliver(await current.stop())
   }
@@ -163,6 +194,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
         recording.current = started
         setSeconds(0)
         setLevels([])
+        haptic('start')
         go(locked ? 'locked' : 'held')
       },
       (error) => {
@@ -179,6 +211,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
     event.currentTarget.setPointerCapture(event.pointerId)
     skipClick.current = true
     origin.current = { x: event.clientX, y: event.clientY }
+    endSpotlight()
     begin(false)
   }
 
@@ -189,6 +222,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
     const dy = Math.min(0, event.clientY - origin.current.y)
     if (dy <= -LOCK_AT) {
       setDrag({ x: 0, y: 0 })
+      haptic('lock')
       return go('locked')
     }
     if (dx <= -CANCEL_AT) return discard()
@@ -216,6 +250,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
       skipClick.current = false
       return
     }
+    endSpotlight()
     if (phaseRef.current === 'locked') void send()
     else if (phaseRef.current === 'idle') begin(true)
   }
@@ -225,11 +260,23 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
     starting: 'Abriendo el micrófono',
     held: 'Grabando. Soltá para enviar',
     locked: 'Enviar la nota de voz',
-    sending: 'Pasando a texto',
+    sending: 'Transcribiendo',
   }[phase]
 
   return (
-    <div className={`voice voice--${phase}`}>
+    <div className={`voice voice--${phase}${spotlight ? ' voice--spotlit' : ''}`}>
+      {spotlight && (
+        <>
+          {/* Tapping anywhere but the mic ends the spotlight. */}
+          <button type="button" className="voice-spotlight" aria-label="Prefiero escribirlo" onClick={endSpotlight} />
+          <div className="voice-spotlight__hint" role="note">
+            <p className="voice-spotlight__title">Lo más fácil: contámelo en un audio.</p>
+            <p className="voice-spotlight__text">Mantené apretado el micrófono mientras hablás, y soltalo para mandarlo.</p>
+            <p className="voice-spotlight__skip">Tocá afuera para escribirlo.</p>
+          </div>
+        </>
+      )}
+
       {phase === 'held' && (
         <div className={`voice__lock${drag.y < -LOCK_AT / 2 ? ' is-near' : ''}`} aria-hidden="true">
           <span className="voice__lock-mark">
@@ -248,7 +295,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
           {phase === 'sending' ? (
             <>
               <Dots tone="page" />
-              <span className="voice__sending">Pasando a texto</span>
+              <span className="voice__sending">Transcribiendo</span>
             </>
           ) : (
             <>
@@ -279,6 +326,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
       )}
 
       <button
+        ref={micRef}
         type="button"
         className="mic"
         aria-label={label}
@@ -291,15 +339,32 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
         onClick={onClick}
         onContextMenu={(event) => event.preventDefault()}
       >
-        {phase === 'locked' ? (
-          <span className="mic__send">Enviar</span>
-        ) : (
-          <span className="mic__glyph" aria-hidden="true">
-            <span className="mic__capsule" />
-            <span className="mic__base" />
-          </span>
-        )}
+        {phase === 'locked' ? <span className="mic__send">Enviar</span> : <MicGlyph />}
       </button>
     </div>
+  )
+}
+
+/** A microphone in the Plaza's 2 px line: the capsule, its holder, and the stand. */
+function MicGlyph() {
+  return (
+    <svg
+      className="mic__glyph"
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="9" y="2.5" width="6" height="11.5" rx="3" />
+      <path d="M5.5 10.5a6.5 6.5 0 0 0 13 0" />
+      <path d="M12 17v4" />
+      <path d="M8.5 21h7" />
+    </svg>
   )
 }

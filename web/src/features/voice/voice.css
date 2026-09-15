@@ -45,26 +45,7 @@
 }
 
 .mic__glyph {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-.mic__capsule {
   display: block;
-  width: 13px;
-  height: 20px;
-  border: 2px solid currentColor;
-  border-radius: 7px;
-}
-
-.mic__base {
-  display: block;
-  width: 20px;
-  height: 2px;
-  border-radius: 1px;
-  background: currentColor;
 }
 
 .mic__send {
@@ -202,4 +183,89 @@
   line-height: 1.4;
   text-align: right;
   color: var(--ink-muted);
+}
+
+/*
+ * The first visit's spotlight (JUG-135): the screen goes soft behind a light
+ * wash and blur, and only the mic and its hint stay sharp above it.
+ */
+.voice-spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  cursor: default;
+  animation: voice-spotlight-in 200ms ease-out;
+}
+
+.voice--spotlit .mic {
+  position: relative;
+  z-index: 3;
+  border-color: var(--primary);
+}
+
+/* A ring that breathes slowly around the mic; still under reduced motion. */
+.voice--spotlit .mic::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  opacity: 0.35;
+  animation: voice-ring 1800ms ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* Above the mic, inside the screen. Taps pass through it to end the spotlight. */
+.voice-spotlight__hint {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 22px);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(300px, 100%);
+  padding: 16px 18px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 18px;
+  background: var(--surface);
+  pointer-events: none;
+  animation: voice-spotlight-in 200ms ease-out;
+}
+
+.voice-spotlight__title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.voice-spotlight__text {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-body);
+}
+
+.voice-spotlight__skip {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+@keyframes voice-spotlight-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes voice-ring {
+  to {
+    opacity: 0.9;
+  }
 }
