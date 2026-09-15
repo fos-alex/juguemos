@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.11 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.12 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -119,6 +119,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Feriados and special days calendar.** The Argentine calendar and family dates, with themed activities in the days leading up to each one.
 - **Each parent's play style.** Energy level, favorite kinds of play, and what they'd rather avoid.
 - **Monthly recaps.** What was practiced and achieved.
+- **Printable activities.** Pages to print, cut, fold, and colour: letters, numbers, and colours, animals to sort into groups, simple board and card games, colouring pages, and things to build for the family's toys, like a stable for the horse or a rocket to fold for the astronaut. Each page is made for the family, with the kids' names and the animals they love, and piece size follows the kids' ages.
 - **Legal work.** Review under Ley 25.326, registration of the database with the AAIP if required, terms of use and privacy policy, and INPI trademark and domain confirmed.
 
 ### 1.0 — *Juguemos*
@@ -170,6 +171,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | A minimal admin for activity templates in 0.1, ahead of 0.7's content backend | Alex asked for it, to shape the playtest's catalog from the browser. 0.7 still brings review states, versions, and reviewer accounts. |
 | Discovery games in 0.4, with the answers in the room and no pictures on the screen | They teach animal names, sounds, and words, which fits 0.4's goals, and parents can pick them through its categories and filter. The constitution rules out kid-facing screen games, so the parent holds the phone and the kids answer out loud or with real things. |
 | Waiting animations in 0.3, as nice-to-haves | Stories from the LLM can take up to two minutes, and 0.3 already improves stories. The animations need the illustration style from 0.2, and the onboarding one should be in place before friends join in 0.5. |
+| Printable activities in 0.9 | They need the illustration style from 0.2, what the toy box knows each toy is, and 0.7's content workflow to produce pages at volume. They also pair with the feriados calendar in 0.9, with pages for the special days. |
 
 ## 6. Open questions
 
@@ -197,3 +199,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.9 draft | September 2026 | Added an admin for the activity templates to 0.1. |
 | 0.10 draft | September 2026 | Added discovery games to 0.4, and folded the sound guessing games from 0.8 into them. |
 | 0.11 draft | September 2026 | Added waiting animations for stories and voice notes to 0.3, as nice-to-haves. |
+| 0.12 draft | September 2026 | Added printable activities to 0.9. |
