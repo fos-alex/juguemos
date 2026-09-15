@@ -13,7 +13,8 @@
     "seed": "node --env-file-if-exists=../.env src/seed.js development",
     "seed:catalog": "node --env-file-if-exists=../.env src/seed.js catalog",
     "migration:generate": "drizzle-kit generate",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test \"test/**/*.test.js\"",
+    "test:unit": "node --test \"test/unit/**/*.test.js\""
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.4",

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { ConfigError, loadConfig } from '../src/config.js'
+import { ConfigError, loadConfig } from '../../src/config.js'
 
 const REQUIRED = { BETTER_AUTH_URL: 'https://juguemos.local:3000', BETTER_AUTH_SECRET: 'a-secret-that-is-at-least-32-chars' }
 /** @param {NodeJS.ProcessEnv} env */

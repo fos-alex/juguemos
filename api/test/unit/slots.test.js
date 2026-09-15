@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fillFor, fitsAge, render, seededRandom, unknownPlaceholders } from '../src/catalog/slots.js'
+import { fillFor, fitsAge, render, seededRandom, unknownPlaceholders } from '../../src/catalog/slots.js'
 
 const fill = { kid: 'Milán', pet: 'Inca', toy: 'el osito marrón', toy2: 'la pelota', interest: 'los dinosaurios' }
 
-/** @param {Partial<import('../src/families/families.service.js').Profile>} [overrides] */
+/** @param {Partial<import('../../src/families/families.service.js').Profile>} [overrides] */
 const profile = (overrides) => ({
   id: 'family',
   name: null,

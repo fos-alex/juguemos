@@ -9,6 +9,38 @@ const SERVER_URL = process.env.TEST_DATABASE_URL ?? 'postgres://juguemos:juguemo
 
 export const ORIGIN = 'http://localhost:3000'
 
+/** @typedef {import('../src/config.js').Config} Config */
+
+/**
+ * The config the API is built on in tests: no LLM, no speech-to-text, the
+ * admin off, and a secret that only tests use. Each part can be overridden
+ * on its own; what isn't given keeps these defaults.
+ * @param {{
+ *   port?: number,
+ *   databaseUrl?: string,
+ *   auth?: Partial<Config['auth']>,
+ *   llm?: Partial<Config['llm']>,
+ *   stt?: Partial<Config['stt']>,
+ *   admin?: Partial<Config['admin']>,
+ *   audit?: Partial<Config['audit']>,
+ * }} [overrides]
+ * @returns {Config}
+ */
+export function testConfig({ auth, llm, stt, admin, audit, ...rest } = {}) {
+  return {
+    port: 0,
+    databaseUrl: '',
+    auth: { url: ORIGIN, trustedOrigins: [], secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(), ...auth },
+    // No key: template stories, unless a test passes its own `llm` to startApi.
+    llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN, ...llm },
+    // No service: voice notes are off, unless a test passes its own `transcriber`.
+    stt: { url: null, model: '', apiKey: null, ...stt },
+    admin: { enabled: false, ...admin },
+    audit: { transcripts: false, ...audit },
+    ...rest,
+  }
+}
+
 /** A profile close to the brief's example family. */
 export const EXAMPLE_PROFILE = {
   kids: [{ name: 'Milán', age: 2 }],
@@ -57,18 +89,12 @@ export async function startApi({ signupEmails = [], trustedOrigins = [], random,
   await migrate({ databaseUrl: database.url })
 
   const db = createDb(database.url)
-  /** @type {import('../src/config.js').Config} */
-  const config = {
-    port: 0,
+  const config = testConfig({
     databaseUrl: database.url,
-    auth: { url: ORIGIN, trustedOrigins, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
-    // No key: template stories, unless a test passes its own `llm`.
-    llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN },
-    // No service: voice notes are off, unless a test passes its own `transcriber`.
-    stt: { url: null, model: '', apiKey: null },
+    auth: { trustedOrigins, signupEmails: new Set(signupEmails) },
     admin: { enabled: admin },
     audit: { transcripts: auditTranscripts },
-  }
+  })
   const app = buildApp({ config, db, logger: false, random, now, llm, transcriber })
   await app.ready()
 
