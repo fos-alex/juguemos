@@ -10,7 +10,15 @@ import { UpstreamError } from '../errors.js'
 import { jsonIn } from './prompt.js'
 
 /** @typedef {import('../config.js').LlmConfig} LlmConfig */
-/** @typedef {object} LlmCall @property {string} system @property {string} user */
+/**
+ * @typedef {object} LlmCall
+ * @property {string} system
+ * @property {string} user
+ * @property {number} [maxTokens] the most tokens the answer may run to; left
+ *   out, the provider's own limit applies
+ * @property {boolean} [reasoning] false asks a reasoning model to skip its
+ *   thinking, on the providers that take the option
+ */
 /**
  * @typedef {object} Llm
  * @property {(call: LlmCall & { signal?: AbortSignal }) => AsyncGenerator<string>} stream
@@ -26,13 +34,15 @@ const USER_AGENT = 'juguemos-api/0.1'
  * - OpenRouter takes the app's URL and name in `HTTP-Referer` and `X-Title`.
  *   `data_collection: 'deny'` sends a request only to upstream providers that
  *   don't store or train on prompts, because prompts carry the kids' names.
- * @type {Record<LlmConfig['provider'], (config: LlmConfig) => { headers: Record<string, string>, body: object }>}
+ *   It is also the one that takes `reasoning: { enabled: false }`, which a
+ *   short call passes so a reasoning model answers without thinking first.
+ * @type {Record<LlmConfig['provider'], (config: LlmConfig, call: { reasoning?: boolean }) => { headers: Record<string, string>, body: object }>}
  */
 const PROVIDER_EXTRAS = {
   opencode: () => ({ headers: { 'x-opencode-session': `juguemos-${randomUUID()}` }, body: {} }),
-  openrouter: (config) => ({
+  openrouter: (config, { reasoning }) => ({
     headers: { 'HTTP-Referer': config.appUrl, 'X-Title': 'Juguemos' },
-    body: { provider: { data_collection: 'deny' } },
+    body: { provider: { data_collection: 'deny' }, ...(reasoning === false ? { reasoning: { enabled: false } } : {}) },
   }),
 }
 
@@ -54,8 +64,8 @@ export function createLlm({ config }) {
      * `UpstreamError`: the log has the reason, and the client doesn't.
      * @param {LlmCall & { signal?: AbortSignal }} call
      */
-    async *stream({ system, user, signal }) {
-      const { headers, body } = extras(config)
+    async *stream({ system, user, maxTokens, reasoning, signal }) {
+      const { headers, body } = extras(config, { reasoning })
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         signal,
@@ -68,6 +78,7 @@ export function createLlm({ config }) {
         body: JSON.stringify({
           model: config.model,
           stream: true,
+          ...(maxTokens ? { max_tokens: maxTokens } : {}),
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
