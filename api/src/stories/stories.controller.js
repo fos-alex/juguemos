@@ -4,9 +4,9 @@ import { familyOf } from '../families/require-family.js'
 /** @typedef {import('./stories.service.js').StoriesService} StoriesService */
 
 /**
- * The story leaves paragraph by paragraph; the reader never waits. A reader
- * who left gets nothing more, and a full buffer waits for room or for the
- * reader to leave, never forever.
+ * Writes one event of the story to the open stream. A reader who left gets
+ * nothing more, and a full buffer waits for room or for the reader to leave,
+ * never forever.
  * @param {import('fastify').FastifyReply} reply
  * @param {import('./stories.service.js').StoryEvent | { type: 'error' }} event
  */

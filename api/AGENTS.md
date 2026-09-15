@@ -9,7 +9,8 @@ Rules for `api/`, on top of the repo-wide rules in the root [`AGENTS.md`](../AGE
 Run from the repo root:
 
 ```bash
-docker compose up -d db && npm test -w api                  # integration tests, each file on a fresh database
+docker compose up -d db && npm test -w api                  # every test, each integration file on a fresh database
+npm run test:unit -w api                                    # the tests in test/unit, which need no database
 npm run migration:generate -w api -- --name add-goals       # after changing a *.schema.js: writes the SQL migration
 npm run migration:generate -w api -- --custom --name x      # an empty migration, for SQL the schema can't express
 npm run migrate -w api                                      # apply pending migrations outside Docker
@@ -17,7 +18,7 @@ npm run seed -w api                                         # development data; 
 npm run dev -w api                                          # the API outside Docker, reading ../.env
 ```
 
-**Locally, the API hot-reloads.** `compose.dev.yml`, turned on by `COMPOSE_FILE` in `.env`, mounts `api/src`, `api/prompts`, `api/seeds`, and `api/migrations` into the containers and runs `node --watch`, so the API restarts when a file it imports changes. After a dependency changes in `package.json`, run `docker compose up -d --build`. The production image copies the source instead of mounting it, so on the droplet every change needs a rebuild. Every `up` runs the one-shot `migrate` service first, and the API starts only if it succeeds.
+**Locally, the API hot-reloads.** `compose.dev.yml`, turned on by `COMPOSE_FILE` in `.env`, mounts `api/src`, `api/seeds`, and `api/migrations` into the containers and runs `node --watch`, so the API restarts when a file it imports changes. After a dependency changes in `package.json`, run `docker compose up -d --build`. The production image copies the source instead of mounting it, so on the droplet every change needs a rebuild. Every `up` runs the one-shot `migrate` service first, and the API starts only if it succeeds.
 
 ## Layout
 
@@ -37,6 +38,14 @@ src/
   catalog/            the templates: their tables, the service every consumer reads them
                       through, the slots filled from the family's own words, and the
                       admin's routes and controller
+  stories/            besides the usual files: stories.service.js is the facade that picks
+                      the source, template-stories.js writes the catalog stories and
+                      generated-stories.js the model's, shared.js is what both need,
+                      storytelling.js is the pure logic, and prompts/ holds the texts
+  families/           besides the usual files: understanding.js reads a family from the
+                      parent's own words, with its prompt in prompts/family.js
+  llm/                client.js, one client for both providers, and prompt.js, which fills
+                      a prompt and reads the JSON in an answer
   audit/              the audit trail of parents' own words, kept only while AUDIT_TRANSCRIPTS is on
   voice/              voice notes: the speech-to-text client, and the route that turns a recording into words
   auth/               Better Auth: the instance, its tables, its /auth/* routes, the session preHandler
@@ -48,6 +57,7 @@ drizzle.config.js     drizzle-kit's settings
 seeds/catalog/        the activity and story templates
 seeds/development.js  the demo accounts and their families
 test/                 integration tests, with helpers.js
+test/unit/            the tests that need no database
 ```
 
 ## How it fits together
@@ -55,8 +65,9 @@ test/                 integration tests, with helpers.js
 - **Layers.** Routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries. A domain may skip a layer it doesn't need.
 - **Factories with explicit dependencies.** Services are `createXService({ db })`, and controllers are `createXController({ ...services })`. Route plugins receive their controller as an option. Only `app.js` creates and passes them, so tests can build the whole app on a scratch database.
 - **Configuration** is read only in `config.js`. A missing or malformed setting stops the process at startup with a message saying what to set. A new setting goes in `config.js`, in `.env.example`, and in what `docker-compose.yml` passes to the `api` service.
-- **Stories use OpenCode Go or OpenRouter** (JUG-115). `LLM_PROVIDER` picks the provider and `LLM_MODEL` the model. `config.js` holds each provider's key setting, URL, and default model, and `llm/llm.js` is one client for both, since both speak the OpenAI chat completions API. Without the chosen provider's key, stories come from templates. OpenRouter requests send `data_collection: 'deny'`, because prompts carry the kids' names and must not go to a provider that stores or trains on them.
-- **A family from the parent's own words** (JUG-11). `POST /family/understanding` sends the text to the same LLM with `prompts/family.js` and returns a profile for the parent to confirm; it saves nothing. `families/understanding.js` keeps each name spelled as the parent wrote it and flags a kid or pet the text doesn't name. The text never goes into a log, and the model's answer can repeat it, so neither goes into an error message. It is stored only in `audit_transcripts`, and only while `AUDIT_TRANSCRIPTS` is on (JUG-116): `audit/audit.service.js` does nothing when it's off, and a voice note's transcription goes through the same `recordTranscript`. `/me` returns `familyFromText`, false without an LLM, so the web starts first run at the form; the endpoint itself answers 503 with `LLM_OFF` on a server that has none.
+- **Stories use OpenCode Go or OpenRouter** (JUG-115). `LLM_PROVIDER` picks the provider and `LLM_MODEL` the model. `config.js` holds each provider's key setting, URL, and default model, and `llm/client.js` is one client for both, since both speak the OpenAI chat completions API. Without the chosen provider's key, stories come from templates. OpenRouter requests send `data_collection: 'deny'`, because prompts carry the kids' names and must not go to a provider that stores or trains on them. `llm/prompt.js` is the other half of the module: `render(template, values)` fills a prompt's `{{key}}` placeholders, and throws on one it has no value for, and `jsonIn(answer)` reads the JSON a model answered with, fences and prose around it included, or null when there is none. The prompt texts themselves live with the domain that sends them, in its own `prompts/` folder.
+- **Stories come from one of two sources** (JUG-126). `stories.service.js` is the facade the controller calls: it picks the source and keeps the library. `template-stories.js` fills a catalog template's slots for the kids playing; `generated-stories.js` asks the model for plots and writes the one the family chose, streaming it as it comes. The options come from the model when there is one and from the templates otherwise, and a story that is read comes from whichever kind its id is, a plot of this family or a story template. Either way a story is written once and saved, and reading it again replays what was saved, as the same events, so the web never tells the kinds apart. `shared.js` holds what both sources need, and `storytelling.js` stays pure: the age bands, the moment of day, and the two ways the model's answer is read.
+- **A family from the parent's own words** (JUG-11). `POST /family/understanding` sends the text to the same LLM with `families/prompts/family.js` and returns a profile for the parent to confirm; it saves nothing. `families/understanding.js` keeps each name spelled as the parent wrote it and flags a kid or pet the text doesn't name. The text never goes into a log, and the model's answer can repeat it, so neither goes into an error message. It is stored only in `audit_transcripts`, and only while `AUDIT_TRANSCRIPTS` is on (JUG-116): `audit/audit.service.js` does nothing when it's off, and a voice note's transcription goes through the same `recordTranscript`. `/me` returns `familyFromText`, false without an LLM, so the web starts first run at the form; the endpoint itself answers 503 with `LLM_OFF` on a server that has none.
 - **The `/api` prefix** is stripped by Caddy before the request reaches the API. Register routes without it: `/me` here is `/api/me` to the browser. `auth/auth.routes.js` puts it back for Better Auth, which routes on its full base path.
 - **Every route has a response schema.** The schema is also the allowlist of what leaves the server, since fields not listed are never serialized. That is how private data stays in. A route that answers a 4xx or 5xx with a body declares that status too, with `errorBody` from `http/schemas.js`; the other fragments there, `uuid`, `text(max)`, and `lines(max, min)`, are the ones the routes would otherwise each define.
 - **Errors have one shape**, `{ error, code? }`, from `handleError` in `app.js`. Throw one of the classes in `errors.js` for a client's own mistake, and its message and code are sent back. Anything else becomes a logged 500 with the message "internal error", so internals are never described: that includes `UpstreamError` (502), which a provider's failure raises so the reason reaches the log and not the parent. The one 5xx that is sent as it is thrown is `UnavailableError` (503), which says a feature this server wasn't configured for is off, such as voice notes without a speech-to-text service; its code is how the web tells that from a failure.
@@ -87,10 +98,10 @@ test/                 integration tests, with helpers.js
 
 ## Tests
 
-- **Integration tests only**, with `node:test` and `node:assert/strict`, in `test/<domain>.test.js`.
-- **`startApi()`** in `test/helpers.js` creates a fresh database, applies every migration, and builds the app on it; `close()` drops it. Each file starts its own in `before` and closes it in `after`. `api.db` is the Drizzle client to build services with, and `api.pool` the pool under it, for checking rows in plain SQL.
+- **Two kinds**, both with `node:test` and `node:assert/strict`: integration tests in `test/<domain>.test.js`, which build the app on a database, and unit tests in `test/unit/<name>.test.js` for a module that is pure or speaks only to a fake server of its own. A file that mixes the two is split in two files.
+- **The integration tests need a Postgres** they can create databases in: `docker compose up -d db`, or set `TEST_DATABASE_URL`. `npm run test:unit -w api` runs `test/unit` alone, with no database and no Docker; `npm test -w api` runs everything.
+- **`startApi()`** in `test/helpers.js` creates a fresh database, applies every migration, and builds the app on it; `close()` drops it. Each file starts its own in `before` and closes it in `after`. `api.db` is the Drizzle client to build services with, and `api.pool` the pool under it, for checking rows in plain SQL. `testConfig(overrides)`, beside it, is the config it builds on, for a test that needs its own.
 - **Requests go through `app.inject()`,** with no network. `cookiesFrom(response)` carries a session to the next request.
-- **The tests need a Postgres** they can create databases in: `docker compose up -d db`, or set `TEST_DATABASE_URL`.
 - **Cover every new endpoint,** including what it must refuse: no session, someone else's data, invalid input.
 
 ## Adding an endpoint
