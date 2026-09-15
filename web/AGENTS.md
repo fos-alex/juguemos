@@ -14,7 +14,8 @@ npm run build      # production build to web/dist, to check it compiles; Caddy's
 ```
 
 - **The dev server proxies `/api`** to the Docker stack at `https://juguemos.local:3000`, so signing in needs `docker compose up`.
-- **The service worker exists only in production builds.** Caddy's image builds the web app, so to see a change at `juguemos.local` or on a phone, run `docker compose up -d --build`. Open apps pick it up on their own.
+- **The local stack hot-reloads** (`compose.dev.yml`, turned on by `COMPOSE_FILE` in `.env`). At `juguemos.local` and on a phone, Caddy proxies to Vite's dev server on the mounted `web/` folder, so a saved change shows up without a rebuild. Rebuild (`docker compose up -d --build`) only after `package.json` changes.
+- **The service worker exists only in production builds.** In development, Caddy answers `/sw.js` with a script that removes a production worker left in the browser. To check the worker itself, run the stack without the dev layer: `COMPOSE_FILE=docker-compose.yml docker compose up -d --build`.
 - **There are no automated tests yet.** Check changes in a browser at the 390 px design width, signed in with a demo account (`npm run seed -w api`; the logins are in the README), including offline, night mode, and reduced motion.
 
 ## Layout

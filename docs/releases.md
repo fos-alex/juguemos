@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.10 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.11 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -78,6 +78,8 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Story series.** Stories that share a setting and characters are grouped into a series. From a series, the parent asks for the next chapter, and Juguemos writes it as a continuation of what happened before.
 - **Story library and rereads.** Save a story and reread it with one tap. A series keeps its chapters together, in order.
 - **Sign in with Google.** Parents can sign in with their Google account, which shares only their name and email. Until the guardrails are complete, only the family's own accounts get in.
+- **An animation while a story is written** (nice to have). A story from the LLM can take up to two minutes before there's anything to read, so an animation shows that it's being written, and it varies with the kids' ages. It gives way to the text as soon as the first words arrive.
+- **An animation while a voice note is read** (nice to have). The same for onboarding, while a voice note becomes words and while Juguemos reads the family from them.
 
 ### 0.4 — *Jugar para crecer*
 
@@ -167,10 +169,12 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | A colour for each kid in 0.4, as a marker rather than a theme | 0.4 brings each kid's goals, and the story library from 0.3 can show whose stories they were. The colour matters once there's more than one kid to tell apart. |
 | A minimal admin for activity templates in 0.1, ahead of 0.7's content backend | Alex asked for it, to shape the playtest's catalog from the browser. 0.7 still brings review states, versions, and reviewer accounts. |
 | Discovery games in 0.4, with the answers in the room and no pictures on the screen | They teach animal names, sounds, and words, which fits 0.4's goals, and parents can pick them through its categories and filter. The constitution rules out kid-facing screen games, so the parent holds the phone and the kids answer out loud or with real things. |
+| Waiting animations in 0.3, as nice-to-haves | Stories from the LLM can take up to two minutes, and 0.3 already improves stories. The animations need the illustration style from 0.2, and the onboarding one should be in place before friends join in 0.5. |
 
 ## 6. Open questions
 
-- **Styling by age.** Should Home's look change with the age of the kid who's playing? The recommendation is no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which the design handoff rules out.
+- **Styling by age.** Should Home's look, or the animation while a story is written, change with the age of the kid who's playing? The recommendation is no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which the design handoff rules out. The story animation could vary with the story being written instead.
+- **Characters in waiting animations.** The design handoff rules out a mascot, character, or cartoon in loading states. A cute character needs the handoff amended; a calm animation in the Plaza style doesn't.
 
 - **The LLM in 0.1.** Does the playtest wait for the LLM provider, or start with template stories and the family form, adding conversational onboarding and bespoke stories when they're ready?
 - **Friends and guardrails.** The first target for friends was 0.3 or 0.4, but guardrails complete in 0.5. Should guardrails move earlier so friends can join sooner, or do friends wait for 0.5?
@@ -192,3 +196,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.8 draft | September 2026 | Added who's playing to 0.1, and a colour for each kid to 0.4. |
 | 0.9 draft | September 2026 | Added an admin for the activity templates to 0.1. |
 | 0.10 draft | September 2026 | Added discovery games to 0.4, and folded the sound guessing games from 0.8 into them. |
+| 0.11 draft | September 2026 | Added waiting animations for stories and voice notes to 0.3, as nice-to-haves. |

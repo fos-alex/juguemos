@@ -39,6 +39,15 @@ docker compose exec caddy cat /data/caddy/pki/authorities/local/root.pem | sudo 
 sudo update-ca-trust
 ```
 
+**Hot reload.** `.env.example` sets `COMPOSE_FILE=docker-compose.yml:compose.dev.yml`, which adds a development layer on top of the production Compose file:
+
+- Caddy proxies to Vite's dev server on your `web/` folder, so a saved change shows up in the open page without a reload.
+- The API runs your `api/` source with `node --watch` and restarts when a file changes.
+- New migrations and catalog templates apply on the next `docker compose up -d`.
+- There's no service worker in development. A browser that installed the production one, such as the phone, gets a script in its place that removes it and reloads the page.
+
+A rebuild (`docker compose up -d --build`) is needed only after a dependency changes in `package.json`. The droplet's `.env` leaves `COMPOSE_FILE` out, so it builds and serves the production web app.
+
 To open the stack on a phone, Caddy also serves plain HTTP on `127.0.0.1:3001`, and Tailscale Serve puts the tailnet's HTTPS in front of it (443 is taken, so it uses 8443). The phone must be on the tailnet:
 
 ```bash

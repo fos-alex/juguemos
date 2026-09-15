@@ -1,0 +1,39 @@
+# Development only (compose.dev.yml): the web app comes from Vite's dev server,
+# with hot reload, and /api goes to the API as in production.
+(app) {
+	handle_path /api/* {
+		reverse_proxy api:3000
+	}
+
+	# There's no service worker in development. A browser that installed the
+	# production one fetches this in its place: it deletes the caches,
+	# unregisters itself, and reloads open pages, so they load from Vite.
+	handle /sw.js {
+		header Content-Type "text/javascript; charset=utf-8"
+		header Cache-Control "no-cache"
+		respond `self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    for (const key of await caches.keys()) await caches.delete(key)
+    await self.registration.unregister()
+    for (const client of await self.clients.matchAll({ type: 'window' })) client.navigate(client.url)
+  })())
+})
+` 200
+	}
+
+	# Vite's dev server, including its hot-reload websocket.
+	handle {
+		reverse_proxy web:5173
+	}
+}
+
+juguemos.local {
+	tls internal
+	import app
+}
+
+# Plain HTTP for Tailscale Serve, which terminates TLS in front so a phone on the tailnet can reach the stack
+:80 {
+	import app
+}

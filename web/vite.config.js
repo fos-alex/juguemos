@@ -35,6 +35,9 @@ export default defineConfig({
     }),
   ],
   server: {
+    // Behind Caddy in the dev stack (compose.dev.yml), requests arrive for
+    // juguemos.local and for the phone's Tailscale address.
+    allowedHosts: ['juguemos.local', '.ts.net'],
     proxy: {
       // The API trusts only its own origin, so the dev server passes as it.
       '/api': {

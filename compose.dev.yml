@@ -1,0 +1,39 @@
+# Development only: hot reload for the web and the API, so a change shows up
+# without `docker compose up --build`. Your .env turns it on with
+# COMPOSE_FILE=docker-compose.yml:compose.dev.yml. The droplet doesn't set it,
+# so it keeps building and serving the production web app.
+services:
+  # Vite's dev server on your web/ folder, with hot module reload. It runs as
+  # the node user (uid 1000), so files it writes, such as the route tree, stay
+  # yours.
+  web:
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
+      target: web-dev
+    restart: unless-stopped
+    volumes:
+      - ./web:/app/web
+
+  # Caddy proxies to Vite instead of serving a built app, so it needs no build.
+  caddy:
+    image: caddy:2-alpine
+    build: !reset null
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+      - web
+
+  # The API runs your api/ source and restarts when a file it imports changes.
+  api:
+    command: ["node", "--watch", "api/src/server.js"]
+    volumes: &api-source
+      - ./api/src:/app/api/src:ro
+      - ./api/prompts:/app/api/prompts:ro
+      - ./api/seeds:/app/api/seeds:ro
+      - ./api/migrations:/app/api/migrations:ro
+
+  # New migrations and catalog templates apply on the next `docker compose up -d`.
+  migrate:
+    volumes: *api-source
