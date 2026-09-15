@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { after, before, test } from 'node:test'
-import { createFamiliesService } from '../src/families/families.service.js'
-import { createStoriesService } from '../src/stories/stories.service.js'
+import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
 /** A model that answers by hand, one chunk at a time, and remembers every call. @param {(call: { call: number, user: string }) => string | Promise<string>} respond */
@@ -77,8 +76,7 @@ before(async () => {
     now: () => new Date('2026-09-14T21:00:00-03:00'),
     llm,
   })
-  const stories = createStoriesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
-  await stories.addTemplate({
+  await createCatalogService({ db: api.db }).addStoryTemplate({
     slug: 'para-streaming',
     title: '{toy} y el tercero.',
     teaser: 'Con {kid}.',

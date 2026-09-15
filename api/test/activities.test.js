@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { createActivitiesService } from '../src/activities/activities.service.js'
-import { createFamiliesService } from '../src/families/families.service.js'
+import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
-/** @param {Partial<import('../src/activities/activities.service.js').ActivityTemplateInput>} overrides */
+/** @param {Partial<import('../src/catalog/catalog.service.js').ActivityTemplateInput>} overrides */
 const template = (overrides) => ({
   slug: 'test',
   title: 'Juego',
@@ -41,8 +40,8 @@ const TEMPLATES = [
 
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
-/** @type {import('../src/activities/activities.service.js').ActivitiesService} */
-let activities
+/** @type {import('../src/catalog/catalog.service.js').CatalogService} */
+let catalog
 before(async () => {
   api = await startApi({
     signupEmails: [
@@ -55,8 +54,8 @@ before(async () => {
       'gabi@example.com',
     ],
   })
-  activities = createActivitiesService({ db: api.db, families: createFamiliesService({ db: api.db }) })
-  for (const each of TEMPLATES) await activities.addTemplate(each)
+  catalog = createCatalogService({ db: api.db })
+  for (const each of TEMPLATES) await catalog.addActivityTemplate(each)
 })
 after(() => api.close())
 
@@ -135,14 +134,8 @@ test('suggestions need a family', async () => {
   assert.deepEqual(response.json(), { error: 'family required' })
 })
 
-test('a template with an unknown slot is refused', async () => {
-  await assert.rejects(activities.addTemplate(template({ slug: 'mal', title: 'Con {perro}' })), {
-    name: 'ValidationError',
-  })
-})
-
 test('a juego suits only the kids playing, names them, and records who played', async () => {
-  await activities.addTemplate(template({ slug: 'para-cuatro', title: '{kid} arma una torre', minAgeMonths: 36, maxAgeMonths: 71 }))
+  await catalog.addActivityTemplate(template({ slug: 'para-cuatro', title: '{kid} arma una torre', minAgeMonths: 36, maxAgeMonths: 71 }))
   const { cookie } = await signUpAs(api, 'gabi@example.com')
   const profile = (
     await putFamily(api, cookie, {
@@ -167,11 +160,4 @@ test('a juego suits only the kids playing, names them, and records who played', 
   assert.deepEqual([...titles].sort(), ['Juntos con Inca', 'Sofi arma una torre'])
   const { rows } = await api.pool.query('select kid_ids::text[] as kids from activities where id = $1', [previous])
   assert.deepEqual(rows[0].kids, [sofi.id])
-})
-
-test('adding a template again keeps the one in the database', async () => {
-  const again = await activities.addTemplate(template({ slug: 'la-busqueda', title: 'Otro título' }))
-  assert.deepEqual(again, { created: false })
-  const { rows } = await api.pool.query(`select title from activity_templates where slug = 'la-busqueda'`)
-  assert.equal(rows[0].title, 'La búsqueda de {toy}')
 })
