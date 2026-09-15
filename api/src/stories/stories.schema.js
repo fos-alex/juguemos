@@ -23,13 +23,16 @@ export const storyPlots = pgTable(
     mood: text({ enum: ['calm', 'lively'] }).notNull(),
     // The kids playing when the plot was proposed (JUG-107); its story stars them.
     kidIds: uuid().array().notNull().default(sql`'{}'`),
+    // The casting the plot was drawn for (JUG-139): who leads, who is in, and
+    // the random numbers and weights behind it. Null on plots from before it.
+    casting: jsonb(),
     createdAt: createdAt(),
   },
   (table) => [
     index('story_plots_family_id_idx').on(table.familyId),
     check('story_plots_title_check', sql`${table.title} <> ''`),
     check('story_plots_teaser_check', sql`${table.teaser} <> ''`),
-    check('story_plots_minutes_check', sql`${table.minutes} between 2 and 6`),
+    check('story_plots_minutes_check', sql`${table.minutes} between 2 and 8`),
     check('story_plots_premise_check', sql`${table.premise} <> ''`),
     check('story_plots_mood_check', sql`${table.mood} in ('calm', 'lively')`),
   ],
@@ -56,6 +59,8 @@ export const stories = pgTable(
     // The kids who played (JUG-107), sorted, for the recommendations and the
     // journal. No foreign key: the record outlives a kid removed from the profile.
     kidIds: uuid().array().notNull().default(sql`'{}'`),
+    // The casting the story was written for (JUG-139); null on template stories.
+    casting: jsonb(),
     createdAt: createdAt(),
   },
   (table) => [
@@ -66,5 +71,35 @@ export const stories = pgTable(
       .where(sql`${table.templateId} is not null`),
     uniqueIndex('stories_family_id_plot_id_key').on(table.familyId, table.plotId).where(sql`${table.plotId} is not null`),
     index('stories_family_id_created_at_idx').on(table.familyId, table.createdAt),
+  ],
+)
+
+// What the family was offered, what they picked, and what was written
+// (JUG-139). It is read in SQL to see whether the casting weights need
+// moving, so it holds no prompt and no story text: kids are ids, and the only
+// words in it are the theme inside the casting.
+export const storyAudit = pgTable(
+  'story_audit',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    familyId: uuid()
+      .notNull()
+      .references(() => families.id, { onDelete: 'cascade' }),
+    event: text({ enum: ['offered', 'picked', 'written'] }).notNull(),
+    kidIds: uuid().array().notNull().default(sql`'{}'`),
+    band: text().notNull(),
+    mood: text().notNull(),
+    // No foreign key: plots retire, and the record of what was offered stays.
+    plotId: uuid(),
+    // The interest keyword the parent tapped, when that is what started the story (JUG-140).
+    keyword: text(),
+    casting: jsonb(),
+    // The model, the attempt, the timings, and the word count, per event.
+    details: jsonb().notNull().default(sql`'{}'::jsonb`),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index('story_audit_family_id_created_at_idx').on(table.familyId, table.createdAt),
+    check('story_audit_event_check', sql`${table.event} in ('offered', 'picked', 'written')`),
   ],
 )
