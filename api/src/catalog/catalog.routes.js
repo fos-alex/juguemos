@@ -1,6 +1,6 @@
 import { errorBody, lines, text, uuid } from '../http/schemas.js'
 
-/** @typedef {ReturnType<typeof import('./admin.controller.js').createAdminController>} AdminController */
+/** @typedef {ReturnType<typeof import('./catalog.controller.js').createCatalogController>} CatalogController */
 
 const CATEGORIES = ['move', 'create', 'pretend', 'explore', 'learn', 'low_energy', 'helpers', 'out_and_about']
 
@@ -66,9 +66,9 @@ const params = {
  * The catalog admin. It has no login yet, so its routes are public, and
  * app.js registers them only when ADMIN_ENABLED turns the admin on.
  * @param {import('fastify').FastifyInstance} app
- * @param {{ controller: AdminController }} options
+ * @param {{ controller: CatalogController }} options
  */
-export async function adminRoutes(app, { controller }) {
+export async function catalogRoutes(app, { controller }) {
   const config = { access: 'public' }
   const url = '/admin/activity-templates'
   app.get(

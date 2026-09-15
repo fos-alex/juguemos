@@ -7,6 +7,7 @@
 export * from '../activities/activities.schema.js'
 export * from '../audit/audit.schema.js'
 export * from '../auth/auth.schema.js'
+export * from '../catalog/catalog.schema.js'
 export * from '../families/families.schema.js'
 export * from '../stories/stories.schema.js'
 export * from '../toys/toys.schema.js'

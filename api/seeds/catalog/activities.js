@@ -13,7 +13,7 @@
  * Pending Alex's review and a voice pass (JUG-14).
  */
 
-/** @type {import('../../src/activities/activities.service.js').ActivityTemplateInput[]} */
+/** @type {import('../../src/catalog/catalog.service.js').ActivityTemplateInput[]} */
 export const activityTemplates = [
   {
     slug: 'la-busqueda',
