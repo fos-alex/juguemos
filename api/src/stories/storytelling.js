@@ -2,8 +2,9 @@
  * The storytelling logic around the harness: which age band anchors a story,
  * the moment-of-day mood, and the two ways the model's answer is read — the
  * options JSON and the streaming story format. Everything here is pure, so
- * the harness in `api/prompts/` can change without any of this moving.
+ * the prompts in `prompts/` can change without any of this moving.
  */
+import { jsonIn } from '../llm/prompt.js'
 
 /** @typedef {import('../families/families.service.js').Profile} Profile */
 
@@ -84,10 +85,7 @@ export function familyLines(profile) {
  * @returns {Plot[]}
  */
 export function parseOptions(text) {
-  const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  const start = cleaned.search(/[[{]/)
-  const end = Math.max(cleaned.lastIndexOf(']'), cleaned.lastIndexOf('}'))
-  const parsed = start >= 0 && end > start ? readJson(cleaned.slice(start, end + 1)) : null
+  const parsed = jsonIn(text)
   const list = Array.isArray(parsed)
     ? parsed
     : Array.isArray(parsed?.tramas)
@@ -191,13 +189,4 @@ export function partsOf(paragraphs) {
   }
   const filled = parts.filter((part) => Array.isArray(part) && part.length > 0)
   return filled.length > 0 ? filled : null
-}
-
-/** @param {string} data */
-function readJson(data) {
-  try {
-    return JSON.parse(data)
-  } catch {
-    return null
-  }
 }

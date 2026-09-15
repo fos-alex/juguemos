@@ -7,6 +7,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { UpstreamError } from '../errors.js'
+import { jsonIn } from './prompt.js'
 
 /** @typedef {import('../config.js').LlmConfig} LlmConfig */
 /** @typedef {object} LlmCall @property {string} system @property {string} user */
@@ -92,7 +93,7 @@ export function createLlm({ config }) {
           const data = line.startsWith('data:') ? line.slice(5).trim() : ''
           if (!data || data === '[DONE]') continue
           const event = /** @type {{ error?: { message?: string }, choices?: { delta?: { content?: string } }[] } | null} */ (
-            readJson(data)
+            jsonIn(data)
           )
           // A failure after the stream has started arrives as an event with an error.
           if (event?.error) throw new UpstreamError(`The story model failed: ${event.error.message ?? 'no reason given'}`)
@@ -101,14 +102,5 @@ export function createLlm({ config }) {
         }
       }
     },
-  }
-}
-
-/** @param {string} data */
-function readJson(data) {
-  try {
-    return JSON.parse(data)
-  } catch {
-    return null
   }
 }

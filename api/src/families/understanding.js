@@ -8,8 +8,9 @@
  * model's answer can repeat it, so errors leave that out too. It is stored
  * only in audit_transcripts, while AUDIT_TRANSCRIPTS is on (JUG-116).
  */
-import familyPrompt from '../../prompts/family.js'
 import { UnavailableError, UpstreamError } from '../errors.js'
+import { jsonIn } from '../llm/prompt.js'
+import familyPrompt from './prompts/family.js'
 
 /** How long the model gets before the parent is asked to try again. */
 const TIMEOUT_MS = 60_000
@@ -33,7 +34,7 @@ const CHECK_NOTE = 'Revisá lo marcado: no lo encontré tal cual en lo que escri
 /** @typedef {ReturnType<typeof createUnderstanding>} UnderstandingService */
 
 /**
- * @param {{ llm: import('../llm/llm.js').Llm | null, audit: import('../audit/audit.service.js').AuditService }} deps
+ * @param {{ llm: import('../llm/client.js').Llm | null, audit: import('../audit/audit.service.js').AuditService }} deps
  */
 export function createUnderstanding({ llm, audit }) {
   return {
@@ -69,10 +70,7 @@ export function createUnderstanding({ llm, audit }) {
  * @returns {Understanding | null}
  */
 export function readUnderstanding(answer, text) {
-  const cleaned = answer.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  const start = cleaned.indexOf('{')
-  const end = cleaned.lastIndexOf('}')
-  const parsed = start >= 0 && end > start ? readJson(cleaned.slice(start, end + 1)) : null
+  const parsed = jsonIn(answer)
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
 
   const doubts = new Set(listOf(parsed.unsure).filter((field) => typeof field === 'string' && FIELD.test(field)))
@@ -152,12 +150,3 @@ const cleanText = (value) => (typeof value === 'string' ? value.trim() : '')
 
 /** @param {unknown} value @returns {any[]} */
 const listOf = (value) => (Array.isArray(value) ? value : [])
-
-/** @param {string} data */
-function readJson(data) {
-  try {
-    return JSON.parse(data)
-  } catch {
-    return null
-  }
-}
