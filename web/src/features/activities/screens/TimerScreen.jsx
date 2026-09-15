@@ -1,0 +1,61 @@
+import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
+import { stopTimer } from '../api'
+import { placeText } from '../model'
+import { clockText } from '../../../shared/format'
+import { useCountdown } from '../../../shared/hooks/useCountdown'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { useStored } from '../../../shared/store'
+import { Body, Footer, Header, MetaLabel, Screen, SecondaryButton, TertiaryButton } from '../../../shared/ui'
+import '../activities.css'
+
+/**
+ * 2o. The timer exists to get the phone out of the parent's hand. It counts
+ * down from the activity's own estimate as a hint, not a target, and is
+ * silent at zero. The app never logs or reports how long they played.
+ * Copy on this screen needs a voice pass.
+ */
+export function TimerScreen() {
+  const { id } = useParams({ from: '/idea/$id/reloj' })
+  const navigate = useNavigate()
+  const goBack = useGoBack('/idea/$id', { id })
+  const activity = useStored('activities')?.[id]
+  const timer = useStored('timer')
+  const mine = timer?.activityId === id
+  const remaining = useCountdown(mine ? timer.endsAt : null)
+
+  useDocumentTitle(activity && `${clockText(remaining)} · ${activity.title}`)
+
+  if (!activity || !mine) return <Navigate to="/idea/$id" params={{ id }} replace />
+
+  const finish = async () => {
+    await navigate({ to: '/', replace: true })
+    stopTimer()
+  }
+
+  return (
+    <Screen tone="accent">
+      <Header
+        onBack={goBack}
+        trailing={
+          <MetaLabel tone="grass">
+            {activity.minutes} min · {placeText(activity.place)}
+          </MetaLabel>
+        }
+      />
+      <Body className="timer">
+        <p className="timer__title">{activity.title}</p>
+        <p className="timer__clock" role="timer" aria-label={`Quedan ${clockText(remaining)}`}>
+          {clockText(remaining)}
+        </p>
+        <p className="timer__hint">Dejá el teléfono. El reloj sigue solo.</p>
+      </Body>
+      <Footer>
+        <SecondaryButton size="lg" outline="primary" onClick={goBack}>
+          Ocultar el reloj
+        </SecondaryButton>
+        <TertiaryButton onClick={finish}>Terminamos</TertiaryButton>
+      </Footer>
+    </Screen>
+  )
+}

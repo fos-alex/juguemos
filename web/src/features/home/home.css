@@ -1,0 +1,61 @@
+/* 2i / 2j / 2l / 2q Home */
+
+.home__header {
+  padding: 16px 26px 0;
+}
+
+.home__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+}
+
+.menu-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  margin: 0 -12px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+}
+
+.menu-button span {
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--primary);
+}
+
+.home__family {
+  margin-top: 6px;
+  font-size: 17px;
+  color: var(--ink-muted);
+}
+
+.home__memory {
+  padding: 22px 26px 0;
+}
+
+.home__offline {
+  margin-bottom: 14px;
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--ink);
+  animation: fade-in 200ms ease-out;
+}
+
+.home__spacer {
+  flex: 1;
+  min-height: 24px;
+}
+
+.home__actions {
+  gap: 14px;
+  padding-top: 0;
+}

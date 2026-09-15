@@ -1,19 +1,7 @@
 /**
- * The shapes the screens not yet in a feature work with. The API modules
- * translate to and from the API's own shapes, so screens never see them.
+ * The shapes the catalog admin works with, as the API sends them.
  */
 
-/**
- * @typedef {{
- *   id: string, title: string, minutes: number, place: 'indoor' | 'outdoor',
- *   why: string, needs: string, steps: string[], easier: string, harder: string,
- * }} Activity
- * `needs` starts lowercase so a toy name at the start keeps its family spelling;
- * the layout capitalises the sentence where it needs to.
- */
-/** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption */
-/** @typedef {StoryOption & { parts: string[][] }} Story */
-/** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStorySummary */
 /**
  * @typedef {{
  *   title: string, active: boolean, minutes: number, place: 'indoor' | 'outdoor',

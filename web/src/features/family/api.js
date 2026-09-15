@@ -8,6 +8,7 @@ import { read, write } from '../../shared/store'
 import { ApiError, request } from '../../shared/http'
 
 /** @typedef {import('./types').Family} Family */
+/** @typedef {import('./types').Kid} Kid */
 /**
  * @typedef {{
  *   kids: { id?: string, name: string, age: number | null, playing?: boolean }[], pets: { name: string }[],
@@ -110,4 +111,13 @@ export function keepDraft(text) {
 export function addToDraft(text) {
   const current = read('familyDraft')?.trim()
   write('familyDraft', current ? `${current} ${text}` : text)
+}
+
+/**
+ * Shows who's playing on this device at once, before `choosePlaying` saves it.
+ * @param {Kid[]} kids
+ */
+export function markPlaying(kids) {
+  const family = read('family')
+  if (family) write('family', { ...family, kids })
 }

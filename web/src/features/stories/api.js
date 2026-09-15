@@ -5,8 +5,8 @@
  * reading screen fills while the model still talks; an already-written story
  * streams the same way, from the saved copy.
  */
-import { read, write } from '../shared/store'
-import { ApiError, endSession, OfflineError, request } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { ApiError, endSession, OfflineError, request } from '../../shared/http'
 
 /** @typedef {import('./types').StoryOption} StoryOption */
 /** @typedef {import('./types').Story} Story */
@@ -111,4 +111,19 @@ export async function savedStory(id) {
   const story = { id, title, teaser, minutes, parts }
   write('stories', { ...read('stories'), [id]: story })
   return story
+}
+
+/** Forgets the options on this device, so the story screen asks for new ones. */
+export function forgetOptions() {
+  write('storyOptions', null)
+}
+
+/**
+ * Saves how far into a story the parent has scrolled, from 0 to 1, so a
+ * reopened story resumes there.
+ * @param {string} id
+ * @param {number} progress
+ */
+export function savePosition(id, progress) {
+  write('storyPositions', { ...read('storyPositions'), [id]: progress })
 }

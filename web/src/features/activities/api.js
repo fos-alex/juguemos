@@ -2,8 +2,8 @@
  * Activities, against the real API. Each suggestion is also kept in the
  * local store, which is what keeps the last one readable offline.
  */
-import { read, write } from '../shared/store'
-import { ApiError, request, WordedError } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { ApiError, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').Activity} Activity */
 
@@ -30,4 +30,24 @@ export async function suggestActivity({ after = null } = {}) {
   write('activities', { ...read('activities'), [activity.id]: activity })
   write('lastActivityId', activity.id)
   return activity
+}
+
+/** Remembers the juego on screen as the last one, for Home's card. @param {string} id */
+export function rememberLast(id) {
+  write('lastActivityId', id)
+}
+
+/**
+ * Starts the timer for an activity, from its own estimate. There is one
+ * timer; starting it for another activity replaces it.
+ * @param {string} activityId
+ * @param {number} minutes
+ */
+export function startTimer(activityId, minutes) {
+  write('timer', { activityId, endsAt: Date.now() + minutes * 60_000 })
+}
+
+/** Ends the timer. Nothing about it is kept. */
+export function stopTimer() {
+  write('timer', null)
 }
