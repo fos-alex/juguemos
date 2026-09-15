@@ -4,7 +4,8 @@
  * now; the second parent joins in 0.6.
  */
 import { and, eq, notInArray, sql } from 'drizzle-orm'
-import { families, familyMembers, interests, kids, kidsSittingOut, pets, toys } from './families.schema.js'
+import { families, familyMembers, interests, kids, kidsSittingOut, pets } from './families.schema.js'
+import { toys } from '../toys/toys.schema.js'
 import { NotFoundError, ValidationError } from '../errors.js'
 
 /** @typedef {{ id: string, name: string | null }} Family */

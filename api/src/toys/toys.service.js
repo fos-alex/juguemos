@@ -6,9 +6,10 @@
  */
 import { randomUUID } from 'node:crypto'
 import { and, asc, count, eq, inArray, max } from 'drizzle-orm'
-import { householdMaterials, kids, toys } from '../families/families.schema.js'
+import { kids } from '../families/families.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 import { MATERIALS } from './materials.js'
+import { householdMaterials, toys } from './toys.schema.js'
 
 /**
  * @typedef {{
