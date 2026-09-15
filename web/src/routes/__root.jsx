@@ -59,9 +59,10 @@ const FIRST_RUN = ['/familia/contanos', '/familia/revisar', '/familia/corregir']
  * Keeps the first run in order: a signed-in account, a family, then the app.
  * Returns where the parent belongs, or null when the path is fine. A session
  * that ended sends them to sign in again; a device that never had one, or
- * signed out, to the entry. The family starts in the form until the app can
- * read a family's own words (JUG-11). Verifying the email waits until the API
- * sends email, so /verificar sends them on.
+ * signed out, to the entry. The family starts from the parent's own words when
+ * the API has an LLM to read them (JUG-11), and in the form when it doesn't.
+ * Verifying the email waits until the API sends email, so /verificar sends
+ * them on.
  * @param {string} path
  * @param {import('../api/types').Account | null} account
  * @returns {{ to: string, search?: { modo: 'entrar' } } | null}
@@ -71,7 +72,10 @@ function firstRunTarget(path, account) {
     if (SIGNED_OUT.includes(path)) return null
     return read('sessionEnded') ? { to: '/cuenta', search: { modo: 'entrar' } } : { to: '/entrada' }
   }
-  if (!read('family')) return FIRST_RUN.includes(path) ? null : { to: '/familia/corregir' }
+  if (!read('family')) {
+    if (FIRST_RUN.includes(path)) return null
+    return { to: account.familyFromText ? '/familia/contanos' : '/familia/corregir' }
+  }
   if ([...SIGNED_OUT, '/verificar', '/familia/contanos', '/familia/revisar'].includes(path)) return { to: '/' }
   return null
 }

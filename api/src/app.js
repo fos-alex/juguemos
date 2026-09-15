@@ -14,6 +14,7 @@ import { createFamiliesController } from './families/families.controller.js'
 import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
+import { createUnderstanding } from './families/understanding.js'
 import { AppError } from './errors.js'
 import { createLlm } from './llm/llm.js'
 import { createHealthController } from './health/health.controller.js'
@@ -45,7 +46,10 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
   const activities = createActivitiesService({ db, families, random })
-  const stories = createStoriesService({ db, families, random, now, llm: llm ?? createLlm({ config: config.llm }) })
+  // One LLM for stories and for reading a family's text; null without a key.
+  const model = llm ?? createLlm({ config: config.llm })
+  const stories = createStoriesService({ db, families, random, now, llm: model })
+  const understanding = createUnderstanding({ llm: model })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
   // After the session hook below: routes about the family need one saved.
@@ -65,8 +69,8 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
 
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
-  app.register(accountsRoutes, { controller: createAccountsController({ families }) })
-  app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
+  app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
+  app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
   app.register(toysRoutes, { controller: createToysController({ toys }), guards: familyGuards })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })

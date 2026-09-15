@@ -41,10 +41,13 @@ async function post(path, body) {
   }
 }
 
-/** @param {{ name: string, email: string, emailVerified: boolean }} user */
-function remember(user) {
+/**
+ * @param {{ name: string, email: string, emailVerified: boolean }} user
+ * @param {boolean} [familyFromText] from /me; kept from the device's copy when not given
+ */
+function remember(user, familyFromText = read('account')?.familyFromText) {
   /** @type {Account} */
-  const account = { name: user.name, email: user.email, provider: 'email', emailVerified: user.emailVerified }
+  const account = { name: user.name, email: user.email, provider: 'email', emailVerified: user.emailVerified, familyFromText }
   write('account', account)
   write('sessionEnded', null)
   lastCheck = { at: Date.now(), account: Promise.resolve(account) }
@@ -54,14 +57,19 @@ function remember(user) {
 /** @param {{ name: string, email: string, password: string }} input @returns {Promise<Account>} */
 export async function createAccount(input) {
   const { user } = await post('/sign-up/email', input)
-  return remember(user)
+  const account = remember(user)
+  // The next navigation asks /me, which says where the family starts.
+  lastCheck = null
+  return account
 }
 
 /** Signs in and brings the account's family into this browser. @param {{ email: string, password: string }} input @returns {Promise<Account>} */
 export async function signIn(input) {
   const { user } = await post('/sign-in/email', input)
   await loadFamily()
-  return remember(user)
+  const account = remember(user)
+  lastCheck = null
+  return account
 }
 
 /**
@@ -107,8 +115,8 @@ async function checkSession() {
       return null
     }
     if (!response.ok) return read('account')
-    const { user, family } = await response.json()
-    const account = remember(user)
+    const { user, family, familyFromText } = await response.json()
+    const account = remember(user, familyFromText)
     // A family saved before this browser was cleared, or on another one, comes back too.
     if (family && !read('family')) await loadFamily()
     return account
