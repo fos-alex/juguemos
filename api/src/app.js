@@ -7,6 +7,7 @@ import { activitiesRoutes } from './activities/activities.routes.js'
 import { createActivitiesService } from './activities/activities.service.js'
 import { createAdminController } from './admin/admin.controller.js'
 import { adminRoutes } from './admin/admin.routes.js'
+import { createAuditService } from './audit/audit.service.js'
 import { createAuth } from './auth/auth.js'
 import { authRoutes } from './auth/auth.routes.js'
 import { createRequireSession } from './auth/session.js'
@@ -56,8 +57,10 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   // One LLM for stories and for reading a family's text; null without a key.
   const model = llm ?? createLlm({ config: config.llm })
   const stories = createStoriesService({ db, families, random, now, llm: model })
-  const understanding = createUnderstanding({ llm: model })
-  const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families })
+  // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.
+  const audit = createAuditService({ db, enabled: config.audit.transcripts })
+  const understanding = createUnderstanding({ llm: model, audit })
+  const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families, audit })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
   // After the session hook below: routes about the family need one saved.

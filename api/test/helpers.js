@@ -50,9 +50,9 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean }} [options]
+ * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean }} [options]
  */
-export async function startApi({ signupEmails = [], random, now, llm, transcriber, admin = false } = {}) {
+export async function startApi({ signupEmails = [], random, now, llm, transcriber, admin = false, auditTranscripts = false } = {}) {
   const database = await createDatabase()
   await migrate({ databaseUrl: database.url })
 
@@ -67,6 +67,7 @@ export async function startApi({ signupEmails = [], random, now, llm, transcribe
     // No service: voice notes are off, unless a test passes its own `transcriber`.
     stt: { url: null, model: '', apiKey: null },
     admin: { enabled: admin },
+    audit: { transcripts: auditTranscripts },
   }
   const app = buildApp({ config, db, logger: false, random, now, llm, transcriber })
   await app.ready()

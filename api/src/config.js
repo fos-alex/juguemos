@@ -47,6 +47,7 @@ const LLM_PROVIDERS = {
  * @property {LlmConfig} llm
  * @property {SttConfig} stt speech to text, for voice notes
  * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
+ * @property {{ transcripts: boolean }} audit whether parents' own words are kept in audit_transcripts (JUG-116)
  */
 
 /** Whisper large-v3-turbo, as the self-hosted speaches server names it. */
@@ -79,6 +80,8 @@ export function loadConfig(env = process.env) {
     llm: loadLlm(env, url),
     stt: loadStt(env),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
+    // Off unless set: the texts hold the family's names.
+    audit: { transcripts: flag(env, 'AUDIT_TRANSCRIPTS') },
   }
 }
 

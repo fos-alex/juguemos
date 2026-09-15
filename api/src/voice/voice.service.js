@@ -6,15 +6,17 @@
 
 /** @typedef {import('./transcriber.js').Transcriber} Transcriber */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
+/** @typedef {import('../audit/audit.service.js').AuditService} AuditService */
 
 /** Whisper reads at most 224 tokens of hints; this stays well under. */
 const MAX_HINTS = 400
 
 /**
- * @param {{ transcriber: Transcriber | null, families: FamiliesService }} deps
- * `transcriber` is null when no speech-to-text service is configured.
+ * @param {{ transcriber: Transcriber | null, families: FamiliesService, audit: AuditService }} deps
+ * `transcriber` is null when no speech-to-text service is configured. `audit`
+ * keeps each transcription while AUDIT_TRANSCRIPTS is on (JUG-116).
  */
-export function createVoiceService({ transcriber, families }) {
+export function createVoiceService({ transcriber, families, audit }) {
   return {
     /** Whether voice notes work on this server. */
     get available() {
@@ -32,7 +34,9 @@ export function createVoiceService({ transcriber, families }) {
       if (!transcriber) throw new Error('No speech-to-text service is configured')
       const familyId = await families.idOf(userId)
       const hints = familyId ? hintsOf(await families.profileOf(familyId)) : undefined
-      return transcriber.transcribe({ audio, type, hints })
+      const text = await transcriber.transcribe({ audio, type, hints })
+      await audit.recordTranscript({ userId, familyId, source: 'voice_note', text })
+      return text
     },
   }
 }

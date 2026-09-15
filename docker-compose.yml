@@ -52,6 +52,7 @@ services:
       OPENCODE_MODEL: ${OPENCODE_MODEL:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
+      AUDIT_TRANSCRIPTS: ${AUDIT_TRANSCRIPTS:-false}
       # Speech to text for voice notes: the stt service below, unless .env
       # points at a hosted one with its model and key.
       STT_URL: ${STT_URL:-http://stt:8000/v1}

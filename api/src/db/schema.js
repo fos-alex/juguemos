@@ -5,6 +5,7 @@
  * from them. A new schema file goes here too.
  */
 export * from '../activities/activities.schema.js'
+export * from '../audit/audit.schema.js'
 export * from '../auth/auth.schema.js'
 export * from '../families/families.schema.js'
 export * from '../stories/stories.schema.js'
