@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { systemPrompt } from '../../src/stories/prompts/compose.js'
-import { anchorOf, clampMinutes, familyLines, moodAt, OptionsParser, toPlot, wordsIn } from '../../src/stories/storytelling.js'
+import { anchorOf, clampMinutes, familyLines, moodAt, OptionsParser, StoryParser, toPlot, wordsIn } from '../../src/stories/storytelling.js'
 
 /** @param {{ name: string, age: number | null }[]} kids */
 const profileOf = (kids) => ({
@@ -156,4 +156,30 @@ test('the word count is every paragraph of every part', () => {
 test('the moment follows the Buenos Aires clock', () => {
   assert.equal(moodAt(new Date('2026-09-14T21:00:00-03:00')), 'calm')
   assert.equal(moodAt(new Date('2026-09-14T20:00:00Z')), 'lively')
+})
+
+test('a TÍTULO line before the first part is read, and handed back once', () => {
+  const parser = new StoryParser()
+  const done = parser.push('TÍTULO: Milán y los dinosaurios.\nPARTE 1\nSalieron a la plaza.\n\n')
+  assert.equal(parser.takeTitle(), 'Milán y los dinosaurios.')
+  assert.equal(parser.takeTitle(), '', 'a story is announced once')
+  assert.deepEqual(done, [{ part: 1, text: 'Salieron a la plaza.' }])
+})
+
+test('the title line is read however it arrives, and a story without one has none', () => {
+  const split = new StoryParser()
+  split.push('TÍTU')
+  split.push('LO:  Milán y el tren.  \nPARTE 1\n')
+  assert.equal(split.takeTitle(), 'Milán y el tren.')
+
+  const untitled = new StoryParser()
+  untitled.push('PARTE 1\nMilán se despertó.\n\n')
+  assert.equal(untitled.takeTitle(), '')
+})
+
+test('a title said inside the story is a paragraph, not the title', () => {
+  const parser = new StoryParser()
+  const done = parser.push('PARTE 1\nTítulo: eso lo dice un personaje.\n\n')
+  assert.equal(parser.takeTitle(), '')
+  assert.deepEqual(done, [{ part: 1, text: 'Título: eso lo dice un personaje.' }])
 })
