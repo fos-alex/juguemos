@@ -7,7 +7,7 @@
 import { read, write } from '../../shared/store'
 import { ApiError, request } from '../../shared/http'
 
-/** @typedef {import('../../api/types').Family} Family */
+/** @typedef {import('./types').Family} Family */
 /**
  * @typedef {{
  *   kids: { id?: string, name: string, age: number | null, playing?: boolean }[], pets: { name: string }[],
@@ -48,7 +48,7 @@ export function upgradeCachedFamily() {
   if (!family?.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')) return
   write('family', {
     ...family,
-    toys: family.toys.map((/** @type {string | import('../../api/types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
+    toys: family.toys.map((/** @type {string | import('./types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
   })
 }
 
@@ -70,11 +70,11 @@ export async function loadFamily() {
  * and keeps the result for the review card. Nothing is saved until the parent
  * confirms it.
  * @param {string} text
- * @returns {Promise<import('../../api/types').ParseResult>}
+ * @returns {Promise<import('./types').ParseResult>}
  */
 export async function understandFamily(text) {
   const { family, unsure, note } = await request('POST', '/family/understanding', { text })
-  /** @type {import('../../api/types').ParseResult} */
+  /** @type {import('./types').ParseResult} */
   const parse = { family: toFamily(family), flagged: unsure, note }
   write('parseResult', parse)
   return parse
@@ -99,4 +99,15 @@ export async function choosePlaying(kidIds) {
   const family = toFamily(await request('PUT', '/family/playing', { kids: kidIds }))
   write('family', family)
   return family
+}
+
+/** Keeps what the parent has written on 2d so far, so a reload doesn't lose it. @param {string} text */
+export function keepDraft(text) {
+  write('familyDraft', text)
+}
+
+/** A voice note's words go after whatever is already in the draft. @param {string} text */
+export function addToDraft(text) {
+  const current = read('familyDraft')?.trim()
+  write('familyDraft', current ? `${current} ${text}` : text)
 }

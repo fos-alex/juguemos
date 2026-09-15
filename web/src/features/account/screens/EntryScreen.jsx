@@ -1,23 +1,16 @@
-import { useEffect } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { PrimaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
-import { Footer, Screen } from '../../../shared/ui/Screen'
-import { Wordmark } from '../../../shared/ui/Wordmark'
-
-export const Route = createFileRoute('/entrada')({
-  component: EntryScreen,
-})
+import { useNavigate } from '@tanstack/react-router'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
+import { Footer, PrimaryButton, Screen, TertiaryButton, Wordmark } from '../../../shared/ui'
+import '../account.css'
 
 /**
  * 2a. The wordmark alone above the fold; both ways in sit in the thumb zone.
  * The Google button comes back with Sign in with Google (0.3).
  */
-function EntryScreen() {
+export function EntryScreen() {
   const navigate = useNavigate()
 
-  useEffect(() => {
-    document.title = 'Juguemos'
-  }, [])
+  useDocumentTitle('Juguemos')
 
   return (
     <Screen className="entry">

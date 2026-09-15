@@ -1,8 +1,8 @@
 import { redirect } from '@tanstack/react-router'
-import { ensureSession } from '../api'
+import { ensureSession } from '../features/account'
 import { read } from '../shared/store'
 
-/** @typedef {import('../api/types').Account} Account */
+/** @typedef {import('../features/account').Account} Account */
 
 const SIGNED_OUT = ['/entrada', '/cuenta']
 const FIRST_RUN = ['/familia/contanos', '/familia/revisar', '/familia/corregir']

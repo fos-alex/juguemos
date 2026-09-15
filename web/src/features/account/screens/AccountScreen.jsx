@@ -1,37 +1,12 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { createAccount, signIn } from '../../../api'
-import { PrimaryButton } from '../../../shared/ui/Buttons'
-import { Field } from '../../../shared/ui/Field'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { createAccount, signIn } from '../api'
+import { checkAccount, offerToSave } from '../model'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
-import { failureText } from '../../../shared/format'
+import { useRequest } from '../../../shared/hooks/useRequest'
 import { read } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-
-export const Route = createFileRoute('/cuenta')({
-  validateSearch: (search) => ({
-    modo: search.modo === 'entrar' ? 'entrar' : undefined,
-    campo: search.campo === 'email' ? 'email' : undefined,
-  }),
-  component: AccountScreen,
-})
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-/**
- * Hands the browser the email and password that just worked, so it offers to
- * save them. The form never reloads the page, which some browsers don't read
- * as a sign-in; where the Credential Management API exists (Chrome, Edge,
- * Android) this asks for the save prompt directly. Elsewhere the browser
- * relies on the fields' autocomplete hints and the form leaving the page.
- * @param {{ email: string, password: string, name: string }} credentials
- */
-function offerToSave({ email, password, name }) {
-  if (!('PasswordCredential' in window)) return
-  const credential = new window.PasswordCredential({ id: email, password, name })
-  navigator.credentials.store(credential).catch(() => {})
-}
+import { Body, Field, Footer, Header, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
 
 /**
  * 2b. Three fields and that's the whole account. "Ya tengo cuenta" reuses the
@@ -39,8 +14,8 @@ function offerToSave({ email, password, name }) {
  * Google button comes back with Sign in with Google (0.3).
  * Account copy still needs a voice pass.
  */
-function AccountScreen() {
-  const { modo, campo } = Route.useSearch()
+export function AccountScreen() {
+  const { modo, campo } = useSearch({ from: '/cuenta' })
   const signingIn = modo === 'entrar'
   const navigate = useNavigate()
   const goBack = useGoBack('/entrada')
@@ -52,28 +27,15 @@ function AccountScreen() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}))
-  const [request, setRequest] = useState(/** @type {'idle' | 'busy'} */ ('idle'))
-  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+  const request = useRequest()
 
-  useEffect(() => {
-    document.title = `${signingIn ? 'Entrá a tu cuenta' : 'Creá tu cuenta'} · Juguemos`
-  }, [signingIn])
-
-  const validate = () => {
-    /** @type {Record<string, string>} */
-    const found = {}
-    if (!signingIn && !name.trim()) found.name = 'Contanos cómo te llamás.'
-    if (!EMAIL.test(email.trim())) found.email = 'Revisá el email: parece que le falta algo.'
-    if (signingIn && !password) found.password = 'Escribí tu contraseña.'
-    if (!signingIn && password.length < 8) found.password = 'Tiene que tener al menos 8 caracteres.'
-    return found
-  }
+  useDocumentTitle(`${signingIn ? 'Entrá a tu cuenta' : 'Creá tu cuenta'} · Juguemos`)
 
   /** @param {React.FormEvent<HTMLFormElement>} event */
-  const submit = async (event) => {
+  const submit = (event) => {
     event.preventDefault()
-    if (request !== 'idle') return
-    const found = validate()
+    if (request.busy) return
+    const found = checkAccount({ signingIn, name, email, password })
     setErrors(found)
     const first = Object.keys(found)[0]
     if (first) {
@@ -81,23 +43,17 @@ function AccountScreen() {
       if (input instanceof HTMLInputElement) input.focus()
       return
     }
-    setRequest('busy')
-    setFailure(null)
-    try {
+    void request.run(async () => {
       if (signingIn) {
         const account = await signIn({ email: email.trim(), password })
         offerToSave({ email: email.trim(), password, name: account.name })
-        void navigate({ to: '/', replace: true })
       } else {
         await createAccount({ name: name.trim(), email: email.trim(), password })
         offerToSave({ email: email.trim(), password, name: name.trim() })
-        // The first-run guard knows where a new account goes next.
-        void navigate({ to: '/', replace: true })
       }
-    } catch (error) {
-      setFailure(failureText(error))
-      setRequest('idle')
-    }
+      // The first-run guard knows where a new account goes next.
+      void navigate({ to: '/', replace: true })
+    })
   }
 
   /** @param {string} field */
@@ -164,10 +120,10 @@ function AccountScreen() {
               </button>
             }
           />
-          <StatusLine role="alert">{failure}</StatusLine>
+          <StatusLine role="alert">{request.failure}</StatusLine>
         </Body>
         <Footer>
-          <PrimaryButton type="submit" busy={request === 'busy'} busyLabel="Un momento">
+          <PrimaryButton type="submit" busy={request.busy} busyLabel="Un momento">
             {signingIn ? 'Entrar' : 'Crear cuenta'}
           </PrimaryButton>
         </Footer>

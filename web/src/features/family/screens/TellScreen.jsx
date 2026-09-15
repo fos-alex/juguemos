@@ -1,16 +1,12 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { understandFamily } from '../../../api'
-import { PrimaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
-import { Body, Footer, Screen } from '../../../shared/ui/Screen'
-import { VoiceNote } from '../../voice/components/VoiceNote'
-import { failureText } from '../../../shared/format'
-import { read, useStored, write } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-
-export const Route = createFileRoute('/familia/contanos')({
-  component: TellUsScreen,
-})
+import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { VoiceNote } from '../../voice'
+import { addToDraft, keepDraft, understandFamily } from '../api'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
+import { useRequest } from '../../../shared/hooks/useRequest'
+import { useStored } from '../../../shared/store'
+import { Body, Footer, PrimaryButton, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import '../family.css'
 
 const EXAMPLE =
   'Somos Alex y Caro, tenemos a Milán, de dos años, y a Inca, nuestra mascota. A Milán le encantan los dinosaurios y los caballos, y tiene un tren de madera que no suelta.'
@@ -28,41 +24,25 @@ const EXAMPLE =
  * and opens the review card. If that fails, the text stays for another try.
  * With nothing written, "Listo" opens the form.
  */
-function TellUsScreen() {
+export function TellScreen() {
   const navigate = useNavigate()
   const draft = useStored('familyDraft') ?? ''
-  const [busy, setBusy] = useState(false)
-  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+  const request = useRequest()
   const [recording, setRecording] = useState(false)
-  const [voiceMessage, setVoiceMessage] = useState(
-    /** @type {import('../../voice/components/VoiceNote').VoiceMessage | null} */ (null),
-  )
+  const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
 
-  useEffect(() => {
-    document.title = 'Contame de tu familia · Juguemos'
-  }, [])
+  useDocumentTitle('Contame de tu familia · Juguemos')
 
   const toForm = () => void navigate({ to: '/familia/corregir' })
 
-  const understand = async () => {
-    if (busy) return
+  const understand = () => {
+    if (request.busy) return
     const text = draft.trim()
     if (!text) return toForm()
-    setBusy(true)
-    setFailure(null)
-    try {
+    void request.run(async () => {
       await understandFamily(text)
       void navigate({ to: '/familia/revisar' })
-    } catch (error) {
-      setFailure(failureText(error))
-      setBusy(false)
-    }
-  }
-
-  /** A note's words go after whatever is already in the box. @param {string} text */
-  const addWords = (text) => {
-    const current = read('familyDraft')?.trim()
-    write('familyDraft', current ? `${current} ${text}` : text)
+    })
   }
 
   return (
@@ -81,10 +61,10 @@ function TellUsScreen() {
           className="tell__text"
           value={draft}
           placeholder={EXAMPLE}
-          readOnly={busy || recording}
-          onChange={(event) => write('familyDraft', event.target.value)}
+          readOnly={request.busy || recording}
+          onChange={(event) => keepDraft(event.target.value)}
         />
-        <StatusLine role="alert">{failure}</StatusLine>
+        <StatusLine role="alert">{request.failure}</StatusLine>
         {voiceMessage && (
           <div className="tell__voice-message">
             <StatusLine role="status">{voiceMessage.text}</StatusLine>
@@ -103,8 +83,8 @@ function TellUsScreen() {
         </TertiaryButton>
       </Body>
       <Footer row>
-        <VoiceNote onText={addWords} onMessage={setVoiceMessage} onRecording={setRecording}>
-          <PrimaryButton className="grow" busy={busy} busyLabel="Leyendo" onClick={() => void understand()}>
+        <VoiceNote onText={addToDraft} onMessage={setVoiceMessage} onRecording={setRecording}>
+          <PrimaryButton className="grow" busy={request.busy} busyLabel="Leyendo" onClick={understand}>
             Listo
           </PrimaryButton>
         </VoiceNote>

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { OfflineError, transcribe, VoiceOffError } from '../../../api'
+import { transcribe, VoiceOffError } from '../api'
+import { OfflineError } from '../../../shared/http'
 import { clockText, failureText } from '../../../shared/format'
 import { canRecord, MicDeniedError, startRecording } from '../recorder'
 import { Dots } from '../../../shared/ui/Buttons'

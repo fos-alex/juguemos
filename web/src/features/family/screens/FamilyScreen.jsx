@@ -1,24 +1,18 @@
-import { useEffect } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { SecondaryButton } from '../../../shared/ui/Buttons'
+import { useNavigate } from '@tanstack/react-router'
 import { FamilyCard } from '../components/FamilyCard'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useStored } from '../../../shared/store'
-
-export const Route = createFileRoute('/familia/')({
-  component: MyFamilyScreen,
-})
+import { Body, Footer, Header, Screen, SecondaryButton } from '../../../shared/ui'
+import '../family.css'
 
 /** Mi familia: the summary card's permanent home once onboarding is over, with the form one tap away. */
-function MyFamilyScreen() {
+export function FamilyScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const family = useStored('family')
 
-  useEffect(() => {
-    document.title = 'Mi familia · Juguemos'
-  }, [])
+  useDocumentTitle('Mi familia · Juguemos')
 
   return (
     <Screen>

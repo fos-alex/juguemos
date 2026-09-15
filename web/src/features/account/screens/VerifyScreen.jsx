@@ -1,17 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { resendCode, verifyEmail, WrongCodeError } from '../../../api'
-import { PrimaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { resendCode, verifyEmail, WrongCodeError } from '../mock'
 import { useCountdown } from '../../../shared/hooks/useCountdown'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { clockText, failureText } from '../../../shared/format'
 import { useStored } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-
-export const Route = createFileRoute('/verificar')({
-  component: VerifyScreen,
-})
+import { Body, Footer, Header, PrimaryButton, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import '../account.css'
 
 const LENGTH = 6
 const RESEND_AFTER_MS = 60_000
@@ -22,7 +18,7 @@ const RESEND_AFTER_MS = 60_000
  * button is for the parent who doesn't trust that. A wrong code clears the
  * boxes and says so in one line: no lockout, no attempt counter.
  */
-function VerifyScreen() {
+export function VerifyScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/cuenta')
   const account = useStored('account')
@@ -34,9 +30,7 @@ function VerifyScreen() {
   const [resendAt, setResendAt] = useState(() => Date.now() + RESEND_AFTER_MS)
   const resendIn = useCountdown(resendAt)
 
-  useEffect(() => {
-    document.title = 'Revisá tu email · Juguemos'
-  }, [])
+  useDocumentTitle('Revisá tu email · Juguemos')
 
   /** @param {string} value */
   const verify = async (value) => {

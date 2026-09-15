@@ -1,44 +1,29 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { signOut } from '../../../api'
-import { TertiaryButton } from '../../../shared/ui/Buttons'
-import { Card, MetaLabel } from '../../../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { signOut } from '../api'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
-import { failureText } from '../../../shared/format'
+import { useRequest } from '../../../shared/hooks/useRequest'
 import { read } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-
-export const Route = createFileRoute('/ajustes')({
-  component: SettingsScreen,
-})
+import { Body, Card, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
 
 /** Ajustes: account, not navigation. Not designed in the handoff; kept to the minimum. Copy needs a voice pass. */
-function SettingsScreen() {
+export function SettingsScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   // Read once: signing out clears the account before this screen leaves.
   const [account] = useState(() => read('account'))
+  const request = useRequest()
 
-  useEffect(() => {
-    document.title = 'Ajustes · Juguemos'
-  }, [])
-
-  const [request, setRequest] = useState(/** @type {'idle' | 'busy'} */ ('idle'))
-  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+  useDocumentTitle('Ajustes · Juguemos')
 
   // Signing out waits for the API; offline it says so and the parent stays signed in.
-  const leave = async () => {
-    if (request !== 'idle') return
-    setRequest('busy')
-    setFailure(null)
-    try {
+  const leave = () => {
+    if (request.busy) return
+    void request.run(async () => {
       await signOut()
       void navigate({ to: '/entrada', replace: true })
-    } catch (error) {
-      setFailure(failureText(error))
-      setRequest('idle')
-    }
+    })
   }
 
   return (
@@ -52,8 +37,8 @@ function SettingsScreen() {
         </Card>
       </Body>
       <Footer>
-        <StatusLine role="alert">{failure}</StatusLine>
-        <TertiaryButton disabled={request !== 'idle'} onClick={leave}>
+        <StatusLine role="alert">{request.failure}</StatusLine>
+        <TertiaryButton disabled={request.busy} onClick={leave}>
           Cerrar sesión
         </TertiaryButton>
       </Footer>

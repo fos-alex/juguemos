@@ -7,9 +7,18 @@
 import { useSyncExternalStore } from 'react'
 
 /**
- * @typedef {'account' | 'family' | 'familyDraft' | 'parseResult' | 'activities' | 'lastActivityId'
- *   | 'timer' | 'storyOptions' | 'stories' | 'storyPositions' | 'theme' | 'sessionEnded' | 'toyBox'} Key
+ * One key per piece of state, grouped by the feature whose api.js writes it.
+ * Two writes cross over: `request` in http.js clears everything and sets
+ * `sessionEnded` when the API ends the session, and the toy box keeps the
+ * family's toys in step with its own.
+ * @typedef {AccountKey | FamilyKey | ToysKey | ActivitiesKey | StoriesKey | AppKey} Key
  */
+/** @typedef {'account' | 'sessionEnded'} AccountKey */
+/** @typedef {'family' | 'familyDraft' | 'parseResult'} FamilyKey */
+/** @typedef {'toyBox'} ToysKey */
+/** @typedef {'activities' | 'lastActivityId' | 'timer'} ActivitiesKey */
+/** @typedef {'storyOptions' | 'stories' | 'storyPositions'} StoriesKey */
+/** @typedef {'theme'} AppKey The night-mode choice, written by app/ThemeProvider.jsx. */
 
 const PREFIX = 'juguemos:'
 const cache = new Map()
