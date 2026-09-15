@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.9 · September 2026 · Owner: Alex Otero
+**Version:** 0.10 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -183,6 +183,7 @@ Practical consequences for the architecture:
 - Photos are stored on the droplet's volume, not on a third-party service, and are served only to the family that owns them.
 - Backups are encrypted and stored off the droplet.
 - Argentina's Ley 25.326, overseen by the AAIP, is the first legal framework to satisfy. Each new market adds its own.
+- What parents send in their own words is kept only for auditing the playtest (JUG-116). With `AUDIT_TRANSCRIPTS=true`, the family text and each voice note's transcription go into `audit_transcripts`, with who sent them. It's off by default and in production. Deleting an account or a family deletes its rows, and `redacted_at` marks a row whose PII has been removed. The texts never go into logs.
 
 ## 10. Operations
 
@@ -213,3 +214,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |
 | 0.8 | September 2026 | Caddy's image builds the web app, so every deploy ships it. The service worker updates itself: each deploy's worker takes over, and the page reloads at a safe moment, never mid-story. |
 | 0.9 | September 2026 | Stories can use OpenCode Go or OpenRouter, switched with `LLM_PROVIDER`, with the model set by `LLM_MODEL`. One client serves both. OpenRouter requests refuse upstream providers that store or train on prompts. |
+| 0.10 | September 2026 | `audit_transcripts` keeps the family text and voice note transcriptions for auditing the playtest, only while `AUDIT_TRANSCRIPTS` is on. |

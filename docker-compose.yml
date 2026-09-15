@@ -52,6 +52,7 @@ services:
       OPENCODE_MODEL: ${OPENCODE_MODEL:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
+      AUDIT_TRANSCRIPTS: ${AUDIT_TRANSCRIPTS:-false}
     depends_on:
       migrate:
         condition: service_completed_successfully

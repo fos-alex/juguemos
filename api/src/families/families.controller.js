@@ -17,7 +17,8 @@ export function createFamiliesController({ families, understanding }) {
      */
     async understand(request) {
       const { text } = /** @type {{ text: string }} */ (request.body)
-      return understanding.understand(text)
+      const userId = request.session.user.id
+      return understanding.understand(text, { userId, familyId: await families.idOf(userId) })
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */

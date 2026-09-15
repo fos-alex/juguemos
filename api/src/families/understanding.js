@@ -4,8 +4,9 @@
  * the parent sees it. Nothing is saved here: the parent confirms the card or
  * corrects the form, and only then does PUT /family save the family.
  *
- * The parent's text is never stored, and never goes into a log or an error
- * message. The model's answer can repeat it, so errors leave that out too.
+ * The parent's text never goes into a log or an error message, and the
+ * model's answer can repeat it, so errors leave that out too. It is stored
+ * only in audit_transcripts, while AUDIT_TRANSCRIPTS is on (JUG-116).
  */
 import familyPrompt from '../../prompts/family.js'
 import { AppError } from '../errors.js'
@@ -32,17 +33,23 @@ const CHECK_NOTE = 'Revisá lo marcado: no lo encontré tal cual en lo que escri
  */
 /** @typedef {ReturnType<typeof createUnderstanding>} UnderstandingService */
 
-/** @param {{ llm: import('../llm/llm.js').Llm | null }} deps */
-export function createUnderstanding({ llm }) {
+/**
+ * @param {{ llm: import('../llm/llm.js').Llm | null, audit: import('../audit/audit.service.js').AuditService }} deps
+ */
+export function createUnderstanding({ llm, audit }) {
   return {
     /** Whether an LLM can read a family's text. Without one, first run starts at the form. */
     available: Boolean(llm),
 
     /**
+     * The text goes into the audit trail first, so a reading that fails is
+     * recorded too.
      * @param {string} text the parent's own words
+     * @param {{ userId: string, familyId: string | null }} sender who sent it, for the audit trail
      * @returns {Promise<Understanding>}
      */
-    async understand(text) {
+    async understand(text, { userId, familyId }) {
+      await audit.recordTranscript({ userId, familyId, source: 'family_text', text })
       if (!llm) throw new AppError('No LLM is configured to read a family', 503)
       let answer = ''
       const signal = AbortSignal.timeout(TIMEOUT_MS)

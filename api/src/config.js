@@ -39,6 +39,7 @@ const LLM_PROVIDERS = {
  * @property {AuthConfig} auth
  * @property {LlmConfig} llm
  * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
+ * @property {{ transcripts: boolean }} audit whether parents' own words are kept in audit_transcripts (JUG-116)
  */
 
 export class ConfigError extends Error {}
@@ -67,6 +68,8 @@ export function loadConfig(env = process.env) {
     auth: { url, secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
     llm: loadLlm(env, url),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
+    // Off unless set: the texts hold the family's names.
+    audit: { transcripts: flag(env, 'AUDIT_TRANSCRIPTS') },
   }
 }
 
