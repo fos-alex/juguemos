@@ -4,11 +4,10 @@ import { familyOf } from '../families/require-family.js'
 /** @typedef {import('./stories.service.js').StoriesService} StoriesService */
 
 /**
- * Writes one event of the story to the open stream. A reader who left gets
- * nothing more, and a full buffer waits for room or for the reader to leave,
- * never forever.
+ * Writes one event to the open stream. A reader who left gets nothing more,
+ * and a full buffer waits for room or for the reader to leave, never forever.
  * @param {import('fastify').FastifyReply} reply
- * @param {import('./stories.service.js').StoryEvent | { type: 'error' }} event
+ * @param {import('./stories.service.js').StoryEvent | import('./stories.service.js').OptionEvent | { type: 'error' }} event
  */
 const writeEvent = async (reply, event) => {
   const response = reply.raw
@@ -25,13 +24,70 @@ const writeEvent = async (reply, event) => {
   })
 }
 
+/**
+ * Aborts when the reader leaves. The response closes when they do, or once
+ * the stream ends. Not the request: its close already fired when the body
+ * was read.
+ * @param {import('fastify').FastifyReply} reply
+ */
+const leavingSignal = (reply) => {
+  const controller = new AbortController()
+  reply.raw.on('close', () => controller.abort())
+  return controller.signal
+}
+
+/**
+ * Opens the stream and sends every event to it, ending after the one named
+ * by `last`. Whatever the service refuses with before the first event is a
+ * regular response, so those failures keep their status and their body;
+ * whatever happens after becomes one `error` event, since a server error is
+ * never described and the failure line in the web does the talking.
+ * @param {import('fastify').FastifyReply} reply
+ * @param {AsyncGenerator<{ type: string }, void, void>} stream
+ * @param {string} last the event type the stream ends with
+ */
+const sendEvents = async (reply, stream, last) => {
+  const first = await stream.next()
+  reply.hijack()
+  reply.raw.writeHead(200, {
+    'content-type': 'text/event-stream',
+    'cache-control': 'no-cache',
+    connection: 'keep-alive',
+    'x-accel-buffering': 'no',
+  })
+  try {
+    let next = first.done ? undefined : first.value
+    while (next) {
+      await writeEvent(reply, next)
+      if (next.type === last) break
+      const step = await stream.next()
+      next = step.done ? undefined : step.value
+    }
+  } catch {
+    await writeEvent(reply, { type: 'error' })
+  }
+  reply.raw.end()
+}
+
 /** Stories for the signed-in adult's family. @param {{ stories: StoriesService }} deps */
 export function createStoriesController({ stories }) {
   return {
-    /** @type {import('fastify').RouteHandlerMethod} */
-    async options(request) {
+    /**
+     * The three options, as server-sent events: one `option` as each lands,
+     * then `done`. A model that answers nothing readable fails before the
+     * stream starts, so the family gets a clean error instead of an empty
+     * screen; a failure once it has started is one last `error` event, as
+     * the story stream does.
+     * @type {import('fastify').RouteHandlerMethod}
+     */
+    async options(request, reply) {
       const { exclude = [] } = /** @type {{ exclude?: string[] }} */ (request.query)
-      return stories.options(familyOf(request), { exclude, userId: userOf(request).id })
+      const stream = await stories.optionsStream(familyOf(request), {
+        exclude,
+        userId: userOf(request).id,
+        signal: leavingSignal(reply),
+      })
+      await sendEvents(reply, stream, 'done')
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
@@ -51,34 +107,11 @@ export function createStoriesController({ stories }) {
      */
     async writeStream(request, reply) {
       const { id } = /** @type {{ id: string }} */ (request.body)
-      const controller = new AbortController()
-      // The response closes when the reader leaves, or once the story is sent.
-      // Not the request: its close already fired when the body was read.
-      reply.raw.on('close', () => controller.abort())
       const stream = await stories.writeStream(familyOf(request), id, {
-        signal: controller.signal,
+        signal: leavingSignal(reply),
         userId: userOf(request).id,
       })
-      const first = await stream.next()
-      reply.hijack()
-      reply.raw.writeHead(200, {
-        'content-type': 'text/event-stream',
-        'cache-control': 'no-cache',
-        connection: 'keep-alive',
-        'x-accel-buffering': 'no',
-      })
-      try {
-        let next = first.done ? undefined : first.value
-        while (next) {
-          await writeEvent(reply, next)
-          if (next.type === 'story') break
-          const step = await stream.next()
-          next = step.done ? undefined : step.value
-        }
-      } catch {
-        await writeEvent(reply, { type: 'error' })
-      }
-      reply.raw.end()
+      await sendEvents(reply, stream, 'story')
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */

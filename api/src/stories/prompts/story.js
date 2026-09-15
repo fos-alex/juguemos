@@ -1,3 +1,7 @@
+/**
+ * The user turn that asks for the story itself, from the plot the family
+ * chose. The band rules are in the system prompt, so this only points at them.
+ */
 export default `Escribí el cuento para esta familia, a partir de la trama elegida.
 
 Los chicos: {{kids}}.
@@ -5,8 +9,10 @@ La mascota: {{pet}}.
 Los juguetes: {{toys}}.
 Lo que le gusta: {{interests}}.
 
-El chico ancla tiene {{anchorAge}}: aplicá la banda {{band}} con precisión, en su largo y en su lengua.
-El momento es {{moment}} y el cuento tiene que durar {{minutes}} minutos.
+El reparto de este cuento:
+{{casting}}
+
+Aplicá las reglas de la banda con precisión, en el largo y en la lengua. El cuento tiene que durar {{minutes}} minutos.
 
 La trama elegida:
 «{{title}}»

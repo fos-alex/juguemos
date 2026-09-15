@@ -7,17 +7,6 @@ import { errorBody, uuid } from '../http/schemas.js'
 const errors = { 400: errorBody, 401: errorBody, 409: errorBody, 500: errorBody }
 const storyErrors = { ...errors, 404: errorBody }
 
-const option = {
-  type: 'object',
-  required: ['id', 'title', 'teaser', 'minutes'],
-  properties: {
-    id: { type: 'string' },
-    title: { type: 'string' },
-    teaser: { type: 'string' },
-    minutes: { type: 'integer' },
-  },
-}
-
 const story = {
   type: 'object',
   required: ['id', 'templateId', 'plotId', 'title', 'teaser', 'minutes', 'parts'],
@@ -68,21 +57,18 @@ const streamBody = {
 }
 
 /**
- * Stories for an adult who has already saved a family. The stream has no
- * schema for its 200: it hijacks the reply and sends server-sent events,
- * described by the service's `StoryEvent`. What it can refuse with before the
- * stream starts is a regular response, so it declares those statuses.
+ * Stories for an adult who has already saved a family. The two streams have
+ * no schema for their 200: they hijack the reply and send server-sent
+ * events, described by the service's `OptionEvent` and `StoryEvent`. What
+ * they can refuse with before the stream starts is a regular response, so
+ * they declare those statuses.
  *
  * @param {import('fastify').FastifyInstance} app
  * @param {{ controller: StoriesController }} options
  */
 export async function storiesRoutes(app, { controller }) {
   const config = { access: 'family' }
-  app.get(
-    '/stories/options',
-    { config, schema: { querystring: optionsQuery, response: { 200: { type: 'array', items: option }, ...errors } } },
-    controller.options,
-  )
+  app.get('/stories/options', { config, schema: { querystring: optionsQuery, response: errors } }, controller.options)
   app.post(
     '/stories',
     { config, schema: { body: writeBody, response: { 200: story, ...storyErrors } } },

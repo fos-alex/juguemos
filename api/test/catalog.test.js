@@ -6,7 +6,7 @@ import { accounts } from '../seeds/development.js'
 import { buildApp } from '../src/app.js'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { fillFor, render, seededRandom, unknownPlaceholders } from '../src/catalog/slots.js'
-import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
+import { EXAMPLE_PROFILE, optionsFrom, putFamily, signUpAs, startApi } from './helpers.js'
 
 const [developer] = accounts
 const family = /** @type {NonNullable<typeof developer.family>} */ (developer.family)
@@ -106,7 +106,7 @@ test('with the catalog loaded, the development family gets activities and storie
   const activity = await api.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: {} })
   assert.equal(activity.statusCode, 201)
   const options = await api.app.inject({ method: 'GET', url: '/stories/options', headers: { cookie } })
-  assert.equal(options.json().length, 3)
+  assert.equal(optionsFrom(options).length, 3)
 })
 
 /** No cookie: the admin has no login yet. @param {string} method @param {string} url @param {object} [payload] */
