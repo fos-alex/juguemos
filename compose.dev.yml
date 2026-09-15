@@ -30,7 +30,6 @@ services:
     command: ["node", "--watch", "api/src/server.js"]
     volumes: &api-source
       - ./api/src:/app/api/src:ro
-      - ./api/prompts:/app/api/prompts:ro
       - ./api/seeds:/app/api/seeds:ro
       - ./api/migrations:/app/api/migrations:ro
 
