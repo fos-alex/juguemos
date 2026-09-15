@@ -3,8 +3,9 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { understandFamily } from '../api'
 import { PrimaryButton, TertiaryButton } from '../components/Buttons'
 import { Body, Footer, Screen } from '../components/Screen'
+import { VoiceNote } from '../components/VoiceNote'
 import { failureText } from '../lib/format'
-import { useStored, write } from '../lib/store'
+import { read, useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/familia/contanos')({
   component: TellUsScreen,
@@ -15,8 +16,12 @@ const EXAMPLE =
 
 /**
  * 2d. The prompt is the headline. The box grows to fill the screen, with the
- * brief's example as hint text; no counter, no validation. The mic is a 0.2
- * placeholder: it holds its position and does nothing yet.
+ * brief's example as hint text; no counter, no validation.
+ *
+ * The mic records a voice note (2e, JUG-95). Its words join the box, where
+ * the parent checks them like anything typed, and "Listo" sends them on the
+ * same path. While a note records, the prompt dims and the strip replaces
+ * "Listo".
  *
  * "Listo" sends the text to the API, whose LLM reads the family in it (JUG-11),
  * and opens the review card. If that fails, the text stays for another try.
@@ -27,6 +32,10 @@ function TellUsScreen() {
   const draft = useStored('familyDraft') ?? ''
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+  const [recording, setRecording] = useState(false)
+  const [voiceMessage, setVoiceMessage] = useState(
+    /** @type {import('../components/VoiceNote').VoiceMessage | null} */ (null),
+  )
 
   useEffect(() => {
     document.title = 'Contame de tu familia · Juguemos'
@@ -49,8 +58,14 @@ function TellUsScreen() {
     }
   }
 
+  /** A note's words go after whatever is already in the box. @param {string} text */
+  const addWords = (text) => {
+    const current = read('familyDraft')?.trim()
+    write('familyDraft', current ? `${current} ${text}` : text)
+  }
+
   return (
-    <Screen className="tell">
+    <Screen className={recording ? 'tell tell--recording' : 'tell'}>
       <div className="tell__prompt">
         <h1 className="prompt">
           Contame de tu familia: quiénes son, cuántos años tienen los chicos, qué les encanta y con qué juegan.
@@ -65,13 +80,26 @@ function TellUsScreen() {
           className="tell__text"
           value={draft}
           placeholder={EXAMPLE}
-          readOnly={busy}
+          readOnly={busy || recording}
           onChange={(event) => write('familyDraft', event.target.value)}
         />
         {failure && (
           <p className="status-line" role="alert">
             {failure}
           </p>
+        )}
+        {voiceMessage && (
+          <div className="tell__voice-message">
+            <p className="status-line" role="status">
+              {voiceMessage.text}
+            </p>
+            {voiceMessage.retry && (
+              // Voice pass pending.
+              <TertiaryButton size="inline" onClick={voiceMessage.retry}>
+                Mandar de nuevo
+              </TertiaryButton>
+            )}
+          </div>
         )}
         {/* Voice pass pending: "Listo" and "Prefiero un formulario". */}
         <p className="tell__help">Escribilo, o mantené apretado el micrófono y contámelo.</p>
@@ -80,18 +108,11 @@ function TellUsScreen() {
         </TertiaryButton>
       </Body>
       <Footer row>
-        <PrimaryButton className="grow" busy={busy} busyLabel="Leyendo" onClick={() => void understand()}>
-          Listo
-        </PrimaryButton>
-        <button type="button" className="mic" aria-disabled="true" aria-label="Nota de voz. Llega en la versión 0.2.">
-          <span className="mic__glyph" aria-hidden="true">
-            <span className="mic__capsule" />
-            <span className="mic__base" />
-          </span>
-          <span className="mic__tag" aria-hidden="true">
-            0.2
-          </span>
-        </button>
+        <VoiceNote onText={addWords} onMessage={setVoiceMessage} onRecording={setRecording}>
+          <PrimaryButton className="grow" busy={busy} busyLabel="Leyendo" onClick={() => void understand()}>
+            Listo
+          </PrimaryButton>
+        </VoiceNote>
       </Footer>
     </Screen>
   )

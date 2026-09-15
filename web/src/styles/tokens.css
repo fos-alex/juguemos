@@ -47,6 +47,7 @@
   --disabled-bar: #E7E0F2;
 
   --numeral: #B79BF0;
+  --level-strong: #8B6FD0;
   --progress-fill: #B79BF0;
   --dots-1: #DED2F0;
   --dots-2: #C0ADE8;
@@ -106,6 +107,7 @@
   --disabled-bar: #2A2140; /* derived */
 
   --numeral: #B79BF0;
+  --level-strong: #D9C9F8; /* derived */
   --progress-fill: #B79BF0;
   --dots-1: #3A3160; /* derived */
   --dots-2: #6A58A8; /* derived */
