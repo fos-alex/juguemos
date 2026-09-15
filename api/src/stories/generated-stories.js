@@ -1,10 +1,11 @@
 /**
  * Stories the LLM writes (JUG-71). Code draws a casting for each option on
- * the screen (`casting.js`), and each casting is one short model call of its
- * own, run beside the others, so three plots arrive in about the time one
- * used to (JUG-139). The chosen plot becomes a story that arrives paragraph
- * by paragraph as it comes out of the model, saved once it ends and read
- * again from what was saved. Every step writes a row in the story audit.
+ * the screen (`casting.js`) and hands the three of them to one model call,
+ * whose answer is read as it streams: each plot is saved and sent on as soon
+ * as the model finishes writing it, so the first option is on screen long
+ * before the third (JUG-139). The chosen plot becomes a story that arrives
+ * paragraph by paragraph the same way, saved once it ends and read again
+ * from what was saved. Every step writes a row in the story audit.
  */
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
@@ -17,7 +18,7 @@ import { stories, storyPlots } from './stories.schema.js'
 import storyOptionsPrompt from './prompts/story-options.js'
 import storyPrompt from './prompts/story.js'
 import { systemPrompt } from './prompts/compose.js'
-import { anchorOf, familyLines, moodAt, momentOf, parseOption, partsOf, StoryParser, wordsIn } from './storytelling.js'
+import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, StoryParser, toPlot, wordsIn } from './storytelling.js'
 
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
@@ -28,13 +29,14 @@ import { anchorOf, familyLines, moodAt, momentOf, parseOption, partsOf, StoryPar
 /** @typedef {import('./storytelling.js').Band} Band */
 /** @typedef {import('./stories.service.js').Story} Story */
 /** @typedef {import('./stories.service.js').StoryEvent} StoryEvent */
+/** @typedef {import('./stories.service.js').StoryOption} StoryOption */
 /**
- * @typedef {{ id: string, casting: Casting } & import('./storytelling.js').Plot} SavedPlot
- *   a plot with the id the family will pick it by, and the casting it was drawn for
+ * @typedef {{ type: 'option', option: StoryOption } | { type: 'done' }} OptionEvent
+ *   what an options screen sends: one option as each lands, then the end
  */
 
-/** The most tokens one plot option may run to: it is a title, a line, and two sentences. */
-const OPTION_TOKENS = 400
+/** The most the three options together may run to: each is a title, a line, and two sentences. */
+const OPTION_TOKENS = 1200
 
 /** How many tokens a word of story is worth, generously, so no story is cut off mid-sentence. */
 const TOKENS_PER_WORD = 3
@@ -70,52 +72,6 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
     return story ? toStory(story) : null
   }
 
-  /**
-   * One model call for one casting, tried once more when the answer doesn't
-   * parse. The timings are the audit's: how long the first piece took and how
-   * long the whole answer did.
-   * @param {{ profile: Profile, casting: Casting, band: Band, mood: 'calm' | 'lively', avoid: string }} ask
-   * @returns {Promise<{ plot: import('./storytelling.js').Plot, casting: Casting, details: object }>}
-   */
-  async function askForPlot({ profile, casting, band, mood, avoid }) {
-    const lines = familyLines(profile, casting)
-    const user = render(storyOptionsPrompt, {
-      moment: momentOf(mood),
-      kids: lines.kids,
-      pet: lines.pet,
-      toys: lines.toys,
-      interests: lines.interests,
-      casting: castingLines(casting, profile),
-      minutes: String(band.minutes[1]),
-      avoid,
-    })
-    const system = systemPrompt({ band: band.id, mood })
-
-    let last = ''
-    for (let attempt = 1; attempt <= 2; attempt += 1) {
-      const chunks = []
-      const started = Date.now()
-      let msFirstToken = null
-      for await (const chunk of /** @type {Llm} */ (llm).stream({ system, user, maxTokens: OPTION_TOKENS, reasoning: false })) {
-        msFirstToken ??= Date.now() - started
-        chunks.push(chunk)
-      }
-      const msTotal = Date.now() - started
-      last = chunks.join('')
-      try {
-        const plot = parseOption(last, band)
-        return {
-          plot,
-          casting,
-          details: { attempt, model, msFirstToken: msFirstToken ?? msTotal, msTotal, wildcard: casting.kind === 'wildcard' },
-        }
-      } catch {
-        // A malformed answer is tried once more.
-      }
-    }
-    throw new UpstreamError(`The story model proposed no readable option: ${last.slice(0, 300)}`)
-  }
-
   return {
     /** Whether this id is a plot this family was offered. @param {string} familyId @param {string} id */
     async hasPlot(familyId, id) {
@@ -127,16 +83,18 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
     },
 
     /**
-     * The model's plot options for the family, one call per casting, saved on
-     * screen-fresh rows. Whatever came back is offered as long as one option
-     * did; only a screen where every call failed reaches the family as a
-     * failure, so one bad answer doesn't cost the other two.
+     * The model's plot options for the family: one call for the three
+     * castings the code drew, read as it streams, so each plot is saved and
+     * sent on as soon as the model closes its braces instead of when the
+     * whole answer lands. An answer with no readable plot at all is asked
+     * once more before the family hears that the model failed.
      * @param {Profile} profile
      * @param {string} familyId
      * @param {string[]} exclude the plots already on screen, which stay pickable
-     * @returns {Promise<SavedPlot[]>}
+     * @param {{ signal?: AbortSignal }} [options]
+     * @returns {AsyncGenerator<OptionEvent, void, void>}
      */
-    async options(profile, familyId, exclude) {
+    async *options(profile, familyId, exclude, { signal } = {}) {
       const mood = moodAt(now())
       const { band } = anchorOf(profile)
       const latest = await db
@@ -150,41 +108,83 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       const recent = /** @type {(Casting | null)[]} */ (latest.slice(0, RECENT_CASTINGS).map((row) => row.casting))
       const castings = castScreen(profile, { count: OPTIONS, weights: DEFAULT_WEIGHTS, random, recent })
 
-      const settled = await Promise.allSettled(castings.map((casting) => askForPlot({ profile, casting, band, mood, avoid })))
-      const answered = settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
-      if (answered.length === 0) {
-        const reasons = settled.map((result) => (result.status === 'rejected' ? result.reason?.message : '')).join(' | ')
-        throw new UpstreamError(`The story model proposed no readable options: ${reasons.slice(0, 500)}`)
-      }
-
-      // The plots on screen stay pickable; the rest retire. One transaction,
-      // so a failed save never leaves the family with no plots at all.
-      const stale =
-        exclude.length > 0
-          ? and(eq(storyPlots.familyId, familyId), notInArray(storyPlots.id, exclude))
-          : eq(storyPlots.familyId, familyId)
-      // The ids are ours so the options keep the casting order.
-      const saved = answered.map(({ plot, casting }) => ({ id: randomUUID(), ...plot, casting }))
-      const kidIds = kidIdsOf(profile)
-      await db.transaction(async (tx) => {
-        await tx.delete(storyPlots).where(stale)
-        await tx.insert(storyPlots).values(saved.map((plot) => ({ ...plot, familyId, mood, kidIds })))
+      const lines = familyLines(profile, castings)
+      const user = render(storyOptionsPrompt, {
+        moment: momentOf(mood),
+        kids: lines.kids,
+        pet: lines.pet,
+        toys: lines.toys,
+        interests: lines.interests,
+        castings: castings.map((casting, index) => `Trama ${index + 1}: ${castingLines(casting, profile)}`).join('\n'),
+        minutes: String(band.minutes[1]),
+        count: String(OPTIONS),
+        avoid,
       })
+      const system = systemPrompt({ band: band.id, mood })
+      const kidIds = kidIdsOf(profile)
 
-      await Promise.all(
-        answered.map(({ casting, details }, index) =>
-          audit.record('offered', {
-            familyId,
-            kidIds,
-            band: band.id,
-            mood,
-            plotId: saved[index].id,
-            casting,
-            details,
-          }),
-        ),
-      )
-      return saved
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        const parser = new OptionsParser()
+        const started = Date.now()
+        let msFirstToken = null
+        let sent = 0
+        // The audit row of an option waits for the next one, so the last one
+        // can carry how long the whole answer took.
+        let pending = null
+        /** @param {object} [extra] */
+        const flush = async (extra = {}) => {
+          if (!pending) return
+          const row = pending
+          pending = null
+          await audit.record('offered', { ...row, details: { ...row.details, ...extra } })
+        }
+
+        for await (const chunk of /** @type {Llm} */ (llm).stream({ system, user, maxTokens: OPTION_TOKENS, reasoning: false, signal })) {
+          msFirstToken ??= Date.now() - started
+          for (const answer of parser.push(chunk)) {
+            if (sent >= OPTIONS) break
+            const plot = toPlot(answer, band)
+            if (!plot) continue
+            const casting = castings[sent]
+            const id = randomUUID()
+            const row = { ...plot, id, familyId, mood, kidIds, casting }
+            if (sent === 0) {
+              // The plots on screen stay pickable; the rest retire, in the
+              // same transaction as the first new one, so a family is never
+              // left with no plots at all.
+              const stale =
+                exclude.length > 0
+                  ? and(eq(storyPlots.familyId, familyId), notInArray(storyPlots.id, exclude))
+                  : eq(storyPlots.familyId, familyId)
+              await db.transaction(async (tx) => {
+                await tx.delete(storyPlots).where(stale)
+                await tx.insert(storyPlots).values(row)
+              })
+            } else {
+              await db.insert(storyPlots).values(row)
+            }
+            sent += 1
+            await flush()
+            pending = {
+              familyId,
+              kidIds,
+              band: band.id,
+              mood,
+              plotId: id,
+              casting,
+              details: { attempt, model, msFirstToken, ms: Date.now() - started, wildcard: casting.kind === 'wildcard' },
+            }
+            yield { type: /** @type {const} */ ('option'), option: { id, title: plot.title, teaser: plot.teaser, minutes: plot.minutes } }
+          }
+        }
+        await flush({ msTotal: Date.now() - started })
+        if (sent > 0) {
+          yield { type: /** @type {const} */ ('done') }
+          return
+        }
+        // An answer with no readable plot is asked once more.
+      }
+      throw new UpstreamError('The story model proposed no readable options')
     },
 
     /**
@@ -221,7 +221,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       const profile = withKids(await families.profileOf(familyId), plot.kidIds)
       const { band } = anchorOf(profile)
       const casting = /** @type {Casting} */ (plot.casting ?? castingOfEveryone(profile))
-      const lines = familyLines(profile, casting)
+      const lines = familyLines(profile, [casting])
       const user = render(storyPrompt, {
         kids: lines.kids,
         pet: lines.pet,

@@ -147,3 +147,27 @@ export function cookiesFrom(response) {
     .map((cookie) => cookie.split(';')[0])
     .join('; ')
 }
+
+/**
+ * The events of a server-sent event stream, as the route wrote them.
+ * @param {string} body
+ */
+export function streamEvents(body) {
+  return body
+    .split('\n\n')
+    .filter(Boolean)
+    .map((block) => {
+      const line = /** @type {string} */ (block.split('\n').find((each) => each.startsWith('data: ')))
+      return JSON.parse(line.slice('data: '.length))
+    })
+}
+
+/**
+ * The options an options stream sent, in order.
+ * @param {import('light-my-request').Response} response
+ */
+export function optionsFrom(response) {
+  return streamEvents(response.body.toString())
+    .filter((event) => event.type === 'option')
+    .map((event) => event.option)
+}

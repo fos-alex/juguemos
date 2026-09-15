@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { after, before, test } from 'node:test'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
-import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
+import { EXAMPLE_PROFILE, optionsFrom, putFamily, signUpAs, startApi } from './helpers.js'
 
 /** @param {string} slug @param {string} title */
 const template = (slug, title) => ({
@@ -53,7 +53,8 @@ test('three options, filled for the family, leaving out what it cannot fill', as
 
   const response = await options(cookie)
   assert.equal(response.statusCode, 200)
-  const list = response.json()
+  assert.match(String(response.headers['content-type']), /text\/event-stream/)
+  const list = optionsFrom(response)
   assert.equal(list.length, 3)
   for (const option of list) {
     assert.match(option.title, /^El dinosaurio chiquito y el/)
@@ -65,8 +66,8 @@ test('other options leave out the ones on screen', async () => {
   const { cookie } = await signUpAs(api, 'beto@example.com')
   await putFamily(api, cookie, { ...EXAMPLE_PROFILE, pets: [] })
 
-  const shown = (await options(cookie)).json().map((option) => option.id)
-  const next = (await options(cookie, shown)).json()
+  const shown = optionsFrom(await options(cookie)).map((option) => option.id)
+  const next = optionsFrom(await options(cookie, shown))
   assert.equal(next.length, 3)
   assert.ok(!shown.includes(next[0].id), 'the fresh template comes first')
 })
@@ -75,7 +76,7 @@ test('a story reads like its option, and reading it again returns the saved stor
   const { cookie } = await signUpAs(api, 'carla@example.com')
   await putFamily(api, cookie, EXAMPLE_PROFILE)
 
-  const [option] = (await options(cookie)).json()
+  const [option] = optionsFrom(await options(cookie))
   const first = await write(cookie, option.id)
   assert.equal(first.statusCode, 200)
   const story = first.json()
@@ -103,13 +104,13 @@ test('stories star the kids playing, and each set of kids gets its own story', a
   ).json()
   const sofi = profile.kids[1]
 
-  const [option] = (await options(cookie)).json()
+  const [option] = optionsFrom(await options(cookie))
   assert.equal(option.teaser, 'Con Milán.')
   const both = (await write(cookie, option.id)).json()
   assert.equal(both.parts[0][1], 'Milán lo vio.')
 
   await api.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids: [sofi.id] } })
-  for (const each of (await options(cookie)).json()) assert.equal(each.teaser, 'Con Sofi.')
+  for (const each of optionsFrom(await options(cookie))) assert.equal(each.teaser, 'Con Sofi.')
   const alone = (await write(cookie, option.id)).json()
   assert.notEqual(alone.id, both.id)
   assert.equal(alone.parts[0][1], 'Sofi lo vio.')

@@ -15,6 +15,7 @@ import { createStoryAudit } from './story-audit.js'
 import { createTemplateStories } from './template-stories.js'
 
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
+/** @typedef {import('./generated-stories.js').OptionEvent} OptionEvent what an options screen sends, one at a time */
 /**
  * @typedef {{ id: string, templateId: string | null, plotId: string | null, title: string, teaser: string, minutes: number, parts: string[][] }} Story
  */
@@ -72,20 +73,22 @@ export function createStoriesService({
 
   return {
     /**
-     * Three stories the family could read, starring the kids playing. With
-     * the LLM configured these are plot options written for them; without
-     * it, catalog templates with their slots filled. The ones in `exclude`
-     * (already on screen) come last, only if they still fit.
+     * Three stories the family could read, starring the kids playing, as
+     * events: one option as each lands, then `done`. With the LLM configured
+     * they are plot options the model wrote for the castings code drew, and
+     * they arrive one at a time while it is still writing the next; without
+     * it they are catalog templates with their slots filled, and all three
+     * land at once. The ones in `exclude` (already on screen) come last, only
+     * if they still fit.
      * @param {string} familyId
-     * @param {{ exclude?: string[], userId?: string | null }} [options] `userId` is the adult
-     *   asking, whose kids sitting out are left out; without one, every kid plays
-     * @returns {Promise<StoryOption[]>}
+     * @param {{ exclude?: string[], userId?: string | null, signal?: AbortSignal }} [options] `userId` is
+     *   the adult asking, whose kids sitting out are left out; without one, every kid plays
+     * @returns {Promise<AsyncGenerator<OptionEvent, void, void>>}
      */
-    async options(familyId, { exclude = [], userId = null } = {}) {
+    async optionsStream(familyId, { exclude = [], userId = null, signal } = {}) {
       const profile = await families.playingProfile(familyId, userId)
-      if (!llm) return templates.options(profile, exclude)
-      const plots = await generated.options(profile, familyId, exclude)
-      return plots.map((plot) => ({ id: plot.id, title: plot.title, teaser: plot.teaser, minutes: plot.minutes }))
+      if (!llm) return oneByOne(await templates.options(profile, exclude))
+      return generated.options(profile, familyId, exclude, { signal })
     },
 
     /**
@@ -147,4 +150,15 @@ export function createStoriesService({
       return toStory(story)
     },
   }
+}
+
+/**
+ * The template options as the same events the model's arrive as, so the
+ * screen reads one stream whatever wrote them.
+ * @param {StoryOption[]} options
+ * @returns {AsyncGenerator<OptionEvent, void, void>}
+ */
+async function* oneByOne(options) {
+  for (const option of options) yield { type: 'option', option }
+  yield { type: 'done' }
 }

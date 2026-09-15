@@ -76,54 +76,55 @@ export function ageLine(age) {
 }
 
 /**
- * The family as the prompt gets it, cut down to the casting: only the kids,
- * the pet, the toy, and the theme that were drawn are named, so the model
- * isn't tempted to bring in the rest of the family. Names stay exactly as the
- * family typed them.
+ * The family as the prompt gets it, cut down to the castings it carries:
+ * only the kids, the pet, the toys and the themes that were drawn are named,
+ * so the model isn't tempted to bring in the rest of the family. The options
+ * prompt holds the three castings of a screen and the story prompt holds
+ * one. Names stay exactly as the family typed them.
  * @param {Profile} profile
- * @param {Casting} casting
+ * @param {Casting[]} castings
  */
-export function familyLines(profile, casting) {
-  const cast = profile.kids.filter((kid) => casting.kids.includes(kid.id))
+export function familyLines(profile, castings) {
+  const inStory = new Set(castings.flatMap((casting) => casting.kids))
+  const cast = profile.kids.filter((kid) => inStory.has(kid.id))
   const kids = cast.map((kid) => `${kid.name}${kid.age != null ? `, de ${ageLine(kid.age)}` : ''}`)
+  const pets = unique(castings.map((casting) => casting.pet?.name))
+  const toys = unique(castings.map((casting) => casting.toy?.name))
+  const themes = unique(castings.map((casting) => casting.theme))
   return {
     kids: kids.join(' y ') || 'no aparece ningún chico de la familia',
-    pet: casting.pet?.name ?? 'no aparece en este cuento',
-    toys: casting.toy?.name ?? 'ninguno en este cuento',
-    interests: casting.theme ?? 'sin tema fijo',
+    pet: pets.join(' y ') || 'no aparece en este cuento',
+    toys: toys.join(', ') || 'ninguno en este cuento',
+    interests: themes.join(', ') || 'sin tema fijo',
   }
 }
+
+/** The names that are there, each once, in the order they were drawn. @param {(string | null | undefined)[]} names */
+const unique = (names) => [...new Set(names.filter((name) => Boolean(name)))]
 
 /** A plot option the model proposed. @typedef {{ title: string, teaser: string, minutes: number, premise: string }} Plot */
 
 /**
- * The answer to an option call: JSON, with or without markdown fences,
- * holding the plot object on its own, wrapped in an array, or under a
- * `tramas` key, since models wrap it all three ways. Minutes outside the
- * band sit back inside it, and an answer with no title, teaser or premise
- * throws, which is what the retry is for.
- * @param {string} text
+ * One option of the model's answer as a plot, or null when it is missing a
+ * title, a teaser or a premise. The minutes it asked for sit inside the
+ * band's own range, and an answer with no number at all gets the band's
+ * shortest story.
+ * @param {any} option
  * @param {Band} band
- * @returns {Plot}
+ * @returns {Plot | null}
  */
-export function parseOption(text, band) {
-  const parsed = jsonIn(text)
-  const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.tramas) ? parsed.tramas : parsed ? [parsed] : []
-  const plot = list
-    .map((option) => ({
-      title: String(option?.title ?? '').trim(),
-      teaser: String(option?.teaser ?? '').trim(),
-      minutes: clampMinutes(option?.minutes, band),
-      premise: String(option?.premise ?? '').trim(),
-    }))
-    .find((option) => option.title && option.teaser && option.premise)
-  if (!plot) throw new Error('The story model proposed no readable option')
-  return plot
+export function toPlot(option, band) {
+  const plot = {
+    title: String(option?.title ?? '').trim(),
+    teaser: String(option?.teaser ?? '').trim(),
+    minutes: clampMinutes(option?.minutes, band),
+    premise: String(option?.premise ?? '').trim(),
+  }
+  return plot.title && plot.teaser && plot.premise ? plot : null
 }
 
 /**
- * The minutes the model asked for, held inside the band's own range. An
- * answer with no number at all gets the band's shortest story.
+ * The minutes the model asked for, held inside the band's own range.
  * @param {unknown} minutes
  * @param {Band} band
  */
@@ -131,6 +132,74 @@ export function clampMinutes(minutes, band) {
   const value = Math.round(Number(minutes))
   if (!Number.isFinite(value)) return band.minutes[0]
   return Math.min(band.minutes[1], Math.max(band.minutes[0], value))
+}
+
+/**
+ * Reads the options answer as it streams, so an option reaches the family as
+ * soon as the model has finished writing it instead of when the whole answer
+ * lands. It looks for the array the plots are in — everything before it is
+ * a fence, prose, or the `{ "tramas":` wrapper — and then hands back each
+ * object as its braces close. Strings are tracked, so a brace or a bracket
+ * inside a title doesn't count.
+ */
+export class OptionsParser {
+  constructor() {
+    /** Whether the array holding the plots has started. */
+    this.inArray = false
+    /** Whether the array has ended: nothing after it is a plot. */
+    this.ended = false
+    /** How deep in nested objects the scan is; 0 is between plots. */
+    this.depth = 0
+    this.inString = false
+    this.escaped = false
+    /** The object being read, braces included. */
+    this.current = ''
+  }
+
+  /**
+   * Feed one piece of the model's answer; the plots that finished with it
+   * come back, as the objects the model wrote. An object that doesn't parse
+   * is dropped, since the next one may still be good.
+   * @param {string} delta
+   * @returns {any[]}
+   */
+  push(delta) {
+    const done = []
+    for (const char of delta) {
+      if (this.ended) break
+      if (!this.inArray) {
+        if (char === '[') this.inArray = true
+        continue
+      }
+      if (this.depth > 0) this.current += char
+
+      if (this.inString) {
+        if (this.escaped) this.escaped = false
+        else if (char === '\\') this.escaped = true
+        else if (char === '"') this.inString = false
+        continue
+      }
+      if (char === '"') {
+        this.inString = true
+      } else if (char === '{') {
+        if (this.depth === 0) this.current = '{'
+        this.depth += 1
+      } else if (char === '}') {
+        this.depth -= 1
+        if (this.depth === 0) {
+          try {
+            done.push(JSON.parse(this.current))
+          } catch {
+            // A plot that doesn't parse is dropped; the next one may be good.
+          }
+          this.current = ''
+        }
+      } else if (char === ']' && this.depth === 0) {
+        this.ended = true
+      }
+    }
+    return done
+  }
 }
 
 /**
