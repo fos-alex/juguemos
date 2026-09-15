@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { ConfigError, loadConfig } from '../src/config.js'
+
+const REQUIRED = { BETTER_AUTH_URL: 'https://juguemos.local:3000', BETTER_AUTH_SECRET: 'a-secret-that-is-at-least-32-chars' }
+/** @param {NodeJS.ProcessEnv} env */
+const llmOf = (env) => loadConfig({ ...REQUIRED, ...env }).llm
+
+test('stories use OpenCode by default, with its default model', () => {
+  assert.deepEqual(llmOf({ OPENCODE_API_KEY: 'oc-key' }), {
+    provider: 'opencode',
+    apiKey: 'oc-key',
+    baseUrl: 'https://opencode.ai/zen/go/v1',
+    model: 'glm-5.3-flash',
+    appUrl: 'https://juguemos.local:3000',
+  })
+})
+
+test('LLM_MODEL picks the model, and OPENCODE_MODEL still works as its old name', () => {
+  assert.equal(llmOf({ OPENCODE_API_KEY: 'oc-key', LLM_MODEL: 'nuevo' }).model, 'nuevo')
+  assert.equal(llmOf({ OPENCODE_API_KEY: 'oc-key', OPENCODE_MODEL: 'viejo' }).model, 'viejo')
+  assert.equal(llmOf({ OPENCODE_API_KEY: 'oc-key', LLM_MODEL: 'nuevo', OPENCODE_MODEL: 'viejo' }).model, 'nuevo')
+})
+
+test('LLM_PROVIDER=openrouter uses the OpenRouter key and LLM_MODEL', () => {
+  const llm = llmOf({
+    LLM_PROVIDER: 'openrouter',
+    LLM_MODEL: 'some-lab/some-model',
+    OPENROUTER_API_KEY: 'or-key',
+    OPENCODE_API_KEY: 'oc-key',
+    OPENCODE_MODEL: 'viejo',
+  })
+  assert.equal(llm.provider, 'openrouter')
+  assert.equal(llm.apiKey, 'or-key')
+  assert.equal(llm.baseUrl, 'https://openrouter.ai/api/v1')
+  assert.equal(llm.model, 'some-lab/some-model')
+})
+
+test('OpenRouter with a key and no model stops the API at startup', () => {
+  assert.throws(
+    () => llmOf({ LLM_PROVIDER: 'openrouter', OPENROUTER_API_KEY: 'or-key', OPENCODE_MODEL: 'viejo' }),
+    (error) => error instanceof ConfigError && /LLM_MODEL/.test(error.message),
+  )
+})
+
+test('without the chosen provider key, stories come from templates', () => {
+  assert.equal(llmOf({ LLM_PROVIDER: 'openrouter', OPENCODE_API_KEY: 'oc-key' }).apiKey, null)
+  assert.equal(llmOf({}).apiKey, null)
+})
+
+test('an unknown provider stops the API at startup', () => {
+  assert.throws(
+    () => llmOf({ LLM_PROVIDER: 'openai' }),
+    (error) => error instanceof ConfigError && /LLM_PROVIDER must be opencode or openrouter/.test(error.message),
+  )
+})

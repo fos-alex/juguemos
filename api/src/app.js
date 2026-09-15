@@ -15,7 +15,7 @@ import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
 import { AppError } from './errors.js'
-import { createOpenCodeLlm } from './llm/opencode.js'
+import { createLlm } from './llm/llm.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
 import { createStoriesController } from './stories/stories.controller.js'
@@ -36,7 +36,7 @@ import { createToysService } from './toys/toys.service.js'
  *   logger?: import('fastify').FastifyServerOptions['logger'],
  *   random?: () => number,
  *   now?: () => Date,
- *   llm?: ReturnType<typeof createOpenCodeLlm> | null,
+ *   llm?: ReturnType<typeof createLlm> | null,
  * }} options `random` drives which template comes next; tests can pin it.
  * `now` picks the moment a story is written for; `llm` overrides the wire,
  * so tests can speak for the model. Without a key, stories come from templates.
@@ -45,7 +45,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
   const activities = createActivitiesService({ db, families, random })
-  const stories = createStoriesService({ db, families, random, now, llm: llm ?? createOpenCodeLlm({ config: config.llm }) })
+  const stories = createStoriesService({ db, families, random, now, llm: llm ?? createLlm({ config: config.llm }) })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
   // After the session hook below: routes about the family need one saved.

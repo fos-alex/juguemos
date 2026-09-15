@@ -63,7 +63,7 @@ export async function startApi({ signupEmails = [], random, now, llm, admin = fa
     databaseUrl: database.url,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
     // No key: template stories, unless a test passes its own `llm`.
-    llm: { apiKey: null, baseUrl: '', model: '' },
+    llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN },
     admin: { enabled: admin },
   }
   const app = buildApp({ config, db, logger: false, random, now, llm })
