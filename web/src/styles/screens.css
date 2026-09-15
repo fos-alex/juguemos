@@ -62,32 +62,6 @@
 
 
 
-/* El baúl de juguetes (JUG-94). Not in the Plaza handoff: built from its
-   primitives until the 0.2 design (JUG-84) lands. */
-
-.toy-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.toy-list .card-title {
-  margin-top: 0;
-}
-
-.toy-box__materials {
-  margin-top: 10px;
-}
-
-.toy-form__remove {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 /* 2m / 2n / 2p Actividad */
 
 .activity-body {
