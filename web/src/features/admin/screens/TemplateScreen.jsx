@@ -1,17 +1,17 @@
 import { useEffect, useId, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ApiError, createTemplate, deleteTemplate, loadTemplate, saveTemplate } from '../api'
-import { Dots, PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
-import { Label } from '../shared/ui/Card'
-import { Chips } from '../shared/ui/Chips'
-import { Field, FieldGroup } from '../shared/ui/Field'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { StatusLine } from '../shared/ui/StatusLine'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { adminFailure, CATEGORIES, ENERGIES, PLACES, SLOTS, slugFrom, unknownSlots } from '../lib/admin'
+import { ApiError, createTemplate, deleteTemplate, loadTemplate, saveTemplate } from '../../../api'
+import { Dots, PrimaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
+import { Label } from '../../../shared/ui/Card'
+import { Chips } from '../../../shared/ui/Chips'
+import { Field, FieldGroup } from '../../../shared/ui/Field'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { StatusLine } from '../../../shared/ui/StatusLine'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { adminFailure, CATEGORIES, ENERGIES, PLACES, SLOTS, slugFrom, unknownSlots } from '../model'
 
-/** @typedef {import('../api/types').ActivityTemplate} ActivityTemplate */
-/** @typedef {import('../api/types').ActivityTemplateFields} ActivityTemplateFields */
+/** @typedef {import('../../../api/types').ActivityTemplate} ActivityTemplate */
+/** @typedef {import('../../../api/types').ActivityTemplateFields} ActivityTemplateFields */
 /**
  * @typedef {{
  *   slug: string, title: string, active: boolean, minutes: string, place: string,

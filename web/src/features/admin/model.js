@@ -2,11 +2,11 @@
  * Plain logic for the catalog admin: how a template's tags read, and the
  * checks the form makes before the API makes them again.
  */
-import { ApiError } from '../api'
-import { failureText } from '../shared/format'
+import { ApiError } from '../../api'
+import { failureText } from '../../shared/format'
 
-/** @typedef {import('../api/types').ActivityTemplate} ActivityTemplate */
-/** @typedef {import('../api/types').ActivityTemplateFields} ActivityTemplateFields */
+/** @typedef {import('../../api/types').ActivityTemplate} ActivityTemplate */
+/** @typedef {import('../../api/types').ActivityTemplateFields} ActivityTemplateFields */
 
 /** The slots code can fill. The API refuses any other, from its own list in catalog/slots.js. */
 export const SLOTS = ['kid', 'pet', 'toy', 'toy2', 'toy3', 'interest']

@@ -2,10 +2,10 @@
  * The catalog admin's activity templates. The admin has no login yet, so the
  * API serves these only where ADMIN_ENABLED turns it on.
  */
-import { request } from '../shared/http'
+import { request } from '../../shared/http'
 
-/** @typedef {import('./types').ActivityTemplate} ActivityTemplate */
-/** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
+/** @typedef {import('../../api/types').ActivityTemplate} ActivityTemplate */
+/** @typedef {import('../../api/types').ActivityTemplateFields} ActivityTemplateFields */
 
 const TEMPLATES = '/admin/activity-templates'
 
