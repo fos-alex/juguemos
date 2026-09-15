@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { addToy, editToy, linkToy, loadToyBox, removeToy } from '../api'
-import { PrimaryButton, SecondaryButton, TertiaryButton } from '../shared/ui/Buttons'
-import { Skeleton } from '../shared/ui/Card'
-import { ChipInput, Chips, ChipToggle } from '../shared/ui/Chips'
-import { AS_TYPED, Field, FieldGroup } from '../shared/ui/Field'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { useOnline } from '../shared/hooks/useOnline'
-import { failureText } from '../shared/format'
-import { useStored } from '../shared/store'
-import { StatusLine } from '../shared/ui/StatusLine'
+import { addToy, editToy, linkToy, loadToyBox, removeToy } from '../../../api'
+import { PrimaryButton, SecondaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
+import { Skeleton } from '../../../shared/ui/Card'
+import { ChipInput, Chips, ChipToggle } from '../../../shared/ui/Chips'
+import { AS_TYPED, Field, FieldGroup } from '../../../shared/ui/Field'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { useOnline } from '../../../shared/hooks/useOnline'
+import { failureText } from '../../../shared/format'
+import { useStored } from '../../../shared/store'
+import { StatusLine } from '../../../shared/ui/StatusLine'
 
-/** @typedef {import('../api/types').Toy} Toy */
-/** @typedef {import('../api/types').ToyChanges} ToyChanges */
+/** @typedef {import('../../../api/types').Toy} Toy */
+/** @typedef {import('../../../api/types').ToyChanges} ToyChanges */
 /**
  * @typedef {{
  *   name: string, aliases: string[], description: string,

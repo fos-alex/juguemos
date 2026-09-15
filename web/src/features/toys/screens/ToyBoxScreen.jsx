@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { chooseMaterials, loadToyBox } from '../api'
-import { PrimaryButton } from '../shared/ui/Buttons'
-import { Card, Skeleton } from '../shared/ui/Card'
-import { Chips, ChipToggle } from '../shared/ui/Chips'
-import { FieldGroup } from '../shared/ui/Field'
-import { OfflineNotice } from '../shared/ui/OfflineNotice'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { StatusLine } from '../shared/ui/StatusLine'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { useOfflineNotice } from '../shared/hooks/useOfflineNotice'
-import { useSerialSaves } from '../shared/hooks/useSerialSaves'
-import { failureText } from '../shared/format'
-import { useStored, write } from '../shared/store'
+import { chooseMaterials, loadToyBox } from '../../../api'
+import { PrimaryButton } from '../../../shared/ui/Buttons'
+import { Card, Skeleton } from '../../../shared/ui/Card'
+import { Chips, ChipToggle } from '../../../shared/ui/Chips'
+import { FieldGroup } from '../../../shared/ui/Field'
+import { OfflineNotice } from '../../../shared/ui/OfflineNotice'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { StatusLine } from '../../../shared/ui/StatusLine'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { useOfflineNotice } from '../../../shared/hooks/useOfflineNotice'
+import { useSerialSaves } from '../../../shared/hooks/useSerialSaves'
+import { failureText } from '../../../shared/format'
+import { useStored, write } from '../../../shared/store'
 
 export const Route = createFileRoute('/juguetes/')({
   component: ToyBoxScreen,
 })
 
-/** @typedef {import('../api/types').Toy} Toy */
-/** @typedef {import('../api/types').Material} Material */
-/** @typedef {import('../api/types').ToyBox} ToyBox */
-/** @typedef {import('../features/family').Kid} Kid */
+/** @typedef {import('../../../api/types').Toy} Toy */
+/** @typedef {import('../../../api/types').Material} Material */
+/** @typedef {import('../../../api/types').ToyBox} ToyBox */
+/** @typedef {import('../../family').Kid} Kid */
 
 /**
  * El baúl de juguetes (JUG-94): the family's toys by their own names, and the

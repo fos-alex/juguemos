@@ -2,12 +2,12 @@
  * The toy box (JUG-18), against the real API. Every change also updates the
  * cached family's toys, so Mi familia and the family form see it at once.
  */
-import { read, write } from '../shared/store'
-import { request } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { request } from '../../shared/http'
 
-/** @typedef {import('./types').Toy} Toy */
-/** @typedef {import('./types').ToyBox} ToyBox */
-/** @typedef {import('./types').ToyChanges} ToyChanges */
+/** @typedef {import('../../api/types').Toy} Toy */
+/** @typedef {import('../../api/types').ToyBox} ToyBox */
+/** @typedef {import('../../api/types').ToyChanges} ToyChanges */
 
 /** Caches the box, and the family's toys in the box's order. @param {ToyBox} box @returns {ToyBox} */
 function keep(box) {
@@ -72,7 +72,7 @@ export async function linkToy(id, ids) {
 
 /** Says which household materials the family has. @param {string[]} keys @returns {Promise<ToyBox>} */
 export async function chooseMaterials(keys) {
-  /** @type {{ materials: import('./types').Material[] }} */
+  /** @type {{ materials: import('../../api/types').Material[] }} */
   const { materials } = await request('PUT', '/family/materials', { have: keys })
   return merge((box) => ({ ...box, materials }))
 }
