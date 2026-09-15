@@ -67,7 +67,8 @@ test/                 integration tests, with helpers.js
 ## Accounts and the guardrails
 
 - **Better Auth** handles sign-up, sign-in, sign-out, and sessions under `/auth/*`, with email and password only for now. The session is an httpOnly cookie that lasts 30 days and is renewed with use, so a parent who opens the app once a month stays signed in.
-- **Only listed emails can sign up.** `SIGNUP_EMAILS` holds the list, enforced by the `user.create.before` hook in `auth/auth.js`; empty means nobody. This is how "no outside testers until the guardrails are complete" is enforced. Never loosen it, and remind Alex of the rule whenever work touches sign-ups.
+- **Only listed emails can sign up.** `SIGNUP_EMAILS` holds the list, enforced by the `user.create.before` hook in `auth/auth.js`; empty means nobody. An `@domain` entry, such as `@juguemos.local`, admits every email at that domain. Emails aren't verified yet, so a domain entry admits anyone who reaches the app: use it only on a development machine, never on the droplet. This is how "no outside testers until the guardrails are complete" is enforced. Never loosen it, and remind Alex of the rule whenever work touches sign-ups.
+- **Better Auth checks the origin** of sign-in and sign-up. It accepts `BETTER_AUTH_URL` and the origins in `TRUSTED_ORIGINS`, such as the phone's Tailscale address, and refuses any other with "Invalid origin". This decides where the app can be opened from, not who can sign up.
 - **Better Auth's tables are ours:** they are defined in `auth/auth.schema.js`, with plural names like every table, and Better Auth reads and writes them through its Drizzle adapter. A Better Auth upgrade or plugin that needs new columns adds them there and generates a migration.
 
 ## Migrations and seeds

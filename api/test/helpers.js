@@ -50,9 +50,9 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean }} [options]
+ * @param {{ signupEmails?: string[], trustedOrigins?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean }} [options]
  */
-export async function startApi({ signupEmails = [], random, now, llm, transcriber, admin = false, auditTranscripts = false } = {}) {
+export async function startApi({ signupEmails = [], trustedOrigins = [], random, now, llm, transcriber, admin = false, auditTranscripts = false } = {}) {
   const database = await createDatabase()
   await migrate({ databaseUrl: database.url })
 
@@ -61,7 +61,7 @@ export async function startApi({ signupEmails = [], random, now, llm, transcribe
   const config = {
     port: 0,
     databaseUrl: database.url,
-    auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
+    auth: { url: ORIGIN, trustedOrigins, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
     // No key: template stories, unless a test passes its own `llm`.
     llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN },
     // No service: voice notes are off, unless a test passes its own `transcriber`.

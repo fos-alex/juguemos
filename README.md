@@ -46,6 +46,8 @@ tailscale serve --bg --https=8443 http://127.0.0.1:3001   # https://<machine>.<t
 tailscale serve --https=8443 off                          # stop
 ```
 
+Add that address to `TRUSTED_ORIGINS` in `.env` and run `docker compose up -d`, or signing in from the phone fails with "Invalid origin".
+
 `/api/health` reports database connectivity. Postgres is reachable from the dev machine on `127.0.0.1:5432`, and `docker compose exec db psql -U juguemos` opens a shell.
 
 The client lives in `web/` as a Vite SPA in an npm workspace alongside `api/`. Both are plain JavaScript with JSDoc types:

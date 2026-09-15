@@ -12,6 +12,8 @@ const DAY_SECONDS = 60 * 60 * 24
 export function createAuth({ config, db }) {
   return betterAuth({
     baseURL: config.url,
+    // The phone reaches the stack through Tailscale, at another origin than BETTER_AUTH_URL.
+    trustedOrigins: config.trustedOrigins,
     secret: config.secret,
     // Its tables are ours, in auth.schema.js, with plural names like every other table.
     database: drizzleAdapter(db, { provider: 'pg', schema: { users, sessions, accounts, verifications }, usePlural: true }),
@@ -23,9 +25,12 @@ export function createAuth({ config, db }) {
       user: {
         create: {
           // No outside testers until the guardrails are complete: only the
-          // listed emails can sign up, whatever the sign-in method.
+          // listed emails, or emails at a listed @domain, can sign up,
+          // whatever the sign-in method.
           before: async (user) => {
-            if (!config.signupEmails.has(user.email.toLowerCase())) {
+            const email = user.email.toLowerCase()
+            const domain = email.slice(email.lastIndexOf('@'))
+            if (!config.signupEmails.has(email) && !config.signupEmails.has(domain)) {
               throw new APIError('FORBIDDEN', { code: 'SIGNUP_NOT_ALLOWED', message: 'Sign-up is by invitation only' })
             }
           },

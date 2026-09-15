@@ -48,6 +48,19 @@ test('without the chosen provider key, stories come from templates', () => {
   assert.equal(llmOf({}).apiKey, null)
 })
 
+test('TRUSTED_ORIGINS adds origins for Better Auth, keeping only the origin of each URL', () => {
+  const authOf = (env) => loadConfig({ ...REQUIRED, ...env }).auth
+  assert.deepEqual(authOf({}).trustedOrigins, [])
+  assert.deepEqual(
+    authOf({ TRUSTED_ORIGINS: ' https://omarchy.tailnet.ts.net:8443/ , http://localhost:5173' }).trustedOrigins,
+    ['https://omarchy.tailnet.ts.net:8443', 'http://localhost:5173'],
+  )
+  assert.throws(
+    () => authOf({ TRUSTED_ORIGINS: 'omarchy.tailnet.ts.net' }),
+    (error) => error instanceof ConfigError && /TRUSTED_ORIGINS/.test(error.message),
+  )
+})
+
 test('an unknown provider stops the API at startup', () => {
   assert.throws(
     () => llmOf({ LLM_PROVIDER: 'openai' }),

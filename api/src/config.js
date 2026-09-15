@@ -19,8 +19,9 @@ const LLM_PROVIDERS = {
 /**
  * @typedef {object} AuthConfig
  * @property {string} url the public origin the app is served from
+ * @property {string[]} trustedOrigins other origins the app is also opened from, such as Tailscale's for a phone
  * @property {string} secret signs sessions; at least 32 characters
- * @property {Set<string>} signupEmails who may create an account, lowercased; empty means nobody
+ * @property {Set<string>} signupEmails who may create an account, lowercased: emails, or `@domain` for every email there; empty means nobody
  */
 
 /**
@@ -76,7 +77,7 @@ export function loadConfig(env = process.env) {
   return {
     port,
     databaseUrl: loadDatabaseUrl(env),
-    auth: { url, secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
+    auth: { url, trustedOrigins: originList(env.TRUSTED_ORIGINS), secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
     llm: loadLlm(env, url),
     stt: loadStt(env),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
@@ -133,6 +134,22 @@ function required(env, name) {
   const value = env[name]?.trim()
   if (!value) throw new ConfigError(`${name} is not set`)
   return value
+}
+
+/**
+ * Origins Better Auth accepts besides BETTER_AUTH_URL's. It refuses sign-in
+ * and sign-up from any other with "Invalid origin".
+ * @param {string} [list] comma-separated URLs; only their origins are kept
+ */
+function originList(list = '') {
+  return list
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      if (!URL.canParse(entry)) throw new ConfigError(`TRUSTED_ORIGINS must be comma-separated URLs, and "${entry}" isn't one`)
+      return new URL(entry).origin
+    })
 }
 
 /** @param {string} [list] comma-separated */

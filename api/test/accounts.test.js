@@ -15,6 +15,7 @@ before(async () => {
       'dani@example.com',
       'eva@example.com',
       'fede@example.com',
+      '@juguemos.local',
     ],
   })
 })
@@ -51,6 +52,15 @@ test('an email outside the allowlist cannot sign up', async () => {
 
   const { rowCount } = await api.pool.query('select 1 from users where email = $1', ['stranger@example.com'])
   assert.equal(rowCount, 0)
+})
+
+test('an @domain entry lets any email at that domain sign up, and only that domain', async () => {
+  assert.equal((await signUp('Cualquiera@Juguemos.local')).statusCode, 200)
+  for (const email of ['alguien@notjuguemos.local', 'alguien@juguemos.local.example.com']) {
+    const response = await signUp(email)
+    assert.equal(response.statusCode, 403, email)
+    assert.equal(response.json().code, 'SIGNUP_NOT_ALLOWED')
+  }
 })
 
 test('the same email cannot sign up twice', async () => {

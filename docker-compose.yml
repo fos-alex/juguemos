@@ -41,6 +41,7 @@ services:
       PORT: "3000"
       DATABASE_URL: postgres://${POSTGRES_USER:-juguemos}:${POSTGRES_PASSWORD:-juguemos}@db:5432/${POSTGRES_DB:-juguemos}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://juguemos.local:3000}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
       # Which LLM writes the stories (opencode or openrouter), its model, and
