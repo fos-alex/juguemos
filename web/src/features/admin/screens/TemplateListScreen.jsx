@@ -1,26 +1,25 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { listTemplates, saveTemplate } from '../../../api'
-import { Dots } from '../../../shared/ui/Buttons'
-import { Body, Header, Screen } from '../../../shared/ui/Screen'
-import { adminFailure, categoryNames, fieldsOf, templateLine } from '../model'
-import { StatusLine } from '../../../shared/ui/StatusLine'
+import { Link } from '@tanstack/react-router'
+import { listTemplates, saveTemplate } from '../api'
+import { adminFailure, categoryNames, fieldsOf, NEW, templateLine } from '../model'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
+import { Body, Dots, Header, Screen, StatusLine } from '../../../shared/ui'
+import '../admin.css'
 
-/** @typedef {import('../../../api/types').ActivityTemplate} ActivityTemplate */
-
-export const Route = createFileRoute('/admin/')({ component: AdminScreen })
+/** @typedef {import('../types').ActivityTemplate} ActivityTemplate */
 
 /**
  * The catalog admin: every activity template, on or off. A tap on a row edits
  * it, and the switch beside it takes it in or out of ¡Juguemos! No login yet.
  */
-function AdminScreen() {
+export function TemplateListScreen() {
   const [templates, setTemplates] = useState(/** @type {ActivityTemplate[] | null} */ (null))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [switching, setSwitching] = useState(/** @type {string | null} */ (null))
 
+  useDocumentTitle('Juegos · Admin · Juguemos')
+
   useEffect(() => {
-    document.title = 'Juegos · Admin · Juguemos'
     listTemplates().then(setTemplates, (error) => setFailure(adminFailure(error)))
   }, [])
 
@@ -44,7 +43,7 @@ function AdminScreen() {
       <Header
         title="Juegos"
         trailing={
-          <Link to="/admin/$id" params={{ id: 'nuevo' }} className="add-link">
+          <Link to="/admin/$id" params={{ id: NEW }} className="add-link">
             + nuevo juego
           </Link>
         }

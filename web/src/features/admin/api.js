@@ -4,8 +4,8 @@
  */
 import { request } from '../../shared/http'
 
-/** @typedef {import('../../api/types').ActivityTemplate} ActivityTemplate */
-/** @typedef {import('../../api/types').ActivityTemplateFields} ActivityTemplateFields */
+/** @typedef {import('./types').ActivityTemplate} ActivityTemplate */
+/** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
 
 const TEMPLATES = '/admin/activity-templates'
 
