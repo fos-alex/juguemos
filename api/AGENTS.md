@@ -26,7 +26,7 @@ src/
   server.js           starts the app: loads config, opens the pool, listens, closes cleanly
   app.js              buildApp(): wires every dependency and route, here and nowhere else
   config.js           reads and validates the environment, once, at startup
-  <domain>/           one folder per domain: accounts/, families/, activities/, stories/, health/
+  <domain>/           one folder per domain: accounts/, families/, toys/, activities/, stories/, health/
     <domain>.routes.js      URLs, route config (`public`), and response schemas
     <domain>.controller.js  HTTP: reads the request, calls services, returns the body
     <domain>.service.js     business logic and queries
@@ -56,7 +56,7 @@ test/                 integration tests, with helpers.js
 - **The catalog admin has no login yet** (JUG-109). Its routes under `/admin` are public, so `app.js` registers them only when `ADMIN_ENABLED` is true; otherwise they are a 404. Never turn it on where anyone outside the family can reach it, and remind Alex of the rule when work touches it.
 - **Queries go through Drizzle,** on the `db` that `db/client.js` creates: the query builder for most things, `db.query` to load a row with its relations, and the `sql` template for what is Postgres-specific (the advisory lock, a kid's current age). Values are always parameters: never build SQL from strings, and never put input in `sql.raw`. Columns are camelCase in code and snake_case in the database. Writes that must succeed or fail together go through `db.transaction(async (tx) => …)`.
 - **A failed query throws `DrizzleQueryError`,** whose message includes the query's parameters, which can be a family's names. The Postgres error, with its `code`, is its `cause`, and that is what `handleError` logs.
-- **Families:** each adult has one family for now, and the second parent joins in 0.6. The profile holds kids, pets, interests, and toys.
+- **Families:** each adult has one family for now, and the second parent joins in 0.6. The profile holds kids, pets, interests, and toys. The toy box (`toys/`, JUG-18) keeps the rest of what is known about each toy, and the profile knows toys only by name: saving it changes a toy's name and order and nothing else, so the form must send each toy's id.
 - **Templates have slots,** `{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, and `{interest}`, filled by code in `catalog/slots.js` (no LLM in 0.1). Toys are known only by name, so write templates any toy fits, never make a word agree in gender with a slot, and never address anyone by a toy's name. "a {toy}" and "de {toy}" contract to "al" and "del" on their own. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
 
 ## Accounts and the guardrails

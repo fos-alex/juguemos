@@ -21,6 +21,9 @@ import { healthRoutes } from './health/health.routes.js'
 import { createStoriesController } from './stories/stories.controller.js'
 import { storiesRoutes } from './stories/stories.routes.js'
 import { createStoriesService } from './stories/stories.service.js'
+import { createToysController } from './toys/toys.controller.js'
+import { toysRoutes } from './toys/toys.routes.js'
+import { createToysService } from './toys/toys.service.js'
 
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
@@ -40,6 +43,7 @@ import { createStoriesService } from './stories/stories.service.js'
  */
 export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm }) {
   const families = createFamiliesService({ db })
+  const toys = createToysService({ db })
   const activities = createActivitiesService({ db, families, random })
   const stories = createStoriesService({ db, families, random, now, llm: llm ?? createOpenCodeLlm({ config: config.llm }) })
   const auth = createAuth({ config: config.auth, db })
@@ -63,6 +67,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(authRoutes, { auth, baseURL: config.auth.url })
   app.register(accountsRoutes, { controller: createAccountsController({ families }) })
   app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
+  app.register(toysRoutes, { controller: createToysController({ toys }), guards: familyGuards })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
