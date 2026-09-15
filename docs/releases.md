@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.9 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.10 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -86,6 +86,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Activity categories.** Move, Create, Pretend, Explore, Learn, Low-energy, Helpers, and Out & About.
 - **Filtering and choosing a type of activity.** For when the parent wants something specific.
 - **A colour for each kid.** Each kid gets a colour that goes with their name on Home, on the games and stories they took part in, and on their goals. When one kid is playing, Home takes a light accent in that kid's colour. It's a marker, not a theme.
+- **Discovery games.** Short games the parent and kids play together with the phone, built from a few reusable game types. The first is *¿Qué suena?*: the phone plays a sound, such as an animal, an instrument, or a vehicle, and the kids guess what it is from options the parent reads out, or by pointing to the real toy. Difficulty follows the ages of the kids who are playing. The parent holds the phone, and nothing on the screen is aimed at the kids.
 - **More activities and content.**
 
 ### 0.5 — *Con cuidado*
@@ -110,7 +111,6 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 ### 0.8 — *Hablale*
 
 - **Live voice conversation with the agent.** Ask for ideas, games, and rhymes out loud.
-- **Sound guessing games** (nice to have). The phone plays the sound of an animal, a vehicle, a musical instrument, or a well-known character, and the parent and child guess together what it is. Audio-first and led by the parent, with the screen used as little as possible.
 
 ### 0.9 — *Los detalles*
 
@@ -158,7 +158,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Parenting tips after 1.0 | Advice has to be excellent or not given at all. |
 | Mood toggle and other concept features parked | Start simple, and add features once they connect well. |
 | Story series and the story library in 0.3 | A series needs its chapters saved, and toddlers love hearing the same story again. 0.3 already improves stories, so they arrive together. |
-| Sound guessing games in 0.8, as a nice-to-have | Like live voice conversation, they're audio-first and keep the phone out of sight. |
+| Sound guessing games folded into discovery games in 0.4 | They were planned for 0.8 as a nice-to-have, but they're the same game as *¿Qué suena?*, the first discovery game. |
 | Sign in with Google in 0.3, limited to the family's accounts | Nobody outside the family gets in until the guardrails are complete, whatever the sign-in method. |
 | Night mode in 0.1, pulled forward from the handoff's 0.3 target | Stories are read at bedtime, and the dark palette was already wired. Alex asked for it in 0.1. |
 | The activity catalog lives in the database, loaded by seeds | Alex's call while building 0.1. The database is the catalog's home, not files in the repo. |
@@ -166,6 +166,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Who's playing in 0.1 | Games and stories should fit the kids who are actually playing. Remembering the choice keeps it to one tap, or none. |
 | A colour for each kid in 0.4, as a marker rather than a theme | 0.4 brings each kid's goals, and the story library from 0.3 can show whose stories they were. The colour matters once there's more than one kid to tell apart. |
 | A minimal admin for activity templates in 0.1, ahead of 0.7's content backend | Alex asked for it, to shape the playtest's catalog from the browser. 0.7 still brings review states, versions, and reviewer accounts. |
+| Discovery games in 0.4, with the answers in the room and no pictures on the screen | They teach animal names, sounds, and words, which fits 0.4's goals, and parents can pick them through its categories and filter. The constitution rules out kid-facing screen games, so the parent holds the phone and the kids answer out loud or with real things. |
 
 ## 6. Open questions
 
@@ -190,3 +191,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.7 draft | September 2026 | Synced 0.1 with decisions made while building: the catalog lives in the database, sign-in uses Better Auth, the LLM is deferred, and Home says *¡Juguemos!* and *Otro juego*. |
 | 0.8 draft | September 2026 | Added who's playing to 0.1, and a colour for each kid to 0.4. |
 | 0.9 draft | September 2026 | Added an admin for the activity templates to 0.1. |
+| 0.10 draft | September 2026 | Added discovery games to 0.4, and folded the sound guessing games from 0.8 into them. |
