@@ -16,7 +16,7 @@ import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
 import { createUnderstanding } from './families/understanding.js'
-import { AppError } from './errors.js'
+import { AppError, UnavailableError } from './errors.js'
 import { createLlm } from './llm/llm.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
@@ -63,8 +63,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families, audit })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
-  // After the session hook below: routes about the family need one saved.
-  const familyGuards = [createRequireFamily(families)]
+  const requireFamily = createRequireFamily(families)
 
   const app = Fastify({ logger })
   app.decorateRequest('session', null)
@@ -72,20 +71,28 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.setErrorHandler(handleError)
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'not found' }))
 
-  // Every route needs a signed-in adult unless its config says `public: true`.
+  // The one place access is decided. A route says `config: { access }`:
+  // `public` for anyone, `session` for a signed-in adult, `family` for one who
+  // has also saved a family. Without a config it is `session`, so a new route
+  // is closed until it says otherwise. A hook that refuses answers and returns
+  // its reply, which stops the request here.
   app.addHook('preHandler', async (request, reply) => {
-    if (request.is404 || request.routeOptions.config.public) return
-    return requireSession(request, reply)
+    if (request.is404) return
+    const { access = 'session' } = request.routeOptions.config
+    if (access === 'public') return
+    const refused = await requireSession(request, reply)
+    if (refused) return refused
+    if (access === 'family') return requireFamily(request, reply)
   })
 
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
   app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
   app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
-  app.register(toysRoutes, { controller: createToysController({ toys }), guards: familyGuards })
-  app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
-  app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
-  // No family guard: onboarding records a note before the family exists.
+  app.register(toysRoutes, { controller: createToysController({ toys }) })
+  app.register(activitiesRoutes, { controller: createActivitiesController({ activities }) })
+  app.register(storiesRoutes, { controller: createStoriesController({ stories }) })
+  // Session access, not family: onboarding records a note before the family exists.
   app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
   if (config.admin.enabled) app.register(adminRoutes, { controller: createAdminController({ activities }) })
@@ -95,12 +102,14 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
 
 /**
  * One shape for every failure. A client's own mistake gets its message, plus
- * the code a service gave it; ours are logged and never described.
+ * the code a service gave it; ours are logged and never described. An
+ * UnavailableError is the exception among the 5xx: it says a feature this
+ * server wasn't configured for is off, which the web is meant to read.
  * @type {Parameters<import('fastify').FastifyInstance['setErrorHandler']>[0]}
  */
 function handleError(error, request, reply) {
   const status = error.statusCode ?? 500
-  if (status >= 500) {
+  if (status >= 500 && !(error instanceof UnavailableError)) {
     // A failed query's message carries its parameters, which can be a family's
     // names; log the query and what Postgres said instead.
     const logged = error instanceof DrizzleQueryError ? { err: error.cause, query: error.query } : { err: error }

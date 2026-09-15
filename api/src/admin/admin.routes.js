@@ -1,11 +1,11 @@
+import { errorBody, lines, text, uuid } from '../http/schemas.js'
+
 /** @typedef {ReturnType<typeof import('./admin.controller.js').createAdminController>} AdminController */
 
 const CATEGORIES = ['move', 'create', 'pretend', 'explore', 'learn', 'low_energy', 'helpers', 'out_and_about']
 
-/** @param {number} maxLength */
-const text = (maxLength) => ({ type: 'string', minLength: 1, maxLength })
-/** @param {number} maxItems @param {number} [minItems] */
-const lines = (maxItems, minItems = 0) => ({ type: 'array', minItems, maxItems, items: text(300) })
+// Bad input is 400, an unknown template 404, and a slug already taken 409.
+const errors = { 400: errorBody, 404: errorBody, 409: errorBody, 500: errorBody }
 
 // A template's fields, except its slug.
 const fields = {
@@ -59,7 +59,7 @@ const template = {
 const params = {
   type: 'object',
   required: ['id'],
-  properties: { id: { type: 'string', format: 'uuid' } },
+  properties: { id: uuid },
 }
 
 /**
@@ -69,15 +69,23 @@ const params = {
  * @param {{ controller: AdminController }} options
  */
 export async function adminRoutes(app, { controller }) {
-  const config = { public: true }
+  const config = { access: 'public' }
   const url = '/admin/activity-templates'
-  app.get(url, { config, schema: { response: { 200: { type: 'array', items: template } } } }, controller.listTemplates)
-  app.post(url, { config, schema: { body: templateInput, response: { 201: template } } }, controller.createTemplate)
-  app.get(`${url}/:id`, { config, schema: { params, response: { 200: template } } }, controller.getTemplate)
+  app.get(
+    url,
+    { config, schema: { response: { 200: { type: 'array', items: template }, ...errors } } },
+    controller.listTemplates,
+  )
+  app.post(
+    url,
+    { config, schema: { body: templateInput, response: { 201: template, ...errors } } },
+    controller.createTemplate,
+  )
+  app.get(`${url}/:id`, { config, schema: { params, response: { 200: template, ...errors } } }, controller.getTemplate)
   app.put(
     `${url}/:id`,
-    { config, schema: { params, body: templateUpdate, response: { 200: template } } },
+    { config, schema: { params, body: templateUpdate, response: { 200: template, ...errors } } },
     controller.updateTemplate,
   )
-  app.delete(`${url}/:id`, { config, schema: { params } }, controller.deleteTemplate)
+  app.delete(`${url}/:id`, { config, schema: { params, response: errors } }, controller.deleteTemplate)
 }

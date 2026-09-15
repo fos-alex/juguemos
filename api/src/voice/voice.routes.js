@@ -1,3 +1,5 @@
+import { errorBody } from '../http/schemas.js'
+
 /** @typedef {ReturnType<typeof import('./voice.controller.js').createVoiceController>} VoiceController */
 
 /**
@@ -12,10 +14,15 @@ const transcript = {
   properties: { text: { type: 'string' } },
 }
 
-const off = {
-  type: 'object',
-  required: ['error', 'code'],
-  properties: { error: { type: 'string' }, code: { type: 'string' } },
+// An empty note is 400, anything but audio 415, one over the limit 413, and a
+// server with no speech-to-text service 503 with VOICE_OFF.
+const errors = {
+  400: errorBody,
+  401: errorBody,
+  413: errorBody,
+  415: errorBody,
+  500: errorBody,
+  503: errorBody,
 }
 
 /**
@@ -33,7 +40,7 @@ export async function voiceRoutes(app, { controller }) {
   })
   app.post(
     '/voice/transcribe',
-    { bodyLimit: MAX_NOTE_BYTES, schema: { response: { 200: transcript, 503: off } } },
+    { bodyLimit: MAX_NOTE_BYTES, schema: { response: { 200: transcript, ...errors } } },
     controller.transcribe,
   )
 }

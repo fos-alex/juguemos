@@ -1,3 +1,5 @@
+import { errorBody } from '../http/schemas.js'
+
 /** @typedef {ReturnType<typeof import('./activities.controller.js').createActivitiesController>} ActivitiesController */
 
 const activity = {
@@ -26,13 +28,21 @@ const suggestion = {
 }
 
 /**
+ * Activities for an adult who has already saved a family. 404 is the catalog
+ * having nothing that fits it yet.
  * @param {import('fastify').FastifyInstance} app
- * @param {{ controller: ActivitiesController, guards: import('fastify').preHandlerAsyncHookHandler[] }} options
+ * @param {{ controller: ActivitiesController }} options
  */
-export async function activitiesRoutes(app, { controller, guards }) {
+export async function activitiesRoutes(app, { controller }) {
   app.post(
     '/activities/suggestions',
-    { preHandler: guards, schema: { body: suggestion, response: { 201: activity } } },
+    {
+      config: { access: 'family' },
+      schema: {
+        body: suggestion,
+        response: { 201: activity, 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
+      },
+    },
     controller.suggest,
   )
 }
