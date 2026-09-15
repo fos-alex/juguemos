@@ -1,10 +1,10 @@
+import { familyOf } from '../families/require-family.js'
+
 /** @typedef {import('./toys.service.js').ToysService} ToysService */
 /** @typedef {import('./toys.service.js').ToyInput} ToyInput */
 
 /** The signed-in adult's toy box. @param {{ toys: ToysService }} deps */
 export function createToysController({ toys }) {
-  /** @param {import('fastify').FastifyRequest} request */
-  const familyOf = (request) => /** @type {string} */ (request.familyId)
   /** @param {import('fastify').FastifyRequest} request */
   const toyOf = (request) => /** @type {{ id: string }} */ (request.params).id
 

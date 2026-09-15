@@ -1,3 +1,4 @@
+import { userOf } from '../auth/session.js'
 import { NotFoundError } from '../errors.js'
 
 /** @typedef {import('./families.service.js').FamiliesService} FamiliesService */
@@ -17,26 +18,27 @@ export function createFamiliesController({ families, understanding }) {
      */
     async understand(request) {
       const { text } = /** @type {{ text: string }} */ (request.body)
-      const userId = request.session.user.id
+      const userId = userOf(request).id
       return understanding.understand(text, { userId, familyId: await families.idOf(userId) })
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
     async get(request) {
-      const familyId = await families.idOf(request.session.user.id)
+      const { id: userId } = userOf(request)
+      const familyId = await families.idOf(userId)
       if (!familyId) throw new NotFoundError('No family yet')
-      return families.profileOf(familyId, request.session.user.id)
+      return families.profileOf(familyId, userId)
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
     async save(request) {
-      return families.saveProfile(request.session.user.id, /** @type {ProfileInput} */ (request.body))
+      return families.saveProfile(userOf(request).id, /** @type {ProfileInput} */ (request.body))
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
     async choosePlaying(request) {
       const { kids } = /** @type {{ kids: string[] }} */ (request.body)
-      return families.choosePlaying(request.session.user.id, kids)
+      return families.choosePlaying(userOf(request).id, kids)
     },
   }
 }

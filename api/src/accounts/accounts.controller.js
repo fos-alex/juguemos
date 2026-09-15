@@ -1,3 +1,5 @@
+import { userOf } from '../auth/session.js'
+
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../families/understanding.js').UnderstandingService} UnderstandingService */
 
@@ -13,7 +15,7 @@ export function createAccountsController({ families, understanding }) {
      * @type {import('fastify').RouteHandlerMethod}
      */
     async me(request) {
-      const { user } = request.session
+      const user = userOf(request)
       return { user, family: await families.familyOf(user.id), familyFromText: understanding.available }
     },
   }
