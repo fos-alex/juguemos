@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { after, before, test } from 'node:test'
-import { UpstreamError } from '../src/errors.js'
-import { createLlm } from '../src/llm/llm.js'
+import { UpstreamError } from '../../src/errors.js'
+import { createLlm } from '../../src/llm/client.js'
 
 /** @typedef {{ url: string | undefined, headers: import('node:http').IncomingHttpHeaders, body: any }} Received */
 
@@ -43,7 +43,7 @@ function stream(response, pieces, events = []) {
   response.end('data: [DONE]\n\n')
 }
 
-/** @param {Partial<import('../src/config.js').LlmConfig>} [overrides] @returns {import('../src/config.js').LlmConfig} */
+/** @param {Partial<import('../../src/config.js').LlmConfig>} [overrides] @returns {import('../../src/config.js').LlmConfig} */
 const config = (overrides) => ({
   provider: 'opencode',
   apiKey: 'the-key',
@@ -54,10 +54,10 @@ const config = (overrides) => ({
 })
 const openRouter = () => config({ provider: 'openrouter', model: 'some-lab/some-model' })
 
-/** @param {import('../src/llm/llm.js').Llm | null} llm */
+/** @param {import('../../src/llm/client.js').Llm | null} llm */
 async function write(llm) {
   let text = ''
-  for await (const piece of /** @type {import('../src/llm/llm.js').Llm} */ (llm).stream({ system: 'sistema', user: 'usuario' })) {
+  for await (const piece of /** @type {import('../../src/llm/client.js').Llm} */ (llm).stream({ system: 'sistema', user: 'usuario' })) {
     text += piece
   }
   return text

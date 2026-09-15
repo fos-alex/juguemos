@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { after, before, test } from 'node:test'
-import { ConfigError, DEFAULT_STT_MODEL, loadConfig } from '../src/config.js'
-import { UpstreamError } from '../src/errors.js'
-import { createTranscriber } from '../src/voice/transcriber.js'
+import { ConfigError, DEFAULT_STT_MODEL, loadConfig } from '../../src/config.js'
+import { UpstreamError } from '../../src/errors.js'
+import { createTranscriber } from '../../src/voice/transcriber.js'
 
 /** @typedef {{ url: string | undefined, headers: import('node:http').IncomingHttpHeaders, form: FormData }} Received */
 
