@@ -73,3 +73,9 @@ p {
     transition: none !important;
   }
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}

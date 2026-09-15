@@ -4,6 +4,7 @@ import { listTemplates, saveTemplate } from '../api'
 import { Dots } from '../shared/ui/Buttons'
 import { Body, Header, Screen } from '../shared/ui/Screen'
 import { adminFailure, categoryNames, fieldsOf, templateLine } from '../lib/admin'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 /** @typedef {import('../api/types').ActivityTemplate} ActivityTemplate */
 
@@ -50,15 +51,11 @@ function AdminScreen() {
       />
       <Body className="page-body">
         {templates && (
-          <p className="status-line">
+          <StatusLine>
             {inUse} en uso de {templates.length}. Los apagados no salen en ¡Juguemos!
-          </p>
+          </StatusLine>
         )}
-        {failure && (
-          <p className="status-line" role="alert">
-            {failure}
-          </p>
-        )}
+        <StatusLine role="alert">{failure}</StatusLine>
         {!templates && !failure && <Dots tone="page" />}
         <ul className="admin-list">
           {templates?.map((template) => (

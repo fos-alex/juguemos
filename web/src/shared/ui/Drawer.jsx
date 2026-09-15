@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import './Drawer.css'
 
 /**
  * A side panel over a scrim, on the native modal dialog so focus, Escape, and

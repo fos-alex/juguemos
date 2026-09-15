@@ -1,3 +1,5 @@
+import './StepList.css'
+
 /**
  * Numbered steps, short enough to glance at mid-play. `bullets` puts each
  * number in a jacarandá circle (Activity A); `numerals` uses large lilac

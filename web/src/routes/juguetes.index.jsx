@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { chooseMaterials, loadToyBox } from '../api'
 import { PrimaryButton } from '../shared/ui/Buttons'
 import { Card, Skeleton } from '../shared/ui/Card'
+import { Chips, ChipToggle } from '../shared/ui/Chips'
+import { FieldGroup } from '../shared/ui/Field'
+import { OfflineNotice } from '../shared/ui/OfflineNotice'
 import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { StatusLine } from '../shared/ui/StatusLine'
 import { useGoBack } from '../shared/hooks/useGoBack'
-import { useOnline } from '../shared/hooks/useOnline'
+import { useOfflineNotice } from '../shared/hooks/useOfflineNotice'
+import { useSerialSaves } from '../shared/hooks/useSerialSaves'
 import { failureText } from '../shared/format'
 import { useStored, write } from '../shared/store'
 
@@ -27,13 +32,14 @@ export const Route = createFileRoute('/juguetes/')({
 function ToyBoxScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
-  const online = useOnline()
+  const offline = useOfflineNotice()
+  const { online } = offline
   const box = useStored('toyBox')
   const family = useStored('family')
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
-  const [offlineTaps, setOfflineTaps] = useState(0)
+  
   // Materials are saved one tap after another, like who's playing on Home.
-  const choosing = useRef(/** @type {Promise<unknown>} */ (Promise.resolve()))
+  const saves = useSerialSaves()
 
   useEffect(() => {
     document.title = 'El baúl de juguetes · Juguemos'
@@ -44,24 +50,22 @@ function ToyBoxScreen() {
   /** @param {Material} material */
   const toggleMaterial = (material) => {
     if (!box) return
-    if (!online) {
-      setOfflineTaps((taps) => taps + 1)
-      return
-    }
+    if (!online) return offline.tap()
     const materials = box.materials.map((each) => (each.key === material.key ? { ...each, have: !each.have } : each))
     write('toyBox', { ...box, materials })
     setFailure(null)
     const keys = materials.filter((each) => each.have).map((each) => each.key)
-    choosing.current = choosing.current
-      .then(() => chooseMaterials(keys))
-      .catch((error) => {
+    saves.add(
+      () => chooseMaterials(keys),
+      (error) => {
         setFailure(failureText(error))
         return loadToyBox().catch(() => {})
-      })
+      },
+    )
   }
 
   const add = () => {
-    if (!online) setOfflineTaps((taps) => taps + 1)
+    if (!online) offline.tap()
     else void navigate({ to: '/juguetes/$id', params: { id: 'nuevo' } })
   }
 
@@ -69,11 +73,7 @@ function ToyBoxScreen() {
     <Screen>
       <Header onBack={goBack} title="El baúl de juguetes" />
       <Body className="page-body toy-box">
-        {!online && (
-          <p key={offlineTaps} className="status-line" role="status">
-            Estás sin conexión.
-          </p>
-        )}
+        <OfflineNotice notice={offline} />
 
         {!box ? (
           <div className="toy-list" aria-hidden="true">
@@ -82,7 +82,7 @@ function ToyBoxScreen() {
             <Skeleton height={64} />
           </div>
         ) : box.toys.length === 0 ? (
-          <p className="status-line">Todavía no hay juguetes en el baúl.</p>
+          <StatusLine>Todavía no hay juguetes en el baúl.</StatusLine>
         ) : (
           <ul className="toy-list">
             {box.toys.map((toy) => {
@@ -100,36 +100,18 @@ function ToyBoxScreen() {
         )}
 
         {box && box.materials.length > 0 && (
-          <div className="field toy-box__materials" role="group" aria-labelledby="materials-label">
-            <p id="materials-label" className="field__label">
-              También hay en casa
-            </p>
-            <div className="chips">
+          <FieldGroup label="También hay en casa" className="toy-box__materials">
+            <Chips>
               {box.materials.map((material) => (
-                <button
-                  key={material.key}
-                  type="button"
-                  className="chip chip--toggle"
-                  aria-pressed={material.have}
-                  onClick={() => toggleMaterial(material)}
-                >
-                  {material.have && (
-                    <span className="chip__check" aria-hidden="true">
-                      ✓
-                    </span>
-                  )}
+                <ChipToggle key={material.key} pressed={material.have} onClick={() => toggleMaterial(material)}>
                   {material.label}
-                </button>
+                </ChipToggle>
               ))}
-            </div>
-          </div>
+            </Chips>
+          </FieldGroup>
         )}
 
-        {failure && (
-          <p className="status-line" role="alert">
-            {failure}
-          </p>
-        )}
+        <StatusLine role="alert">{failure}</StatusLine>
       </Body>
       <Footer>
         <PrimaryButton unavailable={!online} onClick={add}>

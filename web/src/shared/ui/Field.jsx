@@ -1,4 +1,8 @@
 import { useId } from 'react'
+import './Field.css'
+
+/** Input attributes for the family's own words: nobody corrects their family's names, so the keyboard keeps its hands off. */
+export const AS_TYPED = { autoCorrect: 'off', autoCapitalize: 'none', spellCheck: false }
 
 /**
  * A labelled text field. Errors sit under the field that caused them, in
@@ -35,6 +39,23 @@ export function Field({ label, help, error, trailing, suffix, className = '', ..
           {note}
         </p>
       )}
+    </div>
+  )
+}
+
+/**
+ * Several controls under one label, such as a row of chips or the kids'
+ * rows. Help and error lines go in `children`, after the controls.
+ * @param {{ label: string, className?: string, children: React.ReactNode }} props
+ */
+export function FieldGroup({ label, className = '', children }) {
+  const id = useId()
+  return (
+    <div className={`field ${className}`.trim()} role="group" aria-labelledby={id}>
+      <p id={id} className="field__label">
+        {label}
+      </p>
+      {children}
     </div>
   )
 }

@@ -1,3 +1,5 @@
+import './Card.css'
+
 /**
  * A white card with a hairline border, or the lilac `accent` card kept for
  * "Por qué ahora". Pass `onClick` to make the whole card one tap target.

@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { saveFamily } from '../api'
 import { PrimaryButton } from '../shared/ui/Buttons'
-import { Field, FieldControl } from '../shared/ui/Field'
+import { ChipInput, Chips } from '../shared/ui/Chips'
+import { AS_TYPED, Field, FieldControl, FieldGroup } from '../shared/ui/Field'
 import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
 import { useGoBack } from '../shared/hooks/useGoBack'
 import { failureText } from '../shared/format'
 import { read } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 /** @typedef {import('../api/types').Family} Family */
 /**
@@ -23,8 +25,7 @@ export const Route = createFileRoute('/familia/corregir')({
   component: CorrectScreen,
 })
 
-// Nobody corrects their family's names: keep the keyboard's hands off.
-const AS_TYPED = { autoCorrect: 'off', autoCapitalize: 'none', spellCheck: false }
+
 
 /**
  * 2h. The fallback, and it looks like a plain form: the same four groups in
@@ -85,10 +86,7 @@ function CorrectScreen() {
       <Header onBack={goBack} title="Corregir" />
       <form className="screen-form" onSubmit={save} noValidate>
         <Body className="form-body correct">
-          <div className="field" role="group" aria-labelledby="kids-label">
-            <p id="kids-label" className="field__label">
-              Chicos
-            </p>
+          <FieldGroup label="Chicos">
             <div className="kid-rows">
               {form.kids.map((kid, index) => (
                 <div key={index} className="kid-row">
@@ -125,7 +123,7 @@ function CorrectScreen() {
             >
               + agregar otro chico
             </button>
-          </div>
+          </FieldGroup>
 
           <Field
             label="Mascota"
@@ -136,56 +134,23 @@ function CorrectScreen() {
             onChange={(event) => update((f) => ({ ...f, pet: event.target.value }))}
           />
 
-          <div className="field" role="group" aria-labelledby="interests-label">
-            <p id="interests-label" className="field__label">
-              Le encanta
-            </p>
-            <div className="chips">
-              {form.interests.map((interest, index) => (
-                <button
-                  key={`${interest}-${index}`}
-                  type="button"
-                  className="chip"
-                  aria-label={`Quitar ${interest}`}
-                  onClick={() => update((f) => ({ ...f, interests: f.interests.filter((_, i) => i !== index) }))}
-                >
-                  {interest} <span aria-hidden="true">×</span>
-                </button>
-              ))}
-              {newInterest === null ? (
-                <button
-                  type="button"
-                  className="chip chip--add"
-                  data-field="interests"
-                  aria-label="Agregar algo que le encanta"
-                  onClick={() => setNewInterest('')}
-                >
-                  +
-                </button>
-              ) : (
-                <input
-                  className="chip chip--input"
-                  aria-label="Algo que le encanta"
-                  autoFocus
-                  {...AS_TYPED}
-                  value={newInterest}
-                  onChange={(event) => setNewInterest(event.target.value)}
-                  onBlur={commitInterest}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      commitInterest()
-                    }
-                  }}
-                />
-              )}
-            </div>
-          </div>
+          <FieldGroup label="Le encanta">
+            <Chips
+              items={form.interests}
+              onRemove={(index) => update((f) => ({ ...f, interests: f.interests.filter((_, i) => i !== index) }))}
+            >
+              <ChipInput
+                value={newInterest}
+                onChange={setNewInterest}
+                onCommit={commitInterest}
+                field="interests"
+                addLabel="Agregar algo que le encanta"
+                inputLabel="Algo que le encanta"
+              />
+            </Chips>
+          </FieldGroup>
 
-          <div className="field" role="group" aria-labelledby="toys-label">
-            <p id="toys-label" className="field__label">
-              Juguetes · como los llaman en casa
-            </p>
+          <FieldGroup label="Juguetes · como los llaman en casa">
             <div className="toy-rows">
               {form.toys.map((toy, index) => (
                 <FieldControl
@@ -207,13 +172,9 @@ function CorrectScreen() {
             >
               + agregar juguete
             </button>
-          </div>
+          </FieldGroup>
 
-          {failure && (
-            <p className="status-line" role="alert">
-              {failure}
-            </p>
-          )}
+          <StatusLine role="alert">{failure}</StatusLine>
         </Body>
         <Footer sticky>
           {/* Voice pass pending: "Guardar". */}

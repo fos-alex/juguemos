@@ -6,6 +6,7 @@ import { FamilyCard } from '../components/FamilyCard'
 import { Body, Footer, Screen } from '../shared/ui/Screen'
 import { failureText } from '../shared/format'
 import { read } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/familia/revisar')({
   component: ReviewScreen,
@@ -54,11 +55,7 @@ function ReviewScreen() {
       <Body className="review">
         <FamilyCard family={parse.family} flagged={parse.flagged} onFix={correct} />
         {parse.note && <p className="review__note">{parse.note}</p>}
-        {failure && (
-          <p className="status-line" role="alert">
-            {failure}
-          </p>
-        )}
+        <StatusLine role="alert">{failure}</StatusLine>
       </Body>
       <Footer>
         {misread ? (

@@ -1,0 +1,165 @@
+/* Screen */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
+}
+
+.screen__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 26px;
+}
+
+.screen__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 26px calc(36px + env(safe-area-inset-bottom));
+}
+
+.screen__footer--row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.screen__footer--sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--bg);
+}
+
+body[data-tone='accent'] .screen__footer--sticky {
+  background: var(--surface-accent);
+}
+
+body[data-tone='reading'] .screen__footer--sticky {
+  background: var(--reading-bg);
+}
+
+.screen-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.button-row {
+  display: flex;
+  gap: 11px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.grow-3 {
+  flex: 1.5;
+}
+
+.grow-2 {
+  flex: 1;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 16px 26px 0;
+}
+
+.header--split {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header__lead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.header__title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.back-button,
+.close-button,
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  margin: 0 -12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--primary);
+  touch-action: manipulation;
+}
+
+.close-button {
+  font-size: 22px;
+}
+
+/* Shared page pieces */
+
+.page-intro {
+  padding: 26px 26px 0;
+}
+
+.page-intro--tight {
+  padding-top: 16px;
+}
+
+.page-intro--after-back {
+  padding-top: 12px;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: pretty;
+}
+
+.page-lede {
+  margin-top: 12px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink-body);
+}
+
+.page-lede strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.page-body {
+  gap: 16px;
+  padding-top: 22px;
+}
+
+.form-body {
+  gap: 20px;
+  padding-top: 26px;
+}

@@ -7,6 +7,7 @@ import { useCountdown } from '../shared/hooks/useCountdown'
 import { useGoBack } from '../shared/hooks/useGoBack'
 import { clockText, failureText } from '../shared/format'
 import { useStored } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/verificar')({
   component: VerifyScreen,
@@ -108,11 +109,9 @@ function VerifyScreen() {
             ))}
           </div>
         </div>
-        {message && (
-          <p id="otp-message" className="status-line" role="status">
-            {message}
-          </p>
-        )}
+        <StatusLine id="otp-message" role="status">
+          {message}
+        </StatusLine>
         {resendIn > 0 ? (
           <p className="verify__resend">Reenviar el código en {clockText(resendIn)}</p>
         ) : (

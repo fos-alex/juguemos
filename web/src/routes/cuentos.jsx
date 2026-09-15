@@ -8,6 +8,7 @@ import { useGoBack } from '../shared/hooks/useGoBack'
 import { useOnline } from '../shared/hooks/useOnline'
 import { failureText } from '../shared/format'
 import { useStored } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 /** @typedef {import('../api/types').SavedStorySummary} SavedStorySummary */
 
@@ -102,11 +103,7 @@ function StoryOptionsScreen() {
                 </MetaLabel>
               </Card>
             ))}
-        {notice && (
-          <p className="status-line" role="alert">
-            {notice}
-          </p>
-        )}
+        <StatusLine role="alert">{notice}</StatusLine>
         {library && library.length > 0 && (
           <section className="story-library">
             {/* Voice pass pending: "Para volver a leer". */}

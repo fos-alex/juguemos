@@ -1,4 +1,4 @@
-import { AccountError, NothingFitsError, OfflineError } from '../api'
+import { OfflineError, WordedError } from './http'
 
 /** @typedef {import('../api/types').Family} Family */
 /** @typedef {import('../api/types').Activity} Activity */
@@ -26,8 +26,6 @@ export function clockText(seconds) {
 
 /** What to tell the parent when a request fails: no blame, no error codes. @param {unknown} error */
 export function failureText(error) {
-  if (error instanceof AccountError) return error.message
-  // Voice pass pending.
-  if (error instanceof NothingFitsError) return 'Todavía no tengo un juego que les quede bien. Estamos sumando más.'
+  if (error instanceof WordedError) return error.message
   return error instanceof OfflineError ? 'Estás sin conexión.' : 'Uy, algo falló. ¿Probamos de nuevo?'
 }
