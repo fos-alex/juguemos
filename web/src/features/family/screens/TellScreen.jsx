@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { VoiceNote } from '../../voice'
 import { addToDraft, keepDraft, understandFamily } from '../api'
@@ -11,6 +11,9 @@ import '../family.css'
 const EXAMPLE =
   'Somos Alex y Caro, tenemos a Milán, de dos años, y a Inca, nuestra mascota. A Milán le encantan los dinosaurios y los caballos, y tiene un tren de madera que no suelta.'
 
+/** How long "Deshacer" stays after "Reiniciar" erases the text. */
+const UNDO_MS = 6000
+
 /**
  * 2d. The prompt is the headline. The box grows to fill the screen, with the
  * brief's example as hint text; no counter, no validation.
@@ -18,7 +21,12 @@ const EXAMPLE =
  * The mic records a voice note (2e, JUG-95). Its words join the box, where
  * the parent checks them like anything typed, and "Listo" sends them on the
  * same path. While a note records, the prompt dims and the strip replaces
- * "Listo".
+ * "Listo". The first time a device opens this screen, the mic is spotlighted,
+ * since a voice note is the easiest way to tell Juguemos about the family
+ * (JUG-135).
+ *
+ * "Reiniciar", beside the help line, erases the text, and "Deshacer" brings it
+ * back for a few seconds after.
  *
  * "Listo" sends the text to the API, whose LLM reads the family in it (JUG-11),
  * and opens the review card. If that fails, the text stays for another try.
@@ -30,8 +38,17 @@ export function TellScreen() {
   const request = useRequest()
   const [recording, setRecording] = useState(false)
   const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
+  const [erased, setErased] = useState(/** @type {string | null} */ (null))
 
   useDocumentTitle('Contame de tu familia · Juguemos')
+
+  // "Deshacer" lasts a few seconds, and goes as soon as there's new text.
+  useEffect(() => {
+    if (erased === null) return
+    if (draft) return setErased(null)
+    const timer = setTimeout(() => setErased(null), UNDO_MS)
+    return () => clearTimeout(timer)
+  }, [erased, draft])
 
   const toForm = () => void navigate({ to: '/familia/corregir' })
 
@@ -43,6 +60,17 @@ export function TellScreen() {
       await understandFamily(text)
       void navigate({ to: '/familia/revisar' })
     })
+  }
+
+  const restart = () => {
+    setErased(draft)
+    setVoiceMessage(null)
+    keepDraft('')
+  }
+
+  const undo = () => {
+    if (erased !== null) keepDraft(erased)
+    setErased(null)
   }
 
   return (
@@ -76,14 +104,27 @@ export function TellScreen() {
             )}
           </div>
         )}
-        {/* Voice pass pending: "Listo" and "Prefiero un formulario". */}
-        <p className="tell__help">Escribilo, o mantené apretado el micrófono y contámelo.</p>
+        {/* Voice pass pending: "Listo", "Prefiero un formulario", "Reiniciar", and "Deshacer". */}
+        <div className="tell__help-row">
+          <p className="tell__help">Escribilo, o mantené apretado el micrófono y contámelo.</p>
+          {draft.trim() ? (
+            <TertiaryButton size="inline" disabled={request.busy} onClick={restart}>
+              Reiniciar
+            </TertiaryButton>
+          ) : (
+            erased !== null && (
+              <TertiaryButton size="inline" onClick={undo}>
+                Deshacer
+              </TertiaryButton>
+            )
+          )}
+        </div>
         <TertiaryButton size="inline" onClick={toForm}>
           Prefiero un formulario
         </TertiaryButton>
       </Body>
       <Footer row>
-        <VoiceNote onText={addToDraft} onMessage={setVoiceMessage} onRecording={setRecording}>
+        <VoiceNote onText={addToDraft} onMessage={setVoiceMessage} onRecording={setRecording} introduce>
           <PrimaryButton className="grow" busy={request.busy} busyLabel="Leyendo" onClick={understand}>
             Listo
           </PrimaryButton>

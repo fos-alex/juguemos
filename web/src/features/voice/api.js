@@ -5,6 +5,16 @@
  * audio is never stored on the device.
  */
 import { ApiError, endSession, OfflineError } from '../../shared/http'
+import { read, write } from '../../shared/store'
+
+/** Whether this device has already seen the mic spotlighted on 2d (JUG-135). */
+export function introSeen() {
+  return read('voiceIntroSeen') === true
+}
+
+export function markIntroSeen() {
+  write('voiceIntroSeen', true)
+}
 
 /** The server has no speech-to-text service, so voice notes are off. */
 export class VoiceOffError extends Error {}
