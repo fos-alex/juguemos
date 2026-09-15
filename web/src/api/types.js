@@ -1,21 +1,8 @@
 /**
- * The shapes the screens work with. The API modules translate to and from
- * the API's own shapes, so screens never see them.
+ * The shapes the screens not yet in a feature work with. The API modules
+ * translate to and from the API's own shapes, so screens never see them.
  */
 
-/**
- * @typedef {{
- *   id: string, name: string, aliases: string[], description: string | null,
- *   kidId: string | null, shared: boolean, favorite: boolean, linked: string[],
- * }} Toy
- * A toy in the toy box (JUG-18). `name` is the family's, shown exactly as
- * typed; `description` is for Juguemos and never shown in its place. Whose it
- * is: `kidId`'s, `shared`, or neither. `linked` holds the ids of the toys it
- * goes with.
- */
-/** @typedef {Partial<Omit<Toy, 'id' | 'linked'>>} ToyChanges */
-/** @typedef {{ key: string, label: string, have: boolean }} Material A household material, from the API's fixed list. */
-/** @typedef {{ toys: Toy[], materials: Material[] }} ToyBox */
 /**
  * @typedef {{
  *   id: string, title: string, minutes: number, place: 'indoor' | 'outdoor',
