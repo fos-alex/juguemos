@@ -1,7 +1,7 @@
-import { Card, Label, MetaLabel, Skeleton } from '../shared/ui/Card'
-import { StepList } from '../shared/ui/StepList'
+import { Card, Label, MetaLabel, Skeleton } from '../../../shared/ui/Card'
+import { StepList } from '../../../shared/ui/StepList'
 
-/** @typedef {import('../api/types').Activity} Activity */
+/** @typedef {import('../../../api/types').Activity} Activity */
 
 /**
  * One idea, in either of the two layouts still open in the handoff:

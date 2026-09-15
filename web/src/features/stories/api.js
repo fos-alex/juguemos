@@ -5,12 +5,12 @@
  * reading screen fills while the model still talks; an already-written story
  * streams the same way, from the saved copy.
  */
-import { read, write } from '../shared/store'
-import { ApiError, endSession, OfflineError, request } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { ApiError, endSession, OfflineError, request } from '../../shared/http'
 
-/** @typedef {import('./types').StoryOption} StoryOption */
-/** @typedef {import('./types').Story} Story */
-/** @typedef {import('./types').SavedStorySummary} SavedStorySummary */
+/** @typedef {import('../../api/types').StoryOption} StoryOption */
+/** @typedef {import('../../api/types').Story} Story */
+/** @typedef {import('../../api/types').SavedStorySummary} SavedStorySummary */
 
 /** Three options, leaving out the ones on screen. @param {{ exclude?: string[] }} [options] @returns {Promise<StoryOption[]>} */
 export async function storyOptions({ exclude = [] } = {}) {

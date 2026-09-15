@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { savedStories, savedStory, storyOptions } from '../api'
-import { TertiaryButton } from '../shared/ui/Buttons'
-import { Card, MetaLabel, Skeleton } from '../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { useOnline } from '../shared/hooks/useOnline'
-import { failureText } from '../shared/format'
-import { useStored } from '../shared/store'
-import { StatusLine } from '../shared/ui/StatusLine'
+import { savedStories, savedStory, storyOptions } from '../../../api'
+import { TertiaryButton } from '../../../shared/ui/Buttons'
+import { Card, MetaLabel, Skeleton } from '../../../shared/ui/Card'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { useOnline } from '../../../shared/hooks/useOnline'
+import { failureText } from '../../../shared/format'
+import { useStored } from '../../../shared/store'
+import { StatusLine } from '../../../shared/ui/StatusLine'
 
-/** @typedef {import('../api/types').SavedStorySummary} SavedStorySummary */
+/** @typedef {import('../../../api/types').SavedStorySummary} SavedStorySummary */
 
 export const Route = createFileRoute('/cuentos')({
   component: StoryOptionsScreen,

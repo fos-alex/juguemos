@@ -2,10 +2,10 @@
  * Activities, against the real API. Each suggestion is also kept in the
  * local store, which is what keeps the last one readable offline.
  */
-import { read, write } from '../shared/store'
-import { ApiError, request, WordedError } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { ApiError, request, WordedError } from '../../shared/http'
 
-/** @typedef {import('./types').Activity} Activity */
+/** @typedef {import('../../api/types').Activity} Activity */
 
 /** Nothing in the catalog fits this family yet: a state to word plainly, not a failure. */
 export class NothingFitsError extends WordedError {

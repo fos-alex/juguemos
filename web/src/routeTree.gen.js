@@ -9,23 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as IndexRouteImport } from './features/home/screens/HomeScreen'
 import { Route as AjustesRouteImport } from './routes/ajustes'
 import { Route as CuentaRouteImport } from './routes/cuenta'
-import { Route as CuentosRouteImport } from './routes/cuentos'
+import { Route as CuentosRouteImport } from './features/stories/screens/StoryOptionsScreen'
 import { Route as EntradaRouteImport } from './routes/entrada'
 import { Route as VerificarRouteImport } from './routes/verificar'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminIdRouteImport } from './routes/admin.$id'
-import { Route as CuentoIdRouteImport } from './routes/cuento.$id'
+import { Route as CuentoIdRouteImport } from './features/stories/screens/ReadingScreen'
 import { Route as FamiliaIndexRouteImport } from './routes/familia.index'
 import { Route as FamiliaContanosRouteImport } from './routes/familia.contanos'
 import { Route as FamiliaCorregirRouteImport } from './routes/familia.corregir'
 import { Route as FamiliaRevisarRouteImport } from './routes/familia.revisar'
 import { Route as JuguetesIndexRouteImport } from './routes/juguetes.index'
 import { Route as JuguetesIdRouteImport } from './routes/juguetes.$id'
-import { Route as IdeaIdIndexRouteImport } from './routes/idea.$id.index'
-import { Route as IdeaIdRelojRouteImport } from './routes/idea.$id.reloj'
+import { Route as IdeaIdIndexRouteImport } from './features/activities/screens/ActivityScreen'
+import { Route as IdeaIdRelojRouteImport } from './features/activities/screens/TimerScreen'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
