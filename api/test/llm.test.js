@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { after, before, test } from 'node:test'
-import { createLlm, UpstreamError } from '../src/llm/llm.js'
+import { UpstreamError } from '../src/errors.js'
+import { createLlm } from '../src/llm/llm.js'
 
 /** @typedef {{ url: string | undefined, headers: import('node:http').IncomingHttpHeaders, body: any }} Received */
 

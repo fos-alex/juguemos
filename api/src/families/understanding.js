@@ -9,8 +9,7 @@
  * only in audit_transcripts, while AUDIT_TRANSCRIPTS is on (JUG-116).
  */
 import familyPrompt from '../../prompts/family.js'
-import { AppError } from '../errors.js'
-import { UpstreamError } from '../llm/llm.js'
+import { UnavailableError, UpstreamError } from '../errors.js'
 
 /** How long the model gets before the parent is asked to try again. */
 const TIMEOUT_MS = 60_000
@@ -50,7 +49,7 @@ export function createUnderstanding({ llm, audit }) {
      */
     async understand(text, { userId, familyId }) {
       await audit.recordTranscript({ userId, familyId, source: 'family_text', text })
-      if (!llm) throw new AppError('No LLM is configured to read a family', 503)
+      if (!llm) throw new UnavailableError('No LLM is configured to read a family', 'LLM_OFF')
       let answer = ''
       const signal = AbortSignal.timeout(TIMEOUT_MS)
       for await (const piece of llm.stream({ system: familyPrompt, user: text, signal })) answer += piece

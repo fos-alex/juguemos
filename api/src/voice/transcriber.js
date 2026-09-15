@@ -7,7 +7,7 @@
  * The audio goes to the service in the request body and nowhere else. It is
  * never written to disk or logged, and nothing holds it once the request ends.
  */
-import { AppError } from '../errors.js'
+import { UpstreamError } from '../errors.js'
 
 /** @typedef {import('../config.js').SttConfig} SttConfig */
 /**
@@ -56,23 +56,15 @@ export function createTranscriber({ config }) {
         body: form,
         signal: AbortSignal.timeout(TIMEOUT_MS),
       }).catch((error) => {
-        throw new TranscriptionError(`The speech-to-text service is unreachable: ${error.message}`)
+        throw new UpstreamError(`The speech-to-text service is unreachable: ${error.message}`)
       })
       if (!response.ok) {
         const reason = await response.text().catch(() => '')
-        throw new TranscriptionError(`The speech-to-text service answered HTTP ${response.status}: ${reason.slice(0, 300)}`)
+        throw new UpstreamError(`The speech-to-text service answered HTTP ${response.status}: ${reason.slice(0, 300)}`)
       }
       const data = /** @type {{ text?: unknown } | null} */ (await response.json().catch(() => null))
-      if (typeof data?.text !== 'string') throw new TranscriptionError('The speech-to-text service answered without text')
+      if (typeof data?.text !== 'string') throw new UpstreamError('The speech-to-text service answered without text')
       return data.text.trim()
     },
-  }
-}
-
-/** The speech-to-text service failed, in a way the parent can only retry. */
-export class TranscriptionError extends AppError {
-  /** @param {string} message */
-  constructor(message) {
-    super(message, 502)
   }
 }

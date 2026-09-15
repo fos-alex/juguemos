@@ -6,7 +6,7 @@
  * Without a key there is no client, and stories come from the seeded templates.
  */
 import { randomUUID } from 'node:crypto'
-import { AppError } from '../errors.js'
+import { UpstreamError } from '../errors.js'
 
 /** @typedef {import('../config.js').LlmConfig} LlmConfig */
 /** @typedef {object} LlmCall @property {string} system @property {string} user */
@@ -110,13 +110,5 @@ function readJson(data) {
     return JSON.parse(data)
   } catch {
     return null
-  }
-}
-
-/** The LLM provider failed, in a way the parent can only retry. */
-export class UpstreamError extends AppError {
-  /** @param {string} message */
-  constructor(message) {
-    super(message, 502)
   }
 }
