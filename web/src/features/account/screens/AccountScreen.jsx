@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { createAccount, signIn } from '../api'
-import { PrimaryButton } from '../shared/ui/Buttons'
-import { Field } from '../shared/ui/Field'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { failureText } from '../shared/format'
-import { read } from '../shared/store'
-import { StatusLine } from '../shared/ui/StatusLine'
+import { createAccount, signIn } from '../../../api'
+import { PrimaryButton } from '../../../shared/ui/Buttons'
+import { Field } from '../../../shared/ui/Field'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { failureText } from '../../../shared/format'
+import { read } from '../../../shared/store'
+import { StatusLine } from '../../../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/cuenta')({
   validateSearch: (search) => ({

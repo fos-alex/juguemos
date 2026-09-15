@@ -3,11 +3,11 @@
  * lives in an httpOnly cookie; the store keeps only what the screens show.
  * Email verification is still mocked in ./mock, and Google arrives in 0.3.
  */
-import { clearAll, read, write } from '../shared/store'
-import { loadFamily } from './family'
-import { ApiError, endSession, request, WordedError } from '../shared/http'
+import { clearAll, read, write } from '../../shared/store'
+import { loadFamily } from '../family/api'
+import { ApiError, endSession, request, WordedError } from '../../shared/http'
 
-/** @typedef {import('./types').Account} Account */
+/** @typedef {import('../../api/types').Account} Account */
 
 /** A failure the parent can fix, with the words to tell them. */
 export class AccountError extends WordedError {}

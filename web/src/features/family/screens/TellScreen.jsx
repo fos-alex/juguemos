@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { understandFamily } from '../api'
-import { PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
-import { Body, Footer, Screen } from '../shared/ui/Screen'
-import { VoiceNote } from '../components/VoiceNote'
-import { failureText } from '../shared/format'
-import { read, useStored, write } from '../shared/store'
-import { StatusLine } from '../shared/ui/StatusLine'
+import { understandFamily } from '../../../api'
+import { PrimaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
+import { Body, Footer, Screen } from '../../../shared/ui/Screen'
+import { VoiceNote } from '../../voice/components/VoiceNote'
+import { failureText } from '../../../shared/format'
+import { read, useStored, write } from '../../../shared/store'
+import { StatusLine } from '../../../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/familia/contanos')({
   component: TellUsScreen,
@@ -35,7 +35,7 @@ function TellUsScreen() {
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [recording, setRecording] = useState(false)
   const [voiceMessage, setVoiceMessage] = useState(
-    /** @type {import('../components/VoiceNote').VoiceMessage | null} */ (null),
+    /** @type {import('../../voice/components/VoiceNote').VoiceMessage | null} */ (null),
   )
 
   useEffect(() => {

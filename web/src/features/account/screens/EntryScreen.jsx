@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
-import { Footer, Screen } from '../shared/ui/Screen'
-import { Wordmark } from '../shared/ui/Wordmark'
+import { PrimaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
+import { Footer, Screen } from '../../../shared/ui/Screen'
+import { Wordmark } from '../../../shared/ui/Wordmark'
 
 export const Route = createFileRoute('/entrada')({
   component: EntryScreen,

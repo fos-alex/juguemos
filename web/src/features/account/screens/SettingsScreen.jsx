@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { signOut } from '../api'
-import { TertiaryButton } from '../shared/ui/Buttons'
-import { Card, MetaLabel } from '../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { failureText } from '../shared/format'
-import { read } from '../shared/store'
-import { StatusLine } from '../shared/ui/StatusLine'
+import { signOut } from '../../../api'
+import { TertiaryButton } from '../../../shared/ui/Buttons'
+import { Card, MetaLabel } from '../../../shared/ui/Card'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { failureText } from '../../../shared/format'
+import { read } from '../../../shared/store'
+import { StatusLine } from '../../../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/ajustes')({
   component: SettingsScreen,

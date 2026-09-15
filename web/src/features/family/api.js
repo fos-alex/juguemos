@@ -4,10 +4,10 @@
  * which has room for more pets. The rest of what is known about each toy is
  * the toy box's (./toys).
  */
-import { read, write } from '../shared/store'
-import { ApiError, request } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { ApiError, request } from '../../shared/http'
 
-/** @typedef {import('./types').Family} Family */
+/** @typedef {import('../../api/types').Family} Family */
 /**
  * @typedef {{
  *   kids: { id?: string, name: string, age: number | null, playing?: boolean }[], pets: { name: string }[],
@@ -48,7 +48,7 @@ export function upgradeCachedFamily() {
   if (!family?.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')) return
   write('family', {
     ...family,
-    toys: family.toys.map((/** @type {string | import('./types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
+    toys: family.toys.map((/** @type {string | import('../../api/types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
   })
 }
 
@@ -70,11 +70,11 @@ export async function loadFamily() {
  * and keeps the result for the review card. Nothing is saved until the parent
  * confirms it.
  * @param {string} text
- * @returns {Promise<import('./types').ParseResult>}
+ * @returns {Promise<import('../../api/types').ParseResult>}
  */
 export async function understandFamily(text) {
   const { family, unsure, note } = await request('POST', '/family/understanding', { text })
-  /** @type {import('./types').ParseResult} */
+  /** @type {import('../../api/types').ParseResult} */
   const parse = { family: toFamily(family), flagged: unsure, note }
   write('parseResult', parse)
   return parse

@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { saveFamily } from '../api'
-import { PrimaryButton } from '../shared/ui/Buttons'
-import { ChipInput, Chips } from '../shared/ui/Chips'
-import { AS_TYPED, Field, FieldControl, FieldGroup } from '../shared/ui/Field'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { failureText } from '../shared/format'
-import { read } from '../shared/store'
-import { StatusLine } from '../shared/ui/StatusLine'
+import { saveFamily } from '../../../api'
+import { PrimaryButton } from '../../../shared/ui/Buttons'
+import { ChipInput, Chips } from '../../../shared/ui/Chips'
+import { AS_TYPED, Field, FieldControl, FieldGroup } from '../../../shared/ui/Field'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { failureText } from '../../../shared/format'
+import { read } from '../../../shared/store'
+import { StatusLine } from '../../../shared/ui/StatusLine'
 
-/** @typedef {import('../api/types').Family} Family */
+/** @typedef {import('../../../api/types').Family} Family */
 /**
  * @typedef {{
  *   kids: { id?: string, name: string, age: string }[], pet: string, interests: string[],
- *   toys: import('../api/types').FamilyToy[],
+ *   toys: import('../../../api/types').FamilyToy[],
  * }} FormState
  */
 

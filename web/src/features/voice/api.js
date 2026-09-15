@@ -4,7 +4,7 @@
  * `request` only speaks JSON; like it, no network means `OfflineError`. The
  * audio is never stored on the device.
  */
-import { ApiError, endSession, OfflineError } from '../shared/http'
+import { ApiError, endSession, OfflineError } from '../../shared/http'
 
 /** The server has no speech-to-text service, so voice notes are off. */
 export class VoiceOffError extends Error {}

@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { SecondaryButton } from '../shared/ui/Buttons'
+import { SecondaryButton } from '../../../shared/ui/Buttons'
 import { FamilyCard } from '../components/FamilyCard'
-import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
-import { useGoBack } from '../shared/hooks/useGoBack'
-import { useStored } from '../shared/store'
+import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { useStored } from '../../../shared/store'
 
 export const Route = createFileRoute('/familia/')({
   component: MyFamilyScreen,

@@ -1,8 +1,8 @@
-import { MetaLabel } from '../shared/ui/Card'
-import { ageText } from '../shared/format'
-import './FamilyCard.css'
+import { MetaLabel } from '../../../shared/ui/Card'
+import { ageText } from '../../../shared/format'
+import '../family.css'
 
-/** @typedef {import('../api/types').Family} Family */
+/** @typedef {import('../../../api/types').Family} Family */
 
 /**
  * What the app understood about the family, in the family's own words, one
