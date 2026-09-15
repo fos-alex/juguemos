@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { OfflineError, transcribe, VoiceOffError } from '../api'
-import { clockText, failureText } from '../shared/format'
-import { canRecord, MicDeniedError, startRecording } from '../lib/recorder'
-import { Dots } from '../shared/ui/Buttons'
-import './VoiceNote.css'
+import { transcribe, VoiceOffError } from '../api'
+import { OfflineError } from '../../../shared/http'
+import { clockText, failureText } from '../../../shared/format'
+import { canRecord, MicDeniedError, startRecording } from '../recorder'
+import { Dots } from '../../../shared/ui/Buttons'
+import '../voice.css'
 
 /** How far the finger travels, in px, to lock the note or to drop it. */
 const LOCK_AT = 72
@@ -55,7 +56,7 @@ export function VoiceNote({ children, onText, onMessage, onRecording }) {
 
   // Pointer handlers and timers read these, so they never see a stale render.
   const phaseRef = useRef(phase)
-  const recording = useRef(/** @type {import('../lib/recorder').Recording | null} */ (null))
+  const recording = useRef(/** @type {import('../recorder').Recording | null} */ (null))
   const pressed = useRef(false)
   const skipClick = useRef(false)
   const origin = useRef({ x: 0, y: 0 })

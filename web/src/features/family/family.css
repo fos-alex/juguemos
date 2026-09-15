@@ -1,0 +1,195 @@
+/* 2d Contame de tu familia */
+
+.tell__prompt {
+  padding: 26px 26px 0;
+}
+
+.prompt {
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: pretty;
+}
+
+.tell__body {
+  gap: 14px;
+  padding-top: 20px;
+}
+
+.tell__text {
+  flex: 1;
+  min-height: 160px;
+  padding: 16px 18px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 18px;
+  outline: none;
+  background: var(--surface);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink);
+  resize: none;
+}
+
+.tell__text::placeholder {
+  color: var(--ink-hint);
+}
+
+.tell__text:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* The hint clears on focus, so the parent writes on a blank page. */
+.tell__text:focus::placeholder {
+  color: transparent;
+}
+
+.tell__help {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.tell .screen__footer {
+  padding-top: 14px;
+}
+
+.tell__voice-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 2e: while a note records, the prompt dims and the box waits for its words. */
+.tell .prompt {
+  transition: color 150ms ease-out;
+}
+
+.tell--recording .prompt {
+  color: var(--ink-disabled);
+}
+
+.tell--recording .tell__text {
+  opacity: 0.5;
+}
+
+/* The lock target sits over this space; keep the layout, hide what's under it. */
+.tell--recording .tell__help,
+.tell--recording .tell__voice-message,
+.tell--recording .tell__body > .btn--tertiary {
+  visibility: hidden;
+}
+
+/* 2f / 2g ¿Está bien así? */
+
+.review {
+  padding-top: 20px;
+}
+
+.review__note {
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* 2h Corregir */
+
+.correct {
+  gap: 18px;
+  padding-top: 22px;
+}
+
+.kid-rows,
+.toy-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.kid-row {
+  display: flex;
+  gap: 9px;
+}
+
+.kid-row__name {
+  flex: 1;
+}
+
+.kid-row__age {
+  flex: none;
+  gap: 5px;
+  width: 104px;
+}
+
+/* Reads as "2 años": the number takes only the room it needs. */
+.kid-row__age .field__input {
+  flex: 0 1 auto;
+  width: 2.2ch;
+}
+
+/* Who's playing (JUG-107), just above the buttons in the thumb zone, and on
+   the right, under most parents' thumb. */
+
+.who-plays {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.who-plays__label {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+.who-plays .chips {
+  justify-content: flex-end;
+}
+
+/* Family card */
+
+.family-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.family-row {
+  display: block;
+  width: 100%;
+  padding: 16px 18px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+}
+
+.family-row + .family-row {
+  border-top: 1px solid var(--row-divider);
+}
+
+.family-row.is-flagged {
+  background: var(--surface-accent);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.family-row__value {
+  display: block;
+  margin-top: 4px;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.family-row__aside {
+  color: var(--ink-muted);
+}
+
+.family-row__fix {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--link);
+}

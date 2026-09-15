@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { choosePlaying, loadFamily, suggestActivity } from '../api'
-import { familyLine, placeText } from '../shared/format'
+import { suggestActivity } from '../api'
+import { choosePlaying, familyLine, loadFamily, WhoPlays } from '../features/family'
+import { placeText } from '../shared/format'
 import { useDocumentTitle } from '../shared/hooks/useDocumentTitle'
 import { useOfflineNotice } from '../shared/hooks/useOfflineNotice'
 import { useRequest } from '../shared/hooks/useRequest'
@@ -10,7 +11,6 @@ import { useTheme } from '../shared/hooks/useTheme'
 import { useStored, write } from '../shared/store'
 import { PrimaryButton, SecondaryButton } from '../shared/ui/Buttons'
 import { Card, MetaLabel } from '../shared/ui/Card'
-import { Chips, ChipToggle } from '../shared/ui/Chips'
 import { Drawer } from '../shared/ui/Drawer'
 import { OfflineNotice } from '../shared/ui/OfflineNotice'
 import { Footer, Screen } from '../shared/ui/Screen'
@@ -23,7 +23,7 @@ export const Route = createFileRoute('/')({
 
 const SLOW_AFTER_MS = 6000
 
-/** @typedef {import('../api/types').Kid} Kid */
+/** @typedef {import('../features/family').Kid} Kid */
 
 /**
  * 2j (2i when there is no last idea yet), with 2l and 2q as its states. The
@@ -194,38 +194,5 @@ function HomeScreen() {
         </div>
       </Drawer>
     </Screen>
-  )
-}
-
-/**
- * Who's playing: every kid by name, marked unless the parent took them out.
- * Marked is filled with a check and unmarked is outlined, so colour is never
- * the only difference. The last kid playing stays in. No counts, no nudges.
- * @param {{ kids: Kid[], onToggle: (kid: Kid) => void }} props
- */
-function WhoPlays({ kids, onToggle }) {
-  const playingCount = kids.filter((kid) => kid.playing !== false).length
-  return (
-    <div className="who-plays" role="group" aria-labelledby="who-plays-label">
-      {/* Voice pass pending: "¿Quiénes juegan?". */}
-      <p id="who-plays-label" className="who-plays__label">
-        ¿Quiénes juegan?
-      </p>
-      <Chips>
-        {kids.map((kid, index) => {
-          const playing = kid.playing !== false
-          return (
-            <ChipToggle
-              key={kid.id ?? index}
-              pressed={playing}
-              aria-disabled={(playing && playingCount === 1) || undefined}
-              onClick={() => onToggle(kid)}
-            >
-              {kid.name}
-            </ChipToggle>
-          )
-        })}
-      </Chips>
-    </div>
   )
 }

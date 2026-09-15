@@ -77,7 +77,7 @@ The interface is phone-first and one-handed, since a parent is often holding a t
 
 Voice is the primary input, captured in the browser and sent to the API for transcription. Browser support and permissions for microphone capture need to be validated early on a real iPhone, which is the riskiest target.
 
-**Voice notes** (JUG-95) are recorded by `web/src/lib/recorder.js`, a module with no React in it, so a native client can replace it. It uses `MediaRecorder` at 32 kbps: Chrome records Opus in WebM, Firefox Opus in Ogg, and Safari AAC in MP4, and the API takes all three. The microphone is released as soon as a note ends, a note stops at three minutes, and the audio is never stored on the device. The first press asks for permission, and on Safari the prompt takes the press with it, so that first attempt only asks and the next one records. The recorder has not yet been checked on a real iPhone (JUG-89); its findings go here.
+**Voice notes** (JUG-95) are recorded by `web/src/features/voice/recorder.js`, a module with no React in it, so a native client can replace it. It uses `MediaRecorder` at 32 kbps: Chrome records Opus in WebM, Firefox Opus in Ogg, and Safari AAC in MP4, and the API takes all three. The microphone is released as soon as a note ends, a note stops at three minutes, and the audio is never stored on the device. The first press asks for permission, and on Safari the prompt takes the press with it, so that first attempt only asks and the next one records. The recorder has not yet been checked on a real iPhone (JUG-89); its findings go here.
 
 ### 5.2 Offline and the service worker
 

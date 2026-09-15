@@ -1,0 +1,74 @@
+/* 2a Entrada */
+
+.entry__mark {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.entry__actions {
+  gap: 13px;
+}
+
+.entry__tagline {
+  margin-bottom: 8px;
+  font-size: 17px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+/* 2c Verificar */
+
+.verify {
+  gap: 18px;
+  padding-top: 28px;
+}
+
+.otp {
+  position: relative;
+}
+
+.otp__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  letter-spacing: 3em;
+  opacity: 0.01;
+}
+
+.otp__boxes {
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.otp__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 62px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+
+.otp__box.is-active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.verify__resend {
+  font-size: 15px;
+  color: var(--ink-muted);
+}

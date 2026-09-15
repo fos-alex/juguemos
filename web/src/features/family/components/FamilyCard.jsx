@@ -1,8 +1,8 @@
-import { MetaLabel } from '../shared/ui/Card'
-import { ageText } from '../shared/format'
-import './FamilyCard.css'
+import { familyRows } from '../model'
+import { MetaLabel } from '../../../shared/ui'
+import '../family.css'
 
-/** @typedef {import('../api/types').Family} Family */
+/** @typedef {import('../types').Family} Family */
 
 /**
  * What the app understood about the family, in the family's own words, one
@@ -39,26 +39,4 @@ export function FamilyCard({ family, flagged = [], onFix }) {
       })}
     </div>
   )
-}
-
-/**
- * Rows in a fixed order: each kid, the pet, what they love, the toys. Toy
- * names are joined exactly as typed; only the interests line is capitalised,
- * because it reads as a sentence.
- * @param {Family} family
- */
-function familyRows(family) {
-  /** @type {{ field: string, label: string, value: string, aside?: string }[]} */
-  const rows = family.kids.map((kid, index) =>
-    kid.age == null
-      ? { field: `kids.${index}`, label: 'Chicos', value: kid.name, aside: '· sin edad' }
-      : { field: `kids.${index}`, label: 'Chicos', value: `${kid.name} · ${ageText(kid.age)}` },
-  )
-  if (family.pet) rows.push({ field: 'pet', label: 'Mascota', value: family.pet })
-  if (family.interests.length > 0) {
-    const interests = family.interests.join(' · ')
-    rows.push({ field: 'interests', label: 'Le encanta', value: interests[0].toUpperCase() + interests.slice(1) })
-  }
-  if (family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.map((toy) => toy.name).join(' · ') })
-  return rows
 }

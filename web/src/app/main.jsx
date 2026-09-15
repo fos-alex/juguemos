@@ -11,7 +11,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { routeTree } from '../routeTree.gen'
-import { upgradeCachedFamily } from '../api'
+import { upgradeCachedFamily } from '../features/family'
 import { keepUpToDate } from './updates'
 import { applyInitialTheme } from './ThemeProvider'
 

@@ -4,8 +4,8 @@
  * which has room for more pets. The rest of what is known about each toy is
  * the toy box's (./toys).
  */
-import { read, write } from '../shared/store'
-import { ApiError, request } from '../shared/http'
+import { read, write } from '../../shared/store'
+import { ApiError, request } from '../../shared/http'
 
 /** @typedef {import('./types').Family} Family */
 /**
@@ -99,4 +99,15 @@ export async function choosePlaying(kidIds) {
   const family = toFamily(await request('PUT', '/family/playing', { kids: kidIds }))
   write('family', family)
   return family
+}
+
+/** Keeps what the parent has written on 2d so far, so a reload doesn't lose it. @param {string} text */
+export function keepDraft(text) {
+  write('familyDraft', text)
+}
+
+/** A voice note's words go after whatever is already in the draft. @param {string} text */
+export function addToDraft(text) {
+  const current = read('familyDraft')?.trim()
+  write('familyDraft', current ? `${current} ${text}` : text)
 }

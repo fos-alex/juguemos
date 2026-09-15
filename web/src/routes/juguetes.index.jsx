@@ -21,7 +21,7 @@ export const Route = createFileRoute('/juguetes/')({
 /** @typedef {import('../api/types').Toy} Toy */
 /** @typedef {import('../api/types').Material} Material */
 /** @typedef {import('../api/types').ToyBox} ToyBox */
-/** @typedef {import('../api/types').Kid} Kid */
+/** @typedef {import('../features/family').Kid} Kid */
 
 /**
  * El baúl de juguetes (JUG-94): the family's toys by their own names, and the
