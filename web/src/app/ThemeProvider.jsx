@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { syncThemeColor, ThemeContext } from '../hooks/useTheme'
-import { read, useStored, write } from '../lib/store'
-import { chooseTheme, nextSwitch, resolveTheme } from '../lib/theme'
+import { syncThemeColor, ThemeContext } from '../shared/hooks/useTheme'
+import { read, useStored, write } from '../shared/store'
+import { chooseTheme, nextSwitch, resolveTheme } from '../shared/theme'
 
 /**
  * Night mode. Resolves the theme from the clock and the parent's one-tap

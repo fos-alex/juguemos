@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { listTemplates, saveTemplate } from '../api'
-import { Dots } from '../components/Buttons'
-import { Body, Header, Screen } from '../components/Screen'
+import { Dots } from '../shared/ui/Buttons'
+import { Body, Header, Screen } from '../shared/ui/Screen'
 import { adminFailure, categoryNames, fieldsOf, templateLine } from '../lib/admin'
 
 /** @typedef {import('../api/types').ActivityTemplate} ActivityTemplate */

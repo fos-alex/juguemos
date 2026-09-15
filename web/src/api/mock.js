@@ -3,8 +3,8 @@
  * sender. Each function is async and shaped like the endpoint it stands in
  * for, with a realistic delay.
  */
-import { read, write } from '../lib/store'
-import { OfflineError } from './http'
+import { read, write } from '../shared/store'
+import { OfflineError } from '../shared/http'
 
 /** What the real verification will throw for a code that doesn't match. */
 export class WrongCodeError extends Error {}

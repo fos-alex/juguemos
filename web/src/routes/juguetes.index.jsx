@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { chooseMaterials, loadToyBox } from '../api'
-import { PrimaryButton } from '../components/Buttons'
-import { Card, Skeleton } from '../components/Card'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { useGoBack } from '../hooks/useGoBack'
-import { useOnline } from '../hooks/useOnline'
-import { failureText } from '../lib/format'
-import { useStored, write } from '../lib/store'
+import { PrimaryButton } from '../shared/ui/Buttons'
+import { Card, Skeleton } from '../shared/ui/Card'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { useGoBack } from '../shared/hooks/useGoBack'
+import { useOnline } from '../shared/hooks/useOnline'
+import { failureText } from '../shared/format'
+import { useStored, write } from '../shared/store'
 
 export const Route = createFileRoute('/juguetes/')({
   component: ToyBoxScreen,

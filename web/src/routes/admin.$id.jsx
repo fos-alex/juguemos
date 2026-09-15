@@ -1,11 +1,11 @@
 import { useEffect, useId, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ApiError, createTemplate, deleteTemplate, loadTemplate, saveTemplate } from '../api'
-import { Dots, PrimaryButton, TertiaryButton } from '../components/Buttons'
-import { Label } from '../components/Card'
-import { Field } from '../components/Field'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { useGoBack } from '../hooks/useGoBack'
+import { Dots, PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
+import { Label } from '../shared/ui/Card'
+import { Field } from '../shared/ui/Field'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { useGoBack } from '../shared/hooks/useGoBack'
 import { adminFailure, CATEGORIES, ENERGIES, PLACES, SLOTS, slugFrom, unknownSlots } from '../lib/admin'
 
 /** @typedef {import('../api/types').ActivityTemplate} ActivityTemplate */

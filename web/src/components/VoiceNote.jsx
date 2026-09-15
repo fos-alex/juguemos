@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { OfflineError, transcribe, VoiceOffError } from '../api'
-import { clockText, failureText } from '../lib/format'
+import { clockText, failureText } from '../shared/format'
 import { canRecord, MicDeniedError, startRecording } from '../lib/recorder'
-import { Dots } from './Buttons'
+import { Dots } from '../shared/ui/Buttons'
 
 /** How far the finger travels, in px, to lock the note or to drop it. */
 const LOCK_AT = 72

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { savedStories, savedStory, storyOptions } from '../api'
-import { TertiaryButton } from '../components/Buttons'
-import { Card, MetaLabel, Skeleton } from '../components/Card'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { useGoBack } from '../hooks/useGoBack'
-import { useOnline } from '../hooks/useOnline'
-import { failureText } from '../lib/format'
-import { useStored } from '../lib/store'
+import { TertiaryButton } from '../shared/ui/Buttons'
+import { Card, MetaLabel, Skeleton } from '../shared/ui/Card'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { useGoBack } from '../shared/hooks/useGoBack'
+import { useOnline } from '../shared/hooks/useOnline'
+import { failureText } from '../shared/format'
+import { useStored } from '../shared/store'
 
 /** @typedef {import('../api/types').SavedStorySummary} SavedStorySummary */
 

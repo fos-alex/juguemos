@@ -3,7 +3,7 @@
  * checks the form makes before the API makes them again.
  */
 import { ApiError } from '../api'
-import { failureText } from './format'
+import { failureText } from '../shared/format'
 
 /** @typedef {import('../api/types').ActivityTemplate} ActivityTemplate */
 /** @typedef {import('../api/types').ActivityTemplateFields} ActivityTemplateFields */

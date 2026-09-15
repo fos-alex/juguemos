@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       // Each deploy's worker takes over on its own and deletes the old caches;
-      // lib/updates.js reloads the page at a safe moment.
+      // app/updates.js reloads the page at a safe moment.
       registerType: 'autoUpdate',
       injectRegister: false,
       manifest: {

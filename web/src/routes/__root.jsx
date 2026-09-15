@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { createRootRoute, Outlet, redirect, useRouter } from '@tanstack/react-router'
 import { ensureSession } from '../api'
-import { ThemeProvider } from '../components/ThemeProvider'
-import { read, useStored } from '../lib/store'
+import { ThemeProvider } from '../app/ThemeProvider'
+import { read, useStored } from '../shared/store'
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {

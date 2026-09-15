@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { saveFamily } from '../api'
-import { PrimaryButton } from '../components/Buttons'
-import { Field, FieldControl } from '../components/Field'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { useGoBack } from '../hooks/useGoBack'
-import { failureText } from '../lib/format'
-import { read } from '../lib/store'
+import { PrimaryButton } from '../shared/ui/Buttons'
+import { Field, FieldControl } from '../shared/ui/Field'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { useGoBack } from '../shared/hooks/useGoBack'
+import { failureText } from '../shared/format'
+import { read } from '../shared/store'
 
 /** @typedef {import('../api/types').Family} Family */
 /**

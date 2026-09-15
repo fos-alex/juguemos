@@ -3,7 +3,7 @@
  * with the session cookie, and failures turned into errors the screens know
  * how to word. A 401 means the session ended, and the device forgets it.
  */
-import { clearAll, read, write } from '../lib/store'
+import { clearAll, read, write } from './store'
 
 export class OfflineError extends Error {}
 

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { understandFamily } from '../api'
-import { PrimaryButton, TertiaryButton } from '../components/Buttons'
-import { Body, Footer, Screen } from '../components/Screen'
+import { PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
+import { Body, Footer, Screen } from '../shared/ui/Screen'
 import { VoiceNote } from '../components/VoiceNote'
-import { failureText } from '../lib/format'
-import { read, useStored, write } from '../lib/store'
+import { failureText } from '../shared/format'
+import { read, useStored, write } from '../shared/store'
 
 export const Route = createFileRoute('/familia/contanos')({
   component: TellUsScreen,

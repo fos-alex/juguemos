@@ -5,8 +5,8 @@
  * reading screen fills while the model still talks; an already-written story
  * streams the same way, from the saved copy.
  */
-import { read, write } from '../lib/store'
-import { ApiError, endSession, OfflineError, request } from './http'
+import { read, write } from '../shared/store'
+import { ApiError, endSession, OfflineError, request } from '../shared/http'
 
 /** @typedef {import('./types').StoryOption} StoryOption */
 /** @typedef {import('./types').Story} Story */
