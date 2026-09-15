@@ -7,24 +7,13 @@
  */
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
-import { fillFor, render, seededRandom, shuffle, unknownPlaceholders } from '../catalog/slots.js'
-import { stories, storyPlots, storyTemplates } from './stories.schema.js'
-import { ConflictError, NotFoundError, UpstreamError, ValidationError } from '../errors.js'
+import { fillFor, render, seededRandom, shuffle } from '../catalog/slots.js'
+import { stories, storyPlots } from './stories.schema.js'
+import { ConflictError, NotFoundError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { anchorOf, familyLines, moodAt, momentOf, parseOptions, partsOf, StoryParser } from './storytelling.js'
 import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storyteller } from './prompts.js'
 
-/**
- * @typedef {object} StoryTemplateInput
- * @property {string} slug
- * @property {string} title
- * @property {string} teaser
- * @property {number} minutes
- * @property {'calm' | 'lively'} mood
- * @property {number} minAgeMonths
- * @property {number} maxAgeMonths
- * @property {string[][]} parts each a list of paragraphs
- */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
 /**
  * @typedef {{ id: string, templateId: string | null, plotId: string | null, title: string, teaser: string, minutes: number, parts: string[][] }} Story
@@ -42,6 +31,8 @@ import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storytelle
  * @property {Story} story
  */
 /** @typedef {StoryParagraph | StoryDone} StoryEvent what the reading screen draws, one at a time */
+/** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
+/** @typedef {import('../catalog/catalog.service.js').FillableStoryTemplate} StoryTemplate */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../families/families.service.js').Profile} Profile */
@@ -50,19 +41,6 @@ import { render as renderPrompt, storyOptionsTemplate, storyTemplate, storytelle
 
 const OPTIONS = 3
 const LIBRARY_CAP = 20
-
-/** @param {Pick<StoryTemplateInput, 'title' | 'teaser' | 'parts'>} template */
-const textsOf = (template) => [template.title, template.teaser, ...template.parts.flat()]
-
-const templateColumns = {
-  id: storyTemplates.id,
-  title: storyTemplates.title,
-  teaser: storyTemplates.teaser,
-  minutes: storyTemplates.minutes,
-  minAgeMonths: storyTemplates.minAgeMonths,
-  maxAgeMonths: storyTemplates.maxAgeMonths,
-  parts: storyTemplates.parts,
-}
 
 const storyColumns = {
   id: stories.id,
@@ -73,14 +51,6 @@ const storyColumns = {
   minutes: stories.minutes,
   parts: stories.parts,
 }
-
-/** @param {unknown} parts @returns {parts is string[][]} */
-const isParts = (parts) =>
-  Array.isArray(parts) &&
-  parts.length > 0 &&
-  parts.every(
-    (part) => Array.isArray(part) && part.length > 0 && part.every((paragraph) => typeof paragraph === 'string' && paragraph),
-  )
 
 /**
  * Lets whoever listens step in; the reader can leave mid-story and nothing
@@ -98,21 +68,21 @@ const tick = async (signal) => {
 /**
  * @param {{
  *   db: Db,
+ *   catalog: CatalogService,
  *   families: FamiliesService,
  *   llm?: Llm | null,
  *   random?: () => number,
  *   now?: () => Date,
  * }} deps `llm` absent means template stories only; `now` lets tests fix the moment.
  */
-export function createStoriesService({ db, families, llm = null, random = Math.random, now = () => new Date() }) {
+export function createStoriesService({ db, catalog, families, llm = null, random = Math.random, now = () => new Date() }) {
   /**
    * A template's slots filled for this family. Seeded by family and
    * template, so an option and the story written from it always match.
    * @param {Profile} profile
-   * @param {{ id: string } & Pick<StoryTemplateInput, 'title' | 'teaser' | 'parts' | 'minAgeMonths' | 'maxAgeMonths'>} template
+   * @param {StoryTemplate} template
    */
-  const fillOf = (profile, template) =>
-    fillFor(profile, { ...template, texts: textsOf(template) }, seededRandom(`${profile.id}:${template.id}`))
+  const fillOf = (profile, template) => fillFor(profile, template, seededRandom(`${profile.id}:${template.id}`))
 
   /** A saved story, shaped for the reading screen. @param {typeof stories.$inferSelect} row */
   const toStory = (row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) })
@@ -198,8 +168,7 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
 
   /** Three options from the catalog templates, filled for the family. */
   const templateOptions = async (profile, exclude) => {
-    const rows = await db.select(templateColumns).from(storyTemplates).orderBy(storyTemplates.slug)
-    const templates = rows.map((row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) }))
+    const templates = await catalog.storyTemplatesList()
     const excluded = new Set(exclude)
     const fitting = templates.flatMap((template) => {
       const fill = fillOf(profile, template)
@@ -229,24 +198,6 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
     }
 
   return {
-    /**
-     * Adds a template to the catalog unless one with its slug is already
-     * there; a template already in the database is never overwritten.
-     * @param {StoryTemplateInput} template
-     * @returns {Promise<{ created: boolean }>}
-     */
-    async addTemplate(template) {
-      if (!isParts(template.parts)) throw new ValidationError(`${template.slug} needs parts, each a list of paragraphs`)
-      const unknown = unknownPlaceholders(textsOf(template))
-      if (unknown.length > 0) throw new ValidationError(`Unknown slots in ${template.slug}: ${unknown.join(', ')}`)
-      const added = await db
-        .insert(storyTemplates)
-        .values(template)
-        .onConflictDoNothing({ target: storyTemplates.slug })
-        .returning({ id: storyTemplates.id })
-      return { created: added.length === 1 }
-    },
-
     /**
      * Three stories the family could read, starring the kids playing. With
      * the LLM configured these are plot options written for them; without
@@ -279,9 +230,8 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
       const written = await findWritten(familyId, templateId, kidIds)
       if (written) return written
 
-      const [row] = await db.select(templateColumns).from(storyTemplates).where(eq(storyTemplates.id, templateId))
-      if (!row) throw new NotFoundError('No such story')
-      const template = { ...row, parts: /** @type {string[][]} */ (row.parts) }
+      const template = await catalog.storyTemplateById(templateId)
+      if (!template) throw new NotFoundError('No such story')
       const fill = fillOf(profile, template)
       if (!fill) throw new ConflictError('This story needs someone or something the family profile does not have')
 
@@ -323,7 +273,7 @@ export function createStoriesService({ db, families, llm = null, random = Math.r
         .where(and(eq(storyPlots.id, id), eq(storyPlots.familyId, familyId)))
       if (plot) return this.writePlot(familyId, id, { signal })
 
-      const [template] = await db.select({ id: storyTemplates.id }).from(storyTemplates).where(eq(storyTemplates.id, id))
+      const template = await catalog.storyTemplateById(id)
       if (template) return this.streamTemplate(familyId, id, { signal, userId })
 
       throw new NotFoundError('No such story')

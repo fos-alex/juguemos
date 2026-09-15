@@ -1,7 +1,8 @@
 /**
- * Seeding goes through Better Auth and the services, the same way the app
- * does, instead of writing rows directly. Both seeds skip whatever already
- * exists, so they can run any number of times.
+ * The demo accounts' seed. It goes through Better Auth and the services, the
+ * same way the app does, instead of writing rows directly, and skips whatever
+ * already exists, so it can run any number of times. The catalog's templates
+ * are loaded by the catalog service.
  */
 
 /** @typedef {import('../auth/auth.js').Auth} Auth */
@@ -9,29 +10,7 @@
 /** @typedef {import('../families/families.service.js').Profile} Profile */
 /** @typedef {import('../toys/toys.service.js').ToysService} ToysService */
 /** @typedef {import('../../seeds/development.js').SeedToyBox} SeedToyBox */
-/** @typedef {import('../activities/activities.service.js').ActivitiesService} ActivitiesService */
-/** @typedef {import('../activities/activities.service.js').ActivityTemplateInput} ActivityTemplateInput */
-/** @typedef {import('../stories/stories.service.js').StoriesService} StoriesService */
-/** @typedef {import('../stories/stories.service.js').StoryTemplateInput} StoryTemplateInput */
 /** @typedef {import('../../seeds/development.js').SeedAccount} SeedAccount */
-
-/**
- * Adds the catalog's templates. The database is the catalog's home, so a
- * template already in it is never overwritten; this runs on every deploy.
- * @param {{
- *   activities: ActivitiesService,
- *   stories: StoriesService,
- *   catalog: { activityTemplates: ActivityTemplateInput[], storyTemplates: StoryTemplateInput[] },
- *   log?: (message: string) => void,
- * }} options
- */
-export async function seedCatalog({ activities, stories, catalog, log = () => {} }) {
-  let added = 0
-  for (const template of catalog.activityTemplates) if ((await activities.addTemplate(template)).created) added++
-  for (const template of catalog.storyTemplates) if ((await stories.addTemplate(template)).created) added++
-  const total = catalog.activityTemplates.length + catalog.storyTemplates.length
-  log(`Catalog: ${added} template(s) added, ${total - added} already there`)
-}
 
 /**
  * Creates the given accounts and their families, with their toy boxes.

@@ -12,7 +12,7 @@
  * Pending Alex's review and a voice pass (JUG-14).
  */
 
-/** @type {import('../../src/stories/stories.service.js').StoryTemplateInput[]} */
+/** @type {import('../../src/catalog/catalog.service.js').StoryTemplateInput[]} */
 export const storyTemplates = [
   {
     slug: 'no-aparece',

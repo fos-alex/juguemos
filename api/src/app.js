@@ -5,12 +5,13 @@ import { accountsRoutes } from './accounts/accounts.routes.js'
 import { createActivitiesController } from './activities/activities.controller.js'
 import { activitiesRoutes } from './activities/activities.routes.js'
 import { createActivitiesService } from './activities/activities.service.js'
-import { createAdminController } from './admin/admin.controller.js'
-import { adminRoutes } from './admin/admin.routes.js'
 import { createAuditService } from './audit/audit.service.js'
 import { createAuth } from './auth/auth.js'
 import { authRoutes } from './auth/auth.routes.js'
 import { createRequireSession } from './auth/session.js'
+import { createCatalogController } from './catalog/catalog.controller.js'
+import { catalogRoutes } from './catalog/catalog.routes.js'
+import { createCatalogService } from './catalog/catalog.service.js'
 import { createFamiliesController } from './families/families.controller.js'
 import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
@@ -53,10 +54,12 @@ import { createVoiceService } from './voice/voice.service.js'
 export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber }) {
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
-  const activities = createActivitiesService({ db, families, random })
+  // Every activity and story template comes from here.
+  const catalog = createCatalogService({ db })
+  const activities = createActivitiesService({ db, catalog, families, random })
   // One LLM for stories and for reading a family's text; null without a key.
   const model = llm ?? createLlm({ config: config.llm })
-  const stories = createStoriesService({ db, families, random, now, llm: model })
+  const stories = createStoriesService({ db, catalog, families, random, now, llm: model })
   // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.
   const audit = createAuditService({ db, enabled: config.audit.transcripts })
   const understanding = createUnderstanding({ llm: model, audit })
@@ -95,7 +98,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   // Session access, not family: onboarding records a note before the family exists.
   app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
-  if (config.admin.enabled) app.register(adminRoutes, { controller: createAdminController({ activities }) })
+  if (config.admin.enabled) app.register(catalogRoutes, { controller: createCatalogController({ catalog }) })
 
   return app
 }

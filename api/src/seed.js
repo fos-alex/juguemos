@@ -1,13 +1,12 @@
 import { activityTemplates } from '../seeds/catalog/activities.js'
 import { storyTemplates } from '../seeds/catalog/stories.js'
 import { accounts } from '../seeds/development.js'
-import { createActivitiesService } from './activities/activities.service.js'
 import { createAuth } from './auth/auth.js'
+import { createCatalogService } from './catalog/catalog.service.js'
 import { loadConfig, loadDatabaseUrl } from './config.js'
 import { createDb } from './db/client.js'
-import { seedAccounts, seedCatalog } from './db/seed.js'
+import { seedAccounts } from './db/seed.js'
 import { createFamiliesService } from './families/families.service.js'
-import { createStoriesService } from './stories/stories.service.js'
 import { createToysService } from './toys/toys.service.js'
 
 // `node src/seed.js catalog` loads the catalog anywhere; the `migrate` service
@@ -28,12 +27,7 @@ const db = createDb(loadDatabaseUrl())
 const families = createFamiliesService({ db })
 
 try {
-  await seedCatalog({
-    activities: createActivitiesService({ db, families }),
-    stories: createStoriesService({ db, families }),
-    catalog: { activityTemplates, storyTemplates },
-    log: console.log,
-  })
+  await createCatalogService({ db }).load({ activityTemplates, storyTemplates }, console.log)
 
   if (target === 'development') {
     const config = loadConfig()
