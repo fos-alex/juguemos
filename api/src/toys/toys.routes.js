@@ -78,6 +78,28 @@ const materialsInput = {
   properties: { have: { type: 'array', uniqueItems: true, items: { type: 'string', enum: MATERIAL_KEYS } } },
 }
 
+const toysUnderstandingInput = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['text'],
+  properties: { text: { type: 'string', minLength: 1, maxLength: 4000 } },
+}
+
+const toysUnderstanding = {
+  type: 'object',
+  required: ['toys'],
+  properties: {
+    toys: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['name', 'description'],
+        properties: { name: { type: 'string' }, description: { type: ['string', 'null'] } },
+      },
+    },
+  },
+}
+
 /**
  * The toy box, for an adult who has already saved a family.
  * @param {import('fastify').FastifyInstance} app
@@ -99,6 +121,12 @@ export async function toysRoutes(app, { controller }) {
     controller.link,
   )
   app.get('/family/materials', { config, schema: { response: { 200: materialList, ...errors } } }, controller.materials)
+  // 503 with LLM_OFF when this server has no LLM to read the text with.
+  app.post(
+    '/family/toys/understanding',
+    { config, schema: { body: toysUnderstandingInput, response: { 200: toysUnderstanding, ...inputErrors, 503: errorBody } } },
+    controller.understand,
+  )
   app.put(
     '/family/materials',
     { config, schema: { body: materialsInput, response: { 200: materialList, ...inputErrors } } },

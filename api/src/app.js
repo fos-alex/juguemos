@@ -27,6 +27,7 @@ import { createStoriesService } from './stories/stories.service.js'
 import { createToysController } from './toys/toys.controller.js'
 import { toysRoutes } from './toys/toys.routes.js'
 import { createToysService } from './toys/toys.service.js'
+import { createToysUnderstanding } from './toys/understanding.js'
 import { createTranscriber } from './voice/transcriber.js'
 import { createVoiceController } from './voice/voice.controller.js'
 import { voiceRoutes } from './voice/voice.routes.js'
@@ -74,6 +75,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.
   const audit = createAuditService({ db, enabled: config.audit.transcripts })
   const understanding = createUnderstanding({ llm: llmClient, audit })
+  const toysUnderstanding = createToysUnderstanding({ llm: llmClient })
   const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families, audit })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
@@ -102,7 +104,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(authRoutes, { auth, baseURL: config.auth.url })
   app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
   app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
-  app.register(toysRoutes, { controller: createToysController({ toys }) })
+  app.register(toysRoutes, { controller: createToysController({ toys, toysUnderstanding }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }) })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }) })
   // Session access, not family: onboarding records a note before the family exists.
