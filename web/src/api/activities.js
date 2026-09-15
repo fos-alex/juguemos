@@ -3,12 +3,17 @@
  * local store, which is what keeps the last one readable offline.
  */
 import { read, write } from '../shared/store'
-import { ApiError, request } from '../shared/http'
+import { ApiError, request, WordedError } from '../shared/http'
 
 /** @typedef {import('./types').Activity} Activity */
 
 /** Nothing in the catalog fits this family yet: a state to word plainly, not a failure. */
-export class NothingFitsError extends Error {}
+export class NothingFitsError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('Todavía no tengo un juego que les quede bien. Estamos sumando más.')
+  }
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -19,7 +24,7 @@ export async function suggestActivity({ after = null } = {}) {
     // Ids cached before activities came from the API aren't the API's.
     activity = await request('POST', '/activities/suggestions', { after: after && UUID.test(after) ? after : null })
   } catch (error) {
-    if (error instanceof ApiError && error.code === 'NO_FITTING_ACTIVITY') throw new NothingFitsError(error.message)
+    if (error instanceof ApiError && error.code === 'NO_FITTING_ACTIVITY') throw new NothingFitsError()
     throw error
   }
   write('activities', { ...read('activities'), [activity.id]: activity })

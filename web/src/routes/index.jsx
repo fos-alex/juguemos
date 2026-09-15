@@ -1,15 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { choosePlaying, loadFamily, suggestActivity } from '../api'
+import { familyLine, placeText } from '../shared/format'
+import { useDocumentTitle } from '../shared/hooks/useDocumentTitle'
+import { useOfflineNotice } from '../shared/hooks/useOfflineNotice'
+import { useRequest } from '../shared/hooks/useRequest'
+import { useSerialSaves } from '../shared/hooks/useSerialSaves'
+import { useTheme } from '../shared/hooks/useTheme'
+import { useStored, write } from '../shared/store'
 import { PrimaryButton, SecondaryButton } from '../shared/ui/Buttons'
 import { Card, MetaLabel } from '../shared/ui/Card'
+import { Chips, ChipToggle } from '../shared/ui/Chips'
 import { Drawer } from '../shared/ui/Drawer'
+import { OfflineNotice } from '../shared/ui/OfflineNotice'
 import { Footer, Screen } from '../shared/ui/Screen'
+import { StatusLine } from '../shared/ui/StatusLine'
 import { Wordmark } from '../shared/ui/Wordmark'
-import { useOnline } from '../shared/hooks/useOnline'
-import { useTheme } from '../shared/hooks/useTheme'
-import { failureText, familyLine, placeText } from '../shared/format'
-import { useStored, write } from '../shared/store'
 
 export const Route = createFileRoute('/')({
   component: HomeScreen,
@@ -28,78 +34,60 @@ const SLOW_AFTER_MS = 6000
  */
 function HomeScreen() {
   const navigate = useNavigate()
-  const online = useOnline()
+  const offline = useOfflineNotice()
+  const { online } = offline
   const account = useStored('account')
   const family = useStored('family')
   const lastId = useStored('lastActivityId')
   const last = useStored('activities')?.[lastId]
-  const [request, setRequest] = useState(/** @type {'idle' | 'loading' | 'slow' | 'error'} */ ('idle'))
-  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
-  const [offlineTaps, setOfflineTaps] = useState(0)
+  const request = useRequest({ slowAfter: SLOW_AFTER_MS })
+  // Choices are saved one after another, and a juego or a story waits for the last one.
+  const saves = useSerialSaves()
   const [menuOpen, setMenuOpen] = useState(false)
   const { dark, toggle: toggleTheme } = useTheme()
-  // Choices are saved one after another, and a juego or a story waits for the last one.
-  const choosing = useRef(/** @type {Promise<unknown>} */ (Promise.resolve()))
   const picking = (family?.kids.length ?? 0) > 1
 
+  useDocumentTitle('Juguemos')
+
   useEffect(() => {
-    document.title = 'Juguemos'
     // Who's playing may have changed on another phone.
     if (navigator.onLine) loadFamily().catch(() => {})
   }, [])
 
-  const busy = request === 'loading' || request === 'slow'
-
   /** @param {Kid} kid */
   const toggle = (kid) => {
-    if (!family || busy) return
-    if (!online) {
-      setOfflineTaps((taps) => taps + 1)
-      return
-    }
+    if (!family || request.busy) return
+    if (!online) return offline.tap()
     // A family cached before JUG-107 has no kid ids until the refresh above lands.
     if (family.kids.some((each) => !each.id)) return
     const playing = kid.playing !== false
     if (playing && family.kids.filter((each) => each.playing !== false).length === 1) return
     const kids = family.kids.map((each) => (each.id === kid.id ? { ...each, playing: !playing } : each))
     write('family', { ...family, kids })
-    setRequest('idle')
+    request.reset()
     const ids = kids.filter((each) => each.playing !== false).map((each) => /** @type {string} */ (each.id))
-    choosing.current = choosing.current
-      .then(() => choosePlaying(ids))
-      .catch((error) => {
-        setFailure(failureText(error))
-        setRequest('error')
+    saves.add(
+      () => choosePlaying(ids),
+      (error) => {
+        request.fail(error)
         return loadFamily().catch(() => {})
-      })
+      },
+    )
   }
 
-  const suggest = async () => {
-    if (!online) {
-      setOfflineTaps((taps) => taps + 1)
-      return
-    }
-    setRequest('loading')
-    const slow = window.setTimeout(() => setRequest('slow'), SLOW_AFTER_MS)
-    try {
-      await choosing.current
+  const suggest = () => {
+    if (!online) return offline.tap()
+    void request.run(async () => {
+      await saves.settled()
       const activity = await suggestActivity({ after: lastId })
       void navigate({ to: '/idea/$id', params: { id: activity.id } })
-    } catch (error) {
-      setFailure(failureText(error))
-      setRequest('error')
-    } finally {
-      window.clearTimeout(slow)
-    }
+    })
   }
 
   const openStories = async () => {
     setMenuOpen(false)
-    if (!online) {
-      setOfflineTaps((taps) => taps + 1)
-      return
-    }
-    await choosing.current
+    if (!online) return offline.tap()
+    await saves.settled()
     write('storyOptions', null)
     void navigate({ to: '/cuentos' })
   }
@@ -133,11 +121,9 @@ function HomeScreen() {
 
       {(!online || last) && (
         <div className="home__memory">
-          {!online && (
-            <p key={offlineTaps} className="home__offline" role="status">
-              {last ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
-            </p>
-          )}
+          <OfflineNotice notice={offline} className="home__offline">
+            {last ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
+          </OfflineNotice>
           {last && (
             <Card onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}>
               <MetaLabel as="span" wide>
@@ -156,21 +142,13 @@ function HomeScreen() {
 
       <Footer className="home__actions">
         {picking && family && <WhoPlays kids={family.kids} onToggle={toggle} />}
-        <PrimaryButton size="home" busy={busy} busyLabel="Pensando un juego" unavailable={!online} onClick={suggest}>
+        <PrimaryButton size="home" busy={request.busy} busyLabel="Pensando un juego" unavailable={!online} onClick={suggest}>
           ¡Juguemos!
         </PrimaryButton>
         {/* Voice pass pending: the line shown after ~6 s of thinking. */}
-        {request === 'slow' && (
-          <p className="home__status" role="status">
-            Sigo pensando. Ya casi está.
-          </p>
-        )}
-        {request === 'error' && (
-          <p className="home__status" role="alert">
-            {failure}
-          </p>
-        )}
-        <SecondaryButton size="lg" disabled={busy} unavailable={!online} onClick={() => void openStories()}>
+        {request.state === 'slow' && <StatusLine role="status">Sigo pensando. Ya casi está.</StatusLine>}
+        {request.state === 'error' && <StatusLine role="alert">{request.failure}</StatusLine>}
+        <SecondaryButton size="lg" disabled={request.busy} unavailable={!online} onClick={() => void openStories()}>
           Hora del cuento
         </SecondaryButton>
       </Footer>
@@ -233,28 +211,21 @@ function WhoPlays({ kids, onToggle }) {
       <p id="who-plays-label" className="who-plays__label">
         ¿Quiénes juegan?
       </p>
-      <div className="chips">
+      <Chips>
         {kids.map((kid, index) => {
           const playing = kid.playing !== false
           return (
-            <button
+            <ChipToggle
               key={kid.id ?? index}
-              type="button"
-              className="chip chip--kid"
-              aria-pressed={playing}
+              pressed={playing}
               aria-disabled={(playing && playingCount === 1) || undefined}
               onClick={() => onToggle(kid)}
             >
-              {playing && (
-                <span className="chip__check" aria-hidden="true">
-                  ✓
-                </span>
-              )}
               {kid.name}
-            </button>
+            </ChipToggle>
           )
         })}
-      </div>
+      </Chips>
     </div>
   )
 }

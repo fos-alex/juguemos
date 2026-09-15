@@ -1,4 +1,5 @@
 import { useTheme } from '../hooks/useTheme'
+import './ThemeToggle.css'
 
 /**
  * Night mode's one tap. The glyph shows where the tap goes: a moon by day, a

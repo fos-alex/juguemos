@@ -9,6 +9,7 @@ import { useGoBack } from '../shared/hooks/useGoBack'
 import { useWakeLock } from '../shared/hooks/useWakeLock'
 import { failureText } from '../shared/format'
 import { read, useStored, write } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/cuento/$id')({
   component: ReadingScreen,
@@ -90,11 +91,7 @@ function ReadingScreen() {
         <h1 className="story-title">{title}</h1>
         <StoryText parts={parts} done={Boolean(story)} />
         {!story && !failure && <StorySkeleton paragraphs={paragraphs.length === 0 ? 3 : 2} />}
-        {failure && (
-          <p className="status-line" role="alert">
-            {failure}
-          </p>
-        )}
+        <StatusLine role="alert">{failure}</StatusLine>
       </Body>
       {story ? (
         <StoryProgress id={id} total={story.parts.length} />

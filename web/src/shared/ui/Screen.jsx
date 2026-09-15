@@ -1,5 +1,6 @@
 import { useLayoutEffect } from 'react'
 import { syncThemeColor } from '../hooks/useTheme'
+import './Screen.css'
 
 /**
  * One screen: a column capped at the design width. `tone` repaints the whole

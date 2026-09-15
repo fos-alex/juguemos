@@ -6,6 +6,7 @@ import { Body, Footer, Screen } from '../shared/ui/Screen'
 import { VoiceNote } from '../components/VoiceNote'
 import { failureText } from '../shared/format'
 import { read, useStored, write } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/familia/contanos')({
   component: TellUsScreen,
@@ -83,16 +84,10 @@ function TellUsScreen() {
           readOnly={busy || recording}
           onChange={(event) => write('familyDraft', event.target.value)}
         />
-        {failure && (
-          <p className="status-line" role="alert">
-            {failure}
-          </p>
-        )}
+        <StatusLine role="alert">{failure}</StatusLine>
         {voiceMessage && (
           <div className="tell__voice-message">
-            <p className="status-line" role="status">
-              {voiceMessage.text}
-            </p>
+            <StatusLine role="status">{voiceMessage.text}</StatusLine>
             {voiceMessage.retry && (
               // Voice pass pending.
               <TertiaryButton size="inline" onClick={voiceMessage.retry}>

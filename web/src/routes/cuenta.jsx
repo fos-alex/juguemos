@@ -7,6 +7,7 @@ import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
 import { useGoBack } from '../shared/hooks/useGoBack'
 import { failureText } from '../shared/format'
 import { read } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/cuenta')({
   validateSearch: (search) => ({
@@ -163,11 +164,7 @@ function AccountScreen() {
               </button>
             }
           />
-          {failure && (
-            <p className="status-line" role="alert">
-              {failure}
-            </p>
-          )}
+          <StatusLine role="alert">{failure}</StatusLine>
         </Body>
         <Footer>
           <PrimaryButton type="submit" busy={request === 'busy'} busyLabel="Un momento">

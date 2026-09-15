@@ -1,0 +1,9 @@
+.status-line {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-body);
+}
+
+.status-line--center {
+  text-align: center;
+}

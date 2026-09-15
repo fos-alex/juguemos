@@ -1,0 +1,205 @@
+/* Voice note (2e) */
+
+.voice {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 2px solid var(--hairline-strong);
+  border-radius: 32px;
+  background: var(--surface);
+  color: var(--primary);
+  /* A long press must record, not select text, open a menu, or scroll. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.voice--starting .mic,
+.voice--held .mic,
+.voice--locked .mic {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.voice--sending .mic {
+  color: var(--ink-disabled);
+}
+
+.mic__glyph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.mic__capsule {
+  display: block;
+  width: 13px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-radius: 7px;
+}
+
+.mic__base {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.mic__send {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.voice__strip {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 64px;
+  padding: 0 16px;
+  border-radius: 32px;
+  background: var(--surface-accent);
+}
+
+.voice__time {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--outline-accent-text);
+}
+
+/* The newest bars sit on the right; the oldest slide out on the left. */
+.voice__trace {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-width: 0;
+  height: 26px;
+  overflow: hidden;
+}
+
+.voice__trace span {
+  flex: none;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--numeral);
+}
+
+.voice__trace span.is-loud {
+  background: var(--level-strong);
+}
+
+.voice__cancel {
+  display: flex;
+  align-items: center;
+  flex: none;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--outline-accent-text);
+}
+
+.voice__sending {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+/* Above the mic: the padlock and arrow centred over it, the hint kept inside the screen. */
+.voice__lock {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  width: 154px;
+  pointer-events: none;
+}
+
+.voice__lock-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 64px;
+}
+
+.voice__padlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 2px dashed var(--dashed);
+  border-radius: 23px;
+  background: var(--surface);
+  color: var(--primary);
+  transition: border-color 150ms ease-out;
+}
+
+.voice__lock.is-near .voice__padlock {
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.voice__shackle {
+  display: block;
+  width: 13px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+}
+
+.voice__lockbody {
+  display: block;
+  width: 19px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+}
+
+.voice__arrow {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.voice__lock-hint {
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: right;
+  color: var(--ink-muted);
+}

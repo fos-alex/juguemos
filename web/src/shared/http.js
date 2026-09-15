@@ -7,6 +7,9 @@ import { clearAll, read, write } from './store'
 
 export class OfflineError extends Error {}
 
+/** A failure whose message is already the words for the parent, so `failureText()` shows it as it is. */
+export class WordedError extends Error {}
+
 /**
  * The API no longer knows this device's session: forget the device's copy. If
  * the device was signed in, mark the session as ended, so the guard sends the

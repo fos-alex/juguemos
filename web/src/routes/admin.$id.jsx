@@ -3,8 +3,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ApiError, createTemplate, deleteTemplate, loadTemplate, saveTemplate } from '../api'
 import { Dots, PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
 import { Label } from '../shared/ui/Card'
-import { Field } from '../shared/ui/Field'
+import { Chips } from '../shared/ui/Chips'
+import { Field, FieldGroup } from '../shared/ui/Field'
 import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { StatusLine } from '../shared/ui/StatusLine'
 import { useGoBack } from '../shared/hooks/useGoBack'
 import { adminFailure, CATEGORIES, ENERGIES, PLACES, SLOTS, slugFrom, unknownSlots } from '../lib/admin'
 
@@ -139,9 +141,7 @@ function TemplateScreen() {
       {!form ? (
         <Body className="page-body">
           {failure ? (
-            <p className="status-line" role="alert">
-              {failure}
-            </p>
+            <StatusLine role="alert">{failure}</StatusLine>
           ) : (
             <Dots tone="page" />
           )}
@@ -214,11 +214,8 @@ function TemplateScreen() {
               <Select label="Lugar" value={form.place} options={PLACES} onChange={(place) => update({ place })} />
             </div>
             <Select label="Energía" value={form.energy} options={ENERGIES} onChange={(energy) => update({ energy })} />
-            <div className="field" role="group" aria-labelledby="categories-label">
-              <p id="categories-label" className="field__label">
-                Categorías
-              </p>
-              <div className="chips">
+            <FieldGroup label="Categorías">
+              <Chips>
                 {CATEGORIES.map(([category, name]) => {
                   const on = form.categories.includes(category)
                   return (
@@ -239,9 +236,9 @@ function TemplateScreen() {
                     </button>
                   )
                 })}
-              </div>
+              </Chips>
               {errors.categories && <p className="field__error">{errors.categories}</p>}
-            </div>
+            </FieldGroup>
             <Check
               label="Entra en un espacio chico"
               checked={form.smallSpace}
@@ -306,11 +303,7 @@ function TemplateScreen() {
                 Borrar juego
               </TertiaryButton>
             )}
-            {failure && (
-              <p className="status-line" role="alert">
-                {failure}
-              </p>
-            )}
+            <StatusLine role="alert">{failure}</StatusLine>
           </Body>
           <Footer sticky>
             <PrimaryButton type="submit" busy={busy} busyLabel="Guardando">

@@ -3,12 +3,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { addToy, editToy, linkToy, loadToyBox, removeToy } from '../api'
 import { PrimaryButton, SecondaryButton, TertiaryButton } from '../shared/ui/Buttons'
 import { Skeleton } from '../shared/ui/Card'
-import { Field } from '../shared/ui/Field'
+import { ChipInput, Chips, ChipToggle } from '../shared/ui/Chips'
+import { AS_TYPED, Field, FieldGroup } from '../shared/ui/Field'
 import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
 import { useGoBack } from '../shared/hooks/useGoBack'
 import { useOnline } from '../shared/hooks/useOnline'
 import { failureText } from '../shared/format'
 import { useStored } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 /** @typedef {import('../api/types').Toy} Toy */
 /** @typedef {import('../api/types').ToyChanges} ToyChanges */
@@ -28,8 +30,7 @@ export const Route = createFileRoute('/juguetes/$id')({
 const NEW = 'nuevo'
 const SHARED = 'shared'
 
-// Nobody corrects their family's names: keep the keyboard's hands off.
-const AS_TYPED = { autoCorrect: 'off', autoCapitalize: 'none', spellCheck: false }
+
 
 /** @type {FormState} */
 const EMPTY = { name: '', aliases: [], description: '', whose: null, favorite: false, linked: [] }
@@ -143,18 +144,14 @@ function ToyScreen() {
         <Header onBack={goBack} title="Juguete" />
         <Body className="page-body">
           {box ? (
-            <p className="status-line">Ese juguete ya no está en el baúl.</p>
+            <StatusLine>Ese juguete ya no está en el baúl.</StatusLine>
           ) : (
             <>
               <Skeleton height={54} />
               <Skeleton height={54} />
             </>
           )}
-          {failure && (
-            <p className="status-line" role="alert">
-              {failure}
-            </p>
-          )}
+          <StatusLine role="alert">{failure}</StatusLine>
         </Body>
       </Screen>
     )
@@ -182,47 +179,22 @@ function ToyScreen() {
             }}
           />
 
-          <div className="field" role="group" aria-labelledby="aliases-label">
-            <p id="aliases-label" className="field__label">
-              Otros nombres
-            </p>
-            <div className="chips">
-              {form.aliases.map((alias) => (
-                <button
-                  key={alias}
-                  type="button"
-                  className="chip"
-                  aria-label={`Quitar ${alias}`}
-                  onClick={() => update((f) => ({ ...f, aliases: f.aliases.filter((each) => each !== alias) }))}
-                >
-                  {alias} <span aria-hidden="true">×</span>
-                </button>
-              ))}
-              {newAlias === null ? (
-                <button type="button" className="chip chip--add" aria-label="Agregar otro nombre" onClick={() => setNewAlias('')}>
-                  +
-                </button>
-              ) : (
-                <input
-                  className="chip chip--input"
-                  aria-label="Otro nombre"
-                  autoFocus
-                  maxLength={120}
-                  {...AS_TYPED}
-                  value={newAlias}
-                  onChange={(event) => setNewAlias(event.target.value)}
-                  onBlur={commitAlias}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      commitAlias()
-                    }
-                  }}
-                />
-              )}
-            </div>
+          <FieldGroup label="Otros nombres">
+            <Chips
+              items={form.aliases}
+              onRemove={(index) => update((f) => ({ ...f, aliases: f.aliases.filter((_, i) => i !== index) }))}
+            >
+              <ChipInput
+                value={newAlias}
+                onChange={setNewAlias}
+                onCommit={commitAlias}
+                addLabel="Agregar otro nombre"
+                inputLabel="Otro nombre"
+                maxLength={120}
+              />
+            </Chips>
             <p className="field__help">Cómo más le dicen, como «el tuto».</p>
-          </div>
+          </FieldGroup>
 
           <div className="field">
             <label className="field__label" htmlFor="toy-description">
@@ -248,36 +220,30 @@ function ToyScreen() {
             </p>
           </div>
 
-          <div className="field" role="group" aria-labelledby="whose-label">
-            <p id="whose-label" className="field__label">
-              De quién es
-            </p>
-            <div className="chips">
+          <FieldGroup label="De quién es">
+            <Chips>
               {[...kids.map((kid) => ({ value: /** @type {string} */ (kid.id), label: kid.name })), { value: SHARED, label: 'De todos' }].map(
                 (choice) => (
-                  <Toggle
+                  <ChipToggle
                     key={choice.value}
                     pressed={form.whose === choice.value}
                     onClick={() => update((f) => ({ ...f, whose: f.whose === choice.value ? null : choice.value }))}
                   >
                     {choice.label}
-                  </Toggle>
+                  </ChipToggle>
                 ),
               )}
-              <Toggle pressed={form.favorite} onClick={() => update((f) => ({ ...f, favorite: !f.favorite }))}>
+              <ChipToggle pressed={form.favorite} onClick={() => update((f) => ({ ...f, favorite: !f.favorite }))}>
                 Es un favorito
-              </Toggle>
-            </div>
-          </div>
+              </ChipToggle>
+            </Chips>
+          </FieldGroup>
 
           {others.length > 0 && (
-            <div className="field" role="group" aria-labelledby="linked-label">
-              <p id="linked-label" className="field__label">
-                Va con
-              </p>
-              <div className="chips">
+            <FieldGroup label="Va con">
+              <Chips>
                 {others.map((other) => (
-                  <Toggle
+                  <ChipToggle
                     key={other.id}
                     pressed={form.linked.includes(other.id)}
                     onClick={() =>
@@ -290,19 +256,17 @@ function ToyScreen() {
                     }
                   >
                     {other.name}
-                  </Toggle>
+                  </ChipToggle>
                 ))}
-              </div>
+              </Chips>
               <p className="field__help">Los que se distinguen comparándolos, como el caballo grande y el caballo chico.</p>
-            </div>
+            </FieldGroup>
           )}
 
           {!isNew &&
             (request === 'confirm' || request === 'removing' ? (
               <div className="toy-form__remove" role="group" aria-labelledby="remove-label">
-                <p id="remove-label" className="status-line">
-                  ¿Lo sacamos del baúl? No se puede deshacer.
-                </p>
+                <StatusLine id="remove-label">¿Lo sacamos del baúl? No se puede deshacer.</StatusLine>
                 <div className="button-row">
                   <SecondaryButton
                     size="sm"
@@ -324,11 +288,7 @@ function ToyScreen() {
               </TertiaryButton>
             ))}
 
-          {failure && (
-            <p className="status-line" role="alert">
-              {failure}
-            </p>
-          )}
+          <StatusLine role="alert">{failure}</StatusLine>
         </Body>
         <Footer sticky>
           <PrimaryButton type="submit" busy={request === 'saving'} busyLabel="Guardando" unavailable={!online}>
@@ -340,23 +300,7 @@ function ToyScreen() {
   )
 }
 
-/**
- * A chip that stays pressed: filled with a check when on and outlined when
- * off, so colour is never the only difference.
- * @param {{ pressed: boolean, onClick: () => void, children: React.ReactNode }} props
- */
-function Toggle({ pressed, onClick, children }) {
-  return (
-    <button type="button" className="chip chip--toggle" aria-pressed={pressed} onClick={onClick}>
-      {pressed && (
-        <span className="chip__check" aria-hidden="true">
-          ✓
-        </span>
-      )}
-      {children}
-    </button>
-  )
-}
+
 
 function focusName() {
   const input = document.querySelector('[data-field="name"]')

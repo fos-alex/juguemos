@@ -3,6 +3,7 @@ import { OfflineError, transcribe, VoiceOffError } from '../api'
 import { clockText, failureText } from '../shared/format'
 import { canRecord, MicDeniedError, startRecording } from '../lib/recorder'
 import { Dots } from '../shared/ui/Buttons'
+import './VoiceNote.css'
 
 /** How far the finger travels, in px, to lock the note or to drop it. */
 const LOCK_AT = 72

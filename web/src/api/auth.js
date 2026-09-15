@@ -5,12 +5,12 @@
  */
 import { clearAll, read, write } from '../shared/store'
 import { loadFamily } from './family'
-import { ApiError, endSession, request } from '../shared/http'
+import { ApiError, endSession, request, WordedError } from '../shared/http'
 
 /** @typedef {import('./types').Account} Account */
 
 /** A failure the parent can fix, with the words to tell them. */
-export class AccountError extends Error {}
+export class AccountError extends WordedError {}
 
 /** Account copy still needs a voice pass. */
 const MESSAGES = {

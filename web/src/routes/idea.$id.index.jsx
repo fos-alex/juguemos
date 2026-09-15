@@ -10,6 +10,7 @@ import { useGoBack } from '../shared/hooks/useGoBack'
 import { useOnline } from '../shared/hooks/useOnline'
 import { clockText, failureText, placeText } from '../shared/format'
 import { useStored, write } from '../shared/store'
+import { StatusLine } from '../shared/ui/StatusLine'
 
 export const Route = createFileRoute('/idea/$id/')({
   component: ActivityScreen,
@@ -91,11 +92,7 @@ function ActivityScreen() {
         {loading ? <ActivitySkeleton /> : <ActivityView activity={activity} />}
       </Body>
       <Footer sticky className="activity-footer">
-        {notice && (
-          <p className="status-line" role="status">
-            {notice}
-          </p>
-        )}
+        <StatusLine role="status">{notice}</StatusLine>
         <div className="button-row">
           {/* Voice pass pending: "Empezar". */}
           <PrimaryButton size="md" className="grow-3" disabled={loading} onClick={start}>

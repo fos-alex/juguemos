@@ -1,3 +1,5 @@
+import './Wordmark.css'
+
 /**
  * The working wordmark: "Juguemos" and the ronda of three dots. The dots are
  * never scaled beyond the splash size and never given a face.
