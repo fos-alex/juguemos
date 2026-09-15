@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { understandFamily } from '../api'
 import { PrimaryButton, TertiaryButton } from '../components/Buttons'
 import { Body, Footer, Screen } from '../components/Screen'
 import { VoiceNote } from '../components/VoiceNote'
+import { failureText } from '../lib/format'
 import { read, useStored, write } from '../lib/store'
 
 export const Route = createFileRoute('/familia/contanos')({
@@ -21,13 +23,15 @@ const EXAMPLE =
  * same path. While a note records, the prompt dims and the strip replaces
  * "Listo".
  *
- * Reading the family's own words needs the LLM (JUG-11), so for now first run
- * skips this screen and "Listo" continues to the form. The draft is kept for
- * when reading arrives.
+ * "Listo" sends the text to the API, whose LLM reads the family in it (JUG-11),
+ * and opens the review card. If that fails, the text stays for another try.
+ * With nothing written, "Listo" opens the form.
  */
 function TellUsScreen() {
   const navigate = useNavigate()
   const draft = useStored('familyDraft') ?? ''
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [recording, setRecording] = useState(false)
   const [voiceMessage, setVoiceMessage] = useState(
     /** @type {import('../components/VoiceNote').VoiceMessage | null} */ (null),
@@ -38,6 +42,21 @@ function TellUsScreen() {
   }, [])
 
   const toForm = () => void navigate({ to: '/familia/corregir' })
+
+  const understand = async () => {
+    if (busy) return
+    const text = draft.trim()
+    if (!text) return toForm()
+    setBusy(true)
+    setFailure(null)
+    try {
+      await understandFamily(text)
+      void navigate({ to: '/familia/revisar' })
+    } catch (error) {
+      setFailure(failureText(error))
+      setBusy(false)
+    }
+  }
 
   /** A note's words go after whatever is already in the box. @param {string} text */
   const addWords = (text) => {
@@ -61,9 +80,14 @@ function TellUsScreen() {
           className="tell__text"
           value={draft}
           placeholder={EXAMPLE}
-          readOnly={recording}
+          readOnly={busy || recording}
           onChange={(event) => write('familyDraft', event.target.value)}
         />
+        {failure && (
+          <p className="status-line" role="alert">
+            {failure}
+          </p>
+        )}
         {voiceMessage && (
           <div className="tell__voice-message">
             <p className="status-line" role="status">
@@ -85,7 +109,7 @@ function TellUsScreen() {
       </Body>
       <Footer row>
         <VoiceNote onText={addWords} onMessage={setVoiceMessage} onRecording={setRecording}>
-          <PrimaryButton className="grow" onClick={toForm}>
+          <PrimaryButton className="grow" busy={busy} busyLabel="Leyendo" onClick={() => void understand()}>
             Listo
           </PrimaryButton>
         </VoiceNote>

@@ -84,6 +84,7 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 - **Accounts** through Better Auth (`/api/auth/*`, `/api/me`). The app needs a valid session: it confirms it with `/api/me` and signs the device out when the API says the session has ended. Every API route except health and `/api/auth/*` needs a session too. Sessions last 30 days and renew with use.
 - **The family profile** (`/api/family`): kids, pets, interests, and toys, saved from the family form. Each adult picks which kids are playing on Home (`/api/family/playing`), and juegos and stories are for those kids.
+- **The toy box** (`/api/family/toys`, `/api/family/materials`): each toy's family name, aliases, description for the AI, whose it is, favorite, and linked toys, plus the household materials the family has. The screens come next (JUG-94).
 - **Activities** (`/api/activities/suggestions`) and **stories** (`/api/stories`), from templates in the database whose slots are filled with the family's own words. The first 15 activities and 6 stories are waiting for Alex's review (JUG-14).
 - **Voice notes** (`/api/voice/transcribe`) on *Contame de tu familia*: hold the mic, talk, and the words land in the text box to check. Compose runs Whisper as the `stt` service. Its first start downloads the model (about 1.6 GB) into a volume, and voice notes fail until that finishes. The audio is never kept.
 
@@ -93,12 +94,12 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 | Email | Family |
 |---|---|
-| `prueba@juguemos.local` | A toddler and a pet: Milán, 2, and the dog Inca. Likes dinosaurs and horses, with four named toys |
+| `prueba@juguemos.local` | A toddler and a pet: Milán, 2, and the dog Inca. Likes dinosaurs and horses, with five named toys: some described, and a linked pair of horses |
 | `bebe@juguemos.local` | A baby and no pet: Olivia, under 1. Likes songs and water, with two toys |
 | `hermanos@juguemos.local` | Two kids far apart in age: Tomás, 8, and Emma, 4, and the cat Michi. Likes football, pirates, and drawing |
 
 They exist only on a development database: the passwords are in the repo, and the seed refuses to run in production.
 
-Still mocked, because they need a service Juguemos doesn't have yet: Google sign-in (0.3) and email verification. Reading the family from free text and bespoke stories wait on the LLM decision (JUG-7, JUG-71), so first run starts at the family form.
+Still mocked, because they need a service Juguemos doesn't have yet: Google sign-in (0.3) and email verification. Reading the family from the parent's own words (JUG-11) and bespoke stories (JUG-71) use the LLM set in `.env` (JUG-115). Without an LLM key, first run starts at the family form and stories come from templates.
 
 Next step: Alex reviews the first templates, and the catalog grows to 30–40 activities (JUG-14).

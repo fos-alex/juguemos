@@ -388,7 +388,8 @@
 }
 
 /* Taller than the form's chips: here the chip is the whole tap target. */
-.chip--kid {
+.chip--kid,
+.chip--toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -402,7 +403,8 @@
     color 150ms ease-out;
 }
 
-.chip--kid[aria-pressed='true'] {
+.chip--kid[aria-pressed='true'],
+.chip--toggle[aria-pressed='true'] {
   border-color: var(--primary);
   background: var(--primary);
   color: var(--on-primary);
@@ -414,9 +416,45 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chip--kid {
+  .chip--kid,
+  .chip--toggle {
     transition: none;
   }
+}
+
+/* El baúl de juguetes (JUG-94). Not in the Plaza handoff: built from its
+   primitives until the 0.2 design (JUG-84) lands. */
+
+.toy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toy-list .card-title {
+  margin-top: 0;
+}
+
+.toy-box__materials {
+  margin-top: 10px;
+}
+
+.field__control--area {
+  align-items: stretch;
+}
+
+.field__control--area .field__input {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.toy-form__remove {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* 2m / 2n / 2p Actividad */

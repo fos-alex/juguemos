@@ -22,6 +22,8 @@ import { Route as FamiliaIndexRouteImport } from './routes/familia.index'
 import { Route as FamiliaContanosRouteImport } from './routes/familia.contanos'
 import { Route as FamiliaCorregirRouteImport } from './routes/familia.corregir'
 import { Route as FamiliaRevisarRouteImport } from './routes/familia.revisar'
+import { Route as JuguetesIndexRouteImport } from './routes/juguetes.index'
+import { Route as JuguetesIdRouteImport } from './routes/juguetes.$id'
 import { Route as IdeaIdIndexRouteImport } from './routes/idea.$id.index'
 import { Route as IdeaIdRelojRouteImport } from './routes/idea.$id.reloj'
 
@@ -90,6 +92,16 @@ const FamiliaRevisarRoute = FamiliaRevisarRouteImport.update({
   path: '/familia/revisar',
   getParentRoute: () => rootRouteImport,
 })
+const JuguetesIndexRoute = JuguetesIndexRouteImport.update({
+  id: '/juguetes/',
+  path: '/juguetes/',
+  getParentRoute: () => rootRouteImport,
+})
+const JuguetesIdRoute = JuguetesIdRouteImport.update({
+  id: '/juguetes/$id',
+  path: '/juguetes/$id',
+  getParentRoute: () => rootRouteImport,
+})
 const IdeaIdIndexRoute = IdeaIdIndexRouteImport.update({
   id: '/idea/$id/',
   path: '/idea/$id/',
@@ -113,8 +125,10 @@ const rootRouteChildren = {
   FamiliaContanosRoute: FamiliaContanosRoute,
   FamiliaCorregirRoute: FamiliaCorregirRoute,
   FamiliaRevisarRoute: FamiliaRevisarRoute,
+  JuguetesIdRoute: JuguetesIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   FamiliaIndexRoute: FamiliaIndexRoute,
+  JuguetesIndexRoute: JuguetesIndexRoute,
   IdeaIdRelojRoute: IdeaIdRelojRoute,
   IdeaIdIndexRoute: IdeaIdIndexRoute,
 }

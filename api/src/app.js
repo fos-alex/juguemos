@@ -14,13 +14,17 @@ import { createFamiliesController } from './families/families.controller.js'
 import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
+import { createUnderstanding } from './families/understanding.js'
 import { AppError } from './errors.js'
-import { createOpenCodeLlm } from './llm/opencode.js'
+import { createLlm } from './llm/llm.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
 import { createStoriesController } from './stories/stories.controller.js'
 import { storiesRoutes } from './stories/stories.routes.js'
 import { createStoriesService } from './stories/stories.service.js'
+import { createToysController } from './toys/toys.controller.js'
+import { toysRoutes } from './toys/toys.routes.js'
+import { createToysService } from './toys/toys.service.js'
 import { createTranscriber } from './voice/transcriber.js'
 import { createVoiceController } from './voice/voice.controller.js'
 import { voiceRoutes } from './voice/voice.routes.js'
@@ -37,7 +41,7 @@ import { createVoiceService } from './voice/voice.service.js'
  *   logger?: import('fastify').FastifyServerOptions['logger'],
  *   random?: () => number,
  *   now?: () => Date,
- *   llm?: ReturnType<typeof createOpenCodeLlm> | null,
+ *   llm?: ReturnType<typeof createLlm> | null,
  *   transcriber?: ReturnType<typeof createTranscriber> | null,
  * }} options `random` drives which template comes next; tests can pin it.
  * `now` picks the moment a story is written for; `llm` and `transcriber`
@@ -47,8 +51,12 @@ import { createVoiceService } from './voice/voice.service.js'
  */
 export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber }) {
   const families = createFamiliesService({ db })
+  const toys = createToysService({ db })
   const activities = createActivitiesService({ db, families, random })
-  const stories = createStoriesService({ db, families, random, now, llm: llm ?? createOpenCodeLlm({ config: config.llm }) })
+  // One LLM for stories and for reading a family's text; null without a key.
+  const model = llm ?? createLlm({ config: config.llm })
+  const stories = createStoriesService({ db, families, random, now, llm: model })
+  const understanding = createUnderstanding({ llm: model })
   const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
@@ -69,8 +77,9 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
 
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
-  app.register(accountsRoutes, { controller: createAccountsController({ families }) })
-  app.register(familiesRoutes, { controller: createFamiliesController({ families }) })
+  app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
+  app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
+  app.register(toysRoutes, { controller: createToysController({ toys }), guards: familyGuards })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }), guards: familyGuards })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }), guards: familyGuards })
   // No family guard: onboarding records a note before the family exists.

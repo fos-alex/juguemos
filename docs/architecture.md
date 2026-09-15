@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.8 · September 2026 · Owner: Alex Otero
+**Version:** 0.10 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -141,6 +141,8 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **The family profile** is `kids`, `pets`, `interests`, and `toys`, each kept in the parent's order and with names exactly as typed. A kid's age is stored as the years the parent gave and the day they gave it, so it stays current without asking for a birthday. Saving the profile updates rows by id, so ids stay stable for what will reference them later.
 
+**The toy box** (JUG-18) adds to each row in `toys` its aliases, a description for the AI, whose it is (one kid, shared, or not said), and whether it's a favorite. Toys the kid tells apart by comparison share a `link_group`. Saving the profile changes only a toy's name and order, so the rest stays. `household_materials` holds the materials each family has, by their key in a fixed list (`api/src/toys/materials.js`), since they need no family name. Activities and stories still get only a toy's family name, and a toy with only a name fills the slots any toy can, as in 0.1.
+
 **The catalog lives in the database** (JUG-9): `activity_templates`, tagged with the full taxonomy (age range in months, minutes, place, energy, categories, small space, materials, skills, and safety), and `story_templates`. Templates have slots (`{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, `{interest}`) that code fills from the profile (`api/src/catalog/slots.js`); there is no LLM in 0.1. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
 
 **The catalog admin** (JUG-109) is how a loaded template is revised before 0.7's content backend: a page at `/admin` that adds, edits, switches off, and deletes activity templates. A template switched off stays out of the suggestions. Deleting one marks its row `deleted_at` instead of removing it, so the catalog seed, which skips slugs already in the database, never brings it back. The admin has no login yet, so the API serves it only when `ADMIN_ENABLED` is true, and it's never turned on where anyone outside the family can reach it. 0.7 still brings review states, versions, and reviewer accounts.
@@ -153,7 +155,7 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **Migrations.** The schema is only ever changed by SQL migrations in `api/migrations/`, which drizzle-kit generates from the schema locally. Only the `.sql` files are committed: drizzle-kit's snapshots in `migrations/meta/` stay out of the repo (JUG-71). A small runner of our own (`api/src/db/migrate.js`) applies the pending files in name order, each in its own transaction, and records each one's name and hash in `juguemos_migrations`. It holds an advisory lock, so concurrent runs wait their turn and applying is idempotent. It refuses a migration edited after it ran, and one older than the latest applied, which would otherwise never run. On a database that Drizzle's migrator ran on, its first run copies Drizzle's records from `drizzle.__drizzle_migrations`, matched to the files by the same SHA-256, so no migration runs twice. A one-shot `migrate` service runs them on every `docker compose up`, after the image builds and before the API starts, and the API only starts if they succeed. They can't run inside `docker build` itself, because the database isn't reachable there. Application code never creates tables, a migration that has run anywhere is never edited, and migrations only go forward.
 
-The rest of the schema (goals, tips, moments, special days, toy descriptions) arrives with the releases that need it. The tags on activities, toys, goals, and tips stay the backbone of the product, since they determine what the app can actually do.
+The rest of the schema (goals, tips, moments, special days) arrives with the releases that need it. The tags on activities, toys, goals, and tips stay the backbone of the product, since they determine what the app can actually do.
 
 Two data rules carry over from the constitution and shape the schema:
 
@@ -164,7 +166,7 @@ Two data rules carry over from the constitution and shape the schema:
 
 | Service | Used for | Notes |
 |---|---|---|
-| LLM provider | Activity tailoring, story generation, onboarding extraction, agent conversation | Provider not yet chosen. Calls are server-side only. |
+| LLM provider | Activity tailoring, story generation, onboarding extraction, agent conversation | Stories use OpenCode Go or OpenRouter, chosen with `LLM_PROVIDER`, and the model with `LLM_MODEL` (JUG-115). Which to keep is still open (JUG-7). OpenRouter requests only go to upstream providers that don't store or train on prompts. Calls are server-side only. |
 | Speech-to-text | Voice onboarding and voice input | Must handle Rioplatense Spanish, children's names, and background noise. Audio is discarded after transcription. Proposed, pending Alex's choice (JUG-88): Whisper large-v3-turbo on the droplet, run by speaches as the `stt` service in Compose, so audio never leaves the server. The API speaks the OpenAI transcriptions API, so a hosted service (Groq, OpenAI) is a change of `STT_URL`, `STT_MODEL`, and `STT_API_KEY`. |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas, parks, and kid-friendly places | Maps data is considered sufficient for v1; no curated event listings. |
@@ -194,7 +196,7 @@ Version 1 runs a single environment. A separate staging environment is worth add
 
 ## 11. Open questions
 
-- Which LLM provider or providers, and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
+- Which LLM provider to keep, OpenCode Go or OpenRouter (either works, set in the environment), and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
 - Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path, and whether the droplet's CPU transcribes fast enough to run Whisper itself (JUG-88).
 - Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
@@ -212,4 +214,5 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.6 | September 2026 | Database access moves to Drizzle ORM: the schema is code, drizzle-kit generates the migrations from it, and they run under a lock that also refuses edited or skipped migrations. Better Auth uses its Drizzle adapter. node-pg-migrate and the hand-written SQL are gone. |
 | 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |
 | 0.8 | September 2026 | Caddy's image builds the web app, so every deploy ships it. The service worker updates itself: each deploy's worker takes over, and the page reloads at a safe moment, never mid-story. |
+| 0.9 | September 2026 | Stories can use OpenCode Go or OpenRouter, switched with `LLM_PROVIDER`, with the model set by `LLM_MODEL`. One client serves both. OpenRouter requests refuse upstream providers that store or train on prompts. |
 | 0.10 | September 2026 | Voice notes: a recorder module in the web, `POST /voice/transcribe` in the API, and a self-hosted Whisper server (speaches) as the `stt` service in Compose. Any OpenAI-compatible transcription service can replace it by env var. The audio is kept in memory only. |

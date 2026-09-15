@@ -62,7 +62,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 ### 0.2 — *Nos conoce*
 
 - **More detailed brand identity.** Illustration style, iconography, and app icon.
-- **Toy box.** Each toy's family name and its description for the AI kept separate, with aliases and linked pairs (*el caballo grande* and *el caballo chico*). Toys can appear in activities once they have a description.
+- **Toy box.** Each toy's family name and its description for the AI kept separate, with aliases and linked pairs (*el caballo grande* and *el caballo chico*). A toy with only a name keeps filling the slots any toy can, as in 0.1; only activities that need to know what a toy is require its description.
 - **Voice notes.** Record in the browser, transcribe, and discard the audio. Used for onboarding, profile updates (*"Milán ya dejó el chupete"*), and adding toys. Live conversation with the agent comes in 0.8.
 - **Basic guardrails.** A first version to start the trial and error.
 - **Detailed family profiles.** Richer details on each child, the pet, and the home.

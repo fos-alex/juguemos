@@ -63,7 +63,7 @@ export async function startApi({ signupEmails = [], random, now, llm, transcribe
     databaseUrl: database.url,
     auth: { url: ORIGIN, secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(signupEmails) },
     // No key: template stories, unless a test passes its own `llm`.
-    llm: { apiKey: null, baseUrl: '', model: '' },
+    llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN },
     // No service: voice notes are off, unless a test passes its own `transcriber`.
     stt: { url: null, model: '', apiKey: null },
     admin: { enabled: admin },

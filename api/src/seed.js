@@ -8,6 +8,7 @@ import { createDb } from './db/client.js'
 import { seedAccounts, seedCatalog } from './db/seed.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createStoriesService } from './stories/stories.service.js'
+import { createToysService } from './toys/toys.service.js'
 
 // `node src/seed.js catalog` loads the catalog anywhere; the `migrate` service
 // runs it on every `docker compose up`. `node src/seed.js development`
@@ -42,6 +43,7 @@ try {
     await seedAccounts({
       auth: createAuth({ config: { ...config.auth, signupEmails }, db }),
       families,
+      toys: createToysService({ db }),
       accounts,
       log: console.log,
     })

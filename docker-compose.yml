@@ -43,11 +43,14 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://juguemos.local:3000}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
-      # The opencode gateway's key, from ~/.local/share/opencode/auth.json
-      # ("opencode-go.key"): without it stories come from templates.
+      # Which LLM writes the stories (opencode or openrouter), its model, and
+      # the providers' keys. Without the chosen provider's key, stories come
+      # from templates. OPENCODE_MODEL is the old name for LLM_MODEL.
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      LLM_MODEL: ${LLM_MODEL:-}
       OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
-      OPENCODE_BASE_URL: ${OPENCODE_BASE_URL:-}
       OPENCODE_MODEL: ${OPENCODE_MODEL:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
       # Speech to text for voice notes: the stt service below, unless .env
       # points at a hosted one with its model and key.
