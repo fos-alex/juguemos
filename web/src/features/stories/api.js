@@ -4,7 +4,9 @@
  * Both the options and the stories arrive as server-sent events, so a card
  * shows up as soon as the model has written it and the reading screen fills
  * while the model still talks; an already-written story streams the same
- * way, from the saved copy.
+ * way, from the saved copy. A story written from one of the family's
+ * interests (JUG-140) has no option behind it, so it is kept under the id it
+ * was saved with and announces its title first.
  */
 import { read, write } from '../../shared/store'
 import { ApiError, endSession, OfflineError, request } from '../../shared/http'
@@ -14,14 +16,37 @@ import { ApiError, endSession, OfflineError, request } from '../../shared/http'
 /** @typedef {import('./types').SavedStorySummary} SavedStorySummary */
 
 /**
+ * The options already on their way, so Home asking for them early and the
+ * story screen asking on its own don't both reach the API (JUG-140).
+ * @type {{ exclude: string, options: Promise<StoryOption[]> } | null}
+ */
+let asking = null
+
+/**
  * Three options, leaving out the ones on screen, each written into the store
  * as it lands, so the screen shows the first card while the model is still
  * writing the third. The list starts empty, so whatever was on screen before
- * is gone as soon as the parent asks for others.
+ * is gone as soon as the parent asks for others. A second call for the same
+ * options while the first is still out waits for that one instead of asking
+ * again, so Home and the story screen never ask twice (JUG-140).
  * @param {{ exclude?: string[], signal?: AbortSignal }} [options]
  * @returns {Promise<StoryOption[]>}
  */
-export async function storyOptions({ exclude = [], signal } = {}) {
+export function storyOptions({ exclude = [], signal } = {}) {
+  const key = exclude.join(',')
+  if (asking?.exclude === key) return asking.options
+  const options = askForOptions(exclude, signal)
+  asking = { exclude: key, options }
+  void options
+    .catch(() => {})
+    .then(() => {
+      if (asking?.options === options) asking = null
+    })
+  return options
+}
+
+/** @param {string[]} exclude @param {AbortSignal} [signal] @returns {Promise<StoryOption[]>} */
+async function askForOptions(exclude, signal) {
   const query = new URLSearchParams(exclude.map((id) => ['exclude', id]))
   write('storyOptions', [])
   const body = await openStream(`/api/stories/options${exclude.length > 0 ? `?${query}` : ''}`, { method: 'GET', signal })
@@ -57,11 +82,44 @@ export async function storyOptions({ exclude = [], signal } = {}) {
 export async function writeStory(id, { signal, onParagraph } = {}) {
   const cached = read('stories')?.[id]
   if (cached) return cached
+  return await readStory({ id }, { key: id, signal, onParagraph })
+}
 
+/**
+ * A story about one of the family's interests, written now because the parent
+ * tapped it (JUG-140). It has no option behind it, so its title arrives as its
+ * own event before the first paragraph, and it is kept under the id the API
+ * saved it with, which is where the reading screen sends the URL.
+ * @param {string} keyword the interest, exactly as the family typed it
+ * @param {{
+ *   signal?: AbortSignal,
+ *   onTitle?: (title: string) => void,
+ *   onParagraph?: (paragraph: { part: number, text: string }) => void,
+ * }} [options]
+ * @returns {Promise<Story>}
+ */
+export async function writeKeywordStory(keyword, { signal, onTitle, onParagraph } = {}) {
+  return await readStory({ keyword }, { signal, onTitle, onParagraph })
+}
+
+/**
+ * The story the API writes for what it is asked, paragraph by paragraph, kept
+ * for offline once it is whole.
+ * @param {{ id: string } | { keyword: string }} asked
+ * @param {{
+ *   key?: string,
+ *   signal?: AbortSignal,
+ *   onTitle?: (title: string) => void,
+ *   onParagraph?: (paragraph: { part: number, text: string }) => void,
+ * }} handlers `key` is where to keep the story; without one it is kept under
+ *   the id the API saved it with.
+ * @returns {Promise<Story>}
+ */
+async function readStory(asked, { key, signal, onTitle, onParagraph }) {
   const body = await openStream('/api/stories/write', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id }),
+    body: JSON.stringify(asked),
     signal,
   })
 
@@ -69,6 +127,7 @@ export async function writeStory(id, { signal, onParagraph } = {}) {
   let story = null
   await readEvents(body, (event) => {
     if (event.type === 'error') throw new ApiError('La historia no terminó', 0)
+    if (event.type === 'title') onTitle?.(event.title ?? '')
     if (event.type === 'paragraph') onParagraph?.({ part: event.part ?? 1, text: event.text ?? '' })
     if (event.type === 'story') {
       story = /** @type {Story} */ (event.story)
@@ -77,7 +136,7 @@ export async function writeStory(id, { signal, onParagraph } = {}) {
     return false
   })
   if (!story) throw new ApiError('La historia no terminó', 0)
-  write('stories', { ...read('stories'), [id]: story })
+  write('stories', { ...read('stories'), [key ?? /** @type {Story} */ (story).id]: story })
   return story
 }
 
@@ -156,8 +215,8 @@ export async function savedStories() {
 export async function savedStory(id) {
   const cached = read('stories')?.[id]
   if (cached) return cached
-  const { title, teaser, minutes, parts } = await request('GET', `/stories/${id}`)
-  const story = { id, title, teaser, minutes, parts }
+  const { title, teaser, minutes, parts, keyword } = await request('GET', `/stories/${id}`)
+  const story = { id, title, teaser, minutes, parts, keyword }
   write('stories', { ...read('stories'), [id]: story })
   return story
 }

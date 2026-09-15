@@ -134,6 +134,9 @@ export function clampMinutes(minutes, band) {
   return Math.min(band.minutes[1], Math.max(band.minutes[0], value))
 }
 
+/** The `TÍTULO:` line a story with no plot of its own opens with (JUG-140). */
+const TITLE_LINE = /^t[íi]tulo\s*:\s*(.+)$/i
+
 /**
  * Reads the options answer as it streams, so an option reaches the family as
  * soon as the model has finished writing it instead of when the whole answer
@@ -207,13 +210,25 @@ export class OptionsParser {
  * paragraph per line, parts separated by those headers — as it streams.
  * A paragraph is done when its line ends, a part when the next header lands,
  * and anything before the first header (fences, titles, apologies) is not
- * the story, so it never reaches the family.
+ * the story, so it never reaches the family. The one exception is a
+ * `TÍTULO:` line before the first part, which `takeTitle` hands back once.
  */
 export class StoryParser {
   constructor() {
     this.buffer = ''
     this.part = 0
     this.paragraph = ''
+    this.title = ''
+  }
+
+  /**
+   * The title the model wrote, once: the story it belongs to is announced a
+   * single time, before its first paragraph. Empty when there was none.
+   */
+  takeTitle() {
+    const title = this.title
+    this.title = ''
+    return title
   }
 
   /** Feed one piece of the model's answer; the paragraphs that finished with it come back. @param {string} delta */
@@ -230,6 +245,13 @@ export class StoryParser {
         this.flush(done)
         this.part = Number(header[1])
         continue
+      }
+      if (this.part === 0) {
+        const titled = TITLE_LINE.exec(line)
+        if (titled) {
+          this.title = titled[1].trim()
+          continue
+        }
       }
       if (line === '') {
         this.flush(done)

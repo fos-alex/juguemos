@@ -51,6 +51,10 @@ El tren se durmió en el rincón.
 
 Inca se durmió al lado.`
 
+/** The keyword story the model answers with: its own title line, then the same parts. */
+const TITLED_STORY = `TÍTULO: Milán y los dinosaurios.
+${STORY}`
+
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 let llm
@@ -60,7 +64,9 @@ let emailCount = 0
 const signUp = () => signUpAs(api, emails[emailCount++])
 before(async () => {
   // The options call asks for JSON; the story call asks for PARTE 1.
-  llm = fakeLlm(({ user }) => (user.includes('Contestá solo con un objeto JSON') ? PLOTS() : STORY))
+  llm = fakeLlm(({ user }) =>
+    user.includes('Contestá solo con un objeto JSON') ? PLOTS() : user.includes('TÍTULO:') ? TITLED_STORY : STORY,
+  )
   // After 19:00 in Buenos Aires the stories are bedtime ones: TRANQUI. The
   // seeded random makes the casting draw the same on every run.
   api = await startApi({
@@ -95,6 +101,10 @@ const options = async (cookie, exclude = [], target = api) => optionsFrom(await 
 
 /** @param {string} cookie @param {string} id */
 const stream = (cookie, id) => api.app.inject({ method: 'POST', url: '/stories/write', headers: { cookie }, payload: { id } })
+
+/** @param {string} cookie @param {string} keyword @param {Awaited<ReturnType<typeof startApi>>} [target] */
+const streamKeyword = (cookie, keyword, target = api) =>
+  target.app.inject({ method: 'POST', url: '/stories/write', headers: { cookie }, payload: { keyword } })
 
 test('with the LLM, options are plot options written for the family and saved', async () => {
   const { cookie } = await signUp()
@@ -525,4 +535,182 @@ test('a family can only open its own stories', async () => {
   await putFamily(api, familyB, EXAMPLE_PROFILE)
   const response = await api.app.inject({ method: 'GET', url: `/stories/${story.id}`, headers: { cookie: familyB } })
   assert.equal(response.statusCode, 404)
+})
+test('an interest the parent tapped becomes a story of its own, its title first', async () => {
+  const { cookie } = await signUp()
+  const family = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
+
+  const response = await streamKeyword(cookie, 'los dinosaurios')
+  assert.equal(response.statusCode, 200)
+  const list = streamEvents(response.body.toString())
+  assert.deepEqual(list[0], { type: 'title', title: 'Milán y los dinosaurios.' })
+  assert.equal(list[1].type, 'paragraph')
+  assert.equal(list.filter((event) => event.type === 'paragraph').length, 7)
+
+  const final = list.at(-1)
+  assert.equal(final.type, 'story')
+  assert.equal(final.story.title, 'Milán y los dinosaurios.')
+  assert.equal(final.story.teaser, 'Un cuento sobre los dinosaurios.')
+  assert.equal(final.story.keyword, 'los dinosaurios')
+  assert.equal(final.story.plotId, null)
+  assert.equal(final.story.templateId, null)
+  // Milán is two: the band's longest story.
+  assert.equal(final.story.minutes, 4)
+  assert.equal(final.story.parts.length, 3)
+
+  const { rows } = await api.pool.query('select source, keyword, casting, plot_id, template_id from stories where family_id = $1', [
+    family.id,
+  ])
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].source, 'generated')
+  assert.equal(rows[0].keyword, 'los dinosaurios')
+  assert.equal(rows[0].plot_id, null)
+  assert.equal(rows[0].template_id, null)
+  assert.equal(rows[0].casting.kind, 'keyword')
+  assert.equal(rows[0].casting.theme, 'los dinosaurios')
+
+  // One call, with the theme and no plot to follow.
+  const call = llm.prompts.at(-1)
+  assert.match(call.user, /El tema es: los dinosaurios\./)
+  assert.match(call.user, /Tema: los dinosaurios\./)
+  assert.doesNotMatch(call.user, /La trama elegida/)
+  assert.match(call.system, /Cómo se escribe para este chico: DOS AÑOS/)
+
+  // The saved story opens again by its own id, keyword and all.
+  const one = await api.app.inject({ method: 'GET', url: `/stories/${final.story.id}`, headers: { cookie } })
+  assert.equal(one.json().keyword, 'los dinosaurios')
+})
+
+test('every tap on an interest writes a new story', async () => {
+  const { cookie } = await signUp()
+  const family = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
+
+  const first = streamEvents((await streamKeyword(cookie, 'los caballos')).body.toString()).at(-1)
+  const second = streamEvents((await streamKeyword(cookie, 'los caballos')).body.toString()).at(-1)
+  assert.notEqual(first.story.id, second.story.id)
+
+  const { rows } = await api.pool.query(`select count(*)::int as n from stories where family_id = $1 and keyword = 'los caballos'`, [
+    family.id,
+  ])
+  assert.equal(rows[0].n, 2)
+})
+
+test('the audit records the interest that was tapped and the story it wrote', async () => {
+  const { cookie } = await signUp()
+  const family = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
+  streamEvents((await streamKeyword(cookie, 'los caballos')).body.toString())
+
+  const { rows } = await api.pool.query(
+    'select event, band, mood, plot_id, keyword, casting, details from story_audit where family_id = $1 order by event',
+    [family.id],
+  )
+  assert.deepEqual(rows.map((row) => row.event), ['picked', 'written'])
+  for (const row of rows) {
+    assert.equal(row.keyword, 'los caballos')
+    assert.equal(row.plot_id, null)
+    assert.equal(row.band, '2')
+    assert.equal(row.mood, 'calm')
+    assert.equal(row.casting.kind, 'keyword')
+  }
+  const written = rows[1]
+  assert.equal(written.details.parts, 3)
+  assert.equal(written.details.paragraphs, 7)
+  assert.equal(written.details.words, 42)
+  assert.ok(written.details.msTotal >= 0 && written.details.msFirstToken >= 0)
+})
+
+test('a model that writes no title line gets one from the keyword', async () => {
+  const untitled = fakeLlm(() => STORY)
+  const api2 = await startApi({
+    signupEmails: ['pili@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('pili'),
+    llm: untitled,
+  })
+  const { cookie } = await signUpAs(api2, 'pili@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  const list = streamEvents((await streamKeyword(cookie, 'los caballos', api2)).body.toString())
+  assert.deepEqual(list[0], { type: 'title', title: 'Un cuento de los caballos.' })
+  assert.equal(list[1].type, 'paragraph')
+  assert.equal(list.at(-1).story.title, 'Un cuento de los caballos.')
+  await api2.close()
+})
+
+test('a keyword the family never saved is not a theme', async () => {
+  const { cookie } = await signUp()
+  await putFamily(api, cookie, EXAMPLE_PROFILE)
+
+  const response = await streamKeyword(cookie, 'los cohetes')
+  assert.equal(response.statusCode, 400)
+  assert.equal(response.json().code, 'UNKNOWN_KEYWORD')
+  assert.equal(response.headers['content-type'], 'application/json; charset=utf-8')
+})
+
+test('a story comes from an id or from a keyword, never both and never neither', async () => {
+  const { cookie } = await signUp()
+  await putFamily(api, cookie, EXAMPLE_PROFILE)
+  /** @param {object} payload */
+  const write = (payload) => api.app.inject({ method: 'POST', url: '/stories/write', headers: { cookie }, payload })
+
+  assert.equal((await write({ id: randomUUID(), keyword: 'los dinosaurios' })).statusCode, 400)
+  assert.equal((await write({})).statusCode, 400)
+  assert.equal((await write({ keyword: '' })).statusCode, 400)
+})
+
+test('without an LLM, a keyword story says the feature is off', async () => {
+  const api2 = await startApi({
+    signupEmails: ['vera@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('vera'),
+  })
+  const { cookie } = await signUpAs(api2, 'vera@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  const response = await streamKeyword(cookie, 'los dinosaurios', api2)
+  assert.equal(response.statusCode, 503)
+  assert.equal(response.json().code, 'LLM_OFF')
+  await api2.close()
+})
+
+test('a reader who leaves while a keyword story is written saves nothing', { timeout: 10_000 }, async () => {
+  /** @type {() => void} */
+  let release = () => {}
+  const readerLeft = new Promise((resolve) => (release = () => resolve(undefined)))
+  const slowLlm = {
+    async *stream() {
+      yield 'TÍTULO: Milán y los caballos.\nPARTE 1\nMilán se despertó de golpe.\n\n'
+      await readerLeft
+      yield 'Inca movió la cola.\n\nPARTE 2\nFin.\n'
+    },
+  }
+  const api2 = await startApi({
+    signupEmails: ['bruno@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('bruno'),
+    llm: slowLlm,
+  })
+  const { cookie } = await signUpAs(api2, 'bruno@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  const address = await api2.app.listen({ port: 0, host: '127.0.0.1' })
+  const reader = new AbortController()
+  const response = await fetch(`${address}/stories/write`, {
+    method: 'POST',
+    headers: { cookie, 'content-type': 'application/json' },
+    body: JSON.stringify({ keyword: 'los caballos' }),
+    signal: reader.signal,
+  })
+  const { value } = await response.body.getReader().read()
+  assert.match(new TextDecoder().decode(value), /Milán y los caballos/)
+  reader.abort()
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  release()
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const { rows } = await api2.pool.query('select count(*)::int as n from stories')
+  assert.equal(rows[0].n, 0)
+  const audit = await api2.pool.query(`select count(*)::int as n from story_audit where event = 'written'`)
+  assert.equal(audit.rows[0].n, 0)
+  await api2.close()
 })

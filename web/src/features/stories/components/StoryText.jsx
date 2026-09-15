@@ -10,8 +10,9 @@ export function StoryText({ parts, done }) {
     <div className="story" aria-busy={!done}>
       {parts.map((part, index) => (
         <section key={index} className="story__part" data-part={index}>
-          {part.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+          {/* By position, since a story repeats a refrain word for word. */}
+          {part.map((paragraph, line) => (
+            <p key={line}>{paragraph}</p>
           ))}
         </section>
       ))}

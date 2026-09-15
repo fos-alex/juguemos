@@ -5,18 +5,20 @@
  * as the model finishes writing it, so the first option is on screen long
  * before the third (JUG-139). The chosen plot becomes a story that arrives
  * paragraph by paragraph the same way, saved once it ends and read again
- * from what was saved. Every step writes a row in the story audit.
+ * from what was saved. A parent who taps one of the family's interests
+ * instead gets a story on that theme with no plot behind it, written and
+ * titled in one call (JUG-140). Every step writes a row in the story audit.
  */
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
 import { NotFoundError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { render } from '../llm/prompt.js'
-import { castingLines, castScreen, DEFAULT_WEIGHTS } from './casting.js'
+import { castingLines, castKeyword, castScreen, DEFAULT_WEIGHTS } from './casting.js'
 import { OPTIONS, replayEvents, storyColumns, tick, toStory } from './shared.js'
 import { stories, storyPlots } from './stories.schema.js'
 import storyOptionsPrompt from './prompts/story-options.js'
-import storyPrompt from './prompts/story.js'
+import storyPrompt, { keywordStory } from './prompts/story.js'
 import { systemPrompt } from './prompts/compose.js'
 import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, StoryParser, toPlot, wordsIn } from './storytelling.js'
 
@@ -33,6 +35,13 @@ import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, StoryP
 /**
  * @typedef {{ type: 'option', option: StoryOption } | { type: 'done' }} OptionEvent
  *   what an options screen sends: one option as each lands, then the end
+ */
+/**
+ * @typedef {object} Kept what a story leaves behind as it streams, for the save and the audit
+ * @property {string} title the title the model wrote, when it was asked for one
+ * @property {{ part: number, text: string }[]} paragraphs
+ * @property {number} msFirstToken
+ * @property {number} msTotal
  */
 
 /** The most the three options together may run to: each is a title, a line, and two sentences. */
@@ -70,6 +79,52 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       .from(stories)
       .where(and(eq(stories.familyId, familyId), eq(stories.plotId, plotId)))
     return story ? toStory(story) : null
+  }
+
+  /**
+   * One story call, streamed: the paragraphs as the parser finishes them, and
+   * the title before them when the prompt asked the model for one. What the
+   * save and the audit need afterwards is put in `kept` as it arrives, since
+   * the events themselves go straight to the reader.
+   * @param {{ system: string, user: string, maxTokens: number, signal?: AbortSignal, fallbackTitle?: string }} call
+   *   a `fallbackTitle` means this prompt asked for a `TÍTULO:` line: it is the
+   *   title used when the model wrote none, so the story always has one and it
+   *   is always the first event.
+   * @param {Kept} kept
+   * @returns {AsyncGenerator<StoryEvent, void, void>}
+   */
+  async function* tell({ system, user, maxTokens, signal, fallbackTitle = '' }, kept) {
+    const parser = new StoryParser()
+    const started = Date.now()
+    /** @type {number | null} */
+    let first = null
+
+    /** The paragraphs one push finished, each as an event. @param {{ part: number, text: string }[]} done */
+    async function* told(done) {
+      for (const paragraph of done) {
+        if (fallbackTitle && !kept.title) {
+          kept.title = fallbackTitle
+          yield /** @type {StoryEvent} */ ({ type: 'title', title: kept.title })
+        }
+        kept.paragraphs.push(paragraph)
+        yield /** @type {StoryEvent} */ ({ type: 'paragraph', ...paragraph })
+        await tick(signal)
+      }
+    }
+
+    for await (const chunk of /** @type {Llm} */ (llm).stream({ system, user, maxTokens, reasoning: false, signal })) {
+      first ??= Date.now() - started
+      const done = parser.push(chunk)
+      const title = parser.takeTitle()
+      if (fallbackTitle && title && !kept.title) {
+        kept.title = title
+        yield { type: 'title', title }
+      }
+      yield* told(done)
+    }
+    yield* told(parser.end())
+    kept.msTotal = Date.now() - started
+    kept.msFirstToken = first ?? kept.msTotal
   }
 
   return {
@@ -235,40 +290,24 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       const kidIds = kidIdsOf(profile)
       await audit.record('picked', { familyId, kidIds, band: band.id, mood: plot.mood, plotId, casting, details: { model } })
 
-      const parser = new StoryParser()
-      const paragraphs = []
-      const started = Date.now()
-      let msFirstToken = null
+      /** @type {Kept} */
+      const kept = { title: '', paragraphs: [], msFirstToken: 0, msTotal: 0 }
       try {
         const call = {
           system: systemPrompt({ band: band.id, mood: plot.mood }),
           user,
           maxTokens: band.words[1] * TOKENS_PER_WORD,
-          reasoning: false,
           signal,
         }
-        for await (const chunk of /** @type {Llm} */ (llm).stream(call)) {
-          msFirstToken ??= Date.now() - started
-          for (const paragraph of parser.push(chunk)) {
-            paragraphs.push(paragraph)
-            yield { type: 'paragraph', ...paragraph }
-            await tick(signal)
-          }
-        }
-        for (const paragraph of parser.end()) {
-          paragraphs.push(paragraph)
-          yield { type: 'paragraph', ...paragraph }
-          await tick(signal)
-        }
+        yield* tell(call, kept)
       } catch (error) {
         if (signal?.aborted) return
         throw error
       }
-      const msTotal = Date.now() - started
 
       // The reader may have left after the last paragraph was read out.
       if (signal?.aborted) return
-      const parts = partsOf(paragraphs)
+      const parts = partsOf(kept.paragraphs)
       if (!parts) throw new UpstreamError('The story model wrote nothing readable')
 
       await db
@@ -288,7 +327,6 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       const story = await findWritten(familyId, plotId)
       if (!story) throw new UpstreamError('The story did not save')
 
-      const words = wordsIn(parts)
       await audit.record('written', {
         familyId,
         kidIds,
@@ -296,20 +334,108 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
         mood: plot.mood,
         plotId,
         casting,
-        details: {
-          model,
-          msFirstToken: msFirstToken ?? msTotal,
-          msTotal,
-          words,
-          parts: parts.length,
-          paragraphs: paragraphs.length,
-          wordsMin: band.words[0],
-          wordsMax: band.words[1],
-          insideBand: words >= band.words[0] && words <= band.words[1],
-        },
+        details: writtenDetails({ model, band, parts, kept }),
       })
       yield { type: 'story', story }
     },
+
+    /**
+     * A story about one of the family's interests, which the parent tapped
+     * instead of picking one of the three options (JUG-140). There is no plot:
+     * code draws the casting with that interest as the theme, and the model
+     * invents the story and its title in one call. Every tap writes a new
+     * story; nothing is deduplicated. A reader who leaves early hears no more
+     * and nothing is saved.
+     * @param {string} familyId
+     * @param {Profile} profile the kids playing
+     * @param {string} keyword one of the family's interests, as they typed it
+     * @param {{ signal?: AbortSignal }} [options]
+     * @returns {AsyncGenerator<StoryEvent, void, void>}
+     */
+    async *writeKeyword(familyId, profile, keyword, { signal } = {}) {
+      const mood = moodAt(now())
+      const { band } = anchorOf(profile)
+      const casting = castKeyword(profile, { keyword, random })
+      const kidIds = kidIdsOf(profile)
+      await audit.record('picked', { familyId, kidIds, band: band.id, mood, keyword, casting, details: { model } })
+
+      const lines = familyLines(profile, [casting])
+      const user = render(keywordStory, {
+        kids: lines.kids,
+        pet: lines.pet,
+        toys: lines.toys,
+        interests: lines.interests,
+        casting: castingLines(casting, profile),
+        minutes: String(band.minutes[1]),
+        keyword,
+      })
+      /** @type {Kept} */
+      const kept = { title: '', paragraphs: [], msFirstToken: 0, msTotal: 0 }
+      try {
+        const call = {
+          system: systemPrompt({ band: band.id, mood }),
+          user,
+          maxTokens: band.words[1] * TOKENS_PER_WORD,
+          signal,
+          fallbackTitle: `Un cuento de ${keyword}.`,
+        }
+        yield* tell(call, kept)
+      } catch (error) {
+        if (signal?.aborted) return
+        throw error
+      }
+
+      // The reader may have left after the last paragraph was read out.
+      if (signal?.aborted) return
+      const parts = partsOf(kept.paragraphs)
+      if (!parts) throw new UpstreamError('The story model wrote nothing readable')
+
+      const [saved] = await db
+        .insert(stories)
+        .values({
+          familyId,
+          kidIds,
+          source: 'generated',
+          title: kept.title,
+          teaser: `Un cuento sobre ${keyword}.`,
+          minutes: band.minutes[1],
+          parts,
+          casting,
+          keyword,
+        })
+        .returning(storyColumns)
+
+      await audit.record('written', {
+        familyId,
+        kidIds,
+        band: band.id,
+        mood,
+        keyword,
+        casting,
+        details: writtenDetails({ model, band, parts, kept }),
+      })
+      yield { type: 'story', story: toStory(saved) }
+    },
+  }
+}
+
+/**
+ * What the audit keeps about a story once it is written: the model, how long
+ * it took to answer, and how its length compares with the band's budget.
+ * @param {{ model: string, band: Band, parts: string[][], kept: Kept }} story
+ */
+function writtenDetails({ model, band, parts, kept }) {
+  const words = wordsIn(parts)
+  return {
+    model,
+    msFirstToken: kept.msFirstToken,
+    msTotal: kept.msTotal,
+    words,
+    parts: parts.length,
+    paragraphs: kept.paragraphs.length,
+    wordsMin: band.words[0],
+    wordsMax: band.words[1],
+    insideBand: words >= band.words[0] && words <= band.words[1],
   }
 }
 

@@ -7,7 +7,7 @@ import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
 import { useStored } from '../../../shared/store'
-import { Body, Card, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import { Body, Card, Chips, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
 import '../stories.css'
 
 /** @typedef {import('../types').SavedStorySummary} SavedStorySummary */
@@ -16,11 +16,12 @@ import '../stories.css'
 const OPTIONS = 3
 
 /**
- * 2r, and the family's own shelf of already-written stories below it. Three
- * plots of equal weight: the app suggests, it doesn't recommend. Reading
- * time is always the last line, because it decides things at 8 pm. No cover
- * art, no illustration, no mascot. The library is offscreen content, so its
- * fetch may come and go quietly — the options are the story.
+ * 2r, with the family's own interests under the three plots (JUG-140) and
+ * their shelf of already-written stories below those. Three plots of equal
+ * weight: the app suggests, it doesn't recommend. Reading time is always the
+ * last line, because it decides things at 8 pm. No cover art, no
+ * illustration, no mascot. The library is offscreen content, so its fetch may
+ * come and go quietly — the options are the story.
  *
  * The options arrive one at a time, so a card takes its skeleton's place as
  * soon as the model has written it, and a card that is there can be tapped
@@ -32,6 +33,7 @@ export function StoryOptionsScreen() {
   const online = useOnline()
   const options = useStored('storyOptions')
   const stories = useStored('stories')
+  const interests = useStored('family')?.interests ?? []
   const arrived = options?.length ?? 0
   const [loading, setLoading] = useState(arrived === 0)
   const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))
@@ -87,6 +89,16 @@ export function StoryOptionsScreen() {
     void navigate({ to: '/cuento/$id', params: { id } })
   }
 
+  /** An interest tapped: its story is written on the reading screen. @param {string} interest */
+  const pickKeyword = (interest) => {
+    if (!online) {
+      setNotice('Estás sin conexión.')
+      return
+    }
+    if (loading) return
+    void navigate({ to: '/cuento/tema/$keyword', params: { keyword: interest } })
+  }
+
   /** @param {SavedStorySummary} saved */
   const openLibraryStory = async (saved) => {
     if (!online && !stories?.[saved.id]) {
@@ -118,6 +130,25 @@ export function StoryOptionsScreen() {
         {loading &&
           Array.from({ length: Math.max(OPTIONS - arrived, 0) }, (_, index) => <OptionSkeleton key={`skeleton-${index}`} />)}
         <StatusLine role="alert">{notice}</StatusLine>
+        {interests.length > 0 && (
+          <section className="story-keywords">
+            {/* Voice pass pending: "Un cuento de…". */}
+            <h2 className="story-keywords__heading">Un cuento de…</h2>
+            <Chips>
+              {interests.map((interest) => (
+                <button
+                  key={interest}
+                  type="button"
+                  className={`chip story-keyword${online && !loading ? '' : ' is-unavailable'}`}
+                  aria-disabled={!online || loading || undefined}
+                  onClick={() => pickKeyword(interest)}
+                >
+                  {interest}
+                </button>
+              ))}
+            </Chips>
+          </section>
+        )}
         {library && library.length > 0 && (
           <section className="story-library">
             {/* Voice pass pending: "Para volver a leer". */}

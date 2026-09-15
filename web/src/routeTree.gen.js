@@ -24,6 +24,7 @@ import { Route as FamiliaCorregirRouteImport } from './routes/familia.corregir'
 import { Route as FamiliaRevisarRouteImport } from './routes/familia.revisar'
 import { Route as JuguetesIndexRouteImport } from './routes/juguetes.index'
 import { Route as JuguetesIdRouteImport } from './routes/juguetes.$id'
+import { Route as CuentoTemaKeywordRouteImport } from './routes/cuento.tema.$keyword'
 import { Route as IdeaIdIndexRouteImport } from './routes/idea.$id.index'
 import { Route as IdeaIdRelojRouteImport } from './routes/idea.$id.reloj'
 
@@ -102,6 +103,11 @@ const JuguetesIdRoute = JuguetesIdRouteImport.update({
   path: '/juguetes/$id',
   getParentRoute: () => rootRouteImport,
 })
+const CuentoTemaKeywordRoute = CuentoTemaKeywordRouteImport.update({
+  id: '/cuento/tema/$keyword',
+  path: '/cuento/tema/$keyword',
+  getParentRoute: () => rootRouteImport,
+})
 const IdeaIdIndexRoute = IdeaIdIndexRouteImport.update({
   id: '/idea/$id/',
   path: '/idea/$id/',
@@ -129,6 +135,7 @@ const rootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   FamiliaIndexRoute: FamiliaIndexRoute,
   JuguetesIndexRoute: JuguetesIndexRoute,
+  CuentoTemaKeywordRoute: CuentoTemaKeywordRoute,
   IdeaIdRelojRoute: IdeaIdRelojRoute,
   IdeaIdIndexRoute: IdeaIdIndexRoute,
 }

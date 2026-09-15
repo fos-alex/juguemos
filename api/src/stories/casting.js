@@ -35,8 +35,9 @@ import { anchorOf } from './storytelling.js'
  */
 /**
  * @typedef {object} Casting who one story is about
- * @property {'cast' | 'wildcard'} kind a wildcard drops the family's props and
- *   asks the model to invent the setting or a secondary character
+ * @property {'cast' | 'wildcard' | 'keyword'} kind a wildcard drops the family's
+ *   props and asks the model to invent the setting or a secondary character; a
+ *   keyword casting is one the parent asked for by tapping an interest
  * @property {boolean} anchorIn
  * @property {Lead} lead
  * @property {string[]} kids the ids of the kids in the story
@@ -98,6 +99,29 @@ export function castScreen(profile, { count, weights = DEFAULT_WEIGHTS, random, 
 }
 
 /**
+ * The casting of a story the parent asked for by tapping one of the family's
+ * interests (JUG-140). It is drawn like any other, except that the theme is
+ * the keyword they tapped and the story is never a wildcard: they already
+ * said what they want the story to be about.
+ * @param {Profile} profile
+ * @param {{ keyword: string, weights?: Weights, random: () => number }} options
+ * @returns {Casting}
+ */
+export function castKeyword(profile, { keyword, weights = DEFAULT_WEIGHTS, random }) {
+  const casting = castOne(profile, {
+    weights,
+    random,
+    recentToys: new Set(),
+    recentThemes: new Set(),
+    usedToys: new Set(),
+    usedThemes: new Set(),
+    usedLeads: new Set(),
+    theme: keyword,
+  })
+  return { ...casting, kind: 'keyword' }
+}
+
+/**
  * The same casting without the family's props: the kids star as they were
  * drawn, and the model invents the rest. A pet or a toy that was leading
  * hands the lead back to the kids, since they are all that is left.
@@ -128,10 +152,12 @@ function wildcardOf(casting, profile) {
  *   usedToys: Set<string>,
  *   usedThemes: Set<string>,
  *   usedLeads: Set<string>,
- * }} screen
+ *   theme?: string | null,
+ * }} screen `theme` is the theme the story must have, when the parent chose it
+ *   instead of the draw
  * @returns {Casting}
  */
-function castOne(profile, { weights, random, recentToys, recentThemes, usedToys, usedThemes, usedLeads }) {
+function castOne(profile, { weights, random, recentToys, recentThemes, usedToys, usedThemes, usedLeads, theme: fixed = null }) {
   const { anchor } = anchorOf(profile)
   /** @type {Draws} */
   const draws = { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null }
@@ -163,8 +189,8 @@ function castOne(profile, { weights, random, recentToys, recentThemes, usedToys,
   }
 
   /** @type {string | null} */
-  let theme = null
-  if (profile.interests.length > 0) {
+  let theme = fixed
+  if (!theme && profile.interests.length > 0) {
     draws.themeIn = random()
     if (draws.themeIn < weights.themeIn) {
       const pool = fresh(profile.interests, usedThemes, (item) => item)

@@ -7,7 +7,7 @@
  * did; the web never tells the kinds apart.
  */
 import { and, desc, eq } from 'drizzle-orm'
-import { NotFoundError } from '../errors.js'
+import { NotFoundError, UnavailableError, ValidationError } from '../errors.js'
 import { createGeneratedStories } from './generated-stories.js'
 import { storyColumns, toStory } from './shared.js'
 import { stories } from './stories.schema.js'
@@ -17,7 +17,15 @@ import { createTemplateStories } from './template-stories.js'
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
 /** @typedef {import('./generated-stories.js').OptionEvent} OptionEvent what an options screen sends, one at a time */
 /**
- * @typedef {{ id: string, templateId: string | null, plotId: string | null, title: string, teaser: string, minutes: number, parts: string[][] }} Story
+ * @typedef {object} Story
+ * @property {string} id
+ * @property {string | null} templateId
+ * @property {string | null} plotId
+ * @property {string | null} keyword the interest the parent tapped to get it (JUG-140)
+ * @property {string} title
+ * @property {string} teaser
+ * @property {number} minutes
+ * @property {string[][]} parts
  */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStory */
 /**
@@ -27,11 +35,16 @@ import { createTemplateStories } from './template-stories.js'
  * @property {string} text
  */
 /**
+ * @typedef {object} StoryTitle a story with no plot behind it, named before it is read
+ * @property {'title'} type
+ * @property {string} title
+ */
+/**
  * @typedef {object} StoryDone
  * @property {'story'} type
  * @property {Story} story
  */
-/** @typedef {StoryParagraph | StoryDone} StoryEvent what the reading screen draws, one at a time */
+/** @typedef {StoryTitle | StoryParagraph | StoryDone} StoryEvent what the reading screen draws, one at a time */
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
@@ -117,6 +130,25 @@ export function createStoriesService({
       if (await generated.hasPlot(familyId, id)) return generated.write(familyId, id, { signal })
       if (await catalog.storyTemplateById(id)) return templates.stream(familyId, id, { signal, userId })
       throw new NotFoundError('No such story')
+    },
+
+    /**
+     * A story about one of the family's interests, written now because the
+     * parent tapped it (JUG-140). Only the model writes these, so a server
+     * with no LLM says the feature is off. The keyword has to be one of the
+     * interests the family saved: anything else is a mistake, not a theme.
+     * @param {string} familyId
+     * @param {string} keyword
+     * @param {{ signal?: AbortSignal, userId?: string | null }} [options] `userId` is the
+     *   adult asking, whose kids playing the story stars
+     * @returns {Promise<AsyncGenerator<StoryEvent, void, void>>}
+     */
+    async writeKeywordStream(familyId, keyword, { signal, userId = null } = {}) {
+      if (!llm) throw new UnavailableError('No LLM is configured to write a story', 'LLM_OFF')
+      const profile = await families.playingProfile(familyId, userId)
+      const interest = profile.interests.find((saved) => saved.trim() === keyword.trim())
+      if (!interest) throw new ValidationError('That is not one of the family interests', 'UNKNOWN_KEYWORD')
+      return generated.writeKeyword(familyId, profile, interest, { signal })
     },
 
     /**
