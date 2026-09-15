@@ -20,6 +20,7 @@ import {
   StatusLine,
   Wordmark,
 } from '../../../shared/ui'
+import { PlayingCard } from '../components/PlayingCard'
 import '../home.css'
 
 const SLOW_AFTER_MS = 6000
@@ -31,7 +32,8 @@ const SLOW_AFTER_MS = 6000
  * wait happens here: the pressed button holds three slow dots, and the story
  * button greys out so a second tap can't queue another request. Never a feed,
  * streaks, or a nudge about days since last played. With more than one kid,
- * the parent picks who's playing above the buttons (JUG-107).
+ * the parent picks who's playing above the buttons (JUG-107). While a juego is
+ * played, its card shows the time left and lets the parent end it (JUG-134).
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -39,7 +41,11 @@ export function HomeScreen() {
   const { online } = offline
   const family = useStored('family')
   const lastId = useStored('lastActivityId')
-  const last = useStored('activities')?.[lastId]
+  const activities = useStored('activities')
+  const last = activities?.[lastId]
+  const timer = useStored('timer')
+  // The juego being played takes the last juego's place: Home shows one card, never two.
+  const running = timer ? activities?.[timer.activityId] : null
   const request = useRequest({ slowAfter: SLOW_AFTER_MS })
   // Choices are saved one after another, and a juego or a story waits for the last one.
   const saves = useSerialSaves()
@@ -112,21 +118,25 @@ export function HomeScreen() {
         {family && !picking && <p className="home__family">{familyLine(family)}</p>}
       </header>
 
-      {(!online || last) && (
+      {(!online || last || running) && (
         <div className="home__memory">
           <OfflineNotice notice={offline} className="home__offline">
-            {last ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
+            {last || running ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
           </OfflineNotice>
-          {last && (
-            <Card onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}>
-              <MetaLabel as="span" wide>
-                El último juego
-              </MetaLabel>
-              <span className="card-title">{last.title}</span>
-              <span className="card-meta">
-                {last.minutes} min · {placeText(last.place)}
-              </span>
-            </Card>
+          {running ? (
+            <PlayingCard activity={running} timer={timer} />
+          ) : (
+            last && (
+              <Card onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}>
+                <MetaLabel as="span" wide>
+                  El último juego
+                </MetaLabel>
+                <span className="card-title">{last.title}</span>
+                <span className="card-meta">
+                  {last.minutes} min · {placeText(last.place)}
+                </span>
+              </Card>
+            )
           )}
         </div>
       )}

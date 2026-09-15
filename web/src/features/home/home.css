@@ -50,6 +50,37 @@
   animation: fade-in 200ms ease-out;
 }
 
+/* The juego being played, in the last juego's place (JUG-134). */
+
+.playing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.playing__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.playing__what {
+  flex: 1;
+  min-width: 0;
+}
+
+.playing__clock {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface-accent);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-pressed);
+}
+
 .home__spacer {
   flex: 1;
   min-height: 24px;
