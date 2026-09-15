@@ -20,6 +20,7 @@ export const storyColumns = {
   teaser: stories.teaser,
   minutes: stories.minutes,
   parts: stories.parts,
+  keyword: stories.keyword,
 }
 
 /** A saved story, shaped for the reading screen. @param {typeof stories.$inferSelect} row */

@@ -97,8 +97,10 @@ export function createStoriesController({ stories }) {
     },
 
     /**
-     * The chosen story, as server-sent events. Unknown ids — a story nobody
-     * in this family picked — answer with a clean 404 before the stream
+     * The chosen story, as server-sent events: the story behind an option the
+     * family picked, or a new one about an interest they tapped (JUG-140).
+     * Unknown ids — a story nobody in this family picked — and a keyword that
+     * is not one of the family's interests answer cleanly before the stream
      * starts; the rest answer with paragraphs and end with the whole story.
      * Whatever happens after the stream starts becomes one last event: a
      * server error is never described, so the failure line in the web does
@@ -106,11 +108,11 @@ export function createStoriesController({ stories }) {
      * @type {import('fastify').RouteHandlerMethod}
      */
     async writeStream(request, reply) {
-      const { id } = /** @type {{ id: string }} */ (request.body)
-      const stream = await stories.writeStream(familyOf(request), id, {
-        signal: leavingSignal(reply),
-        userId: userOf(request).id,
-      })
+      const { id, keyword } = /** @type {{ id?: string, keyword?: string }} */ (request.body)
+      const asked = { signal: leavingSignal(reply), userId: userOf(request).id }
+      const stream = keyword
+        ? await stories.writeKeywordStream(familyOf(request), keyword, asked)
+        : await stories.writeStream(familyOf(request), /** @type {string} */ (id), asked)
       await sendEvents(reply, stream, 'story')
     },
 

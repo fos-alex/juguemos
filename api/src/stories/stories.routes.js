@@ -1,4 +1,4 @@
-import { errorBody, uuid } from '../http/schemas.js'
+import { errorBody, text, uuid } from '../http/schemas.js'
 
 /** @typedef {ReturnType<typeof import('./stories.controller.js').createStoriesController>} StoriesController */
 
@@ -6,14 +6,20 @@ import { errorBody, uuid } from '../http/schemas.js'
 // possible; a route that names a story can answer that there is no such story.
 const errors = { 400: errorBody, 401: errorBody, 409: errorBody, 500: errorBody }
 const storyErrors = { ...errors, 404: errorBody }
+// Writing a story from a keyword needs the LLM, so this route can also say it is off.
+const writeErrors = { ...storyErrors, 503: errorBody }
+
+/** As long as an interest the family profile lets a parent type. */
+const KEYWORD_MAX = 80
 
 const story = {
   type: 'object',
-  required: ['id', 'templateId', 'plotId', 'title', 'teaser', 'minutes', 'parts'],
+  required: ['id', 'templateId', 'plotId', 'keyword', 'title', 'teaser', 'minutes', 'parts'],
   properties: {
     id: { type: 'string' },
     templateId: { type: ['string', 'null'] },
     plotId: { type: ['string', 'null'] },
+    keyword: { type: ['string', 'null'] },
     title: { type: 'string' },
     teaser: { type: 'string' },
     minutes: { type: 'integer' },
@@ -49,11 +55,13 @@ const writeBody = {
   properties: { templateId: uuid },
 }
 
+// A story to read: either one the family was offered, by its id, or an
+// interest they tapped, by its own words (JUG-140). Exactly one of the two.
 const streamBody = {
   type: 'object',
   additionalProperties: false,
-  required: ['id'],
-  properties: { id: uuid },
+  properties: { id: uuid, keyword: text(KEYWORD_MAX) },
+  oneOf: [{ required: ['id'] }, { required: ['keyword'] }],
 }
 
 /**
@@ -74,7 +82,7 @@ export async function storiesRoutes(app, { controller }) {
     { config, schema: { body: writeBody, response: { 200: story, ...storyErrors } } },
     controller.write,
   )
-  app.post('/stories/write', { config, schema: { body: streamBody, response: storyErrors } }, controller.writeStream)
+  app.post('/stories/write', { config, schema: { body: streamBody, response: writeErrors } }, controller.writeStream)
   app.get(
     '/stories',
     { config, schema: { response: { 200: { type: 'array', items: savedStory }, ...errors } } },

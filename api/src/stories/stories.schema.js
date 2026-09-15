@@ -61,6 +61,10 @@ export const stories = pgTable(
     kidIds: uuid().array().notNull().default(sql`'{}'`),
     // The casting the story was written for (JUG-139); null on template stories.
     casting: jsonb(),
+    // The interest the parent tapped to get this story (JUG-140), as they typed
+    // it. Null on every other story. A tap always writes a new story, so two
+    // stories can share a keyword.
+    keyword: text(),
     createdAt: createdAt(),
   },
   (table) => [
