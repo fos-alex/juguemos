@@ -3,12 +3,12 @@ import { useNavigate } from '@tanstack/react-router'
 import { AppMenu } from '../../../app/AppMenu'
 import { placeText, suggestActivity } from '../../activities'
 import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
-import { forgetOptions } from '../../stories'
+import { forgetOptions, storyOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useOfflineNotice } from '../../../shared/hooks/useOfflineNotice'
 import { useRequest } from '../../../shared/hooks/useRequest'
 import { useSerialSaves } from '../../../shared/hooks/useSerialSaves'
-import { useStored } from '../../../shared/store'
+import { read, useStored } from '../../../shared/store'
 import {
   Card,
   Footer,
@@ -34,6 +34,8 @@ const SLOW_AFTER_MS = 6000
  * streaks, or a nudge about days since last played. With more than one kid,
  * the parent picks who's playing above the buttons (JUG-107). While a juego is
  * played, its card shows the time left and lets the parent end it (JUG-134).
+ * The story options are asked for here, quietly, so Hora del cuento opens
+ * with them already on screen (JUG-140).
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -59,6 +61,14 @@ export function HomeScreen() {
     if (navigator.onLine) loadFamily().catch(() => {})
   }, [])
 
+  useEffect(() => {
+    // The options take a while to write, so they are asked for while the
+    // parent is still here. A failure is nothing to say: the story screen
+    // asks again and answers for itself.
+    if (!navigator.onLine || read('storyOptions')) return
+    storyOptions({}).catch(() => {})
+  }, [])
+
   /** @param {Kid} kid */
   const toggle = (kid) => {
     if (!family || request.busy) return
@@ -69,6 +79,8 @@ export function HomeScreen() {
     if (playing && family.kids.filter((each) => each.playing !== false).length === 1) return
     const kids = family.kids.map((each) => (each.id === kid.id ? { ...each, playing: !playing } : each))
     markPlaying(kids)
+    // The options on hand star the kids who were playing, so they retire here.
+    forgetOptions()
     request.reset()
     const ids = kids.filter((each) => each.playing !== false).map((each) => /** @type {string} */ (each.id))
     saves.add(
@@ -93,7 +105,6 @@ export function HomeScreen() {
     setMenuOpen(false)
     if (!online) return offline.tap()
     await saves.settled()
-    forgetOptions()
     void navigate({ to: '/cuentos' })
   }
 
