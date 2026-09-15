@@ -219,7 +219,10 @@ async function insertFamily(tx, userId, name) {
   return family
 }
 
-/** Pets and toys are only a name, in order. */
+/**
+ * The profile knows pets and toys only by name, in order. Updating a toy
+ * leaves the rest of what the toy box knows about it alone.
+ */
 const nameOnly = {
   /** @param {{ name: string }} item @param {number} position */
   insert: ({ name }, position) => ({ name, position }),

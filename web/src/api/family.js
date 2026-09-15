@@ -1,16 +1,17 @@
 /**
  * The family profile, against the real API. The screens keep 0.1's shape (one
- * pet, toys by name) and this module translates to and from the API's, which
- * has room for more pets and for toy details later.
+ * pet, toys by name and id) and this module translates to and from the API's,
+ * which has room for more pets. The rest of what is known about each toy is
+ * the toy box's (./toys).
  */
-import { write } from '../lib/store'
+import { read, write } from '../lib/store'
 import { ApiError, request } from './http'
 
 /** @typedef {import('./types').Family} Family */
 /**
  * @typedef {{
  *   kids: { id?: string, name: string, age: number | null, playing?: boolean }[], pets: { name: string }[],
- *   interests: string[], toys: { name: string }[],
+ *   interests: string[], toys: { id?: string, name: string }[],
  * }} Profile
  */
 
@@ -20,13 +21,13 @@ function toFamily(profile) {
     kids: profile.kids.map(({ id, name, age, playing }) => ({ id, name, age, playing })),
     pet: profile.pets[0]?.name ?? '',
     interests: profile.interests,
-    toys: profile.toys.map((toy) => toy.name),
+    toys: profile.toys.map(({ id, name }) => ({ id, name })),
   }
 }
 
 /**
- * A kid keeps their id, so the API updates them instead of adding someone new
- * and forgetting who's playing.
+ * Kids and toys keep their ids, so the API updates them instead of adding new
+ * ones: a kid keeps who's playing, and a toy keeps what the toy box knows.
  * @param {Family} family @returns {Profile}
  */
 function toProfile(family) {
@@ -34,8 +35,21 @@ function toProfile(family) {
     kids: family.kids.map(({ id, name, age }) => (id ? { id, name, age } : { name, age })),
     pets: family.pet ? [{ name: family.pet }] : [],
     interests: family.interests,
-    toys: family.toys.map((name) => ({ name })),
+    toys: family.toys.map(({ id, name }) => (id ? { id, name } : { name })),
   }
+}
+
+/**
+ * A family cached before the toy box has its toys as bare names. They become
+ * toys without ids until the next load brings the ids.
+ */
+export function upgradeCachedFamily() {
+  const family = read('family')
+  if (!family?.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')) return
+  write('family', {
+    ...family,
+    toys: family.toys.map((/** @type {string | import('./types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
+  })
 }
 
 /** Brings the account's family into this browser, or forgets it if there is none yet. @returns {Promise<Family | null>} */

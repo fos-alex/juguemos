@@ -3,7 +3,8 @@
 // verification (no email sender), which stays in ./mock.
 export { ApiError, OfflineError } from './http'
 export { AccountError, createAccount, ensureSession, signIn, signOut } from './auth'
-export { choosePlaying, loadFamily, saveFamily, understandFamily } from './family'
+export { choosePlaying, loadFamily, saveFamily, understandFamily, upgradeCachedFamily } from './family'
+export { addToy, chooseMaterials, editToy, linkToy, loadToyBox, removeToy } from './toys'
 export { NothingFitsError, suggestActivity } from './activities'
 export { storyOptions, writeStory, savedStories, savedStory } from './stories'
 export { createTemplate, deleteTemplate, listTemplates, loadTemplate, saveTemplate } from './admin'

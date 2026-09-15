@@ -11,6 +11,14 @@
  * @property {string} email
  * @property {string} password
  * @property {import('../src/families/families.service.js').ProfileInput} [family] saved with the account as its first member
+ * @property {SeedToyBox} [toyBox] added to the family's toys once it is saved
+ */
+/**
+ * @typedef {object} SeedToyBox What the toy box knows beyond the toys' names.
+ * @property {Record<string, import('../src/toys/toys.service.js').ToyInput & { kid?: string }>} [details]
+ *   by the toy's name, with whose it is as a kid's name
+ * @property {string[][]} [links] sets of linked toys, by name
+ * @property {string[]} [materials] household materials, by key
  */
 
 const PASSWORD = 'juguemos-local'
@@ -31,8 +39,18 @@ export const accounts = [
         { name: 'el dinosaurio chiquito' },
         { name: 'el tren grandote' },
         { name: 'el osito marrón' },
-        { name: 'el caballo percherón' },
+        { name: 'el caballo grande' },
+        { name: 'el caballo chico' },
       ],
+    },
+    toyBox: {
+      details: {
+        'el dinosaurio chiquito': { description: 'T-rex de plástico duro, unos 8 cm, entra en la mano' },
+        'el tren grandote': { description: 'Tren de madera con vagones que se enganchan con imanes', favorite: true },
+        'el osito marrón': { aliases: ['el tuto'], kid: 'Milán' },
+      },
+      links: [['el caballo grande', 'el caballo chico']],
+      materials: ['cajas', 'ollas', 'mantas'],
     },
   },
   // The sparsest family: a baby, no pet, and two toys.
@@ -67,6 +85,12 @@ export const accounts = [
         { name: 'la bici roja' },
         { name: 'el barco pirata' },
       ],
+    },
+    toyBox: {
+      details: {
+        'la bici roja': { kid: 'Tomás' },
+        'los bloques de madera': { shared: true },
+      },
     },
   },
 ]
