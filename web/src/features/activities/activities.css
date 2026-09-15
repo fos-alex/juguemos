@@ -1,0 +1,191 @@
+/* 2m / 2n / 2p Actividad */
+
+.activity-body {
+  padding-top: 16px;
+  padding-bottom: 8px;
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity--porque,
+.activity--skeleton {
+  gap: 15px;
+}
+
+.activity--pasos {
+  gap: 17px;
+}
+
+.activity__title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: pretty;
+}
+
+.activity--pasos .activity__title {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.activity__why {
+  margin-top: 4px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.activity__needs {
+  margin-top: 4px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* `needs` keeps the family's lowercase toy name; the sentence gets its capital here. */
+.activity__needs::first-letter {
+  text-transform: uppercase;
+}
+
+.activity__needs-line {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink-body-soft);
+}
+
+.activity__variations {
+  display: flex;
+  gap: 10px;
+}
+
+.variation {
+  flex: 1;
+}
+
+.variation p {
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.activity--porque .variation {
+  padding: 12px 14px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 14px;
+}
+
+.activity--pasos .activity__variations {
+  gap: 20px;
+}
+
+.activity--pasos .variation .meta {
+  font-size: 12px;
+}
+
+.activity--pasos .variation p {
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.activity__why-footnote {
+  padding: 14px 16px;
+  border-radius: 14px;
+}
+
+.activity__why-footnote .meta {
+  font-size: 12px;
+}
+
+.activity__why-footnote .activity__why {
+  margin-top: 3px;
+  font-size: 15px;
+}
+
+.skeleton-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-stack--title {
+  gap: 10px;
+}
+
+.skeleton-stack--lines {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.skeleton-stack--needs {
+  gap: 8px;
+}
+
+.skeleton-stack--steps {
+  gap: 14px;
+}
+
+.skeleton-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeleton-step .skeleton:last-child {
+  flex: 0 1 auto;
+}
+
+.activity-footer {
+  gap: 10px;
+  padding-top: 14px;
+  padding-bottom: calc(34px + env(safe-area-inset-bottom));
+}
+
+.header-clock {
+  min-height: 48px;
+  padding: 0 14px;
+  margin-right: -6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-accent);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-pressed);
+}
+
+/* 2o El reloj */
+
+.timer {
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 0 32px;
+  text-align: center;
+}
+
+.timer__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--primary);
+}
+
+.timer__clock {
+  font-family: var(--font-display);
+  font-size: 104px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.timer__hint {
+  max-width: 250px;
+  font-size: 20px;
+  line-height: 1.45;
+  color: var(--ink-body);
+}

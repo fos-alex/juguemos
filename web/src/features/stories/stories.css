@@ -1,0 +1,142 @@
+/* 2r ¿Cuál leemos hoy? */
+
+.story-options {
+  gap: 14px;
+  padding-top: 22px;
+}
+
+.story-option {
+  padding: 18px;
+}
+
+.story-option__title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.story-option__teaser {
+  display: block;
+  margin-top: 7px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink-body-soft);
+}
+
+.story-option__time {
+  margin-top: 10px;
+}
+
+.story-option--skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 122px;
+}
+
+/* The family's own shelf, below the three options. */
+
+.story-library {
+  margin-top: 30px;
+  display: grid;
+  gap: 14px;
+}
+
+.story-library__heading {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-body-soft);
+}
+
+/* 2s / 2t / 2u Lectura */
+
+.screen--reading .header {
+  padding-right: 26px;
+}
+
+.reading {
+  gap: 20px;
+  padding: 22px 30px 8px;
+}
+
+.story-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--primary);
+}
+
+.story,
+.story__part,
+.story-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.story {
+  max-width: 36ch;
+  font-size: 21px;
+}
+
+.story p {
+  font-size: 21px;
+  line-height: 1.65;
+  color: var(--ink-reading);
+  text-wrap: pretty;
+}
+
+.story-skeleton__paragraph {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Each placeholder line is exactly one line of story text tall, so nothing reflows. */
+.story-skeleton__line {
+  display: flex;
+  align-items: center;
+  height: calc(21px * 1.65);
+}
+
+.reading-footer {
+  gap: 14px;
+  padding: 16px 30px calc(38px + env(safe-area-inset-bottom));
+}
+
+/* While the story is written: the night toggle on the left, the dots centred. */
+.reading-footer--waiting {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  justify-items: center;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+
+.reading-footer--waiting .theme-toggle {
+  justify-self: start;
+}
+
+.progress {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--hairline);
+}
+
+.progress__fill {
+  width: 0;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--progress-fill);
+}
+
+.progress__count {
+  font-size: 14px;
+  white-space: nowrap;
+  color: var(--ink-faint);
+}

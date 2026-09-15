@@ -1,12 +1,5 @@
 import { OfflineError, WordedError } from './http'
 
-/** @typedef {import('../api/types').Activity} Activity */
-
-/** Where an activity happens, as the parent reads it. @param {Activity['place']} place */
-export function placeText(place) {
-  return place === 'outdoor' ? 'afuera' : 'adentro'
-}
-
 /** @param {number} seconds */
 export function clockText(seconds) {
   const minutes = Math.floor(seconds / 60)

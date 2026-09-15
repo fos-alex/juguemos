@@ -1,6 +1,4 @@
-// The screens not yet moved into a feature import the API from here. The
-// account, family, voice, and toys modules live in their features.
+// The admin, not yet moved into a feature, imports the API from here. Every
+// other module lives in its feature.
 export { ApiError, OfflineError } from '../shared/http'
-export { NothingFitsError, suggestActivity } from '../features/activities/api'
-export { storyOptions, writeStory, savedStories, savedStory } from '../features/stories/api'
 export { createTemplate, deleteTemplate, listTemplates, loadTemplate, saveTemplate } from './admin'

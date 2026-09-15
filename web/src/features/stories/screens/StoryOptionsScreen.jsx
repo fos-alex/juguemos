@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { savedStories, savedStory, storyOptions } from '../../../api'
-import { TertiaryButton } from '../../../shared/ui/Buttons'
-import { Card, MetaLabel, Skeleton } from '../../../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { useNavigate } from '@tanstack/react-router'
+import { savedStories, savedStory, storyOptions } from '../api'
+import { OptionSkeleton } from '../components/OptionSkeleton'
+import { failureText } from '../../../shared/format'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
-import { failureText } from '../../../shared/format'
 import { useStored } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
+import { Body, Card, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import '../stories.css'
 
-/** @typedef {import('../../../api/types').SavedStorySummary} SavedStorySummary */
-
-export const Route = createFileRoute('/cuentos')({
-  component: StoryOptionsScreen,
-})
+/** @typedef {import('../types').SavedStorySummary} SavedStorySummary */
 
 /**
  * 2r, and the family's own shelf of already-written stories below it. Three
@@ -23,7 +19,7 @@ export const Route = createFileRoute('/cuentos')({
  * art, no illustration, no mascot. The library is offscreen content, so its
  * fetch may come and go quietly — the options are the story.
  */
-function StoryOptionsScreen() {
+export function StoryOptionsScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const online = useOnline()
@@ -33,6 +29,8 @@ function StoryOptionsScreen() {
   const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))
   const [notice, setNotice] = useState(/** @type {string | null} */ (null))
   const started = useRef(false)
+
+  useDocumentTitle('Hora del cuento · Juguemos')
 
   /** @param {string[]} exclude */
   const load = async (exclude) => {
@@ -48,7 +46,6 @@ function StoryOptionsScreen() {
   }
 
   useEffect(() => {
-    document.title = 'Hora del cuento · Juguemos'
     if (options || started.current) return
     started.current = true
     void load([])
@@ -126,15 +123,5 @@ function StoryOptionsScreen() {
         </TertiaryButton>
       </Footer>
     </Screen>
-  )
-}
-
-function OptionSkeleton() {
-  return (
-    <div className="card story-option story-option--skeleton" aria-hidden="true">
-      <Skeleton width="86%" height={20} />
-      <Skeleton width="64%" height={14} />
-      <Skeleton width={42} height={11} />
-    </div>
   )
 }

@@ -1,16 +1,13 @@
-import { useEffect } from 'react'
-import { createFileRoute, Navigate, useNavigate } from '@tanstack/react-router'
-import { SecondaryButton, TertiaryButton } from '../../../shared/ui/Buttons'
-import { MetaLabel } from '../../../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
+import { stopTimer } from '../api'
+import { placeText } from '../model'
+import { clockText } from '../../../shared/format'
 import { useCountdown } from '../../../shared/hooks/useCountdown'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
-import { clockText, placeText } from '../../../shared/format'
-import { useStored, write } from '../../../shared/store'
-
-export const Route = createFileRoute('/idea/$id/reloj')({
-  component: TimerScreen,
-})
+import { useStored } from '../../../shared/store'
+import { Body, Footer, Header, MetaLabel, Screen, SecondaryButton, TertiaryButton } from '../../../shared/ui'
+import '../activities.css'
 
 /**
  * 2o. The timer exists to get the phone out of the parent's hand. It counts
@@ -18,8 +15,8 @@ export const Route = createFileRoute('/idea/$id/reloj')({
  * silent at zero. The app never logs or reports how long they played.
  * Copy on this screen needs a voice pass.
  */
-function TimerScreen() {
-  const { id } = Route.useParams()
+export function TimerScreen() {
+  const { id } = useParams({ from: '/idea/$id/reloj' })
   const navigate = useNavigate()
   const goBack = useGoBack('/idea/$id', { id })
   const activity = useStored('activities')?.[id]
@@ -27,15 +24,13 @@ function TimerScreen() {
   const mine = timer?.activityId === id
   const remaining = useCountdown(mine ? timer.endsAt : null)
 
-  useEffect(() => {
-    if (activity) document.title = `${clockText(remaining)} · ${activity.title}`
-  }, [activity, remaining])
+  useDocumentTitle(activity && `${clockText(remaining)} · ${activity.title}`)
 
   if (!activity || !mine) return <Navigate to="/idea/$id" params={{ id }} replace />
 
   const finish = async () => {
     await navigate({ to: '/', replace: true })
-    write('timer', null)
+    stopTimer()
   }
 
   return (

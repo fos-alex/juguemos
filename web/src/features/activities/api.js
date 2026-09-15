@@ -5,7 +5,7 @@
 import { read, write } from '../../shared/store'
 import { ApiError, request, WordedError } from '../../shared/http'
 
-/** @typedef {import('../../api/types').Activity} Activity */
+/** @typedef {import('./types').Activity} Activity */
 
 /** Nothing in the catalog fits this family yet: a state to word plainly, not a failure. */
 export class NothingFitsError extends WordedError {
@@ -30,4 +30,24 @@ export async function suggestActivity({ after = null } = {}) {
   write('activities', { ...read('activities'), [activity.id]: activity })
   write('lastActivityId', activity.id)
   return activity
+}
+
+/** Remembers the juego on screen as the last one, for Home's card. @param {string} id */
+export function rememberLast(id) {
+  write('lastActivityId', id)
+}
+
+/**
+ * Starts the timer for an activity, from its own estimate. There is one
+ * timer; starting it for another activity replaces it.
+ * @param {string} activityId
+ * @param {number} minutes
+ */
+export function startTimer(activityId, minutes) {
+  write('timer', { activityId, endsAt: Date.now() + minutes * 60_000 })
+}
+
+/** Ends the timer. Nothing about it is kept. */
+export function stopTimer() {
+  write('timer', null)
 }

@@ -1,0 +1,82 @@
+/* The app's menu (2k), in the drawer */
+
+.drawer__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 16px 22px 0;
+}
+
+.drawer__account {
+  padding: 24px 22px 0;
+}
+
+.drawer__name {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 500;
+}
+
+.drawer__email {
+  margin-top: 3px;
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+.drawer__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 22px 12px 0;
+}
+
+.drawer__item {
+  width: 100%;
+  min-height: 54px;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.25;
+  text-align: left;
+  color: var(--ink);
+}
+
+.drawer__item.is-current {
+  background: var(--surface-quiet);
+  font-weight: 500;
+  color: var(--primary-pressed);
+}
+
+.drawer__item--muted {
+  color: var(--ink-muted);
+}
+
+.drawer__upcoming {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  margin: 12px 14px 0;
+  border: 1.5px dashed var(--dashed);
+  border-radius: 14px;
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+
+.drawer__footer {
+  padding: 0 12px calc(32px + env(safe-area-inset-bottom));
+}
+
+.drawer__footer::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 0 14px 10px;
+  background: var(--hairline);
+}

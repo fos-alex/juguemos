@@ -1,19 +1,28 @@
-import { useEffect, useRef, useState } from 'react'
-import { createFileRoute, Navigate } from '@tanstack/react-router'
-import { savedStory, writeStory } from '../../../api'
-import { Dots, TertiaryButton } from '../../../shared/ui/Buttons'
-import { MetaLabel, Skeleton } from '../../../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
-import { ThemeToggle } from '../../../shared/ui/ThemeToggle'
+import { useEffect, useState } from 'react'
+import { Navigate, useParams } from '@tanstack/react-router'
+import { savedStory, writeStory } from '../api'
+import { StoryProgress } from '../components/StoryProgress'
+import { StorySkeleton } from '../components/StorySkeleton'
+import { StoryText } from '../components/StoryText'
+import { groupByPart } from '../model'
+import { failureText } from '../../../shared/format'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useWakeLock } from '../../../shared/hooks/useWakeLock'
-import { failureText } from '../../../shared/format'
-import { read, useStored, write } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-
-export const Route = createFileRoute('/cuento/$id')({
-  component: ReadingScreen,
-})
+import { read, useStored } from '../../../shared/store'
+import {
+  Body,
+  Dots,
+  Footer,
+  Header,
+  MetaLabel,
+  Screen,
+  Skeleton,
+  StatusLine,
+  TertiaryButton,
+  ThemeToggle,
+} from '../../../shared/ui'
+import '../stories.css'
 
 /**
  * 2s then 2t. The page fills itself: the title is already set and the text
@@ -22,8 +31,8 @@ export const Route = createFileRoute('/cuento/$id')({
  * marks position in the story, never achievement. Night mode is one tap away
  * in the footer, under the thumb.
  */
-function ReadingScreen() {
-  const { id } = Route.useParams()
+export function ReadingScreen() {
+  const { id } = useParams({ from: '/cuento/$id' })
   const goBack = useGoBack('/cuentos')
   const awake = useWakeLock()
   const story = useStored('stories')?.[id]
@@ -65,9 +74,7 @@ function ReadingScreen() {
   const title = story?.title ?? option?.title
   const minutes = story?.minutes ?? option?.minutes
 
-  useEffect(() => {
-    if (title) document.title = `${title} · Juguemos`
-  }, [title])
+  useDocumentTitle(title && `${title} · Juguemos`)
 
   if (!title && !looking) return <Navigate to="/cuentos" replace />
 
@@ -107,110 +114,4 @@ function ReadingScreen() {
       )}
     </Screen>
   )
-}
-
-/** @param {{ parts: string[][], done: boolean }} props */
-function StoryText({ parts, done }) {
-  return (
-    <div className="story" aria-busy={!done}>
-      {parts.map((part, index) => (
-        <section key={index} className="story__part" data-part={index}>
-          {part.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </section>
-      ))}
-    </div>
-  )
-}
-
-/** Placeholder paragraphs whose lines have the story's own line height. @param {{ paragraphs: number }} props */
-function StorySkeleton({ paragraphs }) {
-  const shapes = [
-    ['100%', '100%', '72%'],
-    ['100%', '88%', '46%'],
-    ['64%'],
-  ].slice(0, paragraphs)
-  return (
-    <div className="story-skeleton" aria-hidden="true">
-      {shapes.map((lines, index) => (
-        <div key={index} className="story-skeleton__paragraph">
-          {lines.map((width, line) => (
-            <span key={line} className="story-skeleton__line">
-              <Skeleton width={width} height={17} tone="soft" />
-            </span>
-          ))}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/**
- * Position in the story ("1 de 3") and a bar that follows the scroll. The
- * position is saved, so a reopened story resumes where it was left.
- * @param {{ id: string, total: number }} props
- */
-function StoryProgress({ id, total }) {
-  const bar = useRef(/** @type {HTMLDivElement | null} */ (null))
-  const fill = useRef(/** @type {HTMLDivElement | null} */ (null))
-  const count = useRef(/** @type {HTMLSpanElement | null} */ (null))
-
-  useEffect(() => {
-    const scrollable = () => document.documentElement.scrollHeight - window.innerHeight
-    const saved = read('storyPositions')?.[id]
-    if (saved) window.scrollTo(0, saved * scrollable())
-
-    let saveTimer = 0
-    const update = () => {
-      const max = scrollable()
-      const progress = max > 0 ? Math.min(1, window.scrollY / max) : 1
-      if (fill.current) fill.current.style.width = `${progress * 100}%`
-
-      const readingLine = window.innerHeight * 0.4
-      const parts = [...document.querySelectorAll('.story__part')]
-      const current = Math.max(1, parts.filter((part) => part.getBoundingClientRect().top < readingLine).length)
-      const label = `${current} de ${total}`
-      if (count.current) count.current.textContent = label
-      bar.current?.setAttribute('aria-valuenow', String(current))
-      bar.current?.setAttribute('aria-valuetext', label)
-
-      window.clearTimeout(saveTimer)
-      saveTimer = window.setTimeout(() => write('storyPositions', { ...read('storyPositions'), [id]: progress }), 400)
-    }
-
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => {
-      window.clearTimeout(saveTimer)
-      window.removeEventListener('scroll', update)
-      window.removeEventListener('resize', update)
-    }
-  }, [id, total])
-
-  return (
-    <Footer sticky row className="reading-footer">
-      <ThemeToggle />
-      <div
-        ref={bar}
-        className="progress"
-        role="progressbar"
-        aria-label="Parte del cuento"
-        aria-valuemin={1}
-        aria-valuemax={total}
-      >
-        <div ref={fill} className="progress__fill" />
-      </div>
-      <span ref={count} className="progress__count" aria-hidden="true" />
-    </Footer>
-  )
-}
-
-/** @param {{ part: number, text: string }[]} paragraphs */
-function groupByPart(paragraphs) {
-  /** @type {string[][]} */
-  const parts = []
-  for (const { part, text } of paragraphs) (parts[part] ??= []).push(text)
-  return parts.filter(Boolean)
 }

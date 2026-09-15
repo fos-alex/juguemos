@@ -5,7 +5,7 @@ export { FamilyScreen } from './screens/FamilyScreen'
 export { ReviewScreen } from './screens/ReviewScreen'
 export { TellScreen } from './screens/TellScreen'
 export { WhoPlays } from './components/WhoPlays'
-export { choosePlaying, loadFamily, upgradeCachedFamily } from './api'
+export { choosePlaying, loadFamily, markPlaying, upgradeCachedFamily } from './api'
 export { familyLine } from './model'
 
 /** @typedef {import('./types').Family} Family */

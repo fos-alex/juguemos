@@ -1,25 +1,26 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { suggestActivity } from '../../../api'
-import { choosePlaying, familyLine, loadFamily, WhoPlays } from '../../family'
-import { placeText } from '../../../shared/format'
+import { useNavigate } from '@tanstack/react-router'
+import { AppMenu } from '../../../app/AppMenu'
+import { placeText, suggestActivity } from '../../activities'
+import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
+import { forgetOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useOfflineNotice } from '../../../shared/hooks/useOfflineNotice'
 import { useRequest } from '../../../shared/hooks/useRequest'
 import { useSerialSaves } from '../../../shared/hooks/useSerialSaves'
-import { useTheme } from '../../../shared/hooks/useTheme'
-import { useStored, write } from '../../../shared/store'
-import { PrimaryButton, SecondaryButton } from '../../../shared/ui/Buttons'
-import { Card, MetaLabel } from '../../../shared/ui/Card'
-import { Drawer } from '../../../shared/ui/Drawer'
-import { OfflineNotice } from '../../../shared/ui/OfflineNotice'
-import { Footer, Screen } from '../../../shared/ui/Screen'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-import { Wordmark } from '../../../shared/ui/Wordmark'
-
-export const Route = createFileRoute('/')({
-  component: HomeScreen,
-})
+import { useStored } from '../../../shared/store'
+import {
+  Card,
+  Footer,
+  MetaLabel,
+  OfflineNotice,
+  PrimaryButton,
+  Screen,
+  SecondaryButton,
+  StatusLine,
+  Wordmark,
+} from '../../../shared/ui'
+import '../home.css'
 
 const SLOW_AFTER_MS = 6000
 
@@ -32,11 +33,10 @@ const SLOW_AFTER_MS = 6000
  * streaks, or a nudge about days since last played. With more than one kid,
  * the parent picks who's playing above the buttons (JUG-107).
  */
-function HomeScreen() {
+export function HomeScreen() {
   const navigate = useNavigate()
   const offline = useOfflineNotice()
   const { online } = offline
-  const account = useStored('account')
   const family = useStored('family')
   const lastId = useStored('lastActivityId')
   const last = useStored('activities')?.[lastId]
@@ -44,7 +44,6 @@ function HomeScreen() {
   // Choices are saved one after another, and a juego or a story waits for the last one.
   const saves = useSerialSaves()
   const [menuOpen, setMenuOpen] = useState(false)
-  const { dark, toggle: toggleTheme } = useTheme()
   const picking = (family?.kids.length ?? 0) > 1
 
   useDocumentTitle('Juguemos')
@@ -63,7 +62,7 @@ function HomeScreen() {
     const playing = kid.playing !== false
     if (playing && family.kids.filter((each) => each.playing !== false).length === 1) return
     const kids = family.kids.map((each) => (each.id === kid.id ? { ...each, playing: !playing } : each))
-    write('family', { ...family, kids })
+    markPlaying(kids)
     request.reset()
     const ids = kids.filter((each) => each.playing !== false).map((each) => /** @type {string} */ (each.id))
     saves.add(
@@ -88,14 +87,8 @@ function HomeScreen() {
     setMenuOpen(false)
     if (!online) return offline.tap()
     await saves.settled()
-    write('storyOptions', null)
+    forgetOptions()
     void navigate({ to: '/cuentos' })
-  }
-
-  /** @param {'/familia' | '/juguetes' | '/ajustes'} to */
-  const go = (to) => {
-    setMenuOpen(false)
-    void navigate({ to })
   }
 
   return (
@@ -153,46 +146,7 @@ function HomeScreen() {
         </SecondaryButton>
       </Footer>
 
-      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} label="Menú">
-        <div className="drawer__header">
-          <button type="button" className="close-button" aria-label="Cerrar el menú" onClick={() => setMenuOpen(false)}>
-            ✕
-          </button>
-          <Wordmark />
-        </div>
-        {account && (
-          <div className="drawer__account">
-            <p className="drawer__name">{account.name}</p>
-            <p className="drawer__email">{account.email}</p>
-          </div>
-        )}
-        <nav className="drawer__nav" aria-label="Secciones">
-          <button type="button" className="drawer__item is-current" aria-current="page" onClick={() => setMenuOpen(false)}>
-            ¡Juguemos!
-          </button>
-          <button type="button" className="drawer__item" onClick={() => void openStories()}>
-            Hora del cuento
-          </button>
-          <button type="button" className="drawer__item" onClick={() => go('/familia')}>
-            Mi familia
-          </button>
-          {/* JUG-94, before the 0.2 design. Voice pass pending. */}
-          <button type="button" className="drawer__item" onClick={() => go('/juguetes')}>
-            El baúl de juguetes
-          </button>
-          {/* Where el diario and recuerdos land. */}
-          <div className="drawer__upcoming">próximas funciones</div>
-        </nav>
-        <div className="drawer__footer">
-          {/* Voice pass pending. Stays open, so the parent sees the switch happen. */}
-          <button type="button" className="drawer__item drawer__item--muted" onClick={toggleTheme}>
-            {dark ? 'Modo día' : 'Modo noche'}
-          </button>
-          <button type="button" className="drawer__item drawer__item--muted" onClick={() => go('/ajustes')}>
-            Ajustes
-          </button>
-        </div>
-      </Drawer>
+      <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} onStories={() => void openStories()} />
     </Screen>
   )
 }

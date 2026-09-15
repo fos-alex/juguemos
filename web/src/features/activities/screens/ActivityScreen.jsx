@@ -1,28 +1,34 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute, Navigate, useNavigate } from '@tanstack/react-router'
-import { suggestActivity } from '../../../api'
+import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
+import { rememberLast, startTimer, suggestActivity } from '../api'
 import { ActivitySkeleton, ActivityView } from '../components/ActivityView'
-import { PrimaryButton, SecondaryButton } from '../../../shared/ui/Buttons'
-import { MetaLabel, Skeleton } from '../../../shared/ui/Card'
-import { Body, Footer, Header, Screen } from '../../../shared/ui/Screen'
+import { placeText } from '../model'
+import { clockText, failureText } from '../../../shared/format'
 import { useCountdown } from '../../../shared/hooks/useCountdown'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
-import { clockText, failureText, placeText } from '../../../shared/format'
-import { useStored, write } from '../../../shared/store'
-import { StatusLine } from '../../../shared/ui/StatusLine'
-
-export const Route = createFileRoute('/idea/$id/')({
-  component: ActivityScreen,
-})
+import { useStored } from '../../../shared/store'
+import {
+  Body,
+  Footer,
+  Header,
+  MetaLabel,
+  PrimaryButton,
+  Screen,
+  SecondaryButton,
+  Skeleton,
+  StatusLine,
+} from '../../../shared/ui'
+import '../activities.css'
 
 /**
  * 2m, with 2p as its swap state. "Otra idea" turns the blocks into
  * placeholders in place and pushes the next idea, so back returns to the
  * previous one. No counter of ideas seen, no shuffle animation.
  */
-function ActivityScreen() {
-  const { id } = Route.useParams()
+export function ActivityScreen() {
+  const { id } = useParams({ from: '/idea/$id/' })
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const online = useOnline()
@@ -33,10 +39,10 @@ function ActivityScreen() {
   const [swap, setSwap] = useState(/** @type {'idle' | 'loading' | 'offline' | 'error'} */ ('idle'))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
 
+  useDocumentTitle(activity && `${activity.title} · Juguemos`)
+
   useEffect(() => {
-    if (!activity) return
-    write('lastActivityId', id)
-    document.title = `${activity.title} · Juguemos`
+    if (activity) rememberLast(id)
   }, [id, activity])
 
   if (!activity) return <Navigate to="/" replace />
@@ -61,7 +67,7 @@ function ActivityScreen() {
 
   // The timer belongs to the activity: starting again reopens the running clock.
   const start = () => {
-    if (!running) write('timer', { activityId: id, endsAt: Date.now() + activity.minutes * 60_000 })
+    if (!running) startTimer(id, activity.minutes)
     void navigate({ to: '/idea/$id/reloj', params: { id } })
   }
 
