@@ -3,9 +3,9 @@
  * lives in an httpOnly cookie; the store keeps only what the screens show.
  * Email verification is still mocked in ./mock, and Google arrives in 0.3.
  */
-import { clearAll, read, write } from '../lib/store'
+import { clearAll, read, write } from '../shared/store'
 import { loadFamily } from './family'
-import { ApiError, endSession, request } from './http'
+import { ApiError, endSession, request } from '../shared/http'
 
 /** @typedef {import('./types').Account} Account */
 

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { resendCode, verifyEmail, WrongCodeError } from '../api'
-import { PrimaryButton, TertiaryButton } from '../components/Buttons'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { useCountdown } from '../hooks/useCountdown'
-import { useGoBack } from '../hooks/useGoBack'
-import { clockText, failureText } from '../lib/format'
-import { useStored } from '../lib/store'
+import { PrimaryButton, TertiaryButton } from '../shared/ui/Buttons'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { useCountdown } from '../shared/hooks/useCountdown'
+import { useGoBack } from '../shared/hooks/useGoBack'
+import { clockText, failureText } from '../shared/format'
+import { useStored } from '../shared/store'
 
 export const Route = createFileRoute('/verificar')({
   component: VerifyScreen,

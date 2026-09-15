@@ -1,5 +1,5 @@
-import { Card, Label, MetaLabel, Skeleton } from './Card'
-import { StepList } from './StepList'
+import { Card, Label, MetaLabel, Skeleton } from '../shared/ui/Card'
+import { StepList } from '../shared/ui/StepList'
 
 /** @typedef {import('../api/types').Activity} Activity */
 

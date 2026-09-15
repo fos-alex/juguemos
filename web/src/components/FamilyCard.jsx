@@ -1,5 +1,5 @@
-import { MetaLabel } from './Card'
-import { ageText } from '../lib/format'
+import { MetaLabel } from '../shared/ui/Card'
+import { ageText } from '../shared/format'
 
 /** @typedef {import('../api/types').Family} Family */
 

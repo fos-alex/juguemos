@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, Navigate, useNavigate } from '@tanstack/react-router'
 import { saveFamily } from '../api'
-import { PrimaryButton, QuietButton, SecondaryButton } from '../components/Buttons'
+import { PrimaryButton, QuietButton, SecondaryButton } from '../shared/ui/Buttons'
 import { FamilyCard } from '../components/FamilyCard'
-import { Body, Footer, Screen } from '../components/Screen'
-import { failureText } from '../lib/format'
-import { read } from '../lib/store'
+import { Body, Footer, Screen } from '../shared/ui/Screen'
+import { failureText } from '../shared/format'
+import { read } from '../shared/store'
 
 export const Route = createFileRoute('/familia/revisar')({
   component: ReviewScreen,

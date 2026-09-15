@@ -2,8 +2,8 @@
  * The toy box (JUG-18), against the real API. Every change also updates the
  * cached family's toys, so Mi familia and the family form see it at once.
  */
-import { read, write } from '../lib/store'
-import { request } from './http'
+import { read, write } from '../shared/store'
+import { request } from '../shared/http'
 
 /** @typedef {import('./types').Toy} Toy */
 /** @typedef {import('./types').ToyBox} ToyBox */

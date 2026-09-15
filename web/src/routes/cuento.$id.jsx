@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { savedStory, writeStory } from '../api'
-import { Dots, TertiaryButton } from '../components/Buttons'
-import { MetaLabel, Skeleton } from '../components/Card'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { ThemeToggle } from '../components/ThemeToggle'
-import { useGoBack } from '../hooks/useGoBack'
-import { useWakeLock } from '../hooks/useWakeLock'
-import { failureText } from '../lib/format'
-import { read, useStored, write } from '../lib/store'
+import { Dots, TertiaryButton } from '../shared/ui/Buttons'
+import { MetaLabel, Skeleton } from '../shared/ui/Card'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { ThemeToggle } from '../shared/ui/ThemeToggle'
+import { useGoBack } from '../shared/hooks/useGoBack'
+import { useWakeLock } from '../shared/hooks/useWakeLock'
+import { failureText } from '../shared/format'
+import { read, useStored, write } from '../shared/store'
 
 export const Route = createFileRoute('/cuento/$id')({
   component: ReadingScreen,

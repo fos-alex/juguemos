@@ -2,8 +2,8 @@
  * Activities, against the real API. Each suggestion is also kept in the
  * local store, which is what keeps the last one readable offline.
  */
-import { read, write } from '../lib/store'
-import { ApiError, request } from './http'
+import { read, write } from '../shared/store'
+import { ApiError, request } from '../shared/http'
 
 /** @typedef {import('./types').Activity} Activity */
 

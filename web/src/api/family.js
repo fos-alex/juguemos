@@ -4,8 +4,8 @@
  * which has room for more pets. The rest of what is known about each toy is
  * the toy box's (./toys).
  */
-import { read, write } from '../lib/store'
-import { ApiError, request } from './http'
+import { read, write } from '../shared/store'
+import { ApiError, request } from '../shared/http'
 
 /** @typedef {import('./types').Family} Family */
 /**

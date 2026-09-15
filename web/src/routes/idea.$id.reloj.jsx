@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { createFileRoute, Navigate, useNavigate } from '@tanstack/react-router'
-import { SecondaryButton, TertiaryButton } from '../components/Buttons'
-import { MetaLabel } from '../components/Card'
-import { Body, Footer, Header, Screen } from '../components/Screen'
-import { useCountdown } from '../hooks/useCountdown'
-import { useGoBack } from '../hooks/useGoBack'
-import { clockText, placeText } from '../lib/format'
-import { useStored, write } from '../lib/store'
+import { SecondaryButton, TertiaryButton } from '../shared/ui/Buttons'
+import { MetaLabel } from '../shared/ui/Card'
+import { Body, Footer, Header, Screen } from '../shared/ui/Screen'
+import { useCountdown } from '../shared/hooks/useCountdown'
+import { useGoBack } from '../shared/hooks/useGoBack'
+import { clockText, placeText } from '../shared/format'
+import { useStored, write } from '../shared/store'
 
 export const Route = createFileRoute('/idea/$id/reloj')({
   component: TimerScreen,
