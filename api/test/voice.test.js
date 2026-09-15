@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { TranscriptionError } from '../src/voice/transcriber.js'
+import { UpstreamError } from '../src/errors.js'
 import { MAX_NOTE_BYTES } from '../src/voice/voice.routes.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
@@ -113,7 +113,7 @@ test('a recording over the limit is refused before it reaches the service', asyn
 
 test('when the service fails, the parent gets the plain failure and no details', async () => {
   const failing = fakeTranscriber(() => {
-    throw new TranscriptionError('The speech-to-text service answered HTTP 500: model not loaded')
+    throw new UpstreamError('The speech-to-text service answered HTTP 500: model not loaded')
   })
   const api2 = await startApi({ signupEmails: ['falla@example.com'], transcriber: failing })
   const { cookie } = await signUpAs(api2, 'falla@example.com')

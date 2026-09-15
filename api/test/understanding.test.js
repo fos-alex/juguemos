@@ -156,7 +156,8 @@ test('/me says whether a family can start from text, and without an LLM the endp
     const meWithout = await noLlm.inject({ method: 'GET', url: '/me', headers: { cookie } })
     assert.equal(meWithout.json().familyFromText, false)
     const refused = await noLlm.inject({ method: 'POST', url: '/family/understanding', headers: { cookie }, payload: { text: TEXT } })
-    assert.equal(refused.statusCode, 500)
+    assert.equal(refused.statusCode, 503, 'a server with no LLM says the feature is off, not that it failed')
+    assert.equal(refused.json().code, 'LLM_OFF')
   } finally {
     await noLlm.close()
   }

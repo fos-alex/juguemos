@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { after, before, test } from 'node:test'
 import { ConfigError, DEFAULT_STT_MODEL, loadConfig } from '../src/config.js'
-import { createTranscriber, TranscriptionError } from '../src/voice/transcriber.js'
+import { UpstreamError } from '../src/errors.js'
+import { createTranscriber } from '../src/voice/transcriber.js'
 
 /** @typedef {{ url: string | undefined, headers: import('node:http').IncomingHttpHeaders, form: FormData }} Received */
 
@@ -79,7 +80,7 @@ test('a hosted service gets its key, and no hints means no prompt', async () => 
   assert.equal(/** @type {File} */ (request.form.get('file')).name, 'nota.webm')
 })
 
-test('a refused request throws TranscriptionError with the reason, for the log', async () => {
+test('a refused request throws UpstreamError with the reason, for the log', async () => {
   answer = (response) => {
     response.writeHead(404, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({ detail: 'Model not installed' }))
@@ -87,16 +88,16 @@ test('a refused request throws TranscriptionError with the reason, for the log',
   const transcriber = createTranscriber({ config: { url: baseUrl, model: 'whisper-x', apiKey: null } })
   await assert.rejects(
     transcriber?.transcribe({ audio: AUDIO, type: 'audio/webm' }) ?? Promise.resolve(),
-    (error) => error instanceof TranscriptionError && /HTTP 404/.test(error.message) && /not installed/.test(error.message),
+    (error) => error instanceof UpstreamError && /HTTP 404/.test(error.message) && /not installed/.test(error.message),
   )
 })
 
-test('an answer without text throws TranscriptionError', async () => {
+test('an answer without text throws UpstreamError', async () => {
   answer = json({ segments: [] })
   const transcriber = createTranscriber({ config: { url: baseUrl, model: 'whisper-x', apiKey: null } })
   await assert.rejects(
     transcriber?.transcribe({ audio: AUDIO, type: 'audio/webm' }) ?? Promise.resolve(),
-    (error) => error instanceof TranscriptionError && /without text/.test(error.message),
+    (error) => error instanceof UpstreamError && /without text/.test(error.message),
   )
 })
 

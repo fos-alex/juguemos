@@ -1,3 +1,5 @@
+import { errorBody } from '../http/schemas.js'
+
 /** @typedef {ReturnType<typeof import('./accounts.controller.js').createAccountsController>} AccountsController */
 
 // The response schema is also the allowlist of what leaves the server: fields
@@ -34,5 +36,5 @@ const meResponse = {
  * @param {{ controller: AccountsController }} options
  */
 export async function accountsRoutes(app, { controller }) {
-  app.get('/me', { schema: { response: { 200: meResponse } } }, controller.me)
+  app.get('/me', { schema: { response: { 200: meResponse, 401: errorBody, 500: errorBody } } }, controller.me)
 }

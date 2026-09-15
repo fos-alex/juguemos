@@ -1,8 +1,9 @@
+import { errorBody, text, uuid as id } from '../http/schemas.js'
+
 /** @typedef {ReturnType<typeof import('./families.controller.js').createFamiliesController>} FamiliesController */
 
-const id = { type: 'string', format: 'uuid' }
-/** @param {number} maxLength */
-const text = (maxLength) => ({ type: 'string', minLength: 1, maxLength })
+// What every route here can refuse with: bad input, no session, or our own fault.
+const errors = { 400: errorBody, 401: errorBody, 500: errorBody }
 
 const named = {
   type: 'object',
@@ -116,12 +117,17 @@ const understanding = {
  * @param {{ controller: FamiliesController }} options
  */
 export async function familiesRoutes(app, { controller }) {
-  app.get('/family', { schema: { response: { 200: profile } } }, controller.get)
-  app.put('/family', { schema: { body: profileInput, response: { 200: profile } } }, controller.save)
-  app.put('/family/playing', { schema: { body: playingInput, response: { 200: profile } } }, controller.choosePlaying)
+  app.get('/family', { schema: { response: { 200: profile, ...errors, 404: errorBody } } }, controller.get)
+  app.put('/family', { schema: { body: profileInput, response: { 200: profile, ...errors } } }, controller.save)
+  app.put(
+    '/family/playing',
+    { schema: { body: playingInput, response: { 200: profile, ...errors, 404: errorBody } } },
+    controller.choosePlaying,
+  )
+  // 503 with LLM_OFF when this server has no LLM to read the text with.
   app.post(
     '/family/understanding',
-    { schema: { body: understandingInput, response: { 200: understanding } } },
+    { schema: { body: understandingInput, response: { 200: understanding, ...errors, 503: errorBody } } },
     controller.understand,
   )
 }

@@ -1,11 +1,15 @@
+import { errorBody, text, uuid as id } from '../http/schemas.js'
 import { MATERIAL_KEYS } from './materials.js'
 import { MAX_TOYS } from './toys.service.js'
 
 /** @typedef {ReturnType<typeof import('./toys.controller.js').createToysController>} ToysController */
 
-const id = { type: 'string', format: 'uuid' }
-/** @param {number} maxLength */
-const text = (maxLength) => ({ type: 'string', minLength: 1, maxLength })
+// Every route here needs a session and a family, so 401 and 409 are always
+// possible; a route that takes input can also refuse it, and one that names a
+// toy can answer that there is no such toy.
+const errors = { 401: errorBody, 409: errorBody, 500: errorBody }
+const inputErrors = { ...errors, 400: errorBody }
+const toyErrors = { ...inputErrors, 404: errorBody }
 
 const toy = {
   type: 'object',
@@ -75,27 +79,29 @@ const materialsInput = {
 }
 
 /**
+ * The toy box, for an adult who has already saved a family.
  * @param {import('fastify').FastifyInstance} app
- * @param {{ controller: ToysController, guards: import('fastify').preHandlerAsyncHookHandler[] }} options
+ * @param {{ controller: ToysController }} options
  */
-export async function toysRoutes(app, { controller, guards }) {
-  app.get('/family/toys', { preHandler: guards, schema: { response: { 200: toyList } } }, controller.list)
-  app.post('/family/toys', { preHandler: guards, schema: { body: newToy, response: { 201: toy } } }, controller.add)
+export async function toysRoutes(app, { controller }) {
+  const config = { access: 'family' }
+  app.get('/family/toys', { config, schema: { response: { 200: toyList, ...errors } } }, controller.list)
+  app.post('/family/toys', { config, schema: { body: newToy, response: { 201: toy, ...inputErrors } } }, controller.add)
   app.patch(
     '/family/toys/:id',
-    { preHandler: guards, schema: { params: toyParams, body: toyChanges, response: { 200: toy } } },
+    { config, schema: { params: toyParams, body: toyChanges, response: { 200: toy, ...toyErrors } } },
     controller.edit,
   )
-  app.delete('/family/toys/:id', { preHandler: guards, schema: { params: toyParams } }, controller.remove)
+  app.delete('/family/toys/:id', { config, schema: { params: toyParams, response: toyErrors } }, controller.remove)
   app.put(
     '/family/toys/:id/links',
-    { preHandler: guards, schema: { params: toyParams, body: linksInput, response: { 200: toyList } } },
+    { config, schema: { params: toyParams, body: linksInput, response: { 200: toyList, ...toyErrors } } },
     controller.link,
   )
-  app.get('/family/materials', { preHandler: guards, schema: { response: { 200: materialList } } }, controller.materials)
+  app.get('/family/materials', { config, schema: { response: { 200: materialList, ...errors } } }, controller.materials)
   app.put(
     '/family/materials',
-    { preHandler: guards, schema: { body: materialsInput, response: { 200: materialList } } },
+    { config, schema: { body: materialsInput, response: { 200: materialList, ...inputErrors } } },
     controller.chooseMaterials,
   )
 }

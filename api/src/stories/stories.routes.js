@@ -1,4 +1,11 @@
+import { errorBody, uuid } from '../http/schemas.js'
+
 /** @typedef {ReturnType<typeof import('./stories.controller.js').createStoriesController>} StoriesController */
+
+// Every route here needs a session and a family, so 401 and 409 are always
+// possible; a route that names a story can answer that there is no such story.
+const errors = { 400: errorBody, 401: errorBody, 409: errorBody, 500: errorBody }
+const storyErrors = { ...errors, 404: errorBody }
 
 const option = {
   type: 'object',
@@ -42,7 +49,7 @@ const optionsQuery = {
   additionalProperties: false,
   properties: {
     // The options already on screen, for "Otras opciones".
-    exclude: { type: 'array', maxItems: 20, items: { type: 'string', format: 'uuid' } },
+    exclude: { type: 'array', maxItems: 20, items: uuid },
   },
 }
 
@@ -50,40 +57,49 @@ const writeBody = {
   type: 'object',
   additionalProperties: false,
   required: ['templateId'],
-  properties: { templateId: { type: 'string', format: 'uuid' } },
+  properties: { templateId: uuid },
 }
 
 const streamBody = {
   type: 'object',
   additionalProperties: false,
   required: ['id'],
-  properties: { id: { type: 'string', format: 'uuid' } },
+  properties: { id: uuid },
 }
 
 /**
- * The stream itself has no response schema: its events are described by the
- * service's `StoryEvent`, and the errors between them are regular ones.
- * Everything else on the line answers only with what its schema lets out.
+ * Stories for an adult who has already saved a family. The stream has no
+ * schema for its 200: it hijacks the reply and sends server-sent events,
+ * described by the service's `StoryEvent`. What it can refuse with before the
+ * stream starts is a regular response, so it declares those statuses.
  *
  * @param {import('fastify').FastifyInstance} app
- * @param {{ controller: StoriesController, guards: import('fastify').preHandlerAsyncHookHandler[] }} options
+ * @param {{ controller: StoriesController }} options
  */
-export async function storiesRoutes(app, { controller, guards }) {
+export async function storiesRoutes(app, { controller }) {
+  const config = { access: 'family' }
   app.get(
     '/stories/options',
-    { preHandler: guards, schema: { querystring: optionsQuery, response: { 200: { type: 'array', items: option } } } },
+    { config, schema: { querystring: optionsQuery, response: { 200: { type: 'array', items: option }, ...errors } } },
     controller.options,
   )
-  app.post('/stories', { preHandler: guards, schema: { body: writeBody, response: { 200: story } } }, controller.write)
-  app.post('/stories/write', { preHandler: guards, schema: { body: streamBody } }, controller.writeStream)
+  app.post(
+    '/stories',
+    { config, schema: { body: writeBody, response: { 200: story, ...storyErrors } } },
+    controller.write,
+  )
+  app.post('/stories/write', { config, schema: { body: streamBody, response: storyErrors } }, controller.writeStream)
   app.get(
     '/stories',
-    { preHandler: guards, schema: { response: { 200: { type: 'array', items: savedStory } } } },
+    { config, schema: { response: { 200: { type: 'array', items: savedStory }, ...errors } } },
     controller.list,
   )
   app.get(
     '/stories/:id',
-    { preHandler: guards, schema: { params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } } }, response: { 200: story } } },
+    {
+      config,
+      schema: { params: { type: 'object', properties: { id: uuid } }, response: { 200: story, ...storyErrors } },
+    },
     controller.find,
   )
 }

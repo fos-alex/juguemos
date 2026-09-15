@@ -1,4 +1,5 @@
-import { AppError, ValidationError } from '../errors.js'
+import { userOf } from '../auth/session.js'
+import { AppError, UnavailableError, ValidationError } from '../errors.js'
 
 /** @typedef {ReturnType<typeof import('./voice.service.js').createVoiceService>} VoiceService */
 
@@ -20,13 +21,13 @@ export function createVoiceController({ voice }) {
      * can say voice notes are off instead of failing like a bug.
      * @type {import('fastify').RouteHandlerMethod}
      */
-    async transcribe(request, reply) {
-      if (!voice.available) return reply.code(503).send({ error: 'Voice notes are off', code: 'VOICE_OFF' })
+    async transcribe(request) {
+      if (!voice.available) throw new UnavailableError('Voice notes are off', 'VOICE_OFF')
       const audio = request.body
       // Only an audio Content-Type arrives as a buffer; text and JSON are parsed as themselves.
       if (!Buffer.isBuffer(audio)) throw new AppError('A voice note is audio', 415, 'NOT_AUDIO')
       if (audio.length < MIN_BYTES) throw new ValidationError('The recording is empty', 'EMPTY_NOTE')
-      const text = await voice.transcribe(request.session.user.id, {
+      const text = await voice.transcribe(userOf(request).id, {
         audio,
         type: mediaTypeOf(request.headers['content-type']),
       })
