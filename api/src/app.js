@@ -52,23 +52,33 @@ import { createVoiceService } from './voice/voice.service.js'
  * notes are off.
  */
 export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber }) {
+  const app = Fastify({ logger })
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
   // Every activity and story template comes from here.
   const catalog = createCatalogService({ db })
   const activities = createActivitiesService({ db, catalog, families, random })
   // One LLM for stories and for reading a family's text; null without a key.
-  const model = llm ?? createLlm({ config: config.llm })
-  const stories = createStoriesService({ db, catalog, families, random, now, llm: model })
+  const llmClient = llm ?? createLlm({ config: config.llm })
+  // `model` is the model's name, which the story audit records beside each call.
+  const stories = createStoriesService({
+    db,
+    catalog,
+    families,
+    random,
+    now,
+    llm: llmClient,
+    model: config.llm.model,
+    logger: app.log,
+  })
   // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.
   const audit = createAuditService({ db, enabled: config.audit.transcripts })
-  const understanding = createUnderstanding({ llm: model, audit })
+  const understanding = createUnderstanding({ llm: llmClient, audit })
   const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families, audit })
   const auth = createAuth({ config: config.auth, db })
   const requireSession = createRequireSession(auth)
   const requireFamily = createRequireFamily(families)
 
-  const app = Fastify({ logger })
   app.decorateRequest('session', null)
   app.decorateRequest('familyId', null)
   app.setErrorHandler(handleError)

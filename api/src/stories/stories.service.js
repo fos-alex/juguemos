@@ -11,6 +11,7 @@ import { NotFoundError } from '../errors.js'
 import { createGeneratedStories } from './generated-stories.js'
 import { storyColumns, toStory } from './shared.js'
 import { stories } from './stories.schema.js'
+import { createStoryAudit } from './story-audit.js'
 import { createTemplateStories } from './template-stories.js'
 
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
@@ -45,14 +46,29 @@ const LIBRARY_CAP = 20
  *   catalog: CatalogService,
  *   families: FamiliesService,
  *   llm?: Llm | null,
+ *   model?: string,
+ *   logger?: { error: (details: object, message: string) => void } | null,
  *   random?: () => number,
  *   now?: () => Date,
- * }} deps `llm` absent means template stories only; `now` lets tests fix the moment.
+ * }} deps `llm` absent means template stories only; `model` is the model's name,
+ *   which the story audit records; `logger` is where a failed audit row is
+ *   reported; `now` lets tests fix the moment.
  */
-export function createStoriesService({ db, catalog, families, llm = null, random = Math.random, now = () => new Date() }) {
+export function createStoriesService({
+  db,
+  catalog,
+  families,
+  llm = null,
+  model = '',
+  logger = null,
+  random = Math.random,
+  now = () => new Date(),
+}) {
   const templates = createTemplateStories({ db, catalog, families, random })
+  // What was offered, picked and written, for adjusting the casting weights (JUG-139).
+  const audit = createStoryAudit({ db, logger })
   // Built without an LLM too, since a plot's story that was already written replays without one.
-  const generated = createGeneratedStories({ db, llm, families, now })
+  const generated = createGeneratedStories({ db, llm, families, audit, model, random, now })
 
   return {
     /**

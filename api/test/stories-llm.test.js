@@ -2,17 +2,18 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { after, before, test } from 'node:test'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
+import { seededRandom } from '../src/catalog/slots.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
 /** A model that answers by hand, one chunk at a time, and remembers every call. @param {(call: { call: number, user: string }) => string | Promise<string>} respond */
 const fakeLlm = (respond) => {
-  /** @type {{ call: number, user: string }[]} */
+  /** @type {{ call: number, system: string, user: string, maxTokens?: number }[]} */
   const prompts = []
   return {
     prompts,
-    async *stream({ user }) {
+    async *stream({ system, user, maxTokens }) {
       const call = prompts.length + 1
-      prompts.push({ call, user })
+      prompts.push({ call, system, user, maxTokens })
       const text = await respond({ call, user })
       for (let i = 0; i < text.length; i += 3) {
         await new Promise((resolve) => setTimeout(resolve, 0))
@@ -22,13 +23,16 @@ const fakeLlm = (respond) => {
   }
 }
 
-const OPTIONS_JSON = (suffix) =>
+/** The three prompts an options screen sent, as one text. @param {{ prompts: { user: string }[] }} model */
+const lastScreen = (model) => model.prompts.slice(-3).map((prompt) => prompt.user).join('\n')
+
+/** One plot per call, since every option is its own call now. */
+const PLOT = (n) =>
   JSON.stringify({
-    tramas: [
-      { title: `Milán y el turno de la mañana ${suffix}`, teaser: 'Inca despierta a todo.', minutes: 4, premise: 'Milán e Inca salen a la plaza y vuelven a tiempo.' },
-      { title: `El tren grandote ${suffix}`, teaser: 'Un paseo por todas las habitaciones.', minutes: 3, premise: 'El tren recorre la casa y conoce cada rincón.' },
-      { title: `El caballo percherón ${suffix}`, teaser: 'Un amigo nuevo en el corral.', minutes: 5, premise: 'Un caballo nuevo llega y nadie duerme.' },
-    ],
+    title: `Trama ${n}`,
+    teaser: `La número ${n}.`,
+    minutes: 4,
+    premise: 'Salen a la plaza con el tren grandote. Vuelven a tiempo para la merienda.',
   })
 
 const STORY = `PARTE 1
@@ -66,14 +70,14 @@ const emails = Array.from({ length: 20 }, (_, i) => `llm-${i}@example.com`)
 let emailCount = 0
 const signUp = () => signUpAs(api, emails[emailCount++])
 before(async () => {
-  llm = fakeLlm(({ call, user }) =>
   // The options call asks for JSON; the story call asks for PARTE 1.
-  user.includes('Contestá solo con un objeto JSON') ? (call === 1 ? OPTIONS_JSON('primera') : OPTIONS_JSON('otra')) : STORY,
-)
-  // After 19:00 in Buenos Aires the stories are bedtime ones: TRANQUI.
+  llm = fakeLlm(({ call, user }) => (user.includes('Contestá solo con un objeto JSON') ? PLOT(call) : STORY))
+  // After 19:00 in Buenos Aires the stories are bedtime ones: TRANQUI. The
+  // seeded random makes the casting draw the same on every run.
   api = await startApi({
     signupEmails: emails,
     now: () => new Date('2026-09-14T21:00:00-03:00'),
+    random: seededRandom('cuentos'),
     llm,
   })
   await createCatalogService({ db: api.db }).addStoryTemplate({
@@ -109,11 +113,17 @@ test('with the LLM, options are plot options written for the family and saved', 
   const list = response.json()
   assert.equal(list.length, 3)
   for (const option of list) assert.match(option.id, /^[0-9a-f-]{36}$/)
-  assert.equal(list[0].title, 'Milán y el turno de la mañana primera')
+  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2', 'Trama 3'])
+  // Milán is two, so band 2 runs three to four minutes.
   assert.equal(list[0].minutes, 4)
 
-  const { rows } = await api.pool.query('select count(*)::int as n from story_plots')
-  assert.equal(rows[0].n, 3)
+  const { rows } = await api.pool.query('select casting from story_plots')
+  assert.equal(rows.length, 3)
+  for (const row of rows) {
+    assert.ok(row.casting.lead.name, 'every plot keeps the casting it was drawn for')
+    assert.ok(row.casting.draws.anchorIn >= 0)
+    assert.equal(row.casting.weights.anchorIn, 0.85)
+  }
 })
 
 test('the options ask for a bedtime story at night, and its history reaches the model', async () => {
@@ -121,9 +131,25 @@ test('the options ask for a bedtime story at night, and its history reaches the 
   await putFamily(api, cookie, EXAMPLE_PROFILE)
   await options(cookie)
 
-  assert.match(llm.prompts[0].user, /La familia va a leer un cuento a TRANQUI, antes de dormir/)
-  assert.match(llm.prompts[0].user, /Milán, de 2 años/)
-  assert.match(llm.prompts[0].user, /La mascota: Inca/)
+  const screen = lastScreen(llm)
+  assert.equal(screen.match(/La familia va a leer un cuento a TRANQUI, antes de dormir/g).length, 3)
+  assert.match(screen, /Milán, de 2 años/)
+  assert.match(screen, /El reparto de este cuento:/)
+  assert.match(screen, /Protagonista: /)
+})
+
+test('the system prompt carries one band and one moment, and nothing else', async () => {
+  const { cookie } = await signUp()
+  await putFamily(api, cookie, EXAMPLE_PROFILE)
+  await options(cookie)
+
+  const { system, maxTokens } = llm.prompts.at(-1)
+  assert.match(system, /Sos el narrador de cuentos de Juguemos/)
+  assert.match(system, /Cómo se escribe para este chico: DOS AÑOS/)
+  assert.match(system, /El momento: TRANQUI, antes de dormir/)
+  assert.doesNotMatch(system, /UN AÑO|TRES AÑOS|CUATRO AÑOS|CINCO AÑOS/)
+  assert.doesNotMatch(system, /CON PILAS/)
+  assert.equal(maxTokens, 400, 'an option is a short answer')
 })
 
 test('asking for other options retires the older plots and keeps the ones on screen', async () => {
@@ -143,50 +169,63 @@ test('asking for other options retires the older plots and keeps the ones on scr
   assert.ok(!first.some((option) => alive.has(option.id)), 'the screen nobody can see any more is gone')
 })
 
-test('a malformed answer from the model is tried once more', async () => {
-  llm = fakeLlm(({ call }) => (call === 1 ? 'eso no es json' : OPTIONS_JSON('de nuevo')))
-  const api2 = await startApi({ signupEmails: ['carla@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm })
+test('an option whose answer is malformed is asked once more, and the others do not wait for it', async () => {
+  // The first option answers with prose, then with a plot that lacks a
+  // premise, and only its third try lands; the other two answer straight away.
+  const noPremise = JSON.stringify({ title: 'Sin premisa', teaser: 'Nada más.', minutes: 3 })
+  const retryLlm = fakeLlm(({ call }) => (call === 1 ? 'eso no es json' : call === 4 ? noPremise : PLOT(call)))
+  const api2 = await startApi({
+    signupEmails: ['carla@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('carla'),
+    llm: retryLlm,
+  })
   const { cookie } = await signUpAs(api2, 'carla@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
   const response = await options(cookie, [], api2)
   assert.equal(response.statusCode, 200)
-  assert.equal(response.json()[0].title, 'Milán y el turno de la mañana de nuevo')
-  assert.equal(llm.prompts.length, 2)
+  // The first option gave up after its second try; the other two are on screen.
+  assert.deepEqual(response.json().map((option) => option.title), ['Trama 2', 'Trama 3'])
+  assert.equal(retryLlm.prompts.length, 4, 'three options, and one of them asked twice')
+  const { rows } = await api2.pool.query(`select count(*)::int as n from story_audit where event = 'offered'`)
+  assert.equal(rows[0].n, 2)
+  await api2.close()
+})
+
+test('an option that answers on the second try is offered with the rest', async () => {
+  const secondTry = fakeLlm(({ call }) => (call === 1 ? 'eso no es json' : PLOT(call)))
+  const api2 = await startApi({
+    signupEmails: ['nico@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('nico'),
+    llm: secondTry,
+  })
+  const { cookie } = await signUpAs(api2, 'nico@example.com')
+  await putFamily(api2, cookie, EXAMPLE_PROFILE)
+
+  const response = await options(cookie, [], api2)
+  assert.equal(response.statusCode, 200)
+  assert.deepEqual(response.json().map((option) => option.title), ['Trama 4', 'Trama 2', 'Trama 3'])
+  assert.equal(secondTry.prompts.length, 4)
   await api2.close()
 })
 
 test('the moment is Buenos Aires time, whatever the server clock says', async () => {
-  const dayLlm = fakeLlm(() => OPTIONS_JSON('de tarde'))
+  const dayLlm = fakeLlm(({ call }) => PLOT(call))
   // 20:00 UTC is 17:00 in Buenos Aires: still daytime.
-  const api2 = await startApi({ signupEmails: ['eli@example.com'], now: () => new Date('2026-09-14T20:00:00Z'), llm: dayLlm })
+  const api2 = await startApi({
+    signupEmails: ['eli@example.com'],
+    now: () => new Date('2026-09-14T20:00:00Z'),
+    random: seededRandom('eli'),
+    llm: dayLlm,
+  })
   const { cookie } = await signUpAs(api2, 'eli@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
   await options(cookie, [], api2)
   assert.match(dayLlm.prompts[0].user, /CON PILAS, de día/)
-  await api2.close()
-})
-
-test('an answer whose options all lack a field is tried once more, and only three options are kept', async () => {
-  const incomplete = JSON.stringify({ tramas: [{ title: 'Sin premisa', teaser: 'Nada más.', minutes: 3 }] })
-  const five = JSON.stringify({
-    tramas: [1, 2, 3, 4, 5].map((n) => ({ title: `Trama ${n}`, teaser: 'Un paseo.', minutes: 3, premise: 'Salen a la plaza.' })),
-  })
-  const sloppyLlm = fakeLlm(({ call }) => (call === 1 ? incomplete : five))
-  const api2 = await startApi({ signupEmails: ['fede@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: sloppyLlm })
-  const { cookie } = await signUpAs(api2, 'fede@example.com')
-  await putFamily(api2, cookie, EXAMPLE_PROFILE)
-
-  const response = await options(cookie, [], api2)
-  assert.equal(response.statusCode, 200)
-  assert.deepEqual(
-    response.json().map((option) => option.title),
-    ['Trama 1', 'Trama 2', 'Trama 3'],
-  )
-  assert.equal(sloppyLlm.prompts.length, 2)
-  const { rows } = await api2.pool.query('select count(*)::int as n from story_plots')
-  assert.equal(rows[0].n, 3)
+  assert.match(dayLlm.prompts[0].system, /El momento: CON PILAS, de día/)
   await api2.close()
 })
 
@@ -202,7 +241,7 @@ test('a reader who leaves mid-story stops the story, and nothing is saved', { ti
   const slowLlm = {
     async *stream({ user }) {
       if (user.includes('Contestá solo con un objeto JSON')) {
-        yield OPTIONS_JSON('lenta')
+        yield PLOT(1)
         return
       }
       try {
@@ -214,7 +253,12 @@ test('a reader who leaves mid-story stops the story, and nothing is saved', { ti
       }
     },
   }
-  const api2 = await startApi({ signupEmails: ['gabi@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: slowLlm })
+  const api2 = await startApi({
+    signupEmails: ['gabi@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('gabi'),
+    llm: slowLlm,
+  })
   const { cookie } = await signUpAs(api2, 'gabi@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
   const [option] = (await options(cookie, [], api2)).json()
@@ -243,14 +287,22 @@ test('a reader who leaves mid-story stops the story, and nothing is saved', { ti
 
 test('when the model will not answer, the family hears about it, not a template', async () => {
   const deadLlm = fakeLlm(() => '')
-  const api2 = await startApi({ signupEmails: ['dani@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: deadLlm })
+  const api2 = await startApi({
+    signupEmails: ['dani@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('dani'),
+    llm: deadLlm,
+  })
   const { cookie } = await signUpAs(api2, 'dani@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
   const response = await options(cookie, [], api2)
   assert.equal(response.statusCode, 500)
+  assert.equal(deadLlm.prompts.length, 6, 'three options, each asked twice')
   const { rows } = await api2.pool.query('select count(*)::int as n from story_plots')
   assert.equal(rows[0].n, 0)
+  const audit = await api2.pool.query('select count(*)::int as n from story_audit')
+  assert.equal(audit.rows[0].n, 0)
   await api2.close()
 })
 
@@ -277,8 +329,65 @@ test('the chosen plot streams paragraph by paragraph and then saves the story', 
   assert.equal(final.story.parts.length, 3)
   assert.equal(final.story.parts[1].length, 2)
 
-  const { rows } = await api.pool.query('select source from stories where plot_id = $1', [option.id])
-  assert.deepEqual(rows, [{ source: 'generated' }])
+  const { rows } = await api.pool.query('select source, casting from stories where plot_id = $1', [option.id])
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].source, 'generated')
+  assert.ok(rows[0].casting.lead.name, 'the story keeps the casting it was written for')
+  // The story call repeats the casting and gets the band's word budget.
+  const story = llm.prompts.at(-1)
+  assert.match(story.user, /El reparto de este cuento:/)
+  assert.match(story.system, /Cómo se escribe para este chico: DOS AÑOS/)
+  assert.equal(story.maxTokens, 450 * 3)
+})
+
+test('the audit records what was offered, what was picked, and what was written', async () => {
+  const { cookie } = await signUp()
+  const family = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
+  const [option] = (await options(cookie)).json()
+  events((await stream(cookie, option.id)).body.toString())
+
+  const { rows } = await api.pool.query(
+    'select event, band, mood, plot_id, keyword, casting, details from story_audit where family_id = $1 order by created_at, event',
+    [family.id],
+  )
+  assert.equal(rows.filter((row) => row.event === 'offered').length, 3)
+  for (const row of rows) {
+    assert.equal(row.band, '2')
+    assert.equal(row.mood, 'calm')
+    assert.equal(row.keyword, null)
+    assert.ok(row.casting.lead.name)
+  }
+  const offered = rows.find((row) => row.event === 'offered' && row.plot_id === option.id)
+  assert.equal(offered.details.attempt, 1)
+  assert.equal(offered.details.wildcard, false)
+  assert.ok(offered.details.msTotal >= 0 && offered.details.msFirstToken >= 0)
+
+  const picked = rows.find((row) => row.event === 'picked')
+  assert.equal(picked.plot_id, option.id)
+
+  const written = rows.find((row) => row.event === 'written')
+  assert.equal(written.plot_id, option.id)
+  assert.equal(written.details.parts, 3)
+  assert.equal(written.details.paragraphs, 7)
+  assert.equal(written.details.words, 42)
+  assert.equal(written.details.wordsMin, 300)
+  assert.equal(written.details.wordsMax, 450)
+  assert.equal(written.details.insideBand, false, 'the fake story is far shorter than the band asks for')
+  assert.ok(written.details.msTotal >= 0)
+})
+
+test('reading a story again writes no second picked row', async () => {
+  const { cookie } = await signUp()
+  const family = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
+  const [option] = (await options(cookie)).json()
+  events((await stream(cookie, option.id)).body.toString())
+  events((await stream(cookie, option.id)).body.toString())
+
+  const { rows } = await api.pool.query(
+    `select count(*)::int as n from story_audit where family_id = $1 and event = 'picked'`,
+    [family.id],
+  )
+  assert.equal(rows[0].n, 1)
 })
 
 test('reading the same plot again replays the saved story, without the model', async () => {
@@ -337,8 +446,13 @@ test('the library lists the family stories, newest first, and opens one', async 
 })
 
 test('plots are for the kids playing, and their story stars and records those kids', async () => {
-  const kidsLlm = fakeLlm(({ user }) => (user.includes('Contestá solo con un objeto JSON') ? OPTIONS_JSON('de a uno') : STORY))
-  const api2 = await startApi({ signupEmails: ['hana@example.com'], now: () => new Date('2026-09-14T10:00:00-03:00'), llm: kidsLlm })
+  const kidsLlm = fakeLlm(({ call, user }) => (user.includes('Contestá solo con un objeto JSON') ? PLOT(call) : STORY))
+  const api2 = await startApi({
+    signupEmails: ['hana@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('hana'),
+    llm: kidsLlm,
+  })
   const { cookie } = await signUpAs(api2, 'hana@example.com')
   const profile = (
     await putFamily(api2, cookie, {
@@ -356,13 +470,15 @@ test('plots are for the kids playing, and their story stars and records those ki
 
   await choosePlaying([sofi.id])
   const [option] = (await options(cookie, [], api2)).json()
-  assert.match(kidsLlm.prompts[0].user, /Los chicos: Sofi, de 4 años\./)
+  // Sofi is four, so her band is the one that reaches the model.
+  assert.match(lastScreen(kidsLlm), /Los chicos: Sofi, de 4 años\./)
+  assert.match(kidsLlm.prompts[0].system, /Cómo se escribe para este chico: CUATRO AÑOS/)
 
   // Milán joining after the plot was proposed doesn't change who its story is for.
   await choosePlaying([milan.id, sofi.id])
   const response = await api2.app.inject({ method: 'POST', url: '/stories/write', headers: { cookie }, payload: { id: option.id } })
   assert.ok(events(response.body.toString()).some((event) => event.type === 'story'))
-  assert.match(kidsLlm.prompts[1].user, /Los chicos: Sofi, de 4 años\./)
+  assert.doesNotMatch(kidsLlm.prompts.at(-1).user, /Milán/, 'the story is for the kids the plot was drawn for')
   const { rows } = await api2.pool.query('select kid_ids::text[] as kids from stories where plot_id = $1', [option.id])
   assert.deepEqual(rows[0].kids, [sofi.id])
   await api2.close()
