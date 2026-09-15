@@ -69,7 +69,7 @@ npm run build      # production build to web/dist, to check it; `docker compose 
 
 ### API
 
-`api/src` is layered by domain (`accounts/`, `families/`, `activities/`, `stories/`, `voice/`, `health/`, `auth/`, plus `catalog/` for template slots and `admin/` for the catalog admin): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
+`api/src` is layered by domain (`accounts/`, `families/`, `toys/`, `activities/`, `stories/`, `voice/`, `health/`, `auth/`, plus `catalog/` for the templates, their slots, and the catalog admin): routes map URLs to controllers, controllers speak HTTP, and services hold the business logic and the queries, through Drizzle ORM. `app.js` wires every dependency in one place, and `config.js` validates the environment at startup.
 
 The schema is code, in each domain's `<domain>.schema.js`, and drizzle-kit generates the SQL migrations in `api/migrations/` from it. `docker compose up --build` applies them in a one-shot `migrate` service after the build and before the API starts, then loads the catalog templates the database doesn't have yet (`api/seeds/catalog/`). The API only starts if both succeed, and running them again is a no-op.
 
