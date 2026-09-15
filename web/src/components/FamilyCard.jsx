@@ -58,6 +58,6 @@ function familyRows(family) {
     const interests = family.interests.join(' · ')
     rows.push({ field: 'interests', label: 'Le encanta', value: interests[0].toUpperCase() + interests.slice(1) })
   }
-  if (family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.join(' · ') })
+  if (family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.map((toy) => toy.name).join(' · ') })
   return rows
 }

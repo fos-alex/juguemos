@@ -9,7 +9,12 @@ import { failureText } from '../lib/format'
 import { read } from '../lib/store'
 
 /** @typedef {import('../api/types').Family} Family */
-/** @typedef {{ kids: { id?: string, name: string, age: string }[], pet: string, interests: string[], toys: string[] }} FormState */
+/**
+ * @typedef {{
+ *   kids: { id?: string, name: string, age: string }[], pet: string, interests: string[],
+ *   toys: import('../api/types').FamilyToy[],
+ * }} FormState
+ */
 
 export const Route = createFileRoute('/familia/corregir')({
   validateSearch: (search) => ({
@@ -188,14 +193,18 @@ function CorrectScreen() {
                   aria-label={`Juguete ${index + 1}`}
                   data-field={index === 0 ? 'toys' : undefined}
                   {...AS_TYPED}
-                  value={toy}
+                  value={toy.name}
                   onChange={(event) =>
-                    update((f) => ({ ...f, toys: f.toys.map((t, i) => (i === index ? event.target.value : t)) }))
+                    update((f) => ({ ...f, toys: f.toys.map((t, i) => (i === index ? { ...t, name: event.target.value } : t)) }))
                   }
                 />
               ))}
             </div>
-            <button type="button" className="add-link" onClick={() => update((f) => ({ ...f, toys: [...f.toys, ''] }))}>
+            <button
+              type="button"
+              className="add-link"
+              onClick={() => update((f) => ({ ...f, toys: [...f.toys, { name: '' }] }))}
+            >
               + agregar juguete
             </button>
           </div>
@@ -224,7 +233,7 @@ function toForm(family) {
     kids: kids.length > 0 ? kids : [{ name: '', age: '' }],
     pet: family?.pet ?? '',
     interests: family?.interests ?? [],
-    toys: family?.toys.length ? family.toys : [''],
+    toys: family?.toys.length ? family.toys : [{ name: '' }],
   }
 }
 
@@ -236,6 +245,7 @@ function toFamily(form) {
       .map((kid) => ({ id: kid.id, name: kid.name.trim(), age: kid.age ? Number(kid.age) : null })),
     pet: form.pet.trim(),
     interests: form.interests,
-    toys: form.toys.map((toy) => toy.trim()).filter(Boolean),
+    // Each toy keeps its id, so the toy box keeps what it knows about it.
+    toys: form.toys.map((toy) => ({ id: toy.id, name: toy.name.trim() })).filter((toy) => toy.name),
   }
 }

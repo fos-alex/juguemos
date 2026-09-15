@@ -8,7 +8,25 @@
  * `id` is missing only for a kid the form hasn't saved yet. `playing` is whether
  * the kid plays with this parent (JUG-107); a kid without it plays.
  */
-/** @typedef {{ kids: Kid[], pet: string, interests: string[], toys: string[] }} Family */
+/**
+ * @typedef {{ id?: string, name: string }} FamilyToy
+ * A toy as the family profile knows it: the family's name for it, and its id
+ * once saved, which the form sends back so the toy box keeps what it knows.
+ */
+/** @typedef {{ kids: Kid[], pet: string, interests: string[], toys: FamilyToy[] }} Family */
+/**
+ * @typedef {{
+ *   id: string, name: string, aliases: string[], description: string | null,
+ *   kidId: string | null, shared: boolean, favorite: boolean, linked: string[],
+ * }} Toy
+ * A toy in the toy box (JUG-18). `name` is the family's, shown exactly as
+ * typed; `description` is for Juguemos and never shown in its place. Whose it
+ * is: `kidId`'s, `shared`, or neither. `linked` holds the ids of the toys it
+ * goes with.
+ */
+/** @typedef {Partial<Omit<Toy, 'id' | 'linked'>>} ToyChanges */
+/** @typedef {{ key: string, label: string, have: boolean }} Material A household material, from the API's fixed list. */
+/** @typedef {{ toys: Toy[], materials: Material[] }} ToyBox */
 /**
  * @typedef {{ family: Family, flagged: string[], note: string | null }} ParseResult
  * `flagged` holds field keys ('kids.1', 'pet', 'interests', 'toys') the model was unsure about.
