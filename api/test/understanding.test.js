@@ -21,13 +21,13 @@ const answer = (overrides = {}) =>
 
 /** A model that gives one fixed answer and remembers what it was asked. @param {string} reply */
 const fakeLlm = (reply) => {
-  /** @type {{ system: string, user: string }[]} */
+  /** @type {{ system: string, user: string, data?: string }[]} */
   const calls = []
   return {
     calls,
-    /** @param {{ system: string, user: string }} call */
-    async *stream({ system, user }) {
-      calls.push({ system, user })
+    /** @param {{ system: string, user: string, data?: string }} call */
+    async *stream({ system, user, data }) {
+      calls.push({ system, user, data })
       yield reply.slice(0, 10)
       yield reply.slice(10)
     },
@@ -55,7 +55,7 @@ test('the endpoint sends the text to the model and returns the family, without s
   assert.deepEqual(response.json().unsure, [])
 
   const [call] = llm.calls
-  assert.equal(call.user, TEXT)
+  assert.equal(call.data, TEXT, "the parent's words go as data, never as instructions (JUG-90)")
   assert.match(call.system, /Solo extraés lo que el texto dice/)
 
   const saved = await api.app.inject({ method: 'GET', url: '/family', headers: { cookie } })

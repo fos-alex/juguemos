@@ -4,9 +4,14 @@
  * one client serves both; they differ only in a few headers and, for
  * OpenRouter, a data policy. Server-side only: the browser never sees the key.
  * Without a key there is no client, and stories come from the seeded templates.
+ *
+ * Every call made here carries the guardrails (JUG-90): this is the one place
+ * a request to a model is built, so it is the one place they can't be
+ * forgotten.
  */
 import { randomUUID } from 'node:crypto'
 import { UpstreamError } from '../errors.js'
+import { asData, withGuardrails } from './guardrails.js'
 import { jsonIn } from './prompt.js'
 
 /** @typedef {import('../config.js').LlmConfig} LlmConfig */
@@ -14,6 +19,9 @@ import { jsonIn } from './prompt.js'
  * @typedef {object} LlmCall
  * @property {string} system
  * @property {string} user
+ * @property {string} [data] the family's own words, which go to the model
+ *   inside the data block instead of in the instructions, so a text that
+ *   reads like an order stays a text (JUG-90)
  * @property {number} [maxTokens] the most tokens the answer may run to; left
  *   out, the provider's own limit applies
  * @property {boolean} [reasoning] false asks a reasoning model to skip its
@@ -60,11 +68,13 @@ export function createLlm({ config }) {
 
   return {
     /**
-     * The model's answer, piece by piece. Errors from the provider throw as
-     * `UpstreamError`: the log has the reason, and the client doesn't.
+     * The model's answer, piece by piece. The guardrails wrap the task's
+     * system prompt, and the family's words, when the call has any, go after
+     * the instructions inside the data block. Errors from the provider throw
+     * as `UpstreamError`: the log has the reason, and the client doesn't.
      * @param {LlmCall & { signal?: AbortSignal }} call
      */
-    async *stream({ system, user, maxTokens, reasoning, signal }) {
+    async *stream({ system, user, data, maxTokens, reasoning, signal }) {
       const { headers, body } = extras(config, { reasoning })
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
@@ -80,8 +90,8 @@ export function createLlm({ config }) {
           stream: true,
           ...(maxTokens ? { max_tokens: maxTokens } : {}),
           messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: user },
+            { role: 'system', content: withGuardrails(system) },
+            { role: 'user', content: data ? `${user}\n\n${asData(data)}` : user },
           ],
           ...body,
         }),

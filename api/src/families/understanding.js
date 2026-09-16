@@ -10,7 +10,7 @@
  */
 import { UnavailableError, UpstreamError } from '../errors.js'
 import { jsonIn } from '../llm/prompt.js'
-import familyPrompt from './prompts/family.js'
+import familyPrompt, { readFamily } from './prompts/family.js'
 
 /** How long the model gets before the parent is asked to try again. */
 const TIMEOUT_MS = 60_000
@@ -55,7 +55,8 @@ export function createUnderstanding({ llm, audit }) {
       if (!llm) throw new UnavailableError('No LLM is configured to read a family', 'LLM_OFF')
       let answer = ''
       const signal = AbortSignal.timeout(TIMEOUT_MS)
-      for await (const piece of llm.stream({ system: familyPrompt, user: text, signal })) answer += piece
+      // The parent's words go as `data`, never as instructions (JUG-90).
+      for await (const piece of llm.stream({ system: familyPrompt, user: readFamily, data: text, signal })) answer += piece
       const understood = readUnderstanding(answer, text)
       if (!understood) throw new UpstreamError('The model answered with no readable family')
       return understood

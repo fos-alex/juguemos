@@ -3,6 +3,7 @@ import { createServer } from 'node:http'
 import { after, before, test } from 'node:test'
 import { UpstreamError } from '../../src/errors.js'
 import { createLlm } from '../../src/llm/client.js'
+import { GUARDRAILS, withGuardrails } from '../../src/llm/guardrails.js'
 
 /** @typedef {{ url: string | undefined, headers: import('node:http').IncomingHttpHeaders, body: any }} Received */
 
@@ -80,7 +81,7 @@ test('OpenCode gets the model, the key, the prompts, and a new session id per st
   assert.equal(first.body.model, 'glm-5.3-flash')
   assert.equal(first.body.stream, true)
   assert.deepEqual(first.body.messages, [
-    { role: 'system', content: 'sistema' },
+    { role: 'system', content: withGuardrails('sistema') },
     { role: 'user', content: 'usuario' },
   ])
   assert.match(String(first.headers['x-opencode-session']), /^juguemos-/)
@@ -99,6 +100,20 @@ test('OpenRouter gets the app name and refuses providers that store or train on 
   assert.equal(request.headers['http-referer'], 'https://juguemos.local:3000')
   assert.equal(request.headers['x-title'], 'Juguemos')
   assert.equal(request.headers['x-opencode-session'], undefined)
+})
+
+test('every call carries the guardrails, and the family\'s words go in the data block', async () => {
+  received = []
+  answer = (response) => stream(response, ['{}'])
+  const llm = /** @type {import('../../src/llm/client.js').Llm} */ (createLlm({ config: config() }))
+  // The answer itself doesn't matter here, only what the request carried.
+  for await (const piece of llm.stream({ system: 'sistema', user: 'sacá los datos', data: 'Tenemos a Milán, de dos años.' })) {
+    assert.equal(piece, '{}')
+  }
+
+  const [{ messages }] = received.map((request) => request.body)
+  assert.ok(messages[0].content.startsWith(GUARDRAILS), 'the rules open the system prompt')
+  assert.equal(messages[1].content, 'sacá los datos\n\n<datos-de-la-familia>\nTenemos a Milán, de dos años.\n</datos-de-la-familia>')
 })
 
 test('a refused request throws UpstreamError with the provider reason', async () => {

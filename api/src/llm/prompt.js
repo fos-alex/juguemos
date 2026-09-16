@@ -5,12 +5,16 @@
  * answers with prose instead of JSON is normal and returns null.
  */
 
+import { withoutTags } from './guardrails.js'
+
 /** @typedef {Record<string, string>} Values */
 
 /**
  * Fills a prompt's `{{key}}` placeholders. A placeholder with no value throws,
  * so the prompt and the code can't drift apart quietly and no story says
- * "{{kids}}" out loud.
+ * "{{kids}}" out loud. The values are names and words the family typed, so
+ * each one loses any data tag it carries: a toy can't close the data block
+ * and have the rest of its name read as an instruction (JUG-90).
  * @param {string} template
  * @param {Values} values
  * @returns {string}
@@ -18,7 +22,7 @@
 export function render(template, values) {
   return template.replace(/{{(\w+)}}/g, (_, key) => {
     if (!(key in values)) throw new Error(`No value for the prompt's {{${key}}}`)
-    return values[key]
+    return withoutTags(values[key])
   })
 }
 
