@@ -12,5 +12,12 @@ export function createActivitiesController({ activities }) {
       const activity = await activities.suggest(familyOf(request), { after, userId: userOf(request).id })
       return reply.code(201).send(activity)
     },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async react(request) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      const { reaction } = /** @type {{ reaction: 'up' | 'down' | null }} */ (request.body)
+      return activities.react(familyOf(request), id, reaction)
+    },
   }
 }

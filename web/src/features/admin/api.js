@@ -7,6 +7,7 @@ import { request } from '../../shared/http'
 /** @typedef {import('./types').ActivityTemplate} ActivityTemplate */
 /** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
 /** @typedef {import('./types').MaterialCategory} MaterialCategory */
+/** @typedef {import('./types').Theme} Theme */
 
 const TEMPLATES = '/admin/activity-templates'
 
@@ -43,4 +44,9 @@ export async function deleteTemplate(id) {
 /** The materials a template can name, by category. @returns {Promise<MaterialCategory[]>} */
 export function listMaterials() {
   return request('GET', '/admin/materials')
+}
+
+/** The themes a template can be about. @returns {Promise<Theme[]>} */
+export function listThemes() {
+  return request('GET', '/admin/themes')
 }

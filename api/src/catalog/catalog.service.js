@@ -9,6 +9,7 @@ import { unknownPlaceholders } from './slots.js'
 import { activityTemplates, storyTemplates } from './catalog.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
 import { MATERIAL_KEYS } from '../materials/materials.js'
+import { THEME_KEYS } from './themes.js'
 
 /**
  * @typedef {object} ActivityTemplateInput
@@ -22,6 +23,7 @@ import { MATERIAL_KEYS } from '../materials/materials.js'
  * @property {string[]} categories move, create, pretend, explore, learn, low_energy, helpers, out_and_about
  * @property {boolean} smallSpace
  * @property {string[]} materials the keys, from materials/materials.js, of what it can't be played without
+ * @property {string[]} [themes] the keys, from themes.js, of what it is about; none unless set
  * @property {string[]} skills
  * @property {string[]} safety rules the tailoring may never change
  * @property {string} why
@@ -85,8 +87,8 @@ const activityTexts = (template) => [
 const storyTexts = (template) => [template.title, template.teaser, ...template.parts.flat()]
 
 /**
- * Refuses what the catalog can't hold: a slot code can't fill, a material
- * that isn't on the list, or an age range that ends before it starts.
+ * Refuses what the catalog can't hold: a slot code can't fill, a material or
+ * a theme that isn't on the list, or an age range that ends before it starts.
  * @param {ActivityTemplateUpdate & { slug?: string }} template
  */
 function checkTemplate(template) {
@@ -98,6 +100,10 @@ function checkTemplate(template) {
   const unlisted = template.materials.filter((key) => !MATERIAL_KEYS.includes(key))
   if (unlisted.length > 0) {
     throw new ValidationError(`Unknown materials in ${template.slug ?? template.title}: ${unlisted.join(', ')}`, 'UNKNOWN_MATERIALS')
+  }
+  const unknownThemes = (template.themes ?? []).filter((key) => !THEME_KEYS.includes(key))
+  if (unknownThemes.length > 0) {
+    throw new ValidationError(`Unknown themes in ${template.slug ?? template.title}: ${unknownThemes.join(', ')}`, 'UNKNOWN_THEMES')
   }
   if (template.maxAgeMonths < template.minAgeMonths) {
     throw new ValidationError('maxAgeMonths is below minAgeMonths', 'AGE_RANGE')

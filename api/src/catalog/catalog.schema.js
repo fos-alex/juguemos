@@ -6,6 +6,7 @@
 import { sql } from 'drizzle-orm'
 import { boolean, check, jsonb, pgTable, smallint, text, uuid } from 'drizzle-orm/pg-core'
 import { createdAt, timestamptz } from '../db/columns.js'
+import { THEME_KEYS } from './themes.js'
 
 // Reviewed templates tagged with the full taxonomy, whose slots ({kid}, {pet},
 // {toy}, {toy2}, {toy3}, {interest}) code fills for each family. Safety rules
@@ -26,6 +27,9 @@ export const activityTemplates = pgTable(
     // Keys from src/materials/materials.js: a family that has one of these
     // marked off is never offered the template.
     materials: text().array().notNull().default(sql`'{}'`),
+    // Keys from themes.js: what the template is about, matched against what
+    // the kids love (JUG-104).
+    themes: text().array().notNull().default(sql`'{}'`),
     skills: text().array().notNull().default(sql`'{}'`),
     safety: text().array().notNull().default(sql`'{}'`),
     why: text().notNull(),
@@ -52,6 +56,7 @@ export const activityTemplates = pgTable(
       sql`cardinality(${table.categories}) > 0 and ${table.categories} <@ array['move', 'create', 'pretend', 'explore', 'learn', 'low_energy', 'helpers', 'out_and_about']`,
     ),
     check('activity_templates_steps_check', sql`cardinality(${table.steps}) > 0`),
+    check('activity_templates_themes_check', sql`${table.themes} <@ ${sql.raw(`array[${THEME_KEYS.map((key) => `'${key}'`).join(', ')}]`)}`),
   ],
 )
 

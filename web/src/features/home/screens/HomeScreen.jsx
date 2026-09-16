@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { AppMenu } from '../../../app/AppMenu'
-import { placeText, suggestActivity } from '../../activities'
+import { placeText, ReactionRow, suggestActivity } from '../../activities'
 import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
 import { forgetOptions, LastStoryCard, storyOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
@@ -37,7 +37,9 @@ const SLOW_AFTER_MS = 6000
  * played, its card shows the time left and lets the parent end it (JUG-134).
  * The story options are asked for here, quietly, so Hora del cuento opens
  * with them already on screen (JUG-140). The last story read sits under the
- * juego, with the way to make it a series (JUG-154).
+ * juego, with the way to make it a series (JUG-154). Under the last juego,
+ * the feedback tap asks once how it went (JUG-23): it is there while the
+ * juego has no reaction, stays through the tap, and isn't asked again.
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -57,6 +59,8 @@ export function HomeScreen() {
   // Choices are saved one after another, and a juego or a story waits for the last one.
   const saves = useSerialSaves()
   const [menuOpen, setMenuOpen] = useState(false)
+  // The juego reacted to on this visit, so the chips don't vanish under the tap.
+  const [reactedTo] = useState(() => (last && last.reaction == null ? last.id : null))
   const picking = (family?.kids.length ?? 0) > 1
 
   useDocumentTitle('Ludi')
@@ -152,6 +156,7 @@ export function HomeScreen() {
               </Card>
             )
           )}
+          {!running && last && reactedTo === last.id && <ReactionRow activity={last} />}
           <LastStoryCard />
         </div>
       )}

@@ -1,10 +1,12 @@
-import { errorBody } from '../http/schemas.js'
+import { errorBody, uuid } from '../http/schemas.js'
 
 /** @typedef {ReturnType<typeof import('./activities.controller.js').createActivitiesController>} ActivitiesController */
 
+const reaction = { type: ['string', 'null'], enum: ['up', 'down', null] }
+
 const activity = {
   type: 'object',
-  required: ['id', 'title', 'minutes', 'place', 'why', 'needs', 'steps', 'easier', 'harder'],
+  required: ['id', 'title', 'minutes', 'place', 'why', 'needs', 'steps', 'easier', 'harder', 'reaction'],
   properties: {
     id: { type: 'string' },
     title: { type: 'string' },
@@ -15,6 +17,7 @@ const activity = {
     steps: { type: 'array', items: { type: 'string' } },
     easier: { type: 'string' },
     harder: { type: 'string' },
+    reaction,
   },
 }
 
@@ -27,9 +30,24 @@ const suggestion = {
   },
 }
 
+// The feedback tap (JUG-23): how the juego went, or null to take it back.
+const reactionInput = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['reaction'],
+  properties: { reaction },
+}
+
+const reacted = {
+  type: 'object',
+  required: ['id', 'reaction'],
+  properties: { id: { type: 'string' }, reaction },
+}
+
 /**
  * Activities for an adult who has already saved a family. 404 is the catalog
- * having nothing that fits it yet.
+ * having nothing that fits it yet, or a reaction to a juego that isn't the
+ * family's.
  * @param {import('fastify').FastifyInstance} app
  * @param {{ controller: ActivitiesController }} options
  */
@@ -44,5 +62,17 @@ export async function activitiesRoutes(app, { controller }) {
       },
     },
     controller.suggest,
+  )
+  app.put(
+    '/activities/:id/reaction',
+    {
+      config: { access: 'family' },
+      schema: {
+        params: { type: 'object', required: ['id'], properties: { id: uuid } },
+        body: reactionInput,
+        response: { 200: reacted, 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
+      },
+    },
+    controller.react,
   )
 }

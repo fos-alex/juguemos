@@ -1,4 +1,5 @@
 import { MATERIAL_CATEGORIES } from '../materials/materials.js'
+import { THEMES } from './themes.js'
 
 /** @typedef {import('./catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('./catalog.service.js').ActivityTemplateInput} ActivityTemplateInput */
@@ -37,6 +38,11 @@ export function createCatalogController({ catalog }) {
     /** The materials a template can name. @type {import('fastify').RouteHandlerMethod} */
     async materials() {
       return MATERIAL_CATEGORIES
+    },
+
+    /** The themes a template can be about. @type {import('fastify').RouteHandlerMethod} */
+    async themes() {
+      return THEMES.map(({ key, label }) => ({ key, label }))
     },
   }
 }

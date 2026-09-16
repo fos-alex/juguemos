@@ -62,7 +62,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const materials = createMaterialsService({ db })
   // Every activity and story template comes from here.
   const catalog = createCatalogService({ db })
-  const activities = createActivitiesService({ db, catalog, families, materials, random })
+  const activities = createActivitiesService({ db, catalog, families, materials, random, now })
   // One LLM for stories and for reading a family's text; null without a key.
   const llmClient = llm ?? createLlm({ config: config.llm })
   // `model` is the model's name, which the story audit records beside each call.

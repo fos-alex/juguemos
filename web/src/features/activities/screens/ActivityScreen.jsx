@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams, useRouterState } from '@tanstack/react-router'
 import { rememberLast, startTimer, suggestActivity } from '../api'
 import { ActivitySkeleton, ActivityView } from '../components/ActivityView'
+import { ReactionRow } from '../components/ReactionRow'
 import { placeText } from '../model'
 import { clockText, failureText } from '../../../shared/format'
 import { useCountdown } from '../../../shared/hooks/useCountdown'
@@ -29,7 +30,8 @@ import '../activities.css'
  *
  * A juego reached through Otro juego says so on its back button, *Juego
  * anterior*, and has the way straight to Home in the top bar (JUG-155). The
- * mark is kept in that history entry, so it survives a reload.
+ * mark is kept in that history entry, so it survives a reload. Under the
+ * juego, the feedback tap (JUG-23), which is where a reaction can be changed.
  */
 export function ActivityScreen() {
   const { id } = useParams({ from: '/idea/$id/' })
@@ -106,7 +108,14 @@ export function ActivityScreen() {
         trailing={trailing}
       />
       <Body className="activity-body">
-        {loading ? <ActivitySkeleton /> : <ActivityView activity={activity} />}
+        {loading ? (
+          <ActivitySkeleton />
+        ) : (
+          <>
+            <ActivityView activity={activity} />
+            <ReactionRow activity={activity} className="activity__reaction" />
+          </>
+        )}
       </Body>
       <Footer sticky className="activity-footer">
         <StatusLine role="status">{notice}</StatusLine>

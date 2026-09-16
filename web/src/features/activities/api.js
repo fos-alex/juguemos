@@ -32,6 +32,26 @@ export async function suggestActivity({ after = null } = {}) {
   return activity
 }
 
+/**
+ * Saves how a juego went, or takes the reaction back with null (JUG-23). The
+ * store changes first, so the chip answers the tap, and changes back if the
+ * API refuses.
+ * @param {string} id
+ * @param {Activity['reaction']} reaction
+ */
+export async function reactToActivity(id, reaction) {
+  const activities = read('activities') ?? {}
+  const before = activities[id]
+  if (!before) return
+  write('activities', { ...activities, [id]: { ...before, reaction } })
+  try {
+    await request('PUT', `/activities/${id}/reaction`, { reaction })
+  } catch (error) {
+    write('activities', { ...read('activities'), [id]: before })
+    throw error
+  }
+}
+
 /** Remembers the juego on screen as the last one, for Home's card. @param {string} id */
 export function rememberLast(id) {
   write('lastActivityId', id)

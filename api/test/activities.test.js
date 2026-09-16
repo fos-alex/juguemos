@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
+import { DEFAULT_WEIGHTS } from '../src/activities/ranking.js'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
@@ -15,6 +16,7 @@ const template = (overrides) => ({
   categories: ['pretend'],
   smallSpace: true,
   materials: [],
+  themes: [],
   skills: [],
   safety: [],
   why: 'Porque sí.',
@@ -54,6 +56,11 @@ before(async () => {
       'gabi@example.com',
       'hugo@example.com',
       'ines@example.com',
+      'juan@example.com',
+      'kari@example.com',
+      'lola@example.com',
+      'mati@example.com',
+      'nico@example.com',
     ],
   })
   catalog = createCatalogService({ db: api.db })
@@ -75,9 +82,14 @@ test('a suggestion is a template filled with the family words, and it is saved',
   assert.doesNotMatch(JSON.stringify(activity), /\{(kid|pet|toy2?3?|interest)\}/)
   assert.ok(['La búsqueda del dinosaurio chiquito', 'El dinosaurio chiquito tiene hambre'].includes(activity.title))
   assert.equal(activity.place, 'indoor')
+  assert.equal(activity.reaction, null)
 
-  const { rows } = await api.pool.query('select title from activities where id = $1', [activity.id])
+  // Saved as the parent saw it, with why the ranking picked it (JUG-104).
+  const { rows } = await api.pool.query('select title, pick from activities where id = $1', [activity.id])
   assert.equal(rows[0].title, activity.title)
+  assert.ok(rows[0].pick.score > 0)
+  assert.equal(rows[0].pick.fit, 1)
+  assert.deepEqual(rows[0].pick.weights, DEFAULT_WEIGHTS)
 })
 
 test('templates the family cannot fill, or that are for other ages, are never suggested', async () => {
@@ -225,4 +237,76 @@ test('a juego never needs a material the family does not have, and the common on
   assert.deepEqual(await titles(), ['Con almohadones', 'Con tizas'])
   await mark('almohadones', false)
   assert.deepEqual(await titles(), ['Con tizas'])
+})
+
+/** @param {string} cookie @param {string} id @param {unknown} reaction */
+const react = (cookie, id, reaction) =>
+  api.app.inject({ method: 'PUT', url: `/activities/${id}/reaction`, headers: { cookie }, payload: { reaction } })
+
+test('the feedback tap saves one reaction per juego, which the parent can change or take back (JUG-23)', async () => {
+  const { cookie } = await signUpAs(api, 'juan@example.com')
+  await putFamily(api, cookie, EXAMPLE_PROFILE)
+  const activity = (await suggest(cookie)).json()
+
+  let response = await react(cookie, activity.id, 'up')
+  assert.equal(response.statusCode, 200)
+  assert.deepEqual(response.json(), { id: activity.id, reaction: 'up' })
+  let { rows } = await api.pool.query('select reaction, reacted_at from activities where id = $1', [activity.id])
+  assert.equal(rows[0].reaction, 'up')
+  assert.ok(rows[0].reacted_at)
+
+  response = await react(cookie, activity.id, 'down')
+  assert.deepEqual(response.json(), { id: activity.id, reaction: 'down' })
+
+  response = await react(cookie, activity.id, null)
+  assert.deepEqual(response.json(), { id: activity.id, reaction: null })
+  ;({ rows } = await api.pool.query('select reaction, reacted_at from activities where id = $1', [activity.id]))
+  assert.equal(rows[0].reaction, null)
+  assert.equal(rows[0].reacted_at, null)
+
+  assert.equal((await react(cookie, activity.id, 'meh')).statusCode, 400)
+  assert.equal((await react(cookie, activity.id, undefined)).statusCode, 400)
+})
+
+test('a reaction goes only on the family own juegos', async () => {
+  const { cookie } = await signUpAs(api, 'kari@example.com')
+  await putFamily(api, cookie, EXAMPLE_PROFILE)
+  const { cookie: other } = await signUpAs(api, 'lola@example.com')
+  await putFamily(api, other, EXAMPLE_PROFILE)
+  const activity = (await suggest(cookie)).json()
+
+  assert.equal((await react(other, activity.id, 'up')).statusCode, 404)
+  assert.equal((await react(cookie, '00000000-0000-0000-0000-000000000000', 'up')).statusCode, 404)
+  assert.equal((await react(cookie, 'not-a-uuid', 'up')).statusCode, 400)
+  const noFamily = (await signUpAs(api, 'nico@example.com')).cookie
+  assert.equal((await react(noFamily, activity.id, 'up')).statusCode, 409)
+  assert.equal((await api.app.inject({ method: 'PUT', url: `/activities/${activity.id}/reaction`, payload: { reaction: 'up' } })).statusCode, 401)
+})
+
+test('a juego marked "No era para nosotros" stops showing up, and one about what the kid loves says so in its pick (JUG-104)', async () => {
+  await catalog.addActivityTemplate(
+    template({ slug: 'con-dinos', title: 'Rugidos de dinosaurio', minAgeMonths: 12, maxAgeMonths: 47, themes: ['dinosaurios'] }),
+  )
+  const { cookie } = await signUpAs(api, 'mati@example.com')
+  await putFamily(api, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [{ name: 'el dinosaurio chiquito' }] })
+
+  // Down the first juego the family gets that isn't the dinosaur one.
+  let first = (await suggest(cookie)).json()
+  while (first.title === 'Rugidos de dinosaurio') first = (await suggest(cookie, first.id)).json()
+  await react(cookie, first.id, 'down')
+
+  const titles = new Set()
+  let previous = first.id
+  let dinos = null
+  for (let round = 0; round < 12; round++) {
+    const activity = (await suggest(cookie, previous)).json()
+    titles.add(activity.title)
+    if (activity.title === 'Rugidos de dinosaurio') dinos = activity
+    previous = activity.id
+  }
+  assert.ok(!titles.has(first.title), `${first.title} came back`)
+  assert.ok(dinos, 'the dinosaur juego never came')
+  const { rows } = await api.pool.query('select pick from activities where id = $1', [dinos.id])
+  assert.deepEqual(rows[0].pick.themes, ['dinosaurios'])
+  assert.equal(rows[0].pick.fit, 1 + DEFAULT_WEIGHTS.interest)
 })
