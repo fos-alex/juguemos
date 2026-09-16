@@ -19,7 +19,10 @@ import { useSyncExternalStore } from 'react'
 /** @typedef {'toyBox'} ToysKey */
 /** @typedef {'materials'} MaterialsKey The categories of household materials, as the API last sent them. */
 /** @typedef {'activities' | 'lastActivityId' | 'timer'} ActivitiesKey */
-/** @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series' | 'lastStoryId'} StoriesKey */
+/**
+ * @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series' | 'lastStoryId' | 'storyRequest'} StoriesKey
+ * `storyRequest` is the story the parent asked for and said yes to, until it is written (JUG-156).
+ */
 /** @typedef {'theme'} AppKey The night-mode choice, written by app/ThemeProvider.jsx. */
 
 const PREFIX = 'ludi:'

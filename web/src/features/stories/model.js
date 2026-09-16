@@ -33,3 +33,29 @@ export function waitingVariant(ageMonths) {
  * @param {number} episodes
  */
 export const episodesLine = (episodes) => (episodes === 1 ? '1 episodio' : `${episodes} episodios`)
+
+/**
+ * What a story request says, one row for each thing, in the order a parent
+ * reads it: who is in it, where, its theme, and what happens (JUG-156). The
+ * family comes first, then the characters the note asked for, all by the
+ * words they were heard as. Voice pass pending.
+ * @param {import('./types').StoryRequest} request
+ * @returns {{ label: string, value: string }[]}
+ */
+export function requestRows(request) {
+  const who = [...request.family, ...request.characters]
+  const rows = [
+    { label: 'Con', value: who.join(', ') },
+    { label: 'Dónde', value: request.setting ?? '' },
+    { label: 'Tema', value: request.theme ?? '' },
+    // A plot that only says the summary again isn't worth a row.
+    { label: 'Qué pasa', value: request.plot && !sameText(request.plot, request.summary) ? request.plot : '' },
+  ]
+  return rows.filter((row) => row.value)
+}
+
+/** Whether two lines say the same words, whatever the case and the final stop. @param {string} a @param {string} b */
+const sameText = (a, b) => {
+  const plain = (/** @type {string} */ text) => text.toLocaleLowerCase('es').replace(/[.\s]+$/, '').trim()
+  return plain(a) === plain(b)
+}

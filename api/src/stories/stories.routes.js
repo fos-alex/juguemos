@@ -1,4 +1,5 @@
 import { errorBody, text, uuid } from '../http/schemas.js'
+import { REQUEST_LIMITS } from './requests.js'
 
 /** @typedef {ReturnType<typeof import('./stories.controller.js').createStoriesController>} StoriesController */
 
@@ -6,8 +7,8 @@ import { errorBody, text, uuid } from '../http/schemas.js'
 // possible; a route that names a story can answer that there is no such story.
 const errors = { 400: errorBody, 401: errorBody, 409: errorBody, 500: errorBody }
 const storyErrors = { ...errors, 404: errorBody }
-// Writing a story from a keyword, and every series, needs the LLM, so these
-// routes can also say it is off.
+// Writing a story from a keyword or a request, and every series, needs the
+// LLM, so these routes can also say it is off.
 const writeErrors = { ...storyErrors, 503: errorBody }
 
 /** As long as an interest the family profile lets a parent type. */
@@ -98,13 +99,38 @@ const writeBody = {
   properties: { templateId: uuid },
 }
 
-// A story to read: either one the family was offered, by its id, or an
-// interest they tapped, by its own words (JUG-140). Exactly one of the two.
+// The story a parent asked for in a voice note (JUG-156): what the API read
+// from their words, sent back once they said yes to it.
+const storyRequest = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['summary', 'family', 'characters', 'setting', 'theme', 'plot'],
+  properties: {
+    summary: { type: 'string', maxLength: REQUEST_LIMITS.summary },
+    family: { type: 'array', maxItems: REQUEST_LIMITS.names, items: text(REQUEST_LIMITS.name) },
+    characters: { type: 'array', maxItems: REQUEST_LIMITS.characters, items: text(REQUEST_LIMITS.character) },
+    setting: { type: ['string', 'null'], maxLength: REQUEST_LIMITS.line },
+    theme: { type: ['string', 'null'], maxLength: REQUEST_LIMITS.line },
+    plot: { type: ['string', 'null'], maxLength: REQUEST_LIMITS.plot },
+  },
+}
+
+// The words of a voice note asking for a story, as long as a note about the toys.
+const understandingInput = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['text'],
+  properties: { text: text(4000) },
+}
+
+// A story to read: one the family was offered, by its id, an interest they
+// tapped, by its own words (JUG-140), or the story they asked for (JUG-156).
+// Exactly one of the three.
 const streamBody = {
   type: 'object',
   additionalProperties: false,
-  properties: { id: uuid, keyword: text(KEYWORD_MAX) },
-  oneOf: [{ required: ['id'] }, { required: ['keyword'] }],
+  properties: { id: uuid, keyword: text(KEYWORD_MAX), request: storyRequest },
+  oneOf: [{ required: ['id'] }, { required: ['keyword'] }, { required: ['request'] }],
 }
 
 /**
@@ -126,6 +152,12 @@ export async function storiesRoutes(app, { controller }) {
     controller.write,
   )
   app.post('/stories/write', { config, schema: { body: streamBody, response: writeErrors } }, controller.writeStream)
+  // What story a voice note asks for (JUG-156). Only the model reads it, so it can say it is off.
+  app.post(
+    '/stories/understanding',
+    { config, schema: { body: understandingInput, response: { 200: storyRequest, ...errors, 503: errorBody } } },
+    controller.understand,
+  )
   app.get(
     '/stories',
     { config, schema: { response: { 200: { type: 'array', items: savedStory }, ...errors } } },

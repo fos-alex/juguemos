@@ -7,18 +7,21 @@
  * paragraph by paragraph the same way, saved once it ends and read again
  * from what was saved. A parent who taps one of the family's interests
  * instead gets a story on that theme with no plot behind it, written and
- * titled in one call (JUG-140). Every step writes a row in the story audit.
+ * titled in one call (JUG-140), and one who asks for a story in a voice note
+ * gets that story the same way (JUG-156). Every step writes a row in the
+ * story audit.
  */
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
 import { NotFoundError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { render } from '../llm/prompt.js'
-import { castEveryone, castingLines, castKeyword, castScreen, DEFAULT_WEIGHTS } from './casting.js'
+import { castEveryone, castingLines, castKeyword, castRequest, castScreen, DEFAULT_WEIGHTS } from './casting.js'
 import { OPTIONS, replayEvents, storyColumns, toStory } from './shared.js'
 import { stories, storyPlots } from './stories.schema.js'
 import storyOptionsPrompt from './prompts/story-options.js'
-import storyPrompt, { keywordStory } from './prompts/story.js'
+import storyPrompt, { keywordStory, requestedStory } from './prompts/story.js'
+import { requestLines } from './requests.js'
 import { systemPrompt } from './prompts/compose.js'
 import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, toPlot } from './storytelling.js'
 import { nothingKept, tellStory, tokensFor, writtenDetails } from './tell.js'
@@ -32,6 +35,7 @@ import { nothingKept, tellStory, tokensFor, writtenDetails } from './tell.js'
 /** @typedef {import('./stories.service.js').Story} Story */
 /** @typedef {import('./stories.service.js').StoryEvent} StoryEvent */
 /** @typedef {import('./stories.service.js').StoryOption} StoryOption */
+/** @typedef {import('./requests.js').StoryRequest} StoryRequest */
 /**
  * @typedef {{ type: 'option', option: StoryOption } | { type: 'done' }} OptionEvent
  *   what an options screen sends: one option as each lands, then the end
@@ -355,6 +359,83 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
         band: band.id,
         mood,
         keyword,
+        casting,
+        details: writtenDetails({ model, band, parts, kept }),
+      })
+      yield { type: 'story', story: toStory(saved) }
+    },
+
+    /**
+     * The story the parent asked for in a voice note (JUG-156), once they saw
+     * the request and said yes. Like a keyword story it has no plot: the model
+     * writes the story and its title in one call, from the request, which goes
+     * in as the family's data. The casting is the request's, not a draw, and
+     * the teaser is the request's own summary. Every request writes a new
+     * story. A reader who leaves early hears no more and nothing is saved.
+     * @param {string} familyId
+     * @param {Profile} profile the kids the story is for
+     * @param {StoryRequest} request
+     * @param {{ signal?: AbortSignal }} [options]
+     * @returns {AsyncGenerator<StoryEvent, void, void>}
+     */
+    async *writeRequest(familyId, profile, request, { signal } = {}) {
+      const mood = moodAt(now())
+      const { band } = anchorOf(profile)
+      const casting = castRequest(profile, request)
+      const kidIds = kidIdsOf(profile)
+      await audit.record('picked', { familyId, kidIds, band: band.id, mood, casting, details: { model } })
+
+      const lines = familyLines(profile, [casting])
+      const user = render(requestedStory, {
+        kids: lines.kids,
+        pet: lines.pet,
+        toys: lines.toys,
+        interests: lines.interests,
+        casting: castingLines(casting, profile),
+        minutes: String(band.minutes[1]),
+      })
+      const kept = nothingKept()
+      try {
+        const call = {
+          llm: /** @type {Llm} */ (llm),
+          system: systemPrompt({ band: band.id, mood }),
+          user,
+          data: requestLines(request),
+          maxTokens: tokensFor(band),
+          signal,
+          // Voice pass pending.
+          fallbackTitle: 'El cuento que pedimos.',
+        }
+        yield* tellStory(call, kept)
+      } catch (error) {
+        if (signal?.aborted) return
+        throw error
+      }
+
+      // The reader may have left after the last paragraph was read out.
+      if (signal?.aborted) return
+      const parts = partsOf(kept.paragraphs)
+      if (!parts) throw new UpstreamError('The story model wrote nothing readable')
+
+      const [saved] = await db
+        .insert(stories)
+        .values({
+          familyId,
+          kidIds,
+          source: 'generated',
+          title: kept.title,
+          teaser: request.summary,
+          minutes: band.minutes[1],
+          parts,
+          casting,
+        })
+        .returning(storyColumns)
+
+      await audit.record('written', {
+        familyId,
+        kidIds,
+        band: band.id,
+        mood,
         casting,
         details: writtenDetails({ model, band, parts, kept }),
       })

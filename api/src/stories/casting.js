@@ -35,9 +35,10 @@ import { anchorOf } from './storytelling.js'
  */
 /**
  * @typedef {object} Casting who one story is about
- * @property {'cast' | 'wildcard' | 'keyword'} kind a wildcard drops the family's
- *   props and asks the model to invent the setting or a secondary character; a
- *   keyword casting is one the parent asked for by tapping an interest
+ * @property {'cast' | 'wildcard' | 'keyword' | 'request'} kind a wildcard drops the
+ *   family's props and asks the model to invent the setting or a secondary
+ *   character; a keyword casting is one the parent asked for by tapping an
+ *   interest, and a request casting one they asked for in a voice note
  * @property {boolean} anchorIn
  * @property {Lead} lead
  * @property {string[]} kids the ids of the kids in the story
@@ -119,6 +120,54 @@ export function castKeyword(profile, { keyword, weights = DEFAULT_WEIGHTS, rando
     theme: keyword,
   })
   return { ...casting, kind: 'keyword' }
+}
+
+/**
+ * The casting of a story the parent asked for in a voice note (JUG-156).
+ * Nothing is drawn: the parent said who is in it. The kids it names are in
+ * it, or every kid in the profile when it names none, and the first pet and
+ * the first toy it names come along. The lead is whoever it names first from
+ * the family, or else the first character it asks for, or else the youngest
+ * kid. Its theme is the request's own.
+ * @param {Profile} profile the kids the story is for, with the pets and toys
+ * @param {import('./requests.js').StoryRequest} request
+ * @returns {Casting}
+ */
+export function castRequest(profile, request) {
+  /** @type {Lead[]} */
+  const named = []
+  for (const name of request.family) {
+    const kid = profile.kids.find((each) => each.name === name)
+    const pet = profile.pets.find((each) => each.name === name)
+    const toy = profile.toys.find((each) => each.name === name)
+    if (kid) named.push({ type: 'kid', id: kid.id, name: kid.name })
+    else if (pet) named.push({ type: 'pet', id: pet.id, name: pet.name })
+    else if (toy) named.push({ type: 'toy', id: toy.id, name: toy.name })
+  }
+  const namedKids = named.filter((lead) => lead.type === 'kid').map((lead) => /** @type {string} */ (lead.id))
+  const pet = named.find((lead) => lead.type === 'pet')
+  const toy = named.find((lead) => lead.type === 'toy')
+  const { anchor } = anchorOf(profile)
+
+  /** @type {Lead} */
+  let lead
+  if (named.length > 0) lead = named[0]
+  else if (request.characters.length > 0) lead = { type: 'new', id: null, name: request.characters[0] }
+  else if (anchor) lead = { type: 'kid', id: anchor.id, name: anchor.name }
+  else lead = { type: 'new', id: null, name: NEW_CHARACTER }
+
+  const kids = namedKids.length > 0 ? namedKids : profile.kids.map((kid) => kid.id)
+  return {
+    kind: 'request',
+    anchorIn: anchor != null && kids.includes(anchor.id),
+    lead,
+    kids,
+    pet: pet ? { id: /** @type {string} */ (pet.id), name: pet.name } : null,
+    toy: toy ? { id: /** @type {string} */ (toy.id), name: toy.name } : null,
+    theme: request.theme,
+    draws: { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null },
+    weights: DEFAULT_WEIGHTS,
+  }
 }
 
 /**
