@@ -43,7 +43,7 @@ export function testConfig({ auth, llm, stt, admin, audit, ...rest } = {}) {
 
 /** A profile close to the brief's example family. */
 export const EXAMPLE_PROFILE = {
-  kids: [{ name: 'Milán', age: 2, interests: ['los dinosaurios', 'los caballos'] }],
+  kids: [{ name: 'Milán', ageMonths: 26, interests: ['los dinosaurios', 'los caballos'] }],
   pets: [{ name: 'Inca' }],
   toys: [
     { name: 'el dinosaurio chiquito' },

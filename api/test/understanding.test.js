@@ -10,7 +10,7 @@ const TEXT =
 /** @param {object} overrides */
 const answer = (overrides = {}) =>
   JSON.stringify({
-    kids: [{ name: 'Milán', age: 2 }],
+    kids: [{ name: 'Milán', ageMonths: 26 }],
     pets: [{ name: 'Inca' }],
     interests: ['los dinosaurios', 'los caballos'],
     toys: ['un tren de madera'],

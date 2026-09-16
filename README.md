@@ -105,9 +105,9 @@ Every 0.1 screen from the Plaza handoff (`docs/design_handoff_juguemos_plaza/`) 
 
 | Email | Family |
 |---|---|
-| `prueba@juguemos.local` | A toddler and a pet: Milán, 2, and the dog Inca. Likes dinosaurs and horses, with five named toys: some described, and a linked pair of horses |
-| `bebe@juguemos.local` | A baby and no pet: Olivia, under 1. Likes songs and water, with two toys |
-| `hermanos@juguemos.local` | Two kids far apart in age: Tomás, 8, and Emma, 4, and the cat Michi. Likes football, pirates, and drawing |
+| `prueba@juguemos.local` | A toddler and a pet: Milán, 2 years and 2 months, and the dog Inca. Likes dinosaurs and horses, with five named toys: some described, and a linked pair of horses |
+| `bebe@juguemos.local` | A baby and no pet: Olivia, 8 months. Likes songs and water, with two toys |
+| `hermanos@juguemos.local` | Two kids far apart in age: Tomás, 8 years and 2 months, and Emma, 4 years and 4 months, and the cat Michi. Likes football, pirates, and drawing |
 
 They exist only on a development database: the passwords are in the repo, and the seed refuses to run in production.
 

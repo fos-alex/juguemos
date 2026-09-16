@@ -35,15 +35,14 @@ export function unknownPlaceholders(texts) {
 }
 
 /**
- * Whether a kid's age overlaps a range in months. Knowing only the years, a
- * kid of 2 is anywhere from 24 to 35 months; a kid whose age isn't known fits
- * any range.
- * @param {{ age: number | null }} kid
+ * Whether a kid's age in months is inside a range, ends included. A kid whose
+ * age isn't known fits any range.
+ * @param {{ ageMonths: number | null }} kid
  * @param {{ minAgeMonths: number, maxAgeMonths: number }} range
  */
 export function fitsAge(kid, { minAgeMonths, maxAgeMonths }) {
-  if (kid.age == null) return true
-  return kid.age * 12 <= maxAgeMonths && kid.age * 12 + 11 >= minAgeMonths
+  if (kid.ageMonths == null) return true
+  return kid.ageMonths >= minAgeMonths && kid.ageMonths <= maxAgeMonths
 }
 
 /**

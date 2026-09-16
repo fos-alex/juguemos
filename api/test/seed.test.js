@@ -15,7 +15,7 @@ const accounts = [
     password: 'una-clave-larga',
     family: {
       name: 'Familia de prueba',
-      kids: [{ name: 'Milán', age: 2 }],
+      kids: [{ name: 'Milán', ageMonths: 26 }],
       pets: [],
       interests: [],
       toys: [{ name: 'el tren grandote' }],
@@ -95,7 +95,11 @@ test('each demo account signs in and finds its own family, exactly as seeded', a
 
       const profile = (await demo.app.inject({ method: 'GET', url: '/family', headers: { cookie } })).json()
       assert.equal(profile.name, family?.name, email)
-      assert.deepEqual(profile.kids.map(({ name, age, interests }) => ({ name, age, interests })), family?.kids, email)
+      assert.deepEqual(
+        profile.kids.map(({ name, ageMonths, interests }) => ({ name, ageMonths, interests })),
+        family?.kids,
+        email,
+      )
       assert.deepEqual(profile.pets.map(({ name }) => ({ name })), family?.pets, email)
       assert.deepEqual(profile.toys.map(({ name }) => ({ name })), family?.toys, email)
     }

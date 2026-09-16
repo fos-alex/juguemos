@@ -23,11 +23,11 @@ const profile = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['id', 'name', 'age', 'playing', 'interests'],
+        required: ['id', 'name', 'ageMonths', 'playing', 'interests'],
         properties: {
           id: { type: 'string' },
           name: { type: 'string' },
-          age: { type: ['integer', 'null'] },
+          ageMonths: { type: ['integer', 'null'] },
           // Whether the kid plays with the signed-in adult (JUG-107).
           playing: { type: 'boolean' },
           // What this kid loves (JUG-144).
@@ -54,11 +54,12 @@ const profileInput = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['name', 'age'],
+        required: ['name', 'ageMonths'],
         properties: {
           id,
           name: text(80),
-          age: { type: ['integer', 'null'], minimum: 0, maximum: 17 },
+          // The age in months, up to 17 years and 11 months (JUG-145).
+          ageMonths: { type: ['integer', 'null'], minimum: 0, maximum: 215 },
           // What this kid loves (JUG-144); a kid sent without them loves nothing yet.
           interests: { type: 'array', maxItems: 30, items: text(80) },
         },
@@ -106,8 +107,8 @@ const understanding = {
           type: 'array',
           items: {
             type: 'object',
-            required: ['name', 'age', 'interests'],
-            properties: { name: { type: 'string' }, age: { type: ['integer', 'null'] }, interests: words },
+            required: ['name', 'ageMonths', 'interests'],
+            properties: { name: { type: 'string' }, ageMonths: { type: ['integer', 'null'] }, interests: words },
           },
         },
         pets: { type: 'array', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } } },

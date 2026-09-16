@@ -55,8 +55,8 @@ test('saving the profile starts the family and keeps everything in order, as typ
   assert.equal(saved.statusCode, 200)
   const profile = saved.json()
   assert.deepEqual(
-    profile.kids.map(({ name, age }) => ({ name, age })),
-    [{ name: 'Milán', age: 2 }],
+    profile.kids.map(({ name, ageMonths }) => ({ name, ageMonths })),
+    [{ name: 'Milán', ageMonths: 26 }],
   )
   assert.deepEqual(
     profile.pets.map((pet) => pet.name),
@@ -103,26 +103,26 @@ test('saving again updates rows by id, adds new ones, and drops the rest', async
   assert.equal(rows[0].n, 2)
 })
 
-test('an age keeps counting from the day it was given', async () => {
+test('an age keeps counting, by the month, from the day it was given', async () => {
   const { cookie } = await signUpAs(api, 'eva@example.com')
   const profile = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
   const [kid] = profile.kids
-  await api.pool.query(`update kids set age_set_on = current_date - interval '1 year' where id = $1`, [kid.id])
+  await api.pool.query(`update kids set age_set_on = current_date - interval '1 year 3 months' where id = $1`, [kid.id])
 
   const aged = (await getFamily(cookie)).json()
-  assert.equal(aged.kids[0].age, 3)
+  assert.equal(aged.kids[0].ageMonths, 41, '26 months, given 15 months ago')
 
   // Saving the form again sends the age it showed, which must not restart the count.
   await putFamily(api, cookie, { ...EXAMPLE_PROFILE, kids: aged.kids })
-  const { rows } = await api.pool.query(`select age_years, age_set_on < current_date as counting from kids where id = $1`, [
+  const { rows } = await api.pool.query(`select age_months, age_set_on < current_date as counting from kids where id = $1`, [
     kid.id,
   ])
-  assert.deepEqual(rows[0], { age_years: 2, counting: true })
+  assert.deepEqual(rows[0], { age_months: 26, counting: true })
 })
 
 test('a malformed profile is refused', async () => {
   const { cookie } = await signUpAs(api, 'ana@example.com').catch(() => ({ cookie: '' }))
-  const response = await putFamily(api, cookie || 'x', { ...EXAMPLE_PROFILE, kids: [{ name: '', age: -1 }] })
+  const response = await putFamily(api, cookie || 'x', { ...EXAMPLE_PROFILE, kids: [{ name: '', ageMonths: -1 }] })
   assert.ok([400, 401].includes(response.statusCode))
 
   const signedIn = await api.app.inject({
@@ -134,7 +134,7 @@ test('a malformed profile is refused', async () => {
     method: 'PUT',
     url: '/family',
     headers: { cookie: signedIn.headers['set-cookie']?.toString().split(';')[0] ?? '' },
-    payload: { ...EXAMPLE_PROFILE, kids: [{ name: '', age: -1 }] },
+    payload: { ...EXAMPLE_PROFILE, kids: [{ name: '', ageMonths: -1 }] },
   })
   assert.equal(bad.statusCode, 400)
 })
@@ -150,8 +150,8 @@ const choosePlaying = (cookie, kids) =>
 const TWO_KIDS = {
   ...EXAMPLE_PROFILE,
   kids: [
-    { name: 'Milán', age: 1 },
-    { name: 'Sofi', age: 4 },
+    { name: 'Milán', ageMonths: 12 },
+    { name: 'Sofi', ageMonths: 52 },
   ],
 }
 
@@ -176,8 +176,8 @@ test('every kid starts playing, and the choice holds for the adult across saves 
   assert.deepEqual(playing((await getFamily(cookie)).json()), playing(chosen.json()), 'another phone reads the same')
 
   // Saving the family with the kids' ids keeps the choice, and a kid added later plays.
-  const kept = profile.kids.map(({ id, name, age }) => ({ id, name, age }))
-  const saved = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [...kept, { name: 'Lupe', age: 3 }] })).json()
+  const kept = profile.kids.map(({ id, name, ageMonths }) => ({ id, name, ageMonths }))
+  const saved = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [...kept, { name: 'Lupe', ageMonths: 40 }] })).json()
   assert.deepEqual(playing(saved), [
     ['Milán', false],
     ['Sofi', true],
@@ -185,7 +185,7 @@ test('every kid starts playing, and the choice holds for the adult across saves 
   ])
 
   // A kid removed from the family leaves the choice with them.
-  await putFamily(api, cookie, { ...TWO_KIDS, kids: saved.kids.slice(1).map(({ id, name, age }) => ({ id, name, age })) })
+  await putFamily(api, cookie, { ...TWO_KIDS, kids: saved.kids.slice(1).map(({ id, name, ageMonths }) => ({ id, name, ageMonths })) })
   const { rows } = await api.pool.query('select count(*)::int as n from kids_sitting_out where kid_id = $1', [milan.id])
   assert.equal(rows[0].n, 0)
 })
@@ -202,7 +202,7 @@ test('at least one kid always plays', async () => {
 
   // Sofi, the only one playing, leaves the family: Milán plays again rather than nobody.
   await choosePlaying(cookie, [sofi.id])
-  const left = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [{ id: milan.id, name: 'Milán', age: 1 }] })).json()
+  const left = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [{ id: milan.id, name: 'Milán', ageMonths: 12 }] })).json()
   assert.deepEqual(playing(left), [['Milán', true]])
 })
 
@@ -212,9 +212,9 @@ test('each kid keeps what they love, and the kids playing bring only theirs', as
     await putFamily(api, user.cookie, {
       ...EXAMPLE_PROFILE,
       kids: [
-        { name: 'Milán', age: 1, interests: ['los dinosaurios', 'los trenes'] },
-        { name: 'Sofi', age: 4, interests: ['Los trenes', 'dibujar'] },
-        { name: 'Lupe', age: 3 },
+        { name: 'Milán', ageMonths: 12, interests: ['los dinosaurios', 'los trenes'] },
+        { name: 'Sofi', ageMonths: 52, interests: ['Los trenes', 'dibujar'] },
+        { name: 'Lupe', ageMonths: 40 },
       ],
     })
   ).json()
@@ -238,7 +238,7 @@ test('each kid keeps what they love, and the kids playing bring only theirs', as
   assert.deepEqual(playingNow.interests, ['Los trenes', 'dibujar'])
 
   // A kid who leaves the family takes what they love along.
-  await putFamily(api, user.cookie, { ...EXAMPLE_PROFILE, kids: [{ id: sofi.id, name: 'Sofi', age: 4, interests: ['dibujar'] }] })
+  await putFamily(api, user.cookie, { ...EXAMPLE_PROFILE, kids: [{ id: sofi.id, name: 'Sofi', ageMonths: 52, interests: ['dibujar'] }] })
   const { rows } = await api.pool.query(
     'select count(*)::int as n from kid_interests where kid_id not in (select id from kids)',
   )

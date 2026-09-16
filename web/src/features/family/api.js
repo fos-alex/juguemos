@@ -10,8 +10,13 @@ import { ApiError, request } from '../../shared/http'
 /** @typedef {import('./types').Family} Family */
 /** @typedef {import('./types').Kid} Kid */
 /**
+ * @typedef {Omit<Kid, 'ageMonths' | 'interests'> & { ageMonths?: number | null, age?: number | null, interests?: string[] }} CachedKid
+ * A kid as an older version of the app cached it: its age in whole years, and
+ * no interests of its own.
+ */
+/**
  * @typedef {{
- *   kids: { id?: string, name: string, age: number | null, playing?: boolean, interests?: string[] }[],
+ *   kids: { id?: string, name: string, ageMonths: number | null, playing?: boolean, interests?: string[] }[],
  *   pets: { name: string }[], toys: { id?: string, name: string }[],
  * }} Profile
  */
@@ -19,7 +24,7 @@ import { ApiError, request } from '../../shared/http'
 /** @param {Profile} profile @returns {Family} */
 function toFamily(profile) {
   return {
-    kids: profile.kids.map(({ id, name, age, playing, interests = [] }) => ({ id, name, age, playing, interests })),
+    kids: profile.kids.map(({ id, name, ageMonths, playing, interests = [] }) => ({ id, name, ageMonths, playing, interests })),
     pet: profile.pets[0]?.name ?? '',
     toys: profile.toys.map(({ id, name }) => ({ id, name })),
   }
@@ -32,7 +37,9 @@ function toFamily(profile) {
  */
 function toProfile(family) {
   return {
-    kids: family.kids.map(({ id, name, age, interests }) => (id ? { id, name, age, interests } : { name, age, interests })),
+    kids: family.kids.map(({ id, name, ageMonths, interests }) =>
+      id ? { id, name, ageMonths, interests } : { name, ageMonths, interests },
+    ),
     pets: family.pet ? [{ name: family.pet }] : [],
     toys: family.toys.map(({ id, name }) => (id ? { id, name } : { name })),
   }
@@ -40,19 +47,27 @@ function toProfile(family) {
 
 /**
  * Brings a family cached by an older version up to date until the next load
- * replaces it: toys cached as bare names become toys without ids, and the
- * family's own interests, from before each kid had theirs (JUG-144), go to
- * every kid, as the API's migration did.
+ * replaces it: toys cached as bare names become toys without ids, the family's
+ * own interests, from before each kid had theirs (JUG-144), go to every kid, as
+ * the API's migration did, and an age in whole years becomes months (JUG-145).
  */
 export function upgradeCachedFamily() {
   const family = read('family')
   if (!family) return
   const bareToys = family.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')
-  if (!bareToys && !Array.isArray(family.interests)) return
+  const yearsOnly = family.kids.some((/** @type {CachedKid} */ kid) => kid.ageMonths === undefined)
+  if (!bareToys && !yearsOnly && !Array.isArray(family.interests)) return
   const { interests = [], ...rest } = family
   write('family', {
     ...rest,
-    kids: family.kids.map((/** @type {Kid} */ kid) => ({ ...kid, interests: kid.interests ?? interests })),
+    kids: family.kids.map((/** @type {CachedKid} */ kid) => {
+      const { age, ...kept } = kid
+      return {
+        ...kept,
+        ageMonths: kid.ageMonths ?? (typeof age === 'number' ? age * 12 : null),
+        interests: kid.interests ?? interests,
+      }
+    }),
     toys: family.toys.map((/** @type {string | import('./types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
   })
 }

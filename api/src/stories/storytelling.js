@@ -12,18 +12,27 @@ import { jsonIn } from '../llm/prompt.js'
 
 /**
  * An age band: its id (the key of its prompt fragment in `prompts/bands.js`),
- * the oldest age it covers, how many minutes its stories run, and the word
- * budget the fragment asks for, which the audit checks the story against.
- * @typedef {{ id: string, maxAge: number, minutes: [number, number], words: [number, number] }} Band
+ * the oldest age it covers in months, how many minutes its stories run, and
+ * the word budget the fragment asks for, which the audit checks the story
+ * against.
+ * @typedef {{ id: string, maxMonths: number, minutes: [number, number], words: [number, number] }} Band
  */
 
-/** @type {Band[]} */
+/**
+ * Six months a band under four years, since a kid of 1 and one of 1 and 10
+ * months need different stories, and a year a band at four and five (JUG-145).
+ * A baby under a year gets the first band.
+ * @type {Band[]}
+ */
 const BANDS = [
-  { id: '1', maxAge: 1, minutes: [2, 2], words: [150, 220] },
-  { id: '2', maxAge: 2, minutes: [3, 4], words: [300, 450] },
-  { id: '3', maxAge: 3, minutes: [4, 5], words: [450, 600] },
-  { id: '4', maxAge: 4, minutes: [5, 6], words: [600, 750] },
-  { id: '5', maxAge: 99, minutes: [6, 7], words: [750, 900] },
+  { id: '1', maxMonths: 17, minutes: [2, 3], words: [200, 300] },
+  { id: '1.5', maxMonths: 23, minutes: [3, 3], words: [280, 380] },
+  { id: '2', maxMonths: 29, minutes: [3, 4], words: [350, 480] },
+  { id: '2.5', maxMonths: 35, minutes: [4, 5], words: [450, 600] },
+  { id: '3', maxMonths: 41, minutes: [4, 5], words: [520, 680] },
+  { id: '3.5', maxMonths: 47, minutes: [5, 6], words: [620, 780] },
+  { id: '4', maxMonths: 59, minutes: [5, 6], words: [700, 850] },
+  { id: '5', maxMonths: Infinity, minutes: [6, 7], words: [800, 1000] },
 ]
 
 /**
@@ -32,18 +41,18 @@ const BANDS = [
  * whose age nobody gave don't count, and a family with no ages at all gets
  * band 3.
  * @param {Profile} profile
- * @returns {{ anchor: Profile['kids'][number] | null, anchorAge: number, band: Band }}
+ * @returns {{ anchor: Profile['kids'][number] | null, anchorMonths: number, band: Band }}
  */
 export function anchorOf(profile) {
-  const known = profile.kids.filter((kid) => kid.age != null)
+  const known = profile.kids.filter((kid) => kid.ageMonths != null)
   const anchor = known.reduce(
     (/** @type {Profile['kids'][number] | null} */ youngest, kid) =>
-      youngest == null || /** @type {number} */ (kid.age) < /** @type {number} */ (youngest.age) ? kid : youngest,
+      youngest == null || /** @type {number} */ (kid.ageMonths) < /** @type {number} */ (youngest.ageMonths) ? kid : youngest,
     null,
   )
-  const anchorAge = anchor?.age ?? 3
-  const band = BANDS.find((entry) => anchorAge <= entry.maxAge) ?? BANDS[BANDS.length - 1]
-  return { anchor: anchor ?? profile.kids[0] ?? null, anchorAge, band }
+  const anchorMonths = anchor?.ageMonths ?? 36
+  const band = BANDS.find((entry) => anchorMonths <= entry.maxMonths) ?? BANDS[BANDS.length - 1]
+  return { anchor: anchor ?? profile.kids[0] ?? null, anchorMonths, band }
 }
 
 // The families are in Buenos Aires; the server's clock may be anywhere (UTC in Docker).
@@ -70,9 +79,17 @@ export function momentOf(mood) {
   return mood === 'calm' ? 'TRANQUI, antes de dormir' : 'CON PILAS, de día'
 }
 
-/** The age as it reads aloud: `1 año`, `2 años`. @param {number} age */
-export function ageLine(age) {
-  return age === 1 ? '1 año' : `${age} años`
+/**
+ * An age in months as it reads aloud: `8 meses`, `1 año`, `1 año y 10 meses`.
+ * @param {number} ageMonths
+ */
+export function ageLine(ageMonths) {
+  const years = Math.floor(ageMonths / 12)
+  const months = ageMonths % 12
+  const monthsText = months === 1 ? '1 mes' : `${months} meses`
+  if (years === 0) return monthsText
+  const yearsText = years === 1 ? '1 año' : `${years} años`
+  return months === 0 ? yearsText : `${yearsText} y ${monthsText}`
 }
 
 /**
@@ -87,7 +104,7 @@ export function ageLine(age) {
 export function familyLines(profile, castings) {
   const inStory = new Set(castings.flatMap((casting) => casting.kids))
   const cast = profile.kids.filter((kid) => inStory.has(kid.id))
-  const kids = cast.map((kid) => `${kid.name}${kid.age != null ? `, de ${ageLine(kid.age)}` : ''}`)
+  const kids = cast.map((kid) => `${kid.name}${kid.ageMonths != null ? `, de ${ageLine(kid.ageMonths)}` : ''}`)
   const pets = unique(castings.map((casting) => casting.pet?.name))
   const toys = unique(castings.map((casting) => casting.toy?.name))
   const themes = unique(castings.map((casting) => casting.theme))

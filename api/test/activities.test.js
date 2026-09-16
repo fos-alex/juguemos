@@ -106,8 +106,8 @@ test('an activity must suit every kid, not just one', async () => {
   await putFamily(api, cookie, {
     ...EXAMPLE_PROFILE,
     kids: [
-      { name: 'Milán', age: 1 },
-      { name: 'Sofi', age: 4 },
+      { name: 'Milán', ageMonths: 12 },
+      { name: 'Sofi', ageMonths: 52 },
     ],
   })
 
@@ -122,7 +122,7 @@ test('an activity must suit every kid, not just one', async () => {
 
 test('when nothing in the catalog fits, it says so with a code', async () => {
   const { cookie } = await signUpAs(api, 'dani@example.com')
-  await putFamily(api, cookie, { ...EXAMPLE_PROFILE, kids: [{ name: 'Sofi', age: 12 }] })
+  await putFamily(api, cookie, { ...EXAMPLE_PROFILE, kids: [{ name: 'Sofi', ageMonths: 144 }] })
   const response = await suggest(cookie)
   assert.equal(response.statusCode, 404)
   assert.equal(response.json().code, 'NO_FITTING_ACTIVITY')
@@ -142,8 +142,8 @@ test('a juego suits only the kids playing, names them, and records who played', 
     await putFamily(api, cookie, {
       ...EXAMPLE_PROFILE,
       kids: [
-        { name: 'Milán', age: 1 },
-        { name: 'Sofi', age: 4 },
+        { name: 'Milán', ageMonths: 12 },
+        { name: 'Sofi', ageMonths: 52 },
       ],
     })
   ).json()
@@ -178,8 +178,8 @@ test('{interest} is something the kid named loves, and only the kids playing cou
     await putFamily(api, cookie, {
       ...EXAMPLE_PROFILE,
       kids: [
-        { name: 'Milán', age: 2, interests: ['los dinosaurios'] },
-        { name: 'Sofi', age: 4, interests: ['dibujar'] },
+        { name: 'Milán', ageMonths: 26, interests: ['los dinosaurios'] },
+        { name: 'Sofi', ageMonths: 52, interests: ['dibujar'] },
       ],
     })
   ).json()

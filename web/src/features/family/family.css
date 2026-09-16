@@ -121,22 +121,26 @@
   gap: 9px;
 }
 
+/* Name, years and months fit one line at the design width, and the ages drop
+   to a second line on a narrower screen. */
 .kid-row {
   display: flex;
-  gap: 9px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .kid-row__name {
-  flex: 1;
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 .kid-row__age {
   flex: none;
   gap: 5px;
-  width: 104px;
+  padding: 0 13px;
 }
 
-/* Reads as "2 años": the number takes only the room it needs. */
+/* Reads as "2 años 3 meses": each number takes only the room it needs. */
 .kid-row__age .field__input {
   flex: 0 1 auto;
   width: 2.2ch;

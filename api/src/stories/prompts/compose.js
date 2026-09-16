@@ -8,8 +8,8 @@ import moments from './moments.js'
 import storyteller from './storyteller.js'
 
 /**
- * @param {{ band: string, mood: 'calm' | 'lively' }} story the band id (`1` to
- *   `5`) and the moment of day
+ * @param {{ band: string, mood: 'calm' | 'lively' }} story the band id (`1`,
+ *   `1.5`, and so on to `5`) and the moment of day
  * @returns {string}
  */
 export function systemPrompt({ band, mood }) {

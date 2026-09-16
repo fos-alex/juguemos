@@ -26,9 +26,10 @@ const CHECK_NOTE = 'Revisá lo marcado: no lo encontré tal cual en lo que escri
 
 /**
  * @typedef {object} Understanding
- * @property {{ kids: { name: string, age: number | null, interests: string[] }[], pets: { name: string }[], toys: { name: string }[] }} family
- *   a profile for the parent to confirm, not saved. Each kid has what the text
- *   says they love, plus what it doesn't tie to one kid (JUG-144).
+ * @property {{ kids: { name: string, ageMonths: number | null, interests: string[] }[], pets: { name: string }[], toys: { name: string }[] }} family
+ *   a profile for the parent to confirm, not saved. Each kid has their age in
+ *   months (JUG-145) and what the text says they love, plus what it doesn't tie
+ *   to one kid (JUG-144).
  * @property {string[]} unsure fields the parent should check: 'kids.0', 'pet', 'interests', 'toys'
  * @property {string | null} note one line saying what may be wrong
  */
@@ -88,7 +89,7 @@ export function readUnderstanding(answer, text) {
     // A name the text doesn't contain was changed or invented: the parent checks it.
     if (!found) flaggedHere = true
     if (!found || doubts.has(`kids.${index}`)) unsure.add(`kids.${kids.length}`)
-    kids.push({ name, age: ageOf(kid?.age), interests: wordsOf(kid?.interests, text, LIMITS.name) })
+    kids.push({ name, ageMonths: monthsOf(kid?.ageMonths), interests: wordsOf(kid?.interests, text, LIMITS.name) })
   })
 
   // What the text doesn't tie to one kid goes on every kid (JUG-144).
@@ -143,10 +144,10 @@ function wordsOf(values, text, maxLength) {
   return [...new Set(words.filter(Boolean))]
 }
 
-/** A whole age in years from 0 to 17, or null. @param {unknown} age */
-function ageOf(age) {
-  const years = Math.floor(Number(age))
-  return age !== null && age !== '' && Number.isFinite(years) && years >= 0 && years <= 17 ? years : null
+/** An age in whole months from 0 to 215 (17 years and 11 months), or null. @param {unknown} age */
+function monthsOf(age) {
+  const months = Math.floor(Number(age))
+  return age !== null && age !== '' && Number.isFinite(months) && months >= 0 && months <= 215 ? months : null
 }
 
 /** @param {unknown} value */
