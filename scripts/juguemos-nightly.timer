@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Juguemos nightly cleanup
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+# Catch up after a night the machine was asleep, rather than skipping the run.
+Persistent=true
+RandomizedDelaySec=5m
+
+[Install]
+WantedBy=timers.target

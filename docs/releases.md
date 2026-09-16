@@ -50,7 +50,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Suggest an activity.** The one-tap *"¡Juguemos!"* button. It picks one activity from the catalog that fits the kids' ages and fills it in with their names, interests, and the pet. *"Otro juego"* shows a different one. *"Empezar"* starts a silent timer, and while it runs Home shows the juego and the time left, with a way to end it.
 - **Tell a story.** *"Hora del cuento"* offers three plot options starring the kids, the pet, and their toys by family name. The three options are cast by code from a tweakable probability distribution — who leads, whether the pet and a toy are in, which interest is the theme, and an occasional wildcard outside all of it — and interest keywords under them write a story on that theme in one tap. Each option appears as soon as it is written, so the first card is there while the rest are still coming. The parent picks one and reads it on a screen with large text that stays awake. Until the LLM provider is chosen, stories come from templates filled in by code.
 - **Who's playing.** Home shows the kids, all marked. The parent unmarks whoever isn't playing, and games and stories are made for the kids who are. Juguemos remembers the choice for next time.
-- **Night mode.** Dark from 19:00 to 07:00 local time, switching on its own, and one tap to change between light and dark, above all on the reading screen. It uses the handoff's dark palette; warming it is still open.
+- **Night mode.** Dark from 19:00 to 07:00 local time, switching on its own, and one tap to change between light and dark, above all on the reading screen. It uses the Plaza dark palette; warming it is still open.
 - **First iteration of content.** 30–40 activity templates for ages 1–3, drafted with AI, reviewed by Alex, loaded into the database by the catalog seeds, and tagged with the full taxonomy. A short guideline for story length and tone.
 - **Admin for the catalog.** A page where Alex adds, edits, switches off, and deletes activity templates while playtesting. It has no login yet, so it's off unless turned on, and never on where anyone outside the family can reach it.
 - **Spanish only.** Rioplatense Spanish with *vos*, throughout.
@@ -163,7 +163,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Story series and the story library in 0.3 | A series needs its chapters saved, and toddlers love hearing the same story again. 0.3 already improves stories, so they arrive together. |
 | Sound guessing games folded into discovery games in 0.4 | They were planned for 0.8 as a nice-to-have, but they're the same game as *¿Qué suena?*, the first discovery game. |
 | Sign in with Google in 0.3, limited to the family's accounts | Nobody outside the family gets in until the guardrails are complete, whatever the sign-in method. |
-| Night mode in 0.1, pulled forward from the handoff's 0.3 target | Stories are read at bedtime, and the dark palette was already wired. Alex asked for it in 0.1. |
+| Night mode in 0.1, pulled forward from its 0.3 target | Stories are read at bedtime, and the dark palette was already wired. Alex asked for it in 0.1. |
 | The activity catalog lives in the database, loaded by seeds | Alex's call while building 0.1. The database is the catalog's home, not files in the repo. |
 | 0.1 starts without an LLM | The provider decision is deferred. Until then, activities and stories come from templates filled in by code. |
 | Who's playing in 0.1 | Games and stories should fit the kids who are actually playing. Remembering the choice keeps it to one tap, or none. |
@@ -176,8 +176,8 @@ Changes from the first draft of this plan, and suggestions that were considered 
 
 ## 6. Open questions
 
-- **Styling by age.** Should Home's look, or the animation while a story is written, change with the age of the kid who's playing? The recommendation is no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which the design handoff rules out. The story animation could vary with the story being written instead.
-- **Characters in waiting animations.** The design handoff rules out a mascot, character, or cartoon in loading states. A cute character needs the handoff amended; a calm animation in the Plaza style doesn't.
+- **Styling by age.** Should Home's look, or the animation while a story is written, change with the age of the kid who's playing? The recommendation is no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which [design.md](design.md) rules out. The story animation could vary with the story being written instead.
+- **Characters in waiting animations.** [design.md](design.md) rules out a mascot, character, or cartoon in loading states. A cute character needs that rule changed; a calm animation in the Plaza style doesn't.
 
 - **The LLM in 0.1.** Does the playtest wait for the LLM provider, or start with template stories and the family form, adding conversational onboarding and bespoke stories when they're ready?
 - **Friends and guardrails.** The first target for friends was 0.3 or 0.4, but guardrails complete in 0.5. Should guardrails move earlier so friends can join sooner, or do friends wait for 0.5?

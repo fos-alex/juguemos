@@ -1,7 +1,7 @@
 /*
  * Plaza design tokens. The light set is final for 0.1; the dark set is the 0.3
  * target and is wired now so nothing depends on a light background. Values
- * marked "derived" are not in the handoff and should be revisited in 0.3.
+ * marked "derived" were not in the 0.1 design and should be revisited in 0.3.
  * Never hard-code a hex in a component: add a token here instead.
  */
 

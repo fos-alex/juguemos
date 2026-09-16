@@ -15,7 +15,7 @@ import '../toys.css'
 /**
  * El baúl de juguetes (JUG-94): the family's toys by their own names, and the
  * household materials they have. The 0.2 design (JUG-84) doesn't exist yet,
- * so this is built from the Plaza primitives; restyle it when the handoff
+ * so this is built from the Plaza primitives; restyle it when the design
  * lands. All of its copy needs a voice pass.
  */
 export function ToyBoxScreen() {

@@ -1,0 +1,9 @@
+[Unit]
+Description=Juguemos nightly cleanup: stale worktrees and Linear statuses
+After=network-online.target
+
+[Service]
+Type=oneshot
+# systemd gives a user service a bare PATH; mise's shims are where gh and claude live.
+Environment=PATH=/home/alex/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/alex/juegar/scripts/nightly-cleanup.sh

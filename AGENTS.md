@@ -4,7 +4,7 @@ Rules for any agent working in this repo. Claude Code reads this through `CLAUDE
 
 | Guide | Covers |
 |---|---|
-| [web/AGENTS.md](web/AGENTS.md) | The React SPA: routes, components, local state, night mode, and the Plaza design rules |
+| [web/AGENTS.md](web/AGENTS.md) | The React SPA: routes, components, local state, night mode, and the design rules that live in the code |
 | [api/AGENTS.md](api/AGENTS.md) | The Fastify API: layers, auth and the sign-up allowlist, migrations, seeds, and tests |
 
 ## The project
@@ -13,15 +13,15 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 
 | Document | Read it for |
 |---|---|
-| [README.md](README.md) | Stack and local development |
 | [docs/product-concept.md](docs/product-concept.md) | What the product is and why |
 | [docs/constitution.md](docs/constitution.md) | The commitments and guardrails every decision follows |
-| [docs/architecture.md](docs/architecture.md) | How it is built and run |
+| [docs/architecture.md](docs/architecture.md) | The technical decisions and why they were made |
+| [docs/design.md](docs/design.md) | How the app looks, and the rules behind it |
 | [docs/releases.md](docs/releases.md) | What goes in each release, from 0.1 to 1.0 |
 
 ## Product rules
 
-**No outside testers until the guardrails are complete.** Only Alex's family uses Juguemos until then. Whenever work touches inviting testers, sign-ups, sharing the app, or deploying it for anyone else, remind Alex of this rule.
+**No outside testers until the guardrails are complete.**
 
 **Start simple.** Build a solid core loop first. Don't add features from the product concept that `docs/releases.md` hasn't scheduled, and don't pull parked features forward without asking.
 
@@ -35,7 +35,8 @@ An npm workspace with two projects, run locally by Docker Compose behind Caddy:
 | `api/` | The Fastify API and its PostgreSQL migrations |
 | `caddy/` | Caddy's image, which builds the web app (`Dockerfile`), and its `Caddyfile`, which serves it and proxies `/api` to the API, at `https://juguemos.local:3000` and on `127.0.0.1:3001` for phones over Tailscale |
 | `docker-compose.yml` | Postgres, the one-shot migrations, the API, and Caddy |
-| `docs/` | Product, architecture, releases, and the Plaza design handoff |
+| `scripts/` | Repo tooling, run by timers rather than by agents. See [Nightly cleanup](#nightly-cleanup) |
+| `docs/` | Product, architecture, design, and releases |
 
 Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, and activities and stories from templates in the database. Only Google sign-in (0.3) and email verification are still missing, since they need services Juguemos doesn't have yet.
 
@@ -43,18 +44,18 @@ Every 0.1 screen is built and runs on the API: accounts with a required session,
 
 ## Writing
 
-**No mannered prose.** Code comments, docs, commit messages, PR descriptions, and Linear are written plainly: say what something does or why, in ordinary words. No literary turns, aphorisms, personification, or clever phrasing, like "the reader never waits" or "lets whoever listens step in". If a sentence reads like a slogan, rewrite it as a plain statement.
+**No mannered prose.** Code comments, docs, commit messages, PR descriptions, and Linear are written plainly: say what something does or why, in ordinary words. No literary turns, aphorisms, personification, or clever phrasing.
 
 ## Tracking work in Linear
 
-Alex follows the build in Linear, so Linear must always show what is being built and what has finished.
+Linear must always show what is being built and what has finished.
 
 - **Workspace:** Juguemos, team **Juguemos**, issue keys `JUG-…`
 - **Projects:** one per release (`0.1 — ¿Me gusta?` through `1.0 — Juguemos`), plus `Later` for work after 1.0 and parked ideas
 - **Labels:** Feature, Content, Infrastructure, Decision, Guardrails, Improvement, Bug
 - **Statuses:** Backlog → Todo → In Progress → In Review → Done, plus Canceled and Duplicate
 
-Agents reach Linear through its MCP server; for opencode, that is the `linear` entry in `opencode.json`, which signs in with OAuth. Use its tools to find, create, update, and comment on issues directly; don't ask Alex to do in Linear what the MCP can do.
+Agents reach Linear through its MCP server. Use its tools to find, create, update, and comment on issues directly; don't ask Alex to do in Linear what the MCP can do.
 
 **Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
 
@@ -75,9 +76,9 @@ Don't cancel issues, move them between releases, or change a release's scope wit
 
 We work on `main`, and every PR targets `main`.
 
-**No `Co-Authored-By` trailers.** Don't add `Co-Authored-By` lines, or any other agent attribution, to commit messages, including the ones you suggest to Alex. Alex doesn't want them.
+**No `Co-Authored-By` trailers.** Don't add `Co-Authored-By` lines, or any other agent attribution, to commit messages.
 
-**Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it. Suggest a commit message that includes the issue ID, so Linear links the commit.
+**Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it.
 
 **Big changes get a worktree and a PR.** Use a worktree and a pull request when a change is big, is a separate feature, or is a distinct workstream.
 
@@ -91,18 +92,9 @@ We work on `main`, and every PR targets `main`.
 
 **Alex merges PRs.** Never merge a PR unless Alex has explicitly authorized that specific merge.
 
-**Clean up after a merge.** Once a PR is merged, remove its worktree and local branch, and delete the remote branch if GitHub hasn't:
+## Nightly cleanup
+- **Removes worktrees whose PR has been merged or closed,** with their local and remote branches. It never touches a worktree with uncommitted changes or unpushed commits, and never one whose PR is still open or that has no PR yet.
+- **Moves Linear issues whose work has landed to Done.** An issue id in a merged PR's branch name is that PR's own issue and gets closed; an id that appears only in the title is a mention, and is reported rather than changed.
 
-```bash
-git worktree remove ../juegar-worktrees/jug-12-family-onboarding
-git branch -D fosalex/jug-12-family-onboarding
-git push origin --delete fosalex/jug-12-family-onboarding
-git worktree prune
-```
-
-**Remove stale worktrees.** At the start of every session, run `git worktree list`. A worktree is stale when its PR has been merged or closed, or its branch no longer exists on the remote. Remove stale worktrees and their local branches. If one still has uncommitted or unpushed work, ask Alex before removing it.
-
-## At the start of every session
-
-1. Run `git worktree list` and remove stale worktrees.
-2. Check Linear for issues **In Review** whose change has since been committed or merged, and move any the integration didn't already move to **Done**.
+It writes to `~/.local/state/juguemos/nightly.log` and interrupts nobody.
+`~/.local/state/juguemos/nightly-settled.txt` is the list of issues it has already dealt with, so it never asks about the same one twice. Delete a line to have it look at that issue again.

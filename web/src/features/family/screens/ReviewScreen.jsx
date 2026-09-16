@@ -51,7 +51,7 @@ export function ReviewScreen() {
               Sí, está perfecto
             </QuietButton>
             <PrimaryButton className="btn--text-23" onClick={() => correct()}>
-              Corregir
+              Modificar
             </PrimaryButton>
           </>
         ) : (
@@ -60,7 +60,7 @@ export function ReviewScreen() {
               Sí, está perfecto
             </PrimaryButton>
             <SecondaryButton className="btn--58" onClick={() => correct()}>
-              Corregir
+              Modificar
             </SecondaryButton>
           </>
         )}

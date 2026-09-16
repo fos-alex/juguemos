@@ -2,7 +2,7 @@
 
 **Version:** 0.1 · September 2026 · Owner: Alex Otero
 
-*Research on how similar apps look and feel, done for the basic branding in 0.1 (JUG-10). It covers design and styling. For what each app does and where Juguemos is different, see section 5 of [product-concept.md](product-concept.md).*
+*Research on how similar apps look and feel, done for the basic branding in 0.1 (JUG-10). It covers design and styling. The rules it produced are in [design.md](design.md), which is the one to read before changing the UI; this is the evidence behind them. For what each app does and where Juguemos is different, see section 5 of [product-concept.md](product-concept.md).*
 
 ---
 
@@ -10,7 +10,7 @@
 
 The question behind this research: should Juguemos look like a kids' app, since it's about playing with little kids, or like a tool for the adults who hold the phone?
 
-**Answer: design for the adults, and let the playfulness come from the words, colour and handwork.** This matches the design brief: "a tool for grown-ups, about play".
+**Answer: design for the adults, and let the playfulness come from the words, colour and handwork.** This is where "a tool for grown-ups, about play" comes from.
 
 - **Every parent-facing play app styles itself for adults.** Childlike touches are small accents, never the whole look.
 - **Story apps look like kids' apps only when the child watches the screen.** When a parent reads, the screen gets out of the way.
@@ -135,7 +135,7 @@ The local scene is crafted and artful, and made to be enjoyed by adults as well 
 2. **Visible handwork:** chalk lines, cardboard, collage, grain, a slight wobble. No glossy 3D and no mascot. Illustration itself belongs to JUG-17 in 0.2.
 3. **Grown-up type with one playful detail.** Chubby rounded display type is the lever that reads most childish.
 4. **Quiet motion and no sound,** following Pok Pok's restaurant rule. This also avoids pulling the toddler to the screen.
-5. **The wit lives in the copy.** The Rioplatense voice in the design brief already does this, and the idea itself is the delight.
+5. **The wit lives in the copy.** The Rioplatense voice already does this, and the idea itself is the delight.
 
 **The brand directions in JUG-10.**
 

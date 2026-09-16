@@ -40,7 +40,7 @@ export function CorrectScreen() {
   const [drafts, setDrafts] = useState(/** @type {Record<number, string | null>} */ ({}))
   const request = useRequest()
 
-  useDocumentTitle('Corregir · Juguemos')
+  useDocumentTitle('Editar · Juguemos')
 
   useEffect(() => {
     if (!campo) return
@@ -82,7 +82,7 @@ export function CorrectScreen() {
 
   return (
     <Screen>
-      <Header onBack={goBack} title="Corregir" />
+      <Header onBack={goBack} title="Editar" />
       <form className="screen-form" onSubmit={save} noValidate>
         <Body className="form-body correct">
           <KidRows kids={form.kids} onChange={(change) => update((f) => ({ ...f, kids: change(f.kids) }))} />

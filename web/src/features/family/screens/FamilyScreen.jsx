@@ -19,7 +19,7 @@ export function FamilyScreen() {
       <Header onBack={goBack} title="Mi familia" />
       <Body className="page-body">{family && <FamilyCard family={family} />}</Body>
       <Footer>
-        <SecondaryButton onClick={() => void navigate({ to: '/familia/corregir' })}>Corregir</SecondaryButton>
+        <SecondaryButton onClick={() => void navigate({ to: '/familia/corregir' })}>Editar</SecondaryButton>
       </Footer>
     </Screen>
   )

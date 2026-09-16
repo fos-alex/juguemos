@@ -7,7 +7,7 @@ import { useRequest } from '../../../shared/hooks/useRequest'
 import { read } from '../../../shared/store'
 import { Body, Card, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
 
-/** Ajustes: account, not navigation. Not designed in the handoff; kept to the minimum. Copy needs a voice pass. */
+/** Ajustes: account, not navigation. Not designed yet; kept to the minimum. Copy needs a voice pass. */
 export function SettingsScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/')

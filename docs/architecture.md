@@ -1,222 +1,166 @@
 # Juguemos — Architecture
 
-**Version:** 0.12 · September 2026 · Owner: Alex Otero
+**Version:** 0.13 · September 2026 · Owner: Alex Otero
 
-*A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
-
----
-
-## 1. Scope
-
-This document covers how Juguemos is built and run. The product itself is described in [product-concept.md](product-concept.md), and the principles behind the decisions are in [constitution.md](constitution.md).
+*A living document. It holds the technical decisions and the reasons behind them, so a decision can be revisited on purpose rather than drifted away from. How the code is actually laid out is in [web/AGENTS.md](../web/AGENTS.md) and [api/AGENTS.md](../api/AGENTS.md); what the product is, in [product-concept.md](product-concept.md); the principles, in [constitution.md](constitution.md).*
 
 Version 1 targets Argentina, ages 1–5, on responsive web.
 
-## 2. Decisions so far
+## Decisions
 
-| Area | Decision | Status |
-|---|---|---|
-| Client | React SPA built with Vite (JavaScript with JSDoc, TanStack Router), shipped as static files served by Caddy | Decided |
-| Devices | Mobile-first: mid-range Android and iPhone, Chrome and Safari. Desktop is not a target | Decided |
-| Offline | Service worker for the app shell; an app-owned store for offline data | Decided |
-| Server | Node.js HTTP API (Fastify), long-running | Decided |
-| Database | PostgreSQL. If content grows heavy, a CMS with its own database joins later | Decided |
-| Database access | Drizzle ORM in plain JavaScript: the schema is code, drizzle-kit generates the SQL migrations from it, and Better Auth uses its Drizzle adapter (JUG-105) | Decided |
-| Hosting | Existing DigitalOcean droplet | Decided |
-| Local development | Docker Compose, same as production, at `https://juguemos.local` | Decided |
-| TLS and reverse proxy | Caddy: automatic certificates in production, internal CA locally | Decided |
-| Language | JavaScript with JSDoc across client and server. JSDoc guides agents and readers and is not typechecked; TypeScript was tried and dropped, and its packages removed (JUG-70). Node 24 can still run `.ts` natively if a module ever wants it | Decided |
-| Repo layout | Single repo. npm workspaces (api, web): one install, separate codebases, no shared package; no heavier tooling | Decided |
-| Native mobile apps | Not in v1. After 1.0: native Android/iOS or React Native, TBD | Decided |
-| Authentication | Better Auth in the API: email and password, sessions in PostgreSQL behind an httpOnly cookie. Sign-up limited to an email allowlist until invitations (0.5); Google sign-in (0.3) is a plugin on the same library | Decided |
-
-## 3. Hosting: why the droplet
-
-Version 1 runs on the DigitalOcean droplet that already exists. Vercel's free Hobby plan was considered and rejected for three reasons.
-
-**The Hobby plan is non-commercial only.** Vercel's fair use guidelines restrict Hobby teams to personal, non-commercial use and require Pro or Enterprise for commercial usage, defined broadly as any deployment used for the financial gain of anyone involved in producing it. Juguemos is intended to be a real product, so that foundation would have to be abandoned as soon as it earned anything.
-
-**Content on Hobby may be used for model training.** Vercel's terms, updated June 1 2026, allow this with an opt-out in team settings, while paid Pro does not enable it by default. For an app holding children's names, ages, photos, and voice notes, that is the wrong default to start from and conflicts with the constitution's privacy guardrail.
-
-**The architecture fits a server better than serverless.** Juguemos is a React front end with a separate Node API, not a Next.js app. Several operations are slow by nature: voice transcription, activity tailoring, and story generation. Serverless function timeouts are a real constraint there, and reported Hobby ceilings vary enough between sources to make them an unreliable thing to build on. A long-running server has no such limit, and the database sits next to the application instead of on another provider's free tier.
-
-The trade-off is accepted: backups, updates, and uptime are managed by the team. For a pre-launch product with a handful of test families, that is a fair price for zero marginal cost and no licensing problem. If operations become a distraction, DigitalOcean's App Platform and managed Postgres are a much shorter move than leaving Vercel would have been.
-
-## 4. System shape
-
-Three containers on one droplet, defined in a single Docker Compose file used in both local development and production.
-
-| Container | Role |
+| Area | Decision |
 |---|---|
-| **caddy** | Reverse proxy and TLS. Serves the built React app as static files and proxies `/api` to the server. Certificates are obtained and renewed automatically. |
-| **api** | Node.js HTTP server. Owns all business logic, database access, and every call to external services. |
-| **db** | PostgreSQL, with data on a mounted volume. |
+| Client | React SPA built with Vite, TanStack Router, no UI component library, shipped as static files served by Caddy |
+| Devices | Mobile-first: mid-range Android and iPhone, Chrome and Safari. Desktop is not a target |
+| Offline | Service worker for the app shell; an app-owned IndexedDB store for data |
+| Server | Node.js HTTP API (Fastify), long-running |
+| Database | PostgreSQL. If content grows heavy, a CMS with its own database joins later |
+| Database access | Drizzle ORM: the schema is code, drizzle-kit generates the SQL migrations from it (JUG-105) |
+| Hosting | An existing DigitalOcean droplet |
+| Local development | Docker Compose, the same file as production, at `https://juguemos.local` |
+| TLS and proxy | Caddy: automatic certificates in production, its internal CA locally |
+| Language | JavaScript with JSDoc on both sides. Not typechecked, and that is deliberate (JUG-70): TypeScript was tried and dropped when the shared contract package proved only theoretical |
+| Repo layout | One repo, npm workspaces (`api`, `web`): one install, separate codebases, no shared package |
+| Authentication | Better Auth in the API: email and password, sessions in PostgreSQL behind an httpOnly cookie. Sign-up is limited to an email allowlist until invitations (0.5); Google sign-in (0.3) is a plugin on the same library |
+| Native apps | Not in v1. After 1.0: native Android/iOS or React Native, decided then |
 
-Key rules:
+## Why the droplet
 
-- The browser never talks to an LLM provider, a maps provider, or the database directly. Everything goes through the API, so that keys stay on the server and every AI call can be logged, rate-limited, and bounded by safety rules.
-- The database is not exposed to the public internet. Only the API container reaches it.
-- The same Compose file runs locally, so there is no drift between a developer machine and the server.
-- Caddy serves the app with `immutable` long-caching for hashed assets and `no-cache` for everything else, which is what makes every deploy refresh cleanly on clients.
-- Locally, the same stack serves `https://juguemos.local` with a certificate from Caddy's internal CA. On the droplet, the same Caddyfile swaps the site address for the real domain.
-- The scaffold is in the repo: `docker-compose.yml`, `caddy/Caddyfile`, `api/` (a Fastify server whose health route verifies database connectivity), and `web/` (the React SPA, which Caddy's image builds with Vite and serves, so `docker compose up --build` ships it along with the API). The repo is an npm workspace: `api` and `web`, sharing one install with separate codebases.
+Version 1 runs on the DigitalOcean droplet that already exists. Vercel's free Hobby plan was rejected for three reasons.
 
-## 5. Client
+**Hobby is non-commercial only.** Vercel restricts Hobby teams to personal use and requires Pro for anything used for financial gain. Juguemos is meant to be a real product, so that foundation would have to be abandoned as soon as it earned anything.
 
-A single-page app built with Vite and React, written in JavaScript with JSDoc types on the domain data, shipped as static files that Caddy serves. TanStack Router gives it per-route code splitting and prefetching on tap, so every screen after the first loads instantly. No heavy UI component library; the bundle stays lean. The server runs Node 24, which runs `.js` directly; TypeScript was tried across the stack for shared contract types and dropped when the shared package proved only theoretical.
+**Content on Hobby may be used for model training,** with an opt-out in team settings. For an app holding children's names, ages, photos, and voice notes, that is the wrong default and conflicts with the constitution's privacy guardrail.
 
-Next.js was considered and set aside. Juguemos is a logged-in, phone-first app with no public pages to rank, and every piece of data and logic belongs to the API. Server-side rendering would add a second server runtime next to it and buy nothing, while its hydration cost would land squarely on the mid-range phones that matter most. If marketing pages that need SEO ever appear, they can be a tiny separate site.
+**The architecture fits a server better than serverless.** Juguemos is a React front end with a separate Node API, not a Next.js app, and voice transcription, activity tailoring, and story generation are all slow by nature. Serverless timeouts are a real constraint there. A long-running server has none, and the database sits next to the application instead of on another provider's free tier.
 
-### 5.1 Devices and browsers
+The trade-off is accepted: backups, updates, and uptime are ours. For a pre-launch product with a handful of families that is a fair price for zero marginal cost. If operations become a distraction, DigitalOcean's App Platform and managed Postgres are a much shorter move than leaving Vercel would have been.
 
-The interface is phone-first and one-handed, since a parent is often holding a toddler: large text, generous tap targets, and a reading screen for Story Time that keeps the screen awake and switches to a warm dark mode near bedtime. Mobile is not a layout variant; it is the product.
+## System shape
 
-- **Target devices: mid-range Android phones and recent iPhones.** A mid-range Android is the floor for every performance decision, not a fallback. The budget: first screen interactive in under three seconds on a throttled mid-range device (4× CPU slowdown, slow 4G), with under ~150 KB gzipped of JavaScript for the initial route.
-- **Target browsers: Chrome on Android and Safari on iOS.** Two engines, both first-class. iOS Safari is the riskiest target and gets real-device testing early, especially for microphone capture, service workers, and keeping the screen awake.
-- **Desktop is not a target.** The app must not break in a desktop browser, but it gets no dedicated layouts, features, or testing effort in v1.
+Four containers on one droplet, defined in a single Docker Compose file used in both local development and production: **caddy** (TLS, the built React app as static files, `/api` proxied to the server), **api** (all business logic, database access, and every call to an external service), **db** (PostgreSQL on a mounted volume), and **stt** (a Whisper server for voice notes). A one-shot **migrate** service runs before the API starts.
 
-Voice is the primary input, captured in the browser and sent to the API for transcription. Browser support and permissions for microphone capture need to be validated early on a real iPhone, which is the riskiest target.
+The rules that hold it together:
 
-**Voice notes** (JUG-95) are recorded by `web/src/features/voice/recorder.js`, a module with no React in it, so a native client can replace it. It uses `MediaRecorder` at 32 kbps: Chrome records Opus in WebM, Firefox Opus in Ogg, and Safari AAC in MP4, and the API takes all three. The microphone is released as soon as a note ends, a note stops at three minutes, and the audio is never stored on the device. The first press asks for permission, and on Safari the prompt takes the press with it, so that first attempt only asks and the next one records. The recorder has not yet been checked on a real iPhone (JUG-89); its findings go here.
+- **The browser never talks to an LLM provider, a maps provider, or the database directly.** Everything goes through the API, so keys stay on the server and every AI call can be logged, rate-limited, and bounded by safety rules.
+- **The database is not exposed to the public internet.** Only the API reaches it.
+- **The same Compose file runs locally,** so there is no drift between a developer machine and the server. Local development runs at `https://juguemos.local` rather than `localhost` because microphone capture and service workers need a secure context, and because a real hostname lets a phone on the network load it. In production the same Caddyfile swaps the site address for the real domain.
+- **Caddy serves hashed assets `immutable` and everything else `no-cache`,** which is what makes every deploy refresh cleanly on clients.
+- **Every deploy ships the web app.** Caddy's image builds it, so the stack never serves a build left over from before a pull.
 
-### 5.2 Offline and the service worker
+## Client
 
-Play happens in plazas and bedrooms with weak signal, so the app keeps working when the connection is poor: current suggestions, active goals, and the last story a parent opened remain readable offline. Two hard rules govern the how, born of experience with service worker pain:
+A single-page app, shipped as static files. TanStack Router gives per-route code splitting and prefetching on tap, so every screen after the first loads instantly, and no heavy UI library keeps the bundle small.
 
-**The service worker does not exist in development.** The precache is generated only by `vite build` (Workbox via `vite-plugin-pwa`) and registered only in production builds. `vite dev` serves no worker at all, so it can never cache the dev server or leave stale caches on a developer machine. Service worker behavior is tested the honest way: a production build served locally.
+**Next.js was considered and set aside.** Juguemos is a logged-in, phone-first app with no public pages to rank, and every piece of data and logic belongs to the API. Server-side rendering would add a second runtime next to it and buy nothing, while its hydration cost would land on the mid-range phones that matter most. If marketing pages that need SEO ever appear, they can be a tiny separate site.
+
+### Devices
+
+The interface is phone-first and one-handed, since a parent is often holding a toddler. Mobile is not a layout variant; it is the product. [design.md](design.md) covers what that means on screen.
+
+- **Mid-range Android is the floor for every performance decision,** not a fallback. The budget: first screen interactive in under three seconds on a throttled mid-range device (4× CPU slowdown, slow 4G), with under ~150 KB gzipped of JavaScript for the initial route.
+- **Chrome on Android and Safari on iOS, both first-class.** iOS Safari is the riskiest target and gets real-device testing early, especially for microphone capture, service workers, and keeping the screen awake. The voice recorder has not yet been checked on a real iPhone (JUG-89).
+- **Desktop must not break, but gets no dedicated layouts, features, or testing effort in v1.**
+
+Voice is the primary input, captured in the browser and sent to the API for transcription.
+
+### Offline and the service worker
+
+Play happens in plazas and bedrooms with weak signal, so current suggestions, active goals, and the last story opened stay readable offline. Two hard rules govern how, both born of service worker pain:
+
+**The service worker does not exist in development.** It is generated only by `vite build` and registered only in production builds, so it can never cache a dev server or leave stale caches on a developer machine. It is tested the honest way: a production build served locally.
 
 **Every deploy refreshes cleanly on every client.** The known failure modes, each closed:
 
-- Assets are content-hashed. Each build produces new filenames and a new precache manifest; the new worker diffs the manifests, downloads the new files, and deletes the old caches.
-- Entry points always revalidate. Caddy sends `no-cache` for `index.html` and the service worker file and `immutable` for hashed assets — already the case in the scaffold's Caddyfile. If any HTTP cache can serve a stale worker, the whole system breaks silently; this is the rule that most often goes wrong.
-- Open tabs survive a deploy. A tab running yesterday's code may request a lazy chunk the new deploy replaced; the chunk-load error is caught and turned into a single page reload, which lands on the new version instead of a broken screen.
-- Every deploy ships the web app. Caddy's image builds it (`caddy/Dockerfile`), so the stack never serves a build left over from before a pull.
-- Updates apply themselves, and never interrupt (JUG-111). Each deploy's worker takes over on its own and deletes the old caches; open apps look for it on load, on returning to the foreground, and every half hour. The page then reloads at the next safe moment: right away, or, while a story is read or the timer runs, once the parent leaves that screen or the app goes to the background. A parent mid-story is never reloaded. An earlier banner that asked first let an old version run for as long as nobody tapped it.
-- **Offline data is not the service worker's job.** The worker precaches the app shell so the app opens offline. Product data — current suggestions, active goals, the last story opened — lives in a small app-owned store (IndexedDB) written on every successful fetch and read when the network fails. The worker never caches API responses: that is the origin of most stale-data horror stories, and the app knows better than the worker what may be served stale.
+- Assets are content-hashed, so each build produces a new precache manifest the new worker can diff.
+- Entry points always revalidate. If any HTTP cache can serve a stale worker, the whole system breaks silently; this is the rule that most often goes wrong.
+- A tab running yesterday's code may request a lazy chunk the new deploy replaced. The chunk-load error becomes one page reload rather than a broken screen.
+- Updates apply themselves and never interrupt (JUG-111). Each deploy's worker takes over on its own and deletes the old caches; the page reloads at the next safe moment, never while a story is read or the timer runs. An earlier banner that asked first let an old version run for as long as nobody tapped it.
+- **Offline data is not the service worker's job.** The worker precaches the app shell. Product data lives in a small app-owned store written on every successful fetch and read when the network fails. The worker never caches API responses: that is the origin of most stale-data horror stories, and the app knows better than the worker what may be served stale.
 - **A kill switch always exists.** If a bad worker ever ships, the next deploy can ship one that unregisters all previous workers and tears down their caches.
 
-### 5.3 Local development: juguemos.local
+### After version 1: native
 
-Local development runs at `https://juguemos.local`, not `localhost:3000`, for three reasons:
+After 1.0, Juguemos goes native, either React Native or fully native. That is decided now because it shapes v1: the client stays a thin rendering layer, all logic and AI orchestration live in the API so a native client is a port rather than a rebuild, browser-specific investment stops at what v1 needs, and what a native client would reuse — voice capture, the offline store, the API client — is written as isolated modules rather than woven through components.
 
-- Microphone capture, service workers, and the other browser APIs the app leans on require a secure context.
-- Development matches production's shape: one origin, Caddy in front, `/api` proxied to the API container, same Compose file.
-- A real hostname lets real phones on the same Wi-Fi load the dev server, which matters because iOS Safari must be tested on hardware early.
+## Server
 
-The dev machine resolves `juguemos.local` through its hosts file (on Arch, `files` must come before `mdns_minimal` in `/etc/nsswitch.conf`, or the entry is shadowed); Caddy issues a certificate from its internal CA locally, and the root is trusted once per device. Phones on the network can resolve the name over mDNS, which is exactly what `.local` is for. In production, the same Caddyfile swaps the site address for the real domain and obtains certificates automatically; everything else is identical.
+A Fastify API organized by product domain. Responsibilities that belong to the server and nowhere else: all database access, all AI calls with each activity template's safety constraints enforced server-side, voice transcription (after which the audio is discarded rather than stored), calls to the weather and maps providers with responses cached, and the holiday calendar.
 
-### 5.4 After version 1: native
+The shape that makes this testable: routes map URLs to controllers, controllers handle HTTP, services hold the business logic and the queries, and `app.js` builds the app with every dependency passed in, which is what lets integration tests build it against a scratch database. Configuration is read and validated once at startup, and a missing secret stops the process. One error handler gives every failure the same shape and never describes server errors to the client.
 
-After 1.0, Juguemos goes native: Android and iOS apps, either React Native or fully native, to be decided then. This is decided now because it shapes v1:
+Long-running AI work is the main performance concern. Story generation streams to the client, so the parent sees text appear rather than waiting on a blank screen.
 
-- The client stays a thin rendering layer. All business logic, data, and AI orchestration live in the API, so a native client is a port of the same API, not a rebuild of the product.
-- Browser-specific investment stops at what v1 needs: offline through a service worker, not deep PWA installability.
-- What a native client would reuse — voice capture, the offline store, the API client — is written as isolated modules, not woven through components.
+## Data
 
-## 6. Server
+PostgreSQL, because the model is genuinely relational: families, adults, kids, toys, activity templates, goals, tips, stories, and moments, with links between nearly all of them. The core query of the product — activities for a given age, duration, energy level, and location that use toys this family owns — is exactly what SQL handles well. Postgres also offers JSONB for the flexible parts and `pgvector` if semantic matching over the catalog proves useful.
 
-A Node.js HTTP API (Fastify), organized around the product's domains: family and household, toy box, activities and play, goals, tips, stories, special days, and moments.
+**Drizzle, because it stays close to SQL.** The schema expresses the check constraints and partial indexes the model relies on, raw SQL stays available for what is Postgres-specific, and it needs neither TypeScript nor a code generator. Prisma would have kept check constraints out of its schema, and the class-based ORMs only pay off with TypeScript.
 
-Responsibilities that belong to the server and nowhere else:
+**The schema is only ever changed by migrations,** generated by drizzle-kit and applied by a runner of our own that takes an advisory lock, records what it applied, refuses a migration edited after it ran, and refuses one older than the latest applied. Application code never creates tables, migrations only go forward, and a migration that has run anywhere is never edited.
 
-- All database access.
-- All AI calls, including activity tailoring and story generation, with the safety constraints of each activity template enforced server-side.
-- Voice transcription, after which the audio is discarded rather than stored. `POST /voice/transcribe` reads the recording into memory (8 MB at most), passes it to the speech-to-text service with the family's names as hints, and returns only the words. The audio is never written to disk or logged.
-- Calls to the weather and maps providers, with responses cached so the same neighborhood is not queried repeatedly.
-- The holiday calendar, maintained per country and per year, starting with Argentina.
+**Data comes from seeds, never from application code.** Seeds load through Better Auth and the services, the same way the app does, and skip whatever already exists. The catalog seed runs on every deploy and never overwrites a template already in the database, since the database is the catalog's home (JUG-9). The development seed refuses to run in production.
 
-The code is layered by domain. Routes map URLs to controllers, controllers handle HTTP (parsing, status codes, and response schemas that also decide which fields leave the server), and services hold the business logic and the queries. `app.js` builds the app with every dependency passed in, which is what lets the integration tests build it against a scratch database. Configuration is read and validated once at startup, and a missing secret stops the process. One error handler gives every failure the same shape and never describes server errors to the client.
+**Published content stays cleanly separated from family data.** The content factory of 0.7 — drafts, review states, versions, reviewer accounts — may one day be more than the app database wants to hold. The answer then is not to stretch PostgreSQL further but to stand up a CMS with its own database that publishes finished content to the app. Keeping that split clean now is what makes the move cheap if it ever comes.
 
-Long-running AI work is the main performance concern. Story generation should stream to the client where possible, so the parent sees text appear rather than waiting on a blank screen.
+Two rules carry over from the constitution and shape the schema:
 
-## 7. Data
+- **A toy's family name and its description for the AI are separate fields,** and the AI never derives facts, especially about size or safety, from the family name.
+- **Each activity template has a reviewed core the AI cannot alter,** and tailoring slots it fills per family.
 
-PostgreSQL, chosen because the model is genuinely relational: families, households, adults and their play styles, kids, toys, activity templates, goals, tips, stories, and moments, with links between nearly all of them. The core query of the product, finding activities for a given age, duration, energy level, and location that use toys this family owns, is exactly what SQL handles well.
+The tables themselves, and what each domain owns, are in [api/AGENTS.md](../api/AGENTS.md).
 
-Postgres also offers two things worth having later: JSONB for the flexible parts, such as activity templates and their tailoring slots, and `pgvector` if semantic matching over the activity and story catalog proves useful.
-
-**If content grows heavy, a CMS with its own database joins later.** The product side of the catalog — drafts, review states, versions, reviewer accounts, the whole content factory described in the release plan's 0.7 — may one day be more than the app database wants to hold. The answer when we get there is not to stretch PostgreSQL further, but to stand up a CMS with its own database that publishes finished, reviewed content to the app. The v1 schema only needs to keep published content cleanly separated from family data, so that split, if it ever comes, is cheap.
-
-**Accounts.** Better Auth uses `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family. Signing up creates only the account; a family is created explicitly, never as a side effect. Every table uses plural names and snake_case columns, Better Auth's included (defined in `api/src/auth/auth.schema.js`).
-
-**The family profile** is `kids`, `pets`, and `toys`, each kept in the parent's order and with names exactly as typed, and each kid's own interests in `kid_interests` (JUG-144), since kids like different things. What the API calls the family's interests is derived from the kids it is looking at, so a story or a juego uses only what the kids playing love. A kid's age is stored in months, as the age the parent gave and the day they gave it, so it stays current without asking for a birthday (JUG-145). Onboarding shows it back as years and months, since a kid of 1 and one of 1 and 10 months need different stories and juegos. Saving the profile updates rows by id, so ids stay stable for what will reference them later.
-
-**The toy box** (JUG-18) adds to each row in `toys` its aliases, a description for the AI, whose it is (one kid, shared, or not said), and whether it's a favorite. Toys the kid tells apart by comparison share a `link_group`. Saving the profile changes only a toy's name and order, so the rest stays. `household_materials` holds the materials each family has, by their key in a fixed list (`api/src/toys/materials.js`), since they need no family name. Activities and stories still get only a toy's family name, and a toy with only a name fills the slots any toy can, as in 0.1.
-
-**The catalog lives in the database** (JUG-9): `activity_templates`, tagged with the full taxonomy (age range in months, minutes, place, energy, categories, small space, materials, skills, and safety), and `story_templates`. Templates have slots (`{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, `{interest}`) that code fills from the profile (`api/src/catalog/slots.js`); there is no LLM in 0.1. A template is offered only when the family can fill every slot it uses and its age range fits, by the month: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.
-
-**The catalog admin** (JUG-109) is how a loaded template is revised before 0.7's content backend: a page at `/admin` that adds, edits, switches off, and deletes activity templates. A template switched off stays out of the suggestions. Deleting one marks its row `deleted_at` instead of removing it, so the catalog seed, which skips slugs already in the database, never brings it back. The admin has no login yet, so the API serves it only when `ADMIN_ENABLED` is true, and it's never turned on where anyone outside the family can reach it. 0.7 still brings review states, versions, and reviewer accounts.
-
-**What a family was given is saved as they saw it.** `activities` holds each suggestion as it was tailored, and `stories` each story as it was written, so a story reads again exactly the same. Stories written by an LLM (JUG-71) will be saved to `stories` too, marked by `source`.
-
-**Seeds.** Data never comes from application code; seeds load it through Better Auth and the services, the same way the app does, and skip whatever already exists. The catalog seed (`api/seeds/catalog/`) runs on every `docker compose up`, right after the migrations, and never overwrites a template already in the database, since the database is the catalog's home. The development seed (`api/seeds/development.js`, an account for the example family) refuses to run in production.
-
-**Database access.** The API reaches Postgres through Drizzle ORM (JUG-105). The schema is defined once, in code, next to the code that uses it: each domain's tables are in its `<domain>.schema.js`, beside its service. The queries and migrations follow from it. Drizzle was chosen because it stays close to SQL: the schema expresses the check constraints and partial indexes the model relies on, raw SQL remains available for what's Postgres-specific, and it needs neither TypeScript nor a code generator. Prisma would have kept check constraints out of its schema, and the class-based ORMs only pay off with TypeScript.
-
-**Migrations.** The schema is only ever changed by SQL migrations in `api/migrations/`, which drizzle-kit generates from the schema locally. Only the `.sql` files are committed: drizzle-kit's snapshots in `migrations/meta/` stay out of the repo (JUG-71). A small runner of our own (`api/src/db/migrate.js`) applies the pending files in name order, each in its own transaction, and records each one's name and hash in `juguemos_migrations`. It holds an advisory lock, so concurrent runs wait their turn and applying is idempotent. It refuses a migration edited after it ran, and one older than the latest applied, which would otherwise never run. On a database that Drizzle's migrator ran on, its first run copies Drizzle's records from `drizzle.__drizzle_migrations`, matched to the files by the same SHA-256, so no migration runs twice. A one-shot `migrate` service runs them on every `docker compose up`, after the image builds and before the API starts, and the API only starts if they succeed. They can't run inside `docker build` itself, because the database isn't reachable there. Application code never creates tables, a migration that has run anywhere is never edited, and migrations only go forward.
-
-The rest of the schema (goals, tips, moments, special days) arrives with the releases that need it. The tags on activities, toys, goals, and tips stay the backbone of the product, since they determine what the app can actually do.
-
-Two data rules carry over from the constitution and shape the schema:
-
-- A toy's family name and its description for the AI are stored as separate fields, and the AI never derives facts, especially about size or safety, from the family name.
-- Each activity template has a reviewed core that the AI cannot alter, and tailoring slots that it fills per family.
-
-## 8. External services
+## External services
 
 | Service | Used for | Notes |
 |---|---|---|
-| LLM provider | Activity tailoring, story generation, onboarding extraction, agent conversation | Stories use OpenCode Go or OpenRouter, chosen with `LLM_PROVIDER`, and the model with `LLM_MODEL` (JUG-115). Which to keep is still open (JUG-7). OpenRouter requests only go to upstream providers that don't store or train on prompts. Calls are server-side only. |
-| Speech-to-text | Voice onboarding and voice input | Must handle Rioplatense Spanish, children's names, and background noise. Audio is discarded after transcription. Proposed, pending Alex's choice (JUG-88): Whisper large-v3-turbo on the droplet, run by speaches as the `stt` service in Compose, so audio never leaves the server. The API speaks the OpenAI transcriptions API, so a hosted service (Groq, OpenAI) is a change of `STT_URL`, `STT_MODEL`, and `STT_API_KEY`. |
+| LLM provider | Stories, activity tailoring, reading a family from the parent's words | OpenCode Go or OpenRouter, chosen by environment variable (JUG-115); which to keep is still open. OpenRouter requests refuse upstream providers that store or train on prompts. Server-side only. |
+| Speech-to-text | Voice notes | Must handle Rioplatense Spanish, children's names, and background noise. Whisper on the droplet by default, so audio never leaves the server; the API speaks the OpenAI transcriptions API, so a hosted service is a change of environment variables (JUG-88). |
 | Weather | Matching suggestions to conditions | Cached per location. |
-| Maps | Nearby plazas, parks, and kid-friendly places | Maps data is considered sufficient for v1; no curated event listings. |
+| Maps | Nearby plazas and kid-friendly places | Maps data is enough for v1; no curated event listings. |
 
-Each of these should sit behind a thin internal interface, so a provider can be swapped without touching product code.
+Each sits behind a thin internal interface, so a provider can be swapped without touching product code.
 
-## 9. Privacy and security
+## Privacy and security
 
-These follow directly from the constitution's guardrails.
+These follow from the constitution's guardrails. Family data is minimal by default, and children's names, ages, photos, and location get the highest care. Voice recordings are transcribed and discarded. Parents can see, change, and delete everything the app knows. Nothing is sold or shared, and no data is used to advertise to children.
 
-Family data is minimal by default, and children's names, ages, photos, and location get the highest level of care. Voice recordings are transcribed and then discarded. Parents can see, change, and delete everything the app knows about their family. Nothing is sold or shared, and no data is used to advertise to children.
-
-Practical consequences for the architecture:
+What that means in practice:
 
 - All secrets live in server-side environment variables, never in the client bundle.
-- Photos are stored on the droplet's volume, not on a third-party service, and are served only to the family that owns them.
+- Photos are stored on the droplet's volume, not a third-party service, and served only to the family that owns them.
 - Backups are encrypted and stored off the droplet.
 - Argentina's Ley 25.326, overseen by the AAIP, is the first legal framework to satisfy. Each new market adds its own.
-- What parents send in their own words is kept only for auditing the playtest (JUG-116). With `AUDIT_TRANSCRIPTS=true`, the family text and each voice note's transcription go into `audit_transcripts`, with who sent them. It's off by default and in production. Deleting an account or a family deletes its rows, and `redacted_at` marks a row whose PII has been removed. The texts never go into logs.
+- What parents send in their own words is kept only for auditing the playtest (JUG-116), only while `AUDIT_TRANSCRIPTS` is on, which is never in production. Deleting an account or family deletes those rows. The texts never go into logs.
 
-## 10. Operations
+## Operations
 
-Deployment is a rebuild and restart of the Compose stack on the droplet, kept simple enough to run from a single command.
+Deployment is a rebuild and restart of the Compose stack on the droplet, kept simple enough to run from a single command. The minimum for v1: automated nightly database backups stored off the droplet and verified by restoring them at least once, basic uptime and error monitoring, and logs that record AI calls for cost and debugging without storing family data unnecessarily.
 
-The minimum operational needs for v1 are: automated nightly database backups stored off the droplet and verified by restoring them at least once, basic uptime and error monitoring, and application logs that record AI calls for cost and debugging without storing the contents of family data unnecessarily.
+Version 1 runs a single environment. Staging is worth adding once families outside Alex's household are using it.
 
-Version 1 runs a single environment. A separate staging environment is worth adding once real families outside the founder's household are using it.
+## Open questions
 
-## 11. Open questions
-
-- Which LLM provider to keep, OpenCode Go or OpenRouter (either works, set in the environment), and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
-- Which speech-to-text service handles Rioplatense Spanish and children's names well enough to make voice the default path, and whether the droplet's CPU transcribes fast enough to run Whisper itself (JUG-88).
-- Whether the API is a single service or splits the content pipeline into a separate worker, and whether that content backend eventually becomes a CMS with its own database rather than tables in the app database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
+- Which LLM provider to keep, and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
+- Whether the droplet's CPU transcribes fast enough to keep running Whisper itself (JUG-88).
+- Whether the content pipeline eventually splits into a separate worker, or a CMS with its own database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
-- How the holiday calendar is versioned and deployed. The activity and story catalog lives in the database, loaded by seeds (JUG-9).
+- How the holiday calendar is versioned and deployed.
 
-## 12. Change log
+## Change log
 
-| Version | Date | Change |
-|---|---|---|
-| 0.1 | September 2026 | First draft. Established React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
-| 0.2 | September 2026 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets set (mid-range Android and iPhone; desktop not a target). Service worker and offline rules. `juguemos.local` for local development. Fastify for the API. PostgreSQL now, a CMS with its own database if content grows. First scaffold committed: Compose, Caddy, API, placeholder page. |
-| 0.3 | September 2026 | SPA built from the Plaza prototype in JavaScript with JSDoc (TypeScript tried and dropped): Vite, TanStack Router with per-route code splitting, npm workspaces (api, web) with no shared package, self-hosted fonts, and a production-only service worker with prompt-style updates. Caddy serves `web/dist`. |
-| 0.4 | September 2026 | Authentication decided: Better Auth with email and password, sessions in PostgreSQL, sign-up behind an email allowlist. First tables: users, sessions, families, and family members. API foundations: layered by domain (routes, controllers, services), validated config, versioned SQL migrations with node-pg-migrate run by a one-shot service before the API starts, and integration tests against a real database. |
-| 0.5 | September 2026 | The web runs on the API with no hardcoded data. Family profile (kids, pets, interests, toys), the activity and story catalog in the database with code-filled slots (no LLM in 0.1), and every suggested activity and written story saved per family. Catalog seeds load on every deploy; development seeds stay local. |
-| 0.6 | September 2026 | Database access moves to Drizzle ORM: the schema is code, drizzle-kit generates the migrations from it, and they run under a lock that also refuses edited or skipped migrations. Better Auth uses its Drizzle adapter. node-pg-migrate and the hand-written SQL are gone. |
-| 0.7 | September 2026 | The catalog admin at `/admin` revises activity templates in the database: add, edit, switch off, and delete, with deletes kept as rows so seeds never bring them back. No login yet, so it's off unless `ADMIN_ENABLED` is true. |
-| 0.8 | September 2026 | Caddy's image builds the web app, so every deploy ships it. The service worker updates itself: each deploy's worker takes over, and the page reloads at a safe moment, never mid-story. |
-| 0.9 | September 2026 | Stories can use OpenCode Go or OpenRouter, switched with `LLM_PROVIDER`, with the model set by `LLM_MODEL`. One client serves both. OpenRouter requests refuse upstream providers that store or train on prompts. |
-| 0.10 | September 2026 | Voice notes: a recorder module in the web, `POST /voice/transcribe` in the API, and a self-hosted Whisper server (speaches) as the `stt` service in Compose. Any OpenAI-compatible transcription service can replace it by env var. The audio is kept in memory only. |
-| 0.11 | September 2026 | `audit_transcripts` keeps the family text and voice note transcriptions for auditing the playtest, only while `AUDIT_TRANSCRIPTS` is on. |
-| 0.12 | September 2026 | Interests moved from the family to each kid (`kid_interests`), carried over by a migration. Onboarding ties each interest to its kid and shares the rest, and stories and activities use only the interests of the kids playing. |
-| 0.13 | September 2026 | A kid's age is kept in months (`kids.age_months`) and counted by the month, and onboarding asks for years and months. Story bands are six months wide under four years, eight in all, and every band asks for more than before. |
+| Version | Change |
+|---|---|
+| 0.1 | React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
+| 0.2 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets, service worker and offline rules, `juguemos.local`, Fastify, PostgreSQL. |
+| 0.3 | The SPA built from the Plaza prototype in JavaScript with JSDoc, TypeScript tried and dropped. |
+| 0.4 | Better Auth with sessions in PostgreSQL and an email allowlist. API layered by domain, validated config, migrations run before the API starts, integration tests against a real database. |
+| 0.5 | The web runs on the API with no hardcoded data: family profile, the catalog in the database with code-filled slots, and every suggestion and story saved per family. |
+| 0.6 | Database access moved to Drizzle; the schema became code. |
+| 0.7 | The catalog admin at `/admin`, with deletes kept as rows so seeds never bring them back. |
+| 0.8 | Caddy's image builds the web app, and the service worker updates itself without interrupting. |
+| 0.9 | Stories can use OpenCode Go or OpenRouter, switched by environment variable. |
+| 0.10 | Voice notes, with a self-hosted Whisper server in Compose. Audio is kept in memory only. |
+| 0.11 | `audit_transcripts` keeps parents' own words while auditing the playtest. |
+| 0.12 | Interests moved from the family to each kid. |
+| 0.13 | A kid's age is kept in months and counted by the month; story bands are six months wide under four years. |
