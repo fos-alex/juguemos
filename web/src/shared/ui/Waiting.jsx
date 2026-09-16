@@ -10,7 +10,7 @@ import './Waiting.css'
 const ANIMATES_AFTER_MS = 700
 
 /** How many pieces each animation is drawn from. */
-const PIECES = { ronda: 5 }
+const PIECES = { ronda: 5, petals: 5, rayuela: 5 }
 
 /**
  * The waiting animation (JUG-132, JUG-133): a calm, slow loop that says
@@ -24,14 +24,21 @@ const PIECES = { ronda: 5 }
  * Drawn in CSS from the tokens, like every other graphic in the app, so it
  * works in night mode wherever it is put.
  *
+ * The three variants are the same animation in three shapes from the plaza:
+ * `ronda`, the wordmark's dots holding hands; `petals`, jacarandá drifting
+ * down; and `rayuela`, a hopscotch the light hops around. Which one a story
+ * gets follows the age of the kids playing (JUG-132); everywhere else it is
+ * the ronda.
+ *
  * @param {{
- *   variant?: 'ronda',
+ *   variant?: 'ronda' | 'petals' | 'rayuela',
  *   size?: 'strip' | 'screen',
  *   tone?: 'page' | 'reading' | 'on-primary',
  *   className?: string,
  * }} props `size` is the room it takes: `strip` beside a word, `screen` on its
- *   own. `tone` is where it sits: `on-primary` takes the button's own ink, and
- *   `reading` holds it back so it doesn't brighten a dim room.
+ *   own, at whatever `--waiting-size` the place it sits in gives it. `tone`
+ *   is where it sits: `on-primary` takes the button's own ink, and `reading`
+ *   holds it back so it doesn't brighten a dim room.
  */
 export function Waiting({ variant = 'ronda', size = 'strip', tone = 'page', className = '' }) {
   const calm = useReducedMotion()

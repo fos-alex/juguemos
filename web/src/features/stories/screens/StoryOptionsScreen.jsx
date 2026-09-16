@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { playingInterests } from '../../family'
+import { playingAgeMonths, playingInterests } from '../../family'
 import { savedStories, savedStory, storyOptions } from '../api'
 import { OptionSkeleton } from '../components/OptionSkeleton'
+import { waitingVariant } from '../model'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
+import { useSlowWait } from '../../../shared/hooks/useSlowWait'
 import { useStored } from '../../../shared/store'
-import { Body, Card, Chips, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import { Body, Card, Chips, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton, Waiting } from '../../../shared/ui'
 import '../stories.css'
 
 /** @typedef {import('../types').SavedStorySummary} SavedStorySummary */
@@ -26,7 +28,9 @@ const OPTIONS = 3
  *
  * The options arrive one at a time, so a card takes its skeleton's place as
  * soon as the model has written it, and a card that is there can be tapped
- * while the others are still coming.
+ * while the others are still coming. Until the first one lands there is
+ * nothing to hold a place for, so the waiting animation waits there instead
+ * (JUG-132), and gives way the moment a card arrives.
  */
 export function StoryOptionsScreen() {
   const navigate = useNavigate()
@@ -34,8 +38,9 @@ export function StoryOptionsScreen() {
   const online = useOnline()
   const options = useStored('storyOptions')
   const stories = useStored('stories')
+  const family = useStored('family')
   // What the kids playing love (JUG-144): a keyword the story is about.
-  const interests = playingInterests(useStored('family'))
+  const interests = playingInterests(family)
   const arrived = options?.length ?? 0
   const [loading, setLoading] = useState(arrived === 0)
   const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))
@@ -43,6 +48,10 @@ export function StoryOptionsScreen() {
   // The stream in flight, so asking for others, or leaving, stops the old one
   // instead of letting two of them write options over each other.
   const asking = useRef(/** @type {AbortController | null} */ (null))
+  // Nothing to read yet: the animation waits in the three cards' place
+  // (JUG-132), and says what it is doing once the wait is long.
+  const writing = loading && arrived === 0
+  const slow = useSlowWait(writing)
 
   useDocumentTitle('Hora del cuento · Juguemos')
 
@@ -128,8 +137,16 @@ export function StoryOptionsScreen() {
             </MetaLabel>
           </Card>
         ))}
-        {loading &&
-          Array.from({ length: Math.max(OPTIONS - arrived, 0) }, (_, index) => <OptionSkeleton key={`skeleton-${index}`} />)}
+        {writing ? (
+          <div className="story-writing">
+            <Waiting variant={waitingVariant(playingAgeMonths(family))} size="screen" />
+            {/* Voice pass pending. */}
+            {slow && <StatusLine role="status">Sigo escribiendo. Ya casi están.</StatusLine>}
+          </div>
+        ) : (
+          loading &&
+          Array.from({ length: Math.max(OPTIONS - arrived, 0) }, (_, index) => <OptionSkeleton key={`skeleton-${index}`} />)
+        )}
         <StatusLine role="alert">{notice}</StatusLine>
         {interests.length > 0 && (
           <section className="story-keywords">

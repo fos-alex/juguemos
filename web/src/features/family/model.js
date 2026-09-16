@@ -72,6 +72,20 @@ export function playingInterests(family) {
   return [...seen.values()]
 }
 
+/**
+ * The age, in months, of the youngest kid playing on this device whose age
+ * the family gave. It is the age a story is written for, so it is the age the
+ * story's waiting animation follows too (JUG-132). Null when no kid playing
+ * has a known age.
+ * @param {Family | null | undefined} family
+ */
+export function playingAgeMonths(family) {
+  const ages = (family?.kids ?? [])
+    .filter((kid) => kid.playing !== false && kid.ageMonths != null)
+    .map((kid) => /** @type {number} */ (kid.ageMonths))
+  return ages.length === 0 ? null : Math.min(...ages)
+}
+
 /** The same interests, in any order and case. @param {string[]} a @param {string[]} b */
 function sameInterests(a, b) {
   const key = (/** @type {string[]} */ list) => list.map((item) => item.trim().toLocaleLowerCase('es')).sort().join('\n')

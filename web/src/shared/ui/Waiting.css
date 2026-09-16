@@ -88,3 +88,124 @@
     opacity: 1;
   }
 }
+
+/*
+ * Jacarandá, coming down. Each petal has its own place and its own head start,
+ * so they don't fall in a line, and they are already falling when it appears.
+ */
+
+.waiting--petals .waiting__piece {
+  position: absolute;
+  top: 0;
+  width: calc(var(--waiting-size) / 6);
+  height: calc(var(--waiting-size) / 9);
+  border-radius: 60% 40% 55% 45% / 70% 65% 35% 30%;
+  background: var(--dot-jacaranda);
+  opacity: 0;
+  animation: waiting-fall 9s ease-in-out infinite;
+}
+
+.waiting--petals .waiting__piece:nth-child(even) {
+  background: var(--dots-2);
+}
+
+.waiting--petals .waiting__piece:nth-child(1) {
+  left: 4%;
+  animation-delay: -0.6s;
+}
+
+.waiting--petals .waiting__piece:nth-child(2) {
+  left: 32%;
+  animation-delay: -5.1s;
+}
+
+.waiting--petals .waiting__piece:nth-child(3) {
+  left: 18%;
+  animation-delay: -2.9s;
+}
+
+.waiting--petals .waiting__piece:nth-child(4) {
+  left: 62%;
+  animation-delay: -7.4s;
+}
+
+.waiting--petals .waiting__piece:nth-child(5) {
+  left: 78%;
+  animation-delay: -4.2s;
+}
+
+/* La rayuela, with the light hopping from square to square and round again. */
+
+.waiting--rayuela .waiting__piece {
+  --cell: calc(var(--waiting-size) / 4);
+
+  position: absolute;
+  top: 0;
+  left: calc(50% - var(--cell) / 2);
+  width: var(--cell);
+  height: var(--cell);
+  border: 1.5px solid var(--dashed);
+  border-radius: 3px;
+}
+
+.waiting--rayuela .waiting__piece:nth-child(2) {
+  top: var(--cell);
+}
+
+.waiting--rayuela .waiting__piece:nth-child(3) {
+  top: calc(var(--cell) * 2);
+  left: calc(50% - var(--cell));
+}
+
+.waiting--rayuela .waiting__piece:nth-child(4) {
+  top: calc(var(--cell) * 2);
+  left: 50%;
+}
+
+.waiting--rayuela .waiting__piece:nth-child(5) {
+  top: calc(var(--cell) * 3);
+}
+
+.waiting--rayuela .waiting__piece::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 2px;
+  background: var(--dots-2);
+  opacity: 0;
+  animation: waiting-hop 6s ease-in-out infinite;
+  animation-delay: calc(var(--piece) * 1.2s);
+}
+
+@keyframes waiting-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(-14deg);
+  }
+
+  18%,
+  76% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(calc(var(--waiting-size) - var(--waiting-size) / 9)) rotate(18deg);
+  }
+}
+
+@keyframes waiting-hop {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  6%,
+  14% {
+    opacity: 1;
+  }
+
+  24% {
+    opacity: 0;
+  }
+}

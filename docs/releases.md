@@ -1,6 +1,6 @@
 # Juguemos — Releases
 
-**Version:** 0.13 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.14 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
@@ -79,7 +79,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Story library and rereads.** Save a story and reread it with one tap. A series keeps its chapters together, in order.
 - **Sign in with Google.** Parents can sign in with their Google account, which shares only their name and email. Until the guardrails are complete, only the family's own accounts get in.
 - **An animation while a story is written** (nice to have). A story from the LLM can take up to two minutes before there's anything to read, so an animation shows that it's being written, and it varies with the kids' ages. It gives way to the text as soon as the first words arrive.
-- **An animation while a voice note is read** (nice to have). The same for onboarding, while a voice note becomes words and while Juguemos reads the family from them.
+- **An animation while a voice note is read** (nice to have). The same for onboarding, while a voice note becomes words and while Juguemos reads the family from them. One animation for everyone here: during onboarding Juguemos doesn't know the kids yet.
 
 ### 0.4 — *Jugar para crecer*
 
@@ -172,12 +172,14 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | Discovery games in 0.4, with the answers in the room and no pictures on the screen | They teach animal names, sounds, and words, which fits 0.4's goals, and parents can pick them through its categories and filter. The constitution rules out kid-facing screen games, so the parent holds the phone and the kids answer out loud or with real things. |
 | Waiting animations in 0.3, as nice-to-haves | Stories from the LLM can take up to two minutes, and 0.3 already improves stories. The animations need the illustration style from 0.2, and the onboarding one should be in place before friends join in 0.5. |
 | Casting by code, keywords, and a story audit in 0.1 | The playtest showed the same toys and the same kid in every story, because the model chose; code draws the casting instead, and the audit is what lets the weights be adjusted. |
+| The waiting animations are shapes from the plaza, not a character | Alex's call. A calm ronda, jacarandá petals, and a rayuela keep the handoff's rule against a mascot, character, or cartoon, and they need no illustrator, so they shipped without waiting on the 0.2 illustration style. |
+| The story animation varies with the age of the kids playing | Alex's call, against this plan's own recommendation. A story is already written for the youngest kid playing, and its wait now follows the same age: the ronda under three, petals to five, the rayuela after that. |
+| The waiting animation is allowed on the reading screen, while the story is written | Alex's call. "No art on the reading screen" now means no art beside the story: the animation shows only before there are words and gives way to the first of them. |
 | Printable activities in 0.9 | They need the illustration style from 0.2, what the toy box knows each toy is, and 0.7's content workflow to produce pages at volume. They also pair with the feriados calendar in 0.9, with pages for the special days. |
 
 ## 6. Open questions
 
-- **Styling by age.** Should Home's look, or the animation while a story is written, change with the age of the kid who's playing? The recommendation is no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which [design.md](design.md) rules out. The story animation could vary with the story being written instead.
-- **Characters in waiting animations.** [design.md](design.md) rules out a mascot, character, or cartoon in loading states. A cute character needs that rule changed; a calm animation in the Plaza style doesn't.
+- **Styling by age.** Home's look is still an open question, and the recommendation is still no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which [design.md](design.md) rules out. The animation while a story is written is decided and does vary with age; see the decisions above.
 
 - **The LLM in 0.1.** Does the playtest wait for the LLM provider, or start with template stories and the family form, adding conversational onboarding and bespoke stories when they're ready?
 - **Friends and guardrails.** The first target for friends was 0.3 or 0.4, but guardrails complete in 0.5. Should guardrails move earlier so friends can join sooner, or do friends wait for 0.5?
@@ -202,3 +204,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.11 draft | September 2026 | Added waiting animations for stories and voice notes to 0.3, as nice-to-haves. |
 | 0.12 draft | September 2026 | Added printable activities to 0.9. |
 | 0.13 draft | September 2026 | Added the casting draw, interest keywords, and the story audit to 0.1's Tell a story. |
+| 0.14 draft | September 2026 | Settled the waiting animations: shapes from the plaza rather than a character, varying with the age of the kids playing, and allowed on the reading screen until the story's first words. |
