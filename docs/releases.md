@@ -68,7 +68,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Detailed family profiles.** Richer details on each child, the pet, and the home.
 - **Recommendations based on the profile.** Activities chosen by age, interests, toys at home, and recent history, so ideas don't repeat.
 - **Feedback tap.** One tap after an activity or story, such as *"¡Lo hicimos!"* or *"No era para nosotros,"* which also feeds the recommendations.
-- **More activities and content.**
+- **More activities and content.** 40 more activity templates, taking the catalog to 55. They cover ages 3–5, which 0.1 barely reached, and use the categories 0.1 never did: learn, helpers, and out_and_about. The ones for the older ages run to five or six steps, and most need no toy, so they reach a family with a small toy box.
 
 ### 0.3 — *El momento justo*
 
