@@ -1,5 +1,5 @@
 import { InterestChips } from './InterestChips'
-import { Card, FieldControl } from '../../../shared/ui'
+import { Card, FieldControl, TertiaryButton } from '../../../shared/ui'
 
 /** @typedef {import('../model').FormState['kids'][number]} FormKid */
 
@@ -10,15 +10,20 @@ import { Card, FieldControl } from '../../../shared/ui'
  * and shown, even when they are zero (JUG-145). Ages keep only digits.
  *
  * The interest being typed belongs to the form, so saving includes it.
+ * `onRemove` takes the kid off the form, which the family loses only on
+ * "Guardar"; without it the card has no way to remove the kid.
  * @param {{
  *   kid: FormKid,
  *   index: number,
  *   draft: string | null,
  *   onDraft: (draft: string | null) => void,
  *   onChange: (change: (kid: FormKid) => FormKid) => void,
+ *   onRemove?: () => void,
  * }} props
  */
-export function KidCard({ kid, index, draft, onDraft, onChange }) {
+export function KidCard({ kid, index, draft, onDraft, onChange, onRemove }) {
+  const name = kid.name.trim()
+
   /** @param {Partial<FormKid>} patch */
   const edit = (patch) => onChange((current) => ({ ...current, ...patch }))
 
@@ -60,7 +65,7 @@ export function KidCard({ kid, index, draft, onDraft, onChange }) {
         />
       </div>
       <InterestChips
-        name={kid.name.trim()}
+        name={name}
         field={`interests.${index}`}
         interests={kid.interests}
         draft={draft}
@@ -68,6 +73,12 @@ export function KidCard({ kid, index, draft, onDraft, onChange }) {
         onCommit={commitInterest}
         onRemove={(position) => onChange((current) => ({ ...current, interests: current.interests.filter((_, i) => i !== position) }))}
       />
+      {onRemove && (
+        // Voice pass pending.
+        <TertiaryButton size="inline" className="kid-card__remove" onClick={onRemove}>
+          {name ? `Quitar a ${name}` : 'Quitar'}
+        </TertiaryButton>
+      )}
     </Card>
   )
 }

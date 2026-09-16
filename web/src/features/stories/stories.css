@@ -105,6 +105,14 @@
   margin-bottom: -12px;
 }
 
+/* Under the last paragraph: Listo, and what comes next (JUG-154). */
+
+.story-end {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
 /* 2s / 2t / 2u Lectura */
 
 .screen--reading .header {

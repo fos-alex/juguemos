@@ -66,13 +66,13 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/juguetes` | El baúl de juguetes: the toys by family name, and the household materials, which save on each tap. A voice note on its mic comes back as toys to confirm (JUG-146). Built from the primitives, with no design of its own |
 | `/juguetes/$id` | One toy: its name, other names, what it is, whose it is, favorite, the toys it goes with, and *Ya no lo tenemos*. `/juguetes/nuevo` adds one, and a voice note fills its name and what it is (JUG-146) |
 | `/ajustes` | Ajustes, not designed yet and kept minimal. **Cerrar sesión** lives here: it is account, not navigation |
-| `/` | Home. The drawer, thinking, and offline are states of it. With more than one kid, who's playing sits above the buttons (JUG-107). While a juego is played, its card takes the last juego's place with the time left and has *Terminamos* under it (JUG-134) |
+| `/` | Home. The drawer, thinking, and offline are states of it. With more than one kid, who's playing sits above the buttons (JUG-107). While a juego is played, its card takes the last juego's place with the time left and has *Terminamos* under it (JUG-134). Under it, the last story opened, with *Hacer una serie*, or *Leer otro episodio* for an episode (JUG-154) |
 | `/idea/$id` | Actividad. Otro juego swaps in place and pushes history, so back returns to the previous one |
 | `/idea/$id/reloj` | El reloj |
-| `/cuentos` | ¿Cuál leemos hoy?: the three plots, the family's series with *Otro episodio* (JUG-59), a chip per interest of the kids playing (JUG-140), and the stories to read again, each with *Hacer una serie* (JUG-50). Until the first plot lands, the waiting animation holds the three cards' place (JUG-132) |
-| `/cuento/$id` | Escribiendo, with the waiting animation in the footer until the story's first paragraph (JUG-132), then the reading screen |
+| `/cuentos` | ¿Cuál leemos hoy?: the three plots, the family's series under *Series de cuentos*, each with *Leer otro episodio* (JUG-59), a chip per interest of the kids playing (JUG-140), and the stories to read again, each with *Hacer una serie* (JUG-50). Until the first plot lands, the waiting animation holds the three cards' place (JUG-132) |
+| `/cuento/$id` | Escribiendo, with the waiting animation in the footer until the story's first paragraph (JUG-132), then the reading screen. Under the last paragraph, *Listo* goes Home, with *Hacer una serie*, or *Leer otro episodio* for an episode (JUG-154) |
 | `/cuento/tema/$keyword` | The same reading screen, writing a story about an interest the parent tapped. Once saved, the URL is replaced with the story's own |
-| `/serie/$id` | One series: its storyline, its episodes in order, *Otro episodio*, and *Ya no la seguimos* (JUG-59) |
+| `/serie/$id` | One series: its storyline, its episodes in order, *Leer otro episodio*, and *Ya no la seguimos* (JUG-59) |
 | `/serie/$id/episodio` | The same reading screen, writing the series' next episode. Once saved, the URL is replaced with the story's own |
 | `/admin` | The catalog admin: every activity template, with a switch that takes it out of *¡Juguemos!* |
 | `/admin/$id` | Edits one template. `/admin/nuevo` adds one |

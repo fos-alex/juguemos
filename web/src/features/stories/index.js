@@ -1,5 +1,6 @@
 // Stories: the three options, the family's interests, their series, their shelf, and reading.
 export { EpisodeScreen } from './screens/EpisodeScreen'
+export { LastStoryCard } from './components/LastStoryCard'
 export { KeywordStoryScreen } from './screens/KeywordStoryScreen'
 export { ReadingScreen } from './screens/ReadingScreen'
 export { SeriesScreen } from './screens/SeriesScreen'

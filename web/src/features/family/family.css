@@ -124,6 +124,10 @@
   margin-top: 14px;
 }
 
+.kid-card__remove {
+  margin-top: 6px;
+}
+
 /* Inside the card the name takes its own line, and the years and months
    share the one under it. */
 .kid-row {

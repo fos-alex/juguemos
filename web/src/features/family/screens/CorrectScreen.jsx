@@ -54,6 +54,16 @@ export function CorrectScreen() {
   /** @param {(draft: FormState) => FormState} change */
   const update = (change) => setForm((current) => change(current))
 
+  /**
+   * Takes a kid off the form. Tapping "Quitar" blurs any interest being typed,
+   * which adds it first, so no draft is left to follow the kids that move up.
+   * @param {number} index
+   */
+  const removeKid = (index) => {
+    update((f) => ({ ...f, kids: f.kids.filter((_, i) => i !== index) }))
+    setDrafts({})
+  }
+
   /** @param {string} text the words of a voice note about what changed */
   const readNote = async (text) => {
     const said = await understandChanges(text)
@@ -86,6 +96,7 @@ export function CorrectScreen() {
             drafts={drafts}
             onDraft={(index, draft) => setDrafts((all) => ({ ...all, [index]: draft }))}
             onChange={(change) => update((f) => ({ ...f, kids: change(f.kids) }))}
+            onRemove={removeKid}
           />
 
           <Field

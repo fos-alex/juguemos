@@ -105,7 +105,7 @@ export function SeriesScreen() {
         )}
       </Body>
       <Footer>
-        {/* Voice pass pending: the last-episode line and "Otro episodio". */}
+        {/* Voice pass pending: the last-episode line and "Leer otro episodio". */}
         {full && <StatusLine>Esta serie ya tiene todos sus episodios.</StatusLine>}
         {series && !full && (
           <PrimaryButton
@@ -113,7 +113,7 @@ export function SeriesScreen() {
             unavailable={!online}
             onClick={() => (online ? void navigate({ to: '/serie/$id/episodio', params: { id } }) : setNotice('Estás sin conexión.'))}
           >
-            Otro episodio
+            Leer otro episodio
           </PrimaryButton>
         )}
       </Footer>

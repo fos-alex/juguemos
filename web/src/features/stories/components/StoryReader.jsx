@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import { playingAgeMonths } from '../../family'
-import { savedStory, writeEpisode, writeKeywordStory, writeStory } from '../api'
+import { rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeStory } from '../api'
+import { StoryEnd } from './StoryEnd'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
 import { StoryText } from './StoryText'
@@ -43,6 +44,9 @@ import '../stories.css'
  * held back so it doesn't brighten a dim room, and one line says what is
  * happening once the wait is long. It goes the moment there are words, and
  * the story itself is never illustrated.
+ *
+ * Once the story is whole, it is the one Home offers again, and its end says
+ * what comes next: Listo, and a series or its next episode (JUG-154).
  * @param {{ id?: string, keyword?: string, seriesId?: string }} props one of the
  *   three: the story to read, the interest to write one about, or the series to
  *   write the next episode of
@@ -122,6 +126,10 @@ export function StoryReader({ id: picked, keyword, seriesId }) {
     return () => controller.abort()
   }, [picked, keyword, seriesId, attempt])
 
+  useEffect(() => {
+    if (story && id) rememberLastStory(id)
+  }, [story, id])
+
   const title = story?.title ?? option?.title ?? written
   const minutes = story?.minutes ?? option?.minutes
 
@@ -157,6 +165,7 @@ export function StoryReader({ id: picked, keyword, seriesId }) {
             that lands the heading is a placeholder like the text under it. */}
         {title ? <h1 className="story-title">{title}</h1> : <Skeleton width="70%" height={23} />}
         <StoryText parts={parts} done={Boolean(story)} />
+        {story && <StoryEnd story={story} />}
         {!story && !failure && <StorySkeleton paragraphs={paragraphs.length === 0 ? 3 : 2} />}
         <StatusLine role="alert">{failure}</StatusLine>
         {/* Voice pass pending. */}

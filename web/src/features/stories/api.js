@@ -306,6 +306,7 @@ export async function makeSeries(storyId) {
   try {
     const started = /** @type {Series} */ (await request('POST', `/stories/${storyId}/series`))
     remember(started)
+    placeInSeries((story) => story.id === storyId, { id: started.id, title: started.title, episode: 1 })
     return started
   } catch (error) {
     throw seriesFailure(error)
@@ -320,12 +321,36 @@ export async function makeSeries(storyId) {
 export async function forgetSeries(id) {
   await request('DELETE', `/series/${id}`)
   write('series', (read('series') ?? []).filter((/** @type {Series} */ kept) => kept.id !== id))
+  placeInSeries((story) => story.series?.id === id, null)
+}
+
+/**
+ * Keeps the stories on the device in step with the series they belong to, so
+ * the end of a story and Home offer the right next step without asking the API.
+ * A story can be kept under more than one key (its option's id and its own).
+ * @param {(story: Story) => boolean} matches the stories to change
+ * @param {import('./types').StoryInSeries | null} inSeries
+ */
+function placeInSeries(matches, inSeries) {
+  /** @type {Record<string, Story>} */
+  const stories = read('stories') ?? {}
+  const updated = Object.entries(stories).map(([key, story]) => [key, matches(story) ? { ...story, series: inSeries } : story])
+  write('stories', Object.fromEntries(updated))
 }
 
 /** Keeps the stored list in step with one series. @param {Series} series */
 function remember(series) {
   const rest = (read('series') ?? []).filter((/** @type {Series} */ kept) => kept.id !== series.id)
   write('series', [series, ...rest])
+}
+
+/**
+ * Remembers the story the parent opened last, so Home can offer it again. The
+ * key is where the story is kept on the device, which is also its URL.
+ * @param {string} key
+ */
+export function rememberLastStory(key) {
+  if (read('lastStoryId') !== key) write('lastStoryId', key)
 }
 
 /** Forgets the options on this device, so the story screen asks for new ones. */

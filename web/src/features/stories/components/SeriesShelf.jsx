@@ -14,8 +14,8 @@ export function SeriesShelf({ series, onOpen, onContinue }) {
   if (series.length === 0) return null
   return (
     <section className="story-shelf">
-      {/* Voice pass pending: "Las series". */}
-      <h2 className="story-shelf__heading">Las series</h2>
+      {/* Voice pass pending: "Series de cuentos". */}
+      <h2 className="story-shelf__heading">Series de cuentos</h2>
       {series.map((each) => (
         <div key={each.id} className="card story-option story-shelf__row">
           <button type="button" className="story-shelf__open" onClick={() => onOpen(each)}>
@@ -28,9 +28,9 @@ export function SeriesShelf({ series, onOpen, onContinue }) {
             /* Voice pass pending: "Ya tiene todos sus episodios." */
             <StatusLine>Ya tiene todos sus episodios.</StatusLine>
           ) : (
-            /* Voice pass pending: "Otro episodio". */
+            /* Voice pass pending: "Leer otro episodio". */
             <SecondaryButton size="sm" onClick={() => onContinue(each)}>
-              Otro episodio
+              Leer otro episodio
             </SecondaryButton>
           )}
         </div>

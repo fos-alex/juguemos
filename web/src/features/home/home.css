@@ -32,11 +32,12 @@
 }
 
 .home__memory {
+  display: grid;
+  gap: 14px;
   padding: 22px 26px 0;
 }
 
 .home__offline {
-  margin-bottom: 14px;
   font-size: 19px;
   line-height: 1.45;
   color: var(--ink);

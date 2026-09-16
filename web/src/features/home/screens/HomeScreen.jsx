@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { AppMenu } from '../../../app/AppMenu'
 import { placeText, suggestActivity } from '../../activities'
 import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
-import { forgetOptions, storyOptions } from '../../stories'
+import { forgetOptions, LastStoryCard, storyOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useOfflineNotice } from '../../../shared/hooks/useOfflineNotice'
 import { useRequest } from '../../../shared/hooks/useRequest'
@@ -36,7 +36,8 @@ const SLOW_AFTER_MS = 6000
  * the parent picks who's playing above the buttons (JUG-107). While a juego is
  * played, its card shows the time left and lets the parent end it (JUG-134).
  * The story options are asked for here, quietly, so Hora del cuento opens
- * with them already on screen (JUG-140).
+ * with them already on screen (JUG-140). The last story read sits under the
+ * juego, with the way to make it a series (JUG-154).
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -49,6 +50,9 @@ export function HomeScreen() {
   const timer = useStored('timer')
   // The juego being played takes the last juego's place: Home shows one card, never two.
   const running = timer ? activities?.[timer.activityId] : null
+  const stories = useStored('stories')
+  const lastStoryId = useStored('lastStoryId')
+  const lastStory = stories?.[lastStoryId ?? '']
   const request = useRequest({ slowAfter: SLOW_AFTER_MS })
   // Choices are saved one after another, and a juego or a story waits for the last one.
   const saves = useSerialSaves()
@@ -128,7 +132,7 @@ export function HomeScreen() {
         {family && !picking && <p className="home__family">{familyLine(family)}</p>}
       </header>
 
-      {(!online || last || running) && (
+      {(!online || last || running || lastStory) && (
         <div className="home__memory">
           <OfflineNotice notice={offline} className="home__offline">
             {last || running ? 'Estás sin conexión. El último juego sigue acá.' : 'Estás sin conexión.'}
@@ -148,6 +152,7 @@ export function HomeScreen() {
               </Card>
             )
           )}
+          <LastStoryCard />
         </div>
       )}
 
