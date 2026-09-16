@@ -1,0 +1,90 @@
+/*
+ * The waiting animation (JUG-132, JUG-133). Every piece is a token colour and
+ * a slow loop that ends where it began, so nothing in it counts and nothing
+ * flashes. `base.css` stops it when the phone asks for less motion, and the
+ * component shows the dots instead.
+ *
+ * Only the pieces move. The box they turn inside keeps its size, so the
+ * animation takes the same room as the dots it replaces and never pushes a
+ * word beside it out of place.
+ */
+
+.waiting {
+  --waiting-size: 96px;
+
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--waiting-size);
+  height: var(--waiting-size);
+}
+
+.waiting--strip {
+  --waiting-size: 36px;
+}
+
+/* The reading screen is the last light before sleep, so it stays held back. */
+.waiting--reading {
+  opacity: 0.75;
+}
+
+[data-theme='dark'] .waiting--reading {
+  opacity: 0.55;
+}
+
+/* La ronda: the wordmark's three colours, holding hands and turning. */
+
+.waiting--ronda .waiting__piece {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: calc(var(--waiting-size) / 6);
+  height: calc(var(--waiting-size) / 6);
+  margin-left: calc(var(--waiting-size) / -12);
+  border-radius: 50%;
+  background: var(--dot-jacaranda);
+  transform: rotate(calc(var(--piece) * 72deg));
+  transform-origin: 50% calc(var(--waiting-size) / 2);
+  animation:
+    waiting-turn 14s linear infinite,
+    waiting-breathe 4.2s ease-in-out infinite;
+  animation-delay: 0s, calc(var(--piece) * 0.4s);
+}
+
+.waiting--ronda .waiting__piece:nth-child(2),
+.waiting--ronda .waiting__piece:nth-child(5) {
+  background: var(--dot-sun);
+}
+
+.waiting--ronda .waiting__piece:nth-child(3) {
+  background: var(--dot-grass);
+}
+
+/* On a filled button it takes the button's own ink, the way the dots do. */
+.waiting--on-primary.waiting--ronda .waiting__piece,
+.waiting--on-primary.waiting--ronda .waiting__piece:nth-child(2),
+.waiting--on-primary.waiting--ronda .waiting__piece:nth-child(3),
+.waiting--on-primary.waiting--ronda .waiting__piece:nth-child(5) {
+  background: currentColor;
+}
+
+@keyframes waiting-turn {
+  from {
+    transform: rotate(calc(var(--piece) * 72deg));
+  }
+
+  to {
+    transform: rotate(calc(var(--piece) * 72deg + 360deg));
+  }
+}
+
+@keyframes waiting-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
