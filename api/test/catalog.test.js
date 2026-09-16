@@ -11,22 +11,30 @@ import { EXAMPLE_PROFILE, optionsFrom, putFamily, signUpAs, startApi } from './h
 
 const [developer] = accounts
 const family = /** @type {NonNullable<typeof developer.family>} */ (developer.family)
-// The development family as the slots see it.
-const kids = family.kids.map((kid, index) => ({
-  id: `k${index}`,
-  name: kid.name,
-  ageMonths: kid.ageMonths,
-  playing: true,
-  interests: kid.interests ?? [],
-}))
-const profile = {
-  id: 'development',
-  name: family.name ?? null,
-  kids,
-  pets: family.pets.map((pet, index) => ({ id: `p${index}`, name: pet.name })),
-  interests: interestsOf(kids),
-  toys: family.toys.map((toy, index) => ({ id: `t${index}`, name: toy.name })),
+
+/** A seed family as the slots see it. @param {NonNullable<typeof developer.family>} seed */
+const profileOf = (seed) => {
+  const kids = seed.kids.map((kid, index) => ({
+    id: `k${index}`,
+    name: kid.name,
+    ageMonths: kid.ageMonths,
+    playing: true,
+    interests: kid.interests ?? [],
+  }))
+  return {
+    id: seed.name ?? 'development',
+    name: seed.name ?? null,
+    kids,
+    pets: seed.pets.map((pet, index) => ({ id: `p${index}`, name: pet.name })),
+    interests: interestsOf(kids),
+    toys: seed.toys.map((toy, index) => ({ id: `t${index}`, name: toy.name })),
+  }
 }
+
+const profile = profileOf(family)
+// Every seed family, so a template written for one age band is checked
+// against the family that can actually play it.
+const profiles = accounts.flatMap((account) => (account.family ? [profileOf(account.family)] : []))
 
 const CONTRACTIBLE = /(?<!\p{L})(de|a) el(?!\p{L})/iu
 
@@ -57,7 +65,7 @@ const input = (overrides) => ({
 /** A template as the admin saves it: everything but the slug. @param {{ slug?: string }} template */
 const edit = ({ slug: _slug, ...fields }) => fields
 
-test('every catalog template fills cleanly for the development family', () => {
+test('every catalog template fills cleanly for a development family', () => {
   const templates = [
     ...activityTemplates.map((t) => ({
       slug: t.slug,
@@ -68,12 +76,14 @@ test('every catalog template fills cleanly for the development family', () => {
   ]
   for (const { slug, range, texts } of templates) {
     assert.deepEqual(unknownPlaceholders(texts), [], slug)
-    const fill = fillFor(profile, { ...range, texts }, seededRandom(slug))
-    assert.ok(fill, `${slug} fits the development family`)
-    for (const text of texts) {
-      const rendered = render(text, fill)
-      assert.doesNotMatch(rendered, /[{}]/, slug)
-      assert.doesNotMatch(rendered, CONTRACTIBLE, slug)
+    const fills = profiles.map((each) => fillFor(each, { ...range, texts }, seededRandom(slug))).filter(Boolean)
+    assert.ok(fills.length > 0, `${slug} fits some development family`)
+    for (const fill of fills) {
+      for (const text of texts) {
+        const rendered = render(text, /** @type {NonNullable<typeof fill>} */ (fill))
+        assert.doesNotMatch(rendered, /[{}]/, slug)
+        assert.doesNotMatch(rendered, CONTRACTIBLE, slug)
+      }
     }
   }
 })
