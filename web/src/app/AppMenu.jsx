@@ -1,7 +1,18 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useTheme } from '../shared/hooks/useTheme'
 import { useStored } from '../shared/store'
-import { Drawer, Wordmark } from '../shared/ui'
+import {
+  BookIcon,
+  CloseIcon,
+  Drawer,
+  FamilyIcon,
+  MoonIcon,
+  RondaIcon,
+  SettingsIcon,
+  SunIcon,
+  ToyBoxIcon,
+  Wordmark,
+} from '../shared/ui'
 import './AppMenu.css'
 
 /**
@@ -25,7 +36,7 @@ export function AppMenu({ open, onClose, onStories }) {
     <Drawer open={open} onClose={onClose} label="Menú">
       <div className="drawer__header">
         <button type="button" className="close-button" aria-label="Cerrar el menú" onClick={onClose}>
-          ✕
+          <CloseIcon />
         </button>
         <Wordmark />
       </div>
@@ -37,16 +48,20 @@ export function AppMenu({ open, onClose, onStories }) {
       )}
       <nav className="drawer__nav" aria-label="Secciones">
         <button type="button" className="drawer__item is-current" aria-current="page" onClick={onClose}>
+          <RondaIcon size={22} />
           ¡Juguemos!
         </button>
         <button type="button" className="drawer__item" onClick={onStories}>
+          <BookIcon size={22} />
           Hora del cuento
         </button>
         <button type="button" className="drawer__item" onClick={() => go('/familia')}>
+          <FamilyIcon size={22} />
           Mi familia
         </button>
-        {/* JUG-94, before the 0.2 design. Voice pass pending. */}
+        {/* JUG-94. Voice pass pending. */}
         <button type="button" className="drawer__item" onClick={() => go('/juguetes')}>
+          <ToyBoxIcon size={22} />
           El baúl de juguetes
         </button>
         {/* Where el diario and recuerdos land. */}
@@ -55,9 +70,11 @@ export function AppMenu({ open, onClose, onStories }) {
       <div className="drawer__footer">
         {/* Voice pass pending. Stays open, so the parent sees the switch happen. */}
         <button type="button" className="drawer__item drawer__item--muted" onClick={toggle}>
+          {dark ? <SunIcon size={22} /> : <MoonIcon size={22} />}
           {dark ? 'Modo día' : 'Modo noche'}
         </button>
         <button type="button" className="drawer__item drawer__item--muted" onClick={() => go('/ajustes')}>
+          <SettingsIcon size={22} />
           Ajustes
         </button>
       </div>

@@ -1,5 +1,6 @@
 import { useLayoutEffect } from 'react'
 import { syncThemeColor } from '../hooks/useTheme'
+import { BackIcon } from './Icons'
 import './Screen.css'
 
 /**
@@ -41,7 +42,7 @@ export function Header({ onBack, title, trailing }) {
 export function BackButton({ onClick }) {
   return (
     <button type="button" className="back-button" onClick={onClick} aria-label="Volver">
-      ←
+      <BackIcon />
     </button>
   )
 }

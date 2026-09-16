@@ -99,6 +99,7 @@
 .voice__cancel {
   display: flex;
   align-items: center;
+  gap: 4px;
   flex: none;
   min-height: 48px;
   padding: 0;
@@ -138,7 +139,6 @@
 
 .voice__padlock {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 46px;
@@ -155,26 +155,7 @@
   border-color: var(--primary);
 }
 
-.voice__shackle {
-  display: block;
-  width: 13px;
-  height: 8px;
-  border: 2px solid currentColor;
-  border-bottom: none;
-  border-radius: 7px 7px 0 0;
-}
-
-.voice__lockbody {
-  display: block;
-  width: 19px;
-  height: 12px;
-  border: 2px solid currentColor;
-  border-radius: 3px;
-}
-
 .voice__arrow {
-  font-size: 20px;
-  line-height: 1;
   color: var(--ink-faint);
 }
 

@@ -22,9 +22,16 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#FFF9F0',
         theme_color: '#FFF9F0',
+        // One drawing covers both purposes: public/icon.svg is full bleed, so a
+        // phone can crop it to any shape, and its ronda stays inside the
+        // maskable safe zone. public/ holds the PNGs it was rendered to.
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+        ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,woff2,woff}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,woff}'],
         // Spanish needs Latin and Latin-Ext only; other subsets still load on demand via unicode-range.
         globIgnores: ['**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew,math,symbols}-*.woff2'],
         cleanupOutdatedCaches: true,

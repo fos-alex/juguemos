@@ -19,6 +19,12 @@
   color: var(--ink);
 }
 
+/* The remove mark sits on the label's baseline, not on its own line. */
+.chip__remove {
+  display: inline-block;
+  margin-bottom: -3px;
+}
+
 /* Keeps every chip a 48 px tap target without making it look bigger. */
 .chip::after {
   content: '';
@@ -26,8 +32,12 @@
   inset: -4px 0;
 }
 
+/* The + is an icon, so the chip centres it instead of a character. */
 .chip--add {
-  padding: 8px 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 13px;
   border-style: dashed;
   border-color: var(--dashed);
   background: none;
@@ -60,11 +70,6 @@
   border-color: var(--primary);
   background: var(--primary);
   color: var(--on-primary);
-}
-
-.chip__check {
-  font-size: 15px;
-  line-height: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

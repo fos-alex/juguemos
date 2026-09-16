@@ -16,7 +16,8 @@ Juguemos is a play coach for families in Buenos Aires. Start with these document
 | [docs/product-concept.md](docs/product-concept.md) | What the product is and why |
 | [docs/constitution.md](docs/constitution.md) | The commitments and guardrails every decision follows |
 | [docs/architecture.md](docs/architecture.md) | The technical decisions and why they were made |
-| [docs/design.md](docs/design.md) | How the app looks, and the rules behind it |
+| [docs/design.md](docs/design.md) | How the app looks, and the rules behind it: colour, type, iconography, the app icon |
+| [docs/brand-brief.md](docs/brand-brief.md) | The brand as Alex judges it, and the brand decisions still open |
 | [docs/releases.md](docs/releases.md) | What goes in each release, from 0.1 to 1.0 |
 
 ## Product rules

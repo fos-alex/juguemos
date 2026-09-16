@@ -3,7 +3,7 @@ import { addToy } from '../api'
 import { sameName } from '../model'
 import { useOnline } from '../../../shared/hooks/useOnline'
 import { useRequest } from '../../../shared/hooks/useRequest'
-import { Body, Card, Footer, PrimaryButton, StatusLine, TertiaryButton } from '../../../shared/ui'
+import { Body, Card, CheckIcon, Footer, PlusIcon, PrimaryButton, StatusLine, TertiaryButton } from '../../../shared/ui'
 import '../toys.css'
 
 /** @typedef {import('../types').ToyBox} ToyBox */
@@ -63,7 +63,7 @@ export function ToyCandidates({ candidates, box, onDone }) {
                 onClick={() => toggle(row.key)}
               >
                 <span className="toy-candidate__mark" aria-hidden="true">
-                  {row.chosen ? '✓' : '+'}
+                  {row.chosen ? <CheckIcon size={16} /> : <PlusIcon size={16} />}
                 </span>
                 <span className="card-title">{row.name}</span>
                 {row.description && <span className="card-meta">{row.description}</span>}

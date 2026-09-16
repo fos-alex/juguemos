@@ -1,4 +1,5 @@
 import { AS_TYPED } from './Field'
+import { CheckIcon, CloseIcon, PlusIcon } from './Icons'
 import './Chips.css'
 
 /**
@@ -23,7 +24,7 @@ export function Chips({ items = [], onRemove, className = '', children }) {
           aria-label={`Quitar ${item}`}
           onClick={() => onRemove?.(index)}
         >
-          {item} <span aria-hidden="true">×</span>
+          {item} <CloseIcon size={16} className="chip__remove" />
         </button>
       ))}
       {children}
@@ -40,11 +41,7 @@ export function Chips({ items = [], onRemove, className = '', children }) {
 export function ChipToggle({ pressed, onClick, children, ...rest }) {
   return (
     <button type="button" className="chip chip--toggle" aria-pressed={pressed} onClick={onClick} {...rest}>
-      {pressed && (
-        <span className="chip__check" aria-hidden="true">
-          ✓
-        </span>
-      )}
+      {pressed && <CheckIcon size={18} />}
       {children}
     </button>
   )
@@ -70,7 +67,7 @@ export function ChipInput({ value, onChange, onCommit, addLabel, inputLabel, fie
   if (value === null) {
     return (
       <button type="button" className="chip chip--add" data-field={field} aria-label={addLabel} onClick={() => onChange('')}>
-        +
+        <PlusIcon size={18} />
       </button>
     )
   }
