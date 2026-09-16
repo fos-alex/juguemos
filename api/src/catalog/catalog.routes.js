@@ -1,5 +1,6 @@
 import { errorBody, lines, text, uuid } from '../http/schemas.js'
 import { MATERIAL_KEYS } from '../materials/materials.js'
+import { THEME_KEYS } from './themes.js'
 
 /** @typedef {ReturnType<typeof import('./catalog.controller.js').createCatalogController>} CatalogController */
 
@@ -21,6 +22,8 @@ const fields = {
   smallSpace: { type: 'boolean' },
   // By key: what the template can't be played without (JUG-153).
   materials: { type: 'array', uniqueItems: true, maxItems: MATERIAL_KEYS.length, items: { type: 'string', enum: MATERIAL_KEYS } },
+  // By key: what it is about, for the ranking (JUG-104).
+  themes: { type: 'array', uniqueItems: true, maxItems: THEME_KEYS.length, items: { type: 'string', enum: THEME_KEYS } },
   skills: lines(20),
   safety: lines(20),
   why: text(600),
@@ -29,7 +32,7 @@ const fields = {
   easier: text(600),
   harder: text(600),
 }
-const requiredFields = Object.keys(fields).filter((name) => name !== 'active')
+const requiredFields = Object.keys(fields).filter((name) => name !== 'active' && name !== 'themes')
 const slug = { type: 'string', pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 80 }
 
 const templateInput = {
@@ -56,6 +59,12 @@ const template = {
     updatedAt: { type: 'string', format: 'date-time' },
     ...fields,
   },
+}
+
+// The list a template's themes are picked from.
+const themes = {
+  type: 'array',
+  items: { type: 'object', required: ['key', 'label'], properties: { key: { type: 'string' }, label: { type: 'string' } } },
 }
 
 // The list a template's materials are picked from, by category.
@@ -112,4 +121,5 @@ export async function catalogRoutes(app, { controller }) {
   )
   app.delete(`${url}/:id`, { config, schema: { params, response: errors } }, controller.deleteTemplate)
   app.get('/admin/materials', { config, schema: { response: { 200: materialCategories } } }, controller.materials)
+  app.get('/admin/themes', { config, schema: { response: { 200: themes } } }, controller.themes)
 }

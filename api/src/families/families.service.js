@@ -16,8 +16,9 @@ import { NotFoundError, ValidationError } from '../errors.js'
  * this kid's own (JUG-144), as the parent typed them.
  */
 /** @typedef {{ id: string, name: string }} Named */
+/** @typedef {{ id: string, name: string, favorite: boolean }} ProfileToy A toy by its family name, and whether it is a favorite (JUG-104). */
 /**
- * @typedef {{ id: string, name: string | null, kids: Kid[], pets: Named[], interests: string[], toys: Named[] }} Profile
+ * @typedef {{ id: string, name: string | null, kids: Kid[], pets: Named[], interests: string[], toys: ProfileToy[] }} Profile
  * `interests` are those of the kids in the profile, each once: the whole
  * family's in `profileOf`, and only the kids playing in `playingProfile`.
  */
@@ -102,7 +103,7 @@ export function createFamiliesService({ db }) {
           with: { interests: { columns: { label: true }, orderBy: byPosition } },
         },
         pets: { columns: { id: true, name: true }, orderBy: byPosition },
-        toys: { columns: { id: true, name: true }, orderBy: byPosition },
+        toys: { columns: { id: true, name: true, favorite: true }, orderBy: byPosition },
       },
     })
     if (!family) throw new NotFoundError('No such family')

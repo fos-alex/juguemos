@@ -1,18 +1,24 @@
 /**
  * The activities suggested to each family. A suggestion is a catalog template
- * that fits the family, with its slots filled from their profile, saved as
- * the parent saw it.
+ * that fits the family, ranked above the others that fit (ranking.js), with
+ * its slots filled from their profile, saved as the parent saw it. The
+ * parent's reaction to it (JUG-23) is saved on the same row, and every later
+ * ranking reads it.
  */
-import { desc, eq, sql } from 'drizzle-orm'
+import { and, count, desc, eq, isNotNull, ne, sql } from 'drizzle-orm'
 import { fillFor, render } from '../catalog/slots.js'
+import { themesOf } from '../catalog/themes.js'
 import { activities } from './activities.schema.js'
+import { rank } from './ranking.js'
 import { NotFoundError } from '../errors.js'
 import { kidIdsOf } from '../families/families.service.js'
 
+/** @typedef {'up' | 'down'} Reaction */
 /**
  * @typedef {{
  *   id: string, title: string, minutes: number, place: 'indoor' | 'outdoor',
  *   why: string, needs: string, steps: string[], easier: string, harder: string,
+ *   reaction: Reaction | null,
  * }} Activity
  */
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
@@ -21,21 +27,29 @@ import { kidIdsOf } from '../families/families.service.js'
 /** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
 /** @typedef {ReturnType<typeof createActivitiesService>} ActivitiesService */
 
-/** How many of the family's latest activities a new suggestion tries not to repeat. */
-const RECENT = 3
+/** How many of the family's latest activities the ranking reads. */
+const HISTORY = 400
 
 /**
- * @param {{ db: Db, catalog: CatalogService, families: FamiliesService, materials: MaterialsService, random?: () => number }} deps
+ * @param {{
+ *   db: Db,
+ *   catalog: CatalogService,
+ *   families: FamiliesService,
+ *   materials: MaterialsService,
+ *   random?: () => number,
+ *   now?: () => Date,
+ * }} deps `random` is the only source of chance, `now` the clock the
+ *   freshness is measured against; tests pin both.
  */
-export function createActivitiesService({ db, catalog, families, materials, random = Math.random }) {
+export function createActivitiesService({ db, catalog, families, materials, random = Math.random, now = () => new Date() }) {
   return {
     /**
      * Picks a template that is switched on, whose age range covers every kid
      * playing, whose slots the family can fill, and that needs no material the
-     * family doesn't have (JUG-153), fills its slots, and saves the result
-     * with the kids who played. The pick is random. It avoids the family's
-     * latest activities when it can, and never repeats the one being moved on
-     * from unless nothing else fits.
+     * family doesn't have (JUG-153); ranks what fits by fit, feedback,
+     * freshness, and difference from the juego being left (ranking.js); fills
+     * the winner's slots; and saves the result with the kids who played and
+     * why it won.
      * @param {string} familyId
      * @param {{ after?: string | null, userId?: string | null }} [options] the activity to move on
      *   from, and the adult asking, whose kids sitting out are left out (everyone plays without one)
@@ -43,17 +57,29 @@ export function createActivitiesService({ db, catalog, families, materials, rand
      */
     async suggest(familyId, { after = null, userId = null } = {}) {
       const isAfter = sql`${activities.id} = ${after}`
-      const [profile, templates, missing, recent] = await Promise.all([
+      const [profile, templates, missing, history, others] = await Promise.all([
         families.playingProfile(familyId, userId),
         catalog.activeActivityTemplates(),
         materials.missing(familyId),
-        // The latest few, with the one being moved on from always among them.
+        // The latest ones, with the one being moved on from always among them.
         db
-          .select({ templateId: activities.templateId, isAfter: isAfter.mapWith(Boolean) })
+          .select({
+            id: activities.id,
+            templateId: activities.templateId,
+            createdAt: activities.createdAt,
+            reaction: activities.reaction,
+            isAfter: isAfter.mapWith(Boolean),
+          })
           .from(activities)
           .where(eq(activities.familyId, familyId))
           .orderBy(sql`${isAfter} desc nulls last`, desc(activities.createdAt))
-          .limit(RECENT + 1),
+          .limit(HISTORY),
+        // Every other family's reactions, by template.
+        db
+          .select({ templateId: activities.templateId, reaction: activities.reaction, count: count() })
+          .from(activities)
+          .where(and(ne(activities.familyId, familyId), isNotNull(activities.reaction), isNotNull(activities.templateId)))
+          .groupBy(activities.templateId, activities.reaction),
       ])
 
       const fitting = templates.flatMap((template) => {
@@ -65,14 +91,26 @@ export function createActivitiesService({ db, catalog, families, materials, rand
         throw new NotFoundError('No activity in the catalog fits this family yet', 'NO_FITTING_ACTIVITY')
       }
 
-      const afterTemplate = recent.find((row) => row.isAfter)?.templateId
-      const avoid = new Set(recent.map((row) => row.templateId))
-      /** @param {typeof fitting} pool */
-      const choose = (pool) => pool[Math.floor(random() * pool.length)]
-      const { template, fill } =
-        choose(fitting.filter((candidate) => !avoid.has(candidate.template.id))) ??
-        choose(fitting.filter((candidate) => candidate.template.id !== afterTemplate)) ??
-        choose(fitting)
+      /** @type {Map<string, { ups: number, downs: number }>} */
+      const counts = new Map()
+      for (const row of others) {
+        const id = /** @type {string} */ (row.templateId)
+        const entry = counts.get(id) ?? { ups: 0, downs: 0 }
+        if (row.reaction === 'up') entry.ups += row.count
+        else entry.downs += row.count
+        counts.set(id, entry)
+      }
+      const afterTemplateId = history.find((row) => row.isAfter)?.templateId ?? null
+      const [{ template, fill, pick }] = rank(fitting, {
+        interestThemes: themesOf(profile.interests),
+        favoriteToys: profile.toys.filter((toy) => toy.favorite).map((toy) => toy.name),
+        history: history.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+        others: counts,
+        catalog: templates,
+        after: templates.find((each) => each.id === afterTemplateId) ?? null,
+        now: now(),
+        random,
+      })
 
       const activity = {
         title: render(template.title, fill),
@@ -86,9 +124,27 @@ export function createActivitiesService({ db, catalog, families, materials, rand
       }
       const [{ id }] = await db
         .insert(activities)
-        .values({ familyId, templateId: template.id, kidIds: kidIdsOf(profile), ...activity })
+        .values({ familyId, templateId: template.id, kidIds: kidIdsOf(profile), pick, ...activity })
         .returning({ id: activities.id })
-      return { id, ...activity }
+      return { id, ...activity, reaction: null }
+    },
+
+    /**
+     * Saves how a juego went, or takes the reaction back with null. One
+     * reaction per juego, and the parent can change it (JUG-23).
+     * @param {string} familyId
+     * @param {string} id
+     * @param {Reaction | null} reaction
+     * @returns {Promise<{ id: string, reaction: Reaction | null }>}
+     */
+    async react(familyId, id, reaction) {
+      const [row] = await db
+        .update(activities)
+        .set({ reaction, reactedAt: reaction ? now() : null })
+        .where(and(eq(activities.id, id), eq(activities.familyId, familyId)))
+        .returning({ id: activities.id, reaction: activities.reaction })
+      if (!row) throw new NotFoundError('No such activity')
+      return row
     },
   }
 }

@@ -155,6 +155,26 @@
   color: var(--primary-pressed);
 }
 
+/* The feedback tap (JUG-23), under the juego and under Home's last juego. */
+
+.reaction {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity__reaction {
+  padding-top: 18px;
+  margin-top: 4px;
+  border-top: 1px solid var(--hairline);
+}
+
+.reaction__ask {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+
 /* 2o El reloj */
 
 .timer {

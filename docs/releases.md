@@ -66,8 +66,8 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Voice notes.** Record in the browser, transcribe, and discard the audio. Used for onboarding, profile updates (*"Milán ya dejó el chupete"*), and adding toys. Live conversation with the agent comes in 0.8.
 - **Basic guardrails.** A first version to start the trial and error.
 - **Detailed family profiles.** Richer details on each child, the pet, and the home.
-- **Recommendations based on the profile.** Activities chosen by age, interests, toys at home, and recent history, so ideas don't repeat.
-- **Feedback tap.** One tap after an activity or story, such as *"¡Lo hicimos!"* or *"No era para nosotros,"* which also feeds the recommendations.
+- **Recommendations based on the profile.** Among the activities that fit, the one offered is ranked by how well it fits what the kids love and the toys at home, by how the family and other families reacted to it and to ones like it, by how recently it was seen or played, and, for *Otro juego*, by how different it is from the one being left. The pick is a draw weighted by all of that, not the top of a list, so a family sees variety and the best-rated games still come round more often.
+- **Feedback tap.** One tap after an activity, *"¡Lo hicimos!"* or *"No era para nosotros,"* which feeds the recommendations. A story's reaction is still to come.
 - **More activities and content.** 40 more activity templates, taking the catalog to 55. They cover ages 3–5, which 0.1 barely reached, and use the categories 0.1 never did: learn, helpers, and out_and_about. The ones for the older ages run to five or six steps, and most need no toy, so they reach a family with a small toy box.
 
 ### 0.3 — *El momento justo*
