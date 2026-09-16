@@ -108,15 +108,24 @@
   padding-top: 22px;
 }
 
-.kid-rows,
+.kid-cards,
 .toy-rows {
   display: flex;
   flex-direction: column;
   gap: 9px;
 }
 
-/* Name, years and months fit one line at the design width, and the ages drop
-   to a second line on a narrower screen. */
+/* Each kid's card holds their name, age, and what they love (JUG-152). */
+.kid-cards {
+  gap: 12px;
+}
+
+.kid-card__interests {
+  margin-top: 14px;
+}
+
+/* Inside the card the name takes its own line, and the years and months
+   share the one under it. */
 .kid-row {
   display: flex;
   flex-wrap: wrap;
@@ -124,7 +133,7 @@
 }
 
 .kid-row__name {
-  flex: 1 1 120px;
+  flex: 1 1 100%;
   min-width: 0;
 }
 

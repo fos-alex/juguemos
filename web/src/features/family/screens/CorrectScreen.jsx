@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { saveFamily, understandChanges } from '../api'
-import { InterestChips } from '../components/InterestChips'
-import { KidRows } from '../components/KidRows'
+import { KidCards } from '../components/KidCards'
 import { ToyRows } from '../components/ToyRows'
 import { toFamily, toForm, withChanges } from '../model'
 import { VoiceLine, VoiceUnderstanding } from '../../voice'
@@ -15,23 +14,13 @@ import '../family.css'
 
 /** @typedef {import('../model').FormState} FormState */
 
-/**
- * Whose interests a chip group holds. With one kid it's just "Le encanta".
- * @param {FormState['kids'][number]} kid @param {number} index @param {number} count
- */
-function interestsLabel(kid, index, count) {
-  if (count === 1) return 'Le encanta'
-  const name = kid.name.trim()
-  return name ? `A ${name} le encanta` : `Le encanta · chico ${index + 1}`
-}
-
 // Voice pass pending.
 const HEARD = 'Lo anoté acá arriba. Revisalo y tocá Guardar.'
 
 /**
- * 2h. The fallback, and it looks like a plain form: the same groups in the
- * same order as the card, with what each kid loves in its own group
- * (JUG-144). Everything is optional. Reached from "Corregir", a flagged row
+ * 2h. The fallback, and it looks like a plain form: a card for each kid with
+ * their name, age, and what they love (JUG-144, JUG-152), then the pet and
+ * the toys. Everything is optional. Reached from "Corregir", a flagged row
  * (focused on that field), the opt-out in 2d, and Mi familia.
  *
  * The mic beside "Guardar" is how the parent says what changed (JUG-103): the
@@ -46,7 +35,7 @@ export function CorrectScreen() {
   const [onboarding] = useState(() => !read('family'))
   const goBack = useGoBack(onboarding ? '/familia/contanos' : '/familia')
   const [form, setForm] = useState(() => toForm(read('parseResult')?.family ?? read('family')))
-  // The interest being typed for each kid, by the kid's row.
+  // The interest being typed for each kid, by the kid's position.
   const [drafts, setDrafts] = useState(/** @type {Record<number, string | null>} */ ({}))
   const request = useRequest()
   const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
@@ -64,17 +53,6 @@ export function CorrectScreen() {
 
   /** @param {(draft: FormState) => FormState} change */
   const update = (change) => setForm((current) => change(current))
-
-  /** @param {number} index @param {(interests: string[]) => string[]} change */
-  const changeInterests = (index, change) =>
-    update((f) => ({ ...f, kids: f.kids.map((kid, i) => (i === index ? { ...kid, interests: change(kid.interests) } : kid)) }))
-
-  /** @param {number} index */
-  const commitInterest = (index) => {
-    const value = drafts[index]?.trim()
-    if (value) changeInterests(index, (interests) => [...interests, value])
-    setDrafts((all) => ({ ...all, [index]: null }))
-  }
 
   /** @param {string} text the words of a voice note about what changed */
   const readNote = async (text) => {
@@ -103,7 +81,12 @@ export function CorrectScreen() {
       <Header onBack={goBack} title="Editar" />
       <form className="screen-form" onSubmit={save} noValidate>
         <Body className="form-body correct">
-          <KidRows kids={form.kids} onChange={(change) => update((f) => ({ ...f, kids: change(f.kids) }))} />
+          <KidCards
+            kids={form.kids}
+            drafts={drafts}
+            onDraft={(index, draft) => setDrafts((all) => ({ ...all, [index]: draft }))}
+            onChange={(change) => update((f) => ({ ...f, kids: change(f.kids) }))}
+          />
 
           <Field
             label="Mascota"
@@ -113,19 +96,6 @@ export function CorrectScreen() {
             value={form.pet}
             onChange={(event) => update((f) => ({ ...f, pet: event.target.value }))}
           />
-
-          {form.kids.map((kid, index) => (
-            <InterestChips
-              key={index}
-              label={interestsLabel(kid, index, form.kids.length)}
-              field={`interests.${index}`}
-              interests={kid.interests}
-              draft={drafts[index] ?? null}
-              onDraft={(draft) => setDrafts((all) => ({ ...all, [index]: draft }))}
-              onCommit={() => commitInterest(index)}
-              onRemove={(position) => changeInterests(index, (interests) => interests.filter((_, i) => i !== position))}
-            />
-          ))}
 
           <ToyRows toys={form.toys} onChange={(change) => update((f) => ({ ...f, toys: change(f.toys) }))} />
 
