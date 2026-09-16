@@ -23,6 +23,8 @@ export const activityTemplates = pgTable(
     energy: text({ enum: ['low', 'medium', 'high'] }).notNull(),
     categories: text().array().notNull(),
     smallSpace: boolean().notNull(),
+    // Keys from src/materials/materials.js: a family that has one of these
+    // marked off is never offered the template.
     materials: text().array().notNull().default(sql`'{}'`),
     skills: text().array().notNull().default(sql`'{}'`),
     safety: text().array().notNull().default(sql`'{}'`),

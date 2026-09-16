@@ -11,12 +11,13 @@ import { useSyncExternalStore } from 'react'
  * Two writes cross over: `request` in http.js clears everything and sets
  * `sessionEnded` when the API ends the session, and the toy box keeps the
  * family's toys in step with its own.
- * @typedef {AccountKey | FamilyKey | VoiceKey | ToysKey | ActivitiesKey | StoriesKey | AppKey} Key
+ * @typedef {AccountKey | FamilyKey | VoiceKey | ToysKey | MaterialsKey | ActivitiesKey | StoriesKey | AppKey} Key
  */
 /** @typedef {'account' | 'sessionEnded'} AccountKey */
 /** @typedef {'family' | 'familyDraft' | 'parseResult'} FamilyKey */
 /** @typedef {'voiceIntroSeen'} VoiceKey Whether this device has seen the mic spotlighted on 2d. */
 /** @typedef {'toyBox'} ToysKey */
+/** @typedef {'materials'} MaterialsKey The categories of household materials, as the API last sent them. */
 /** @typedef {'activities' | 'lastActivityId' | 'timer'} ActivitiesKey */
 /** @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series'} StoriesKey */
 /** @typedef {'theme'} AppKey The night-mode choice, written by app/ThemeProvider.jsx. */

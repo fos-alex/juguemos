@@ -8,7 +8,6 @@ import { ApiError, request, WordedError } from '../../shared/http'
 /** @typedef {import('./types').Toy} Toy */
 /** @typedef {import('./types').ToyBox} ToyBox */
 /** @typedef {import('./types').ToyChanges} ToyChanges */
-/** @typedef {import('./types').Material} Material */
 /** @typedef {import('./types').ToyCandidate} ToyCandidate */
 
 /** This server has no LLM to read toys with: a state to word plainly, not a failure. */
@@ -47,8 +46,9 @@ function merge(change) {
 
 /** @returns {Promise<ToyBox>} */
 export async function loadToyBox() {
-  const [{ toys }, { materials }] = await Promise.all([request('GET', '/family/toys'), request('GET', '/family/materials')])
-  return keep({ toys, materials })
+  /** @type {{ toys: Toy[] }} */
+  const { toys } = await request('GET', '/family/toys')
+  return keep({ toys })
 }
 
 /** Adds a toy at the end of the box. @param {ToyChanges & { name: string }} toy @returns {Promise<Toy>} */
@@ -105,21 +105,4 @@ export async function understandToys(text) {
   }
   if (heard.toys.length === 0) throw new NoToysHeardError()
   return heard.toys
-}
-
-/** Says which household materials the family has. @param {string[]} keys @returns {Promise<ToyBox>} */
-export async function chooseMaterials(keys) {
-  /** @type {{ materials: Material[] }} */
-  const { materials } = await request('PUT', '/family/materials', { have: keys })
-  return merge((box) => ({ ...box, materials }))
-}
-
-/**
- * Shows a change to the materials on this device at once, before
- * `chooseMaterials` saves it.
- * @param {Material[]} materials
- */
-export function markMaterials(materials) {
-  const box = read('toyBox')
-  if (box) write('toyBox', { ...box, materials })
 }

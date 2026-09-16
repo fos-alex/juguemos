@@ -205,6 +205,19 @@ export function ToyBoxIcon(props) {
   )
 }
 
+/** Materiales. Scissors, open, for what there is at home to make things with. @param {IconProps} props */
+export function MaterialsIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="6.5" cy="6.5" r="2.6" />
+      <circle cx="6.5" cy="17.5" r="2.6" />
+      <path d="M8.4 15.6 19.5 4.5" />
+      <path d="M8.4 8.4 12 12" />
+      <path d="M14.2 14.2l5.3 5.3" />
+    </Icon>
+  )
+}
+
 /** Ajustes. Sliders rather than a gear, which reads mechanical. @param {IconProps} props */
 export function SettingsIcon(props) {
   return (

@@ -27,7 +27,7 @@ src/
   config.js           reads and validates the environment, once, at startup
   errors.js           the errors services throw, each with the status it answers
   http/schemas.js     schema fragments the routes share: uuid, text, lines, errorBody
-  <domain>/           accounts/, families/, toys/, activities/, stories/, health/
+  <domain>/           accounts/, families/, toys/, materials/, activities/, stories/, health/
     <domain>.routes.js      URLs, route config (`access`), and response schemas
     <domain>.controller.js  HTTP: reads the request, calls services, returns the body
     <domain>.service.js     business logic and queries
@@ -64,6 +64,7 @@ test/                 integration tests, with helpers.js; test/unit/ needs no da
 
 - **Each adult has one family** for now; the second parent joins in 0.6. The profile holds kids, pets, and toys, and each kid holds their own interests (`kid_interests`, JUG-144). A `Profile`'s own `interests` are derived, never stored: the interests of the kids in it, each once, so `playingProfile` carries only what the kids playing love.
 - **The profile knows toys only by name.** Saving it changes a toy's name and order and nothing else, so the form must send each toy's id. The rest of what is known about a toy lives in `toys/` (JUG-18).
+- **Household materials are a list in code** (JUG-153). `materials/materials.js` holds the categories and each material's key, label, and `common` default. `household_materials` keeps only the family's answers, so a material with no row is at its default: on for what almost every home has. **Never change a key** once families may have answered it. A template's `materials` are keys from that list, the ones it can't be played without; the catalog refuses any other, and `suggest` skips a template that needs a material the family doesn't have. Something every home has, like a plate, isn't on the list.
 - **A kid's age is kept in months** (`kids.age_months`), as the age the parent gave and the day they gave it, so it stays current without asking for a birthday (JUG-145).
 - **The catalog owns every template** (JUG-125). `catalog.service.js` is the only place `activity_templates` and `story_templates` are read or written: the seed loads through its `load`, the admin creates and edits, and activities and stories ask it for the templates they can offer. Activities keeps `suggest` and its own table; stories keeps the stories and the plots.
 - **Templates have slots** — `{kid}`, `{pet}`, `{toy}`, `{toy2}`, `{toy3}`, `{interest}` — filled by code in `catalog/slots.js`, with no LLM. Toys are known only by name, so **write templates any toy fits, never make a word agree in gender with a slot, and never address anyone by a toy's name.** "a {toy}" and "de {toy}" contract to "al" and "del" on their own. A template is offered only when the family can fill every slot it uses and its age range fits: every kid for activities, since their safety rules hold only within that range, and at least one kid for stories.

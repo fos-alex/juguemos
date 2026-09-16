@@ -18,20 +18,24 @@ import { kidIdsOf } from '../families/families.service.js'
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
+/** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
 /** @typedef {ReturnType<typeof createActivitiesService>} ActivitiesService */
 
 /** How many of the family's latest activities a new suggestion tries not to repeat. */
 const RECENT = 3
 
-/** @param {{ db: Db, catalog: CatalogService, families: FamiliesService, random?: () => number }} deps */
-export function createActivitiesService({ db, catalog, families, random = Math.random }) {
+/**
+ * @param {{ db: Db, catalog: CatalogService, families: FamiliesService, materials: MaterialsService, random?: () => number }} deps
+ */
+export function createActivitiesService({ db, catalog, families, materials, random = Math.random }) {
   return {
     /**
      * Picks a template that is switched on, whose age range covers every kid
-     * playing, and whose slots the family can fill, fills them, and saves the
-     * result with the kids who played. The pick is random. It avoids the
-     * family's latest activities when it can, and never repeats the one being
-     * moved on from unless nothing else fits.
+     * playing, whose slots the family can fill, and that needs no material the
+     * family doesn't have (JUG-153), fills its slots, and saves the result
+     * with the kids who played. The pick is random. It avoids the family's
+     * latest activities when it can, and never repeats the one being moved on
+     * from unless nothing else fits.
      * @param {string} familyId
      * @param {{ after?: string | null, userId?: string | null }} [options] the activity to move on
      *   from, and the adult asking, whose kids sitting out are left out (everyone plays without one)
@@ -39,9 +43,10 @@ export function createActivitiesService({ db, catalog, families, random = Math.r
      */
     async suggest(familyId, { after = null, userId = null } = {}) {
       const isAfter = sql`${activities.id} = ${after}`
-      const [profile, templates, recent] = await Promise.all([
+      const [profile, templates, missing, recent] = await Promise.all([
         families.playingProfile(familyId, userId),
         catalog.activeActivityTemplates(),
+        materials.missing(familyId),
         // The latest few, with the one being moved on from always among them.
         db
           .select({ templateId: activities.templateId, isAfter: isAfter.mapWith(Boolean) })
@@ -52,6 +57,7 @@ export function createActivitiesService({ db, catalog, families, random = Math.r
       ])
 
       const fitting = templates.flatMap((template) => {
+        if (template.materials.some((key) => missing.has(key))) return []
         const fill = fillFor(profile, template, random, { everyKid: true })
         return fill ? [{ template, fill }] : []
       })

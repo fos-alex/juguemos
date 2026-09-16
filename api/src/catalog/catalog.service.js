@@ -8,6 +8,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { unknownPlaceholders } from './slots.js'
 import { activityTemplates, storyTemplates } from './catalog.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
+import { MATERIAL_KEYS } from '../materials/materials.js'
 
 /**
  * @typedef {object} ActivityTemplateInput
@@ -20,7 +21,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
  * @property {'low' | 'medium' | 'high'} energy
  * @property {string[]} categories move, create, pretend, explore, learn, low_energy, helpers, out_and_about
  * @property {boolean} smallSpace
- * @property {string[]} materials
+ * @property {string[]} materials the keys, from materials/materials.js, of what it can't be played without
  * @property {string[]} skills
  * @property {string[]} safety rules the tailoring may never change
  * @property {string} why
@@ -84,8 +85,8 @@ const activityTexts = (template) => [
 const storyTexts = (template) => [template.title, template.teaser, ...template.parts.flat()]
 
 /**
- * Refuses what the catalog can't hold: a slot code can't fill, or an age
- * range that ends before it starts.
+ * Refuses what the catalog can't hold: a slot code can't fill, a material
+ * that isn't on the list, or an age range that ends before it starts.
  * @param {ActivityTemplateUpdate & { slug?: string }} template
  */
 function checkTemplate(template) {
@@ -93,6 +94,10 @@ function checkTemplate(template) {
   if (unknown.length > 0) {
     const names = unknown.map((name) => `{${name}}`).join(', ')
     throw new ValidationError(`Unknown slots in ${template.slug ?? template.title}: ${names}`, 'UNKNOWN_SLOTS')
+  }
+  const unlisted = template.materials.filter((key) => !MATERIAL_KEYS.includes(key))
+  if (unlisted.length > 0) {
+    throw new ValidationError(`Unknown materials in ${template.slug ?? template.title}: ${unlisted.join(', ')}`, 'UNKNOWN_MATERIALS')
   }
   if (template.maxAgeMonths < template.minAgeMonths) {
     throw new ValidationError('maxAgeMonths is below minAgeMonths', 'AGE_RANGE')

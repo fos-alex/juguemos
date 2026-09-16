@@ -12,10 +12,11 @@ import { ApiError } from '../../shared/http'
  * @typedef {{
  *   slug: string, title: string, active: boolean, minutes: string, place: string,
  *   minAgeMonths: string, maxAgeMonths: string, energy: string, categories: string[], smallSpace: boolean,
- *   materials: string, skills: string, safety: string,
+ *   materials: string[], skills: string, safety: string,
  *   why: string, needs: string, steps: string, easier: string, harder: string,
  * }} FormState
- * Numbers as typed, and lists one item per line.
+ * Numbers as typed, and lists one item per line, except the categories and
+ * the materials, which are picked.
  */
 /** @typedef {Partial<Record<keyof FormState, string>>} Errors */
 
@@ -65,7 +66,7 @@ export const EMPTY = {
   energy: 'medium',
   categories: [],
   smallSpace: true,
-  materials: '',
+  materials: [],
   skills: '',
   safety: '',
   why: '',
@@ -144,7 +145,7 @@ export function toForm(template) {
     energy: template.energy,
     categories: template.categories,
     smallSpace: template.smallSpace,
-    materials: template.materials.join('\n'),
+    materials: template.materials,
     skills: template.skills.join('\n'),
     safety: template.safety.join('\n'),
     why: template.why,
@@ -167,7 +168,7 @@ export function toFields(form) {
     energy: /** @type {ActivityTemplateFields['energy']} */ (form.energy),
     categories: form.categories,
     smallSpace: form.smallSpace,
-    materials: lines(form.materials),
+    materials: form.materials,
     skills: lines(form.skills),
     safety: lines(form.safety),
     why: form.why.trim(),

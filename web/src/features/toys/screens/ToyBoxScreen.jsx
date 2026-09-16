@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { loadToyBox, understandToys } from '../api'
-import { MaterialsPicker } from '../components/MaterialsPicker'
 import { ToyCandidates } from '../components/ToyCandidates'
 import { ToyList } from '../components/ToyList'
 import { NEW } from '../model'
@@ -17,9 +16,10 @@ import '../toys.css'
 /** @typedef {import('../types').ToyCandidate} ToyCandidate */
 
 /**
- * El baúl de juguetes (JUG-94): the family's toys by their own names, and the
- * household materials they have. It was never given a design of its own: it
- * is built from the Plaza primitives, and all of its copy needs a voice pass.
+ * El baúl de juguetes (JUG-94): the family's toys by their own names. The
+ * household materials have their own screen, Materiales (JUG-153). It was
+ * never given a design of its own: it is built from the Plaza primitives, and
+ * all of its copy needs a voice pass.
  *
  * The mic beside "Agregar juguete" takes a voice note about the toys, and the
  * API reads the toys in its words (JUG-146). They come back as candidates,
@@ -73,7 +73,6 @@ export function ToyBoxScreen() {
       <Body className="page-body toy-box">
         <OfflineNotice notice={offline} />
         <ToyList box={box} kids={family?.kids ?? []} onOpen={open} />
-        {box && <MaterialsPicker materials={box.materials} offline={offline} onFailure={setFailure} />}
         <StatusLine role="alert">{failure}</StatusLine>
         <VoiceLine message={voiceMessage} />
       </Body>

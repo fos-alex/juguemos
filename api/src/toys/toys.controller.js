@@ -43,16 +43,5 @@ export function createToysController({ toys, toysUnderstanding }) {
       const { text } = /** @type {{ text: string }} */ (request.body)
       return toysUnderstanding.understand(text)
     },
-
-    /** @type {import('fastify').RouteHandlerMethod} */
-    async materials(request) {
-      return { materials: await toys.materials(familyOf(request)) }
-    },
-
-    /** @type {import('fastify').RouteHandlerMethod} */
-    async chooseMaterials(request) {
-      const { have } = /** @type {{ have: string[] }} */ (request.body)
-      return { materials: await toys.chooseMaterials(familyOf(request), have) }
-    },
   }
 }

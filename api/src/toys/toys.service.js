@@ -1,15 +1,13 @@
 /**
  * The toy box: the family's toys by their own names, with what the AI may know
- * about each, and the household materials the family has. Activities and
- * stories name a toy only by its family name; the description never replaces
- * it, and nothing is inferred from the name.
+ * about each. Activities and stories name a toy only by its family name; the
+ * description never replaces it, and nothing is inferred from the name.
  */
 import { randomUUID } from 'node:crypto'
 import { and, asc, count, eq, inArray, max } from 'drizzle-orm'
 import { kids } from '../families/families.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
-import { MATERIALS } from './materials.js'
-import { householdMaterials, toys } from './toys.schema.js'
+import { toys } from './toys.schema.js'
 
 /**
  * @typedef {{
@@ -27,7 +25,6 @@ import { householdMaterials, toys } from './toys.schema.js'
  * Only the fields given change. Giving a kid makes the toy not shared, and
  * `shared` takes it from its kid.
  */
-/** @typedef {{ key: string, label: string, have: boolean }} Material */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {ReturnType<typeof createToysService>} ToysService */
 
@@ -83,19 +80,8 @@ export function createToysService({ db }) {
     return { ...(kidId === null && { kidId: null }), ...(shared === false && { shared: false }) }
   }
 
-  /** @param {string} familyId @returns {Promise<Material[]>} */
-  async function materials(familyId) {
-    const rows = await db
-      .select({ material: householdMaterials.material })
-      .from(householdMaterials)
-      .where(eq(householdMaterials.familyId, familyId))
-    const have = new Set(rows.map((row) => row.material))
-    return MATERIALS.map((material) => ({ ...material, have: have.has(material.key) }))
-  }
-
   return {
     list,
-    materials,
 
     /**
      * Adds a toy at the end of the box, with its name exactly as given.
@@ -174,20 +160,6 @@ export function createToysService({ db }) {
           .where(inArray(toys.id, members))
       })
       return list(familyId)
-    },
-
-    /**
-     * Says which household materials the family has; the rest it doesn't.
-     * @param {string} familyId
-     * @param {string[]} keys
-     * @returns {Promise<Material[]>}
-     */
-    async chooseMaterials(familyId, keys) {
-      await db.transaction(async (tx) => {
-        await tx.delete(householdMaterials).where(eq(householdMaterials.familyId, familyId))
-        if (keys.length > 0) await tx.insert(householdMaterials).values(keys.map((material) => ({ familyId, material })))
-      })
-      return materials(familyId)
     },
   }
 }
