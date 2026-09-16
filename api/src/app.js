@@ -70,6 +70,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
     now,
     llm: llmClient,
     model: config.llm.model,
+    maxEpisodes: config.stories.episodesPerSeries,
     logger: app.log,
   })
   // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.

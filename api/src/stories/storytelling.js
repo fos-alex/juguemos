@@ -151,9 +151,6 @@ export function clampMinutes(minutes, band) {
   return Math.min(band.minutes[1], Math.max(band.minutes[0], value))
 }
 
-/** The `TÍTULO:` line a story with no plot of its own opens with (JUG-140). */
-const TITLE_LINE = /^t[íi]tulo\s*:\s*(.+)$/i
-
 /**
  * Reads the options answer as it streams, so an option reaches the family as
  * soon as the model has finished writing it instead of when the whole answer
@@ -223,19 +220,57 @@ export class OptionsParser {
 }
 
 /**
+ * The lines an answer can carry outside the story text, by the word that opens
+ * them: the title a story with no plot of its own is named by (JUG-140), and
+ * the bookkeeping a series episode is asked for (JUG-59). None of it is ever
+ * read aloud: the parser keeps these lines out of the story and hands them
+ * back on their own.
+ *
+ * The ones that name the story are read only before its first part, so
+ * «Título: eso lo dice un personaje» inside a story stays a paragraph. The two
+ * that close it are read wherever they land, since they come after the last
+ * part and nothing else follows them.
+ * @type {Record<string, string>}
+ */
+const OPENING_FIELDS = { titulo: 'title', serie: 'series', lugar: 'setting', antes: 'before' }
+
+/** @type {Record<string, string>} */
+const CLOSING_FIELDS = { resumen: 'summary', personajes: 'characters' }
+
+/** A line that opens with one word and a colon, which may be one of the fields. */
+const FIELD_LINE = /^(\p{L}+)\s*:\s*(.*)$/u
+
+/** The header that opens each part of a story. */
+const PART_LINE = /^partes?\s+(\d+)\s*:?\s*$/i
+
+/** A field's name as `FIELDS` keys it: lowercase, without accents. @param {string} word */
+const keyOf = (word) =>
+  word
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+
+/**
  * Reads the story format the harness asks for — `PARTE n` lines, one
  * paragraph per line, parts separated by those headers — as it streams.
  * A paragraph is done when its line ends, a part when the next header lands,
  * and anything before the first header (fences, titles, apologies) is not
- * the story, so it never reaches the family. The one exception is a
- * `TÍTULO:` line before the first part, which `takeTitle` hands back once.
+ * the story, so it never reaches the family.
+ *
+ * The exceptions are the field lines in `FIELDS`. A field runs to the next
+ * blank line, field, or part header, and `takeTitle` hands the title back as
+ * soon as it lands, since the story is announced by it; the rest wait for
+ * `takeFields` at the end.
  */
 export class StoryParser {
   constructor() {
     this.buffer = ''
     this.part = 0
     this.paragraph = ''
-    this.title = ''
+    /** What the answer said outside the story, by field name. @type {Record<string, string>} */
+    this.fields = {}
+    /** The field the lines are going into, until the story starts again. */
+    this.field = ''
   }
 
   /**
@@ -243,9 +278,16 @@ export class StoryParser {
    * single time, before its first paragraph. Empty when there was none.
    */
   takeTitle() {
-    const title = this.title
-    this.title = ''
+    const title = this.fields.title ?? ''
+    delete this.fields.title
     return title
+  }
+
+  /** Everything else the answer carried outside the story text. */
+  takeFields() {
+    const fields = this.fields
+    this.fields = {}
+    return fields
   }
 
   /** Feed one piece of the model's answer; the paragraphs that finished with it come back. @param {string} delta */
@@ -257,25 +299,7 @@ export class StoryParser {
     while ((index = this.buffer.indexOf('\n')) >= 0) {
       const line = this.buffer.slice(0, index).trim()
       this.buffer = this.buffer.slice(index + 1)
-      const header = /^partes?\s+(\d+)\s*:?\s*$/i.exec(line)
-      if (header) {
-        this.flush(done)
-        this.part = Number(header[1])
-        continue
-      }
-      if (this.part === 0) {
-        const titled = TITLE_LINE.exec(line)
-        if (titled) {
-          this.title = titled[1].trim()
-          continue
-        }
-      }
-      if (line === '') {
-        this.flush(done)
-        continue
-      }
-      if (this.part === 0) continue
-      this.paragraph = this.paragraph ? `${this.paragraph} ${line}` : line
+      this.read(line, done)
     }
     return done
   }
@@ -284,17 +308,41 @@ export class StoryParser {
   end() {
     const done = /** @type {{ part: number, text: string }[]} */ ([])
     const tail = this.buffer.trim()
-    if (tail) {
-      const header = /^partes?\s+(\d+)\s*:?\s*$/i.exec(tail)
-      if (header) {
-        this.flush(done)
-        this.part = Number(header[1])
-      } else if (this.part > 0) {
-        this.paragraph = this.paragraph ? `${this.paragraph} ${tail}` : tail
-      }
-    }
+    this.buffer = ''
+    if (tail) this.read(tail, done)
     this.flush(done)
     return done
+  }
+
+  /** One line of the answer. @param {string} line @param {{ part: number, text: string }[]} done */
+  read(line, done) {
+    const header = PART_LINE.exec(line)
+    if (header) {
+      this.flush(done)
+      this.field = ''
+      this.part = Number(header[1])
+      return
+    }
+    const opened = FIELD_LINE.exec(line)
+    const named = opened && keyOf(opened[1])
+    const field = named ? CLOSING_FIELDS[named] ?? (this.part === 0 ? OPENING_FIELDS[named] : undefined) : undefined
+    if (field) {
+      this.flush(done)
+      this.field = field
+      this.fields[field] = /** @type {RegExpExecArray} */ (opened)[2].trim()
+      return
+    }
+    if (line === '') {
+      this.flush(done)
+      this.field = ''
+      return
+    }
+    if (this.field) {
+      this.fields[this.field] = `${this.fields[this.field]} ${line}`.trim()
+      return
+    }
+    if (this.part === 0) return
+    this.paragraph = this.paragraph ? `${this.paragraph} ${line}` : line
   }
 
   /** @param {{ part: number, text: string }[]} done */
@@ -329,4 +377,100 @@ export function partsOf(paragraphs) {
  */
 export function wordsIn(parts) {
   return parts.flat().reduce((total, paragraph) => total + paragraph.split(/\s+/).filter(Boolean).length, 0)
+}
+
+/**
+ * A character the model invented and the series keeps, so a later episode can
+ * bring it back (JUG-59). The family's own cast is not in here: it is in the
+ * series casting, which every episode is written with.
+ * @typedef {{ name: string, note: string }} SeriesCharacter
+ */
+
+/** How many invented characters a series carries, so its prompts stay short. */
+const SERIES_CHARACTERS = 12
+
+/** The longest a character's name and its few words may be. */
+const NAME_MAX = 60
+const NOTE_MAX = 140
+
+/**
+ * The characters a `PERSONAJES:` line names: `Caracola: un caracol lento` or
+ * `Caracola (un caracol lento)`, one after another, separated by semicolons.
+ * A name with nothing after it is still a character.
+ * @param {string} line
+ * @returns {SeriesCharacter[]}
+ */
+export function charactersIn(line) {
+  return line
+    .split(/[;\n]/)
+    .map((entry) => {
+      const parenthesised = /^([^(]+)\(([^)]*)\)\s*$/.exec(entry.trim())
+      const [name, note] = parenthesised ? [parenthesised[1], parenthesised[2]] : split(entry, ':')
+      return { name: name.trim().slice(0, NAME_MAX), note: note.trim().slice(0, NOTE_MAX) }
+    })
+    .filter((character) => character.name !== '')
+}
+
+/** A string at its first separator; everything after it is the second half. @param {string} text @param {string} separator */
+function split(text, separator) {
+  const at = text.indexOf(separator)
+  return at < 0 ? [text, ''] : [text.slice(0, at), text.slice(at + 1)]
+}
+
+/**
+ * The characters the series carries after an episode: the ones it already had,
+ * in the order they arrived, plus whoever this episode brought in. A name the
+ * series already knows keeps its first note unless it had none.
+ * @param {SeriesCharacter[]} kept
+ * @param {SeriesCharacter[]} found
+ * @returns {SeriesCharacter[]}
+ */
+export function mergeCharacters(kept, found) {
+  /** @type {Map<string, SeriesCharacter>} */
+  const all = new Map()
+  for (const character of [...kept, ...found]) {
+    const key = character.name.trim().toLocaleLowerCase('es')
+    const known = all.get(key)
+    if (!known) all.set(key, character)
+    else if (!known.note && character.note) all.set(key, { ...known, note: character.note })
+  }
+  return [...all.values()].slice(0, SERIES_CHARACTERS)
+}
+
+/**
+ * The series as the prompt of its next episode says it: what it is called,
+ * what it is about, where it happens, and who has been in it. Whatever the
+ * series doesn't know yet is left out rather than said as an empty line.
+ * @param {{ title: string, storyline: string, setting: string, characters: SeriesCharacter[] }} series
+ * @returns {string}
+ */
+export function seriesLines({ title, storyline, setting, characters }) {
+  const lines = [`La serie se llama «${title}».`, `El hilo de la serie, que ningún episodio cambia: ${storyline}`]
+  if (setting) lines.push(`Dónde pasa: ${setting}`)
+  if (characters.length > 0) {
+    const named = characters.map((character) => (character.note ? `${character.name} (${character.note})` : character.name))
+    lines.push(`Personajes que ya aparecieron y podés traer de vuelta: ${named.join('; ')}`)
+  }
+  return lines.join('\n')
+}
+
+/**
+ * What happened in each episode so far, in order, which is what the next one
+ * continues from.
+ * @param {{ episode: number, title: string, summary: string }[]} episodes
+ * @returns {string}
+ */
+export function episodeLines(episodes) {
+  return episodes
+    .map(({ episode, title, summary }) => `${episode}. «${title}»${summary ? `: ${summary}` : ''}`)
+    .join('\n')
+}
+
+/**
+ * What a series is called when the model didn't name it: after whoever leads
+ * it, which is the one thing every episode has in common.
+ * @param {Casting} casting
+ */
+export function seriesTitleFor(casting) {
+  return `Las aventuras de ${casting.lead.name}.`
 }

@@ -14,13 +14,14 @@ import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
 import { NotFoundError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { render } from '../llm/prompt.js'
-import { castingLines, castKeyword, castScreen, DEFAULT_WEIGHTS } from './casting.js'
-import { OPTIONS, replayEvents, storyColumns, tick, toStory } from './shared.js'
+import { castEveryone, castingLines, castKeyword, castScreen, DEFAULT_WEIGHTS } from './casting.js'
+import { OPTIONS, replayEvents, storyColumns, toStory } from './shared.js'
 import { stories, storyPlots } from './stories.schema.js'
 import storyOptionsPrompt from './prompts/story-options.js'
 import storyPrompt, { keywordStory } from './prompts/story.js'
 import { systemPrompt } from './prompts/compose.js'
-import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, StoryParser, toPlot, wordsIn } from './storytelling.js'
+import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, toPlot } from './storytelling.js'
+import { nothingKept, tellStory, tokensFor, writtenDetails } from './tell.js'
 
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
@@ -28,7 +29,6 @@ import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, StoryP
 /** @typedef {import('../llm/client.js').Llm} Llm */
 /** @typedef {import('./casting.js').Casting} Casting */
 /** @typedef {import('./story-audit.js').StoryAudit} StoryAudit */
-/** @typedef {import('./storytelling.js').Band} Band */
 /** @typedef {import('./stories.service.js').Story} Story */
 /** @typedef {import('./stories.service.js').StoryEvent} StoryEvent */
 /** @typedef {import('./stories.service.js').StoryOption} StoryOption */
@@ -36,19 +36,9 @@ import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, StoryP
  * @typedef {{ type: 'option', option: StoryOption } | { type: 'done' }} OptionEvent
  *   what an options screen sends: one option as each lands, then the end
  */
-/**
- * @typedef {object} Kept what a story leaves behind as it streams, for the save and the audit
- * @property {string} title the title the model wrote, when it was asked for one
- * @property {{ part: number, text: string }[]} paragraphs
- * @property {number} msFirstToken
- * @property {number} msTotal
- */
 
 /** The most the three options together may run to: each is a title, a line, and two sentences. */
 const OPTION_TOKENS = 1200
-
-/** How many tokens a word of story is worth, generously, so no story is cut off mid-sentence. */
-const TOKENS_PER_WORD = 3
 
 /** How many of the family's last stories the casting draw avoids repeating. */
 const RECENT_CASTINGS = 5
@@ -79,52 +69,6 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       .from(stories)
       .where(and(eq(stories.familyId, familyId), eq(stories.plotId, plotId)))
     return story ? toStory(story) : null
-  }
-
-  /**
-   * One story call, streamed: the paragraphs as the parser finishes them, and
-   * the title before them when the prompt asked the model for one. What the
-   * save and the audit need afterwards is put in `kept` as it arrives, since
-   * the events themselves go straight to the reader.
-   * @param {{ system: string, user: string, maxTokens: number, signal?: AbortSignal, fallbackTitle?: string }} call
-   *   a `fallbackTitle` means this prompt asked for a `TÍTULO:` line: it is the
-   *   title used when the model wrote none, so the story always has one and it
-   *   is always the first event.
-   * @param {Kept} kept
-   * @returns {AsyncGenerator<StoryEvent, void, void>}
-   */
-  async function* tell({ system, user, maxTokens, signal, fallbackTitle = '' }, kept) {
-    const parser = new StoryParser()
-    const started = Date.now()
-    /** @type {number | null} */
-    let first = null
-
-    /** The paragraphs one push finished, each as an event. @param {{ part: number, text: string }[]} done */
-    async function* told(done) {
-      for (const paragraph of done) {
-        if (fallbackTitle && !kept.title) {
-          kept.title = fallbackTitle
-          yield /** @type {StoryEvent} */ ({ type: 'title', title: kept.title })
-        }
-        kept.paragraphs.push(paragraph)
-        yield /** @type {StoryEvent} */ ({ type: 'paragraph', ...paragraph })
-        await tick(signal)
-      }
-    }
-
-    for await (const chunk of /** @type {Llm} */ (llm).stream({ system, user, maxTokens, reasoning: false, signal })) {
-      first ??= Date.now() - started
-      const done = parser.push(chunk)
-      const title = parser.takeTitle()
-      if (fallbackTitle && title && !kept.title) {
-        kept.title = title
-        yield { type: 'title', title }
-      }
-      yield* told(done)
-    }
-    yield* told(parser.end())
-    kept.msTotal = Date.now() - started
-    kept.msFirstToken = first ?? kept.msTotal
   }
 
   return {
@@ -275,7 +219,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
 
       const profile = withKids(await families.profileOf(familyId), plot.kidIds)
       const { band } = anchorOf(profile)
-      const casting = /** @type {Casting} */ (plot.casting ?? castingOfEveryone(profile))
+      const casting = /** @type {Casting} */ (plot.casting ?? castEveryone(profile))
       const lines = familyLines(profile, [casting])
       const user = render(storyPrompt, {
         kids: lines.kids,
@@ -290,16 +234,16 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       const kidIds = kidIdsOf(profile)
       await audit.record('picked', { familyId, kidIds, band: band.id, mood: plot.mood, plotId, casting, details: { model } })
 
-      /** @type {Kept} */
-      const kept = { title: '', paragraphs: [], msFirstToken: 0, msTotal: 0 }
+      const kept = nothingKept()
       try {
         const call = {
+          llm: /** @type {Llm} */ (llm),
           system: systemPrompt({ band: band.id, mood: plot.mood }),
           user,
-          maxTokens: band.words[1] * TOKENS_PER_WORD,
+          maxTokens: tokensFor(band),
           signal,
         }
-        yield* tell(call, kept)
+        yield* tellStory(call, kept)
       } catch (error) {
         if (signal?.aborted) return
         throw error
@@ -369,17 +313,17 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
         minutes: String(band.minutes[1]),
         keyword,
       })
-      /** @type {Kept} */
-      const kept = { title: '', paragraphs: [], msFirstToken: 0, msTotal: 0 }
+      const kept = nothingKept()
       try {
         const call = {
+          llm: /** @type {Llm} */ (llm),
           system: systemPrompt({ band: band.id, mood }),
           user,
-          maxTokens: band.words[1] * TOKENS_PER_WORD,
+          maxTokens: tokensFor(band),
           signal,
           fallbackTitle: `Un cuento de ${keyword}.`,
         }
-        yield* tell(call, kept)
+        yield* tellStory(call, kept)
       } catch (error) {
         if (signal?.aborted) return
         throw error
@@ -416,46 +360,5 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       })
       yield { type: 'story', story: toStory(saved) }
     },
-  }
-}
-
-/**
- * What the audit keeps about a story once it is written: the model, how long
- * it took to answer, and how its length compares with the band's budget.
- * @param {{ model: string, band: Band, parts: string[][], kept: Kept }} story
- */
-function writtenDetails({ model, band, parts, kept }) {
-  const words = wordsIn(parts)
-  return {
-    model,
-    msFirstToken: kept.msFirstToken,
-    msTotal: kept.msTotal,
-    words,
-    parts: parts.length,
-    paragraphs: kept.paragraphs.length,
-    wordsMin: band.words[0],
-    wordsMax: band.words[1],
-    insideBand: words >= band.words[0] && words <= band.words[1],
-  }
-}
-
-/**
- * The casting of a plot drawn before castings existed: the whole family, so
- * an old plot still writes the story it promised.
- * @param {Profile} profile
- * @returns {Casting}
- */
-function castingOfEveryone(profile) {
-  const lead = profile.kids[0]
-  return {
-    kind: 'cast',
-    anchorIn: true,
-    lead: lead ? { type: 'kid', id: lead.id, name: lead.name } : { type: 'new', id: null, name: 'un personaje nuevo' },
-    kids: profile.kids.map((kid) => kid.id),
-    pet: profile.pets[0] ? { id: profile.pets[0].id, name: profile.pets[0].name } : null,
-    toy: profile.toys[0] ? { id: profile.toys[0].id, name: profile.toys[0].name } : null,
-    theme: profile.interests[0] ?? null,
-    draws: { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null },
-    weights: DEFAULT_WEIGHTS,
   }
 }

@@ -23,8 +23,13 @@ export const storyColumns = {
   keyword: stories.keyword,
 }
 
-/** A saved story, shaped for the reading screen. @param {typeof stories.$inferSelect} row */
-export const toStory = (row) => ({ ...row, parts: /** @type {string[][]} */ (row.parts) })
+/**
+ * A saved story, shaped for the reading screen.
+ * @param {typeof stories.$inferSelect} row
+ * @param {import('./stories.service.js').Story['series']} [series] the series
+ *   this story is an episode of (JUG-59); a story that stands on its own has none
+ */
+export const toStory = (row, series = null) => ({ ...row, parts: /** @type {string[][]} */ (row.parts), series })
 
 /**
  * Yields to the event loop between paragraphs, and throws when the reader has

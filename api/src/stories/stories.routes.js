@@ -6,26 +6,67 @@ import { errorBody, text, uuid } from '../http/schemas.js'
 // possible; a route that names a story can answer that there is no such story.
 const errors = { 400: errorBody, 401: errorBody, 409: errorBody, 500: errorBody }
 const storyErrors = { ...errors, 404: errorBody }
-// Writing a story from a keyword needs the LLM, so this route can also say it is off.
+// Writing a story from a keyword, and every series, needs the LLM, so these
+// routes can also say it is off.
 const writeErrors = { ...storyErrors, 503: errorBody }
 
 /** As long as an interest the family profile lets a parent type. */
 const KEYWORD_MAX = 80
 
+// The series a story is an episode of (JUG-59), which is how the reading
+// screen knows to say so. Null on a story that stands on its own.
+const storySeries = {
+  type: ['object', 'null'],
+  required: ['id', 'title', 'episode'],
+  properties: { id: { type: 'string' }, title: { type: 'string' }, episode: { type: 'integer' } },
+}
+
 const story = {
   type: 'object',
-  required: ['id', 'templateId', 'plotId', 'keyword', 'title', 'teaser', 'minutes', 'parts'],
+  required: ['id', 'templateId', 'plotId', 'keyword', 'series', 'title', 'teaser', 'minutes', 'parts'],
   properties: {
     id: { type: 'string' },
     templateId: { type: ['string', 'null'] },
     plotId: { type: ['string', 'null'] },
     keyword: { type: ['string', 'null'] },
+    series: storySeries,
     title: { type: 'string' },
     teaser: { type: 'string' },
     minutes: { type: 'integer' },
     parts: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
   },
 }
+
+// One series with its episodes in order, which is how the web both lists them
+// and opens one.
+const series = {
+  type: 'object',
+  required: ['id', 'title', 'storyline', 'episodes', 'maxEpisodes', 'createdAt'],
+  properties: {
+    id: { type: 'string' },
+    title: { type: 'string' },
+    storyline: { type: 'string' },
+    episodes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'title', 'minutes', 'episode', 'createdAt'],
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          minutes: { type: 'integer' },
+          episode: { type: 'integer' },
+          createdAt: { type: 'string' },
+        },
+      },
+    },
+    // How many episodes this series holds in all, so the web can say when it is full.
+    maxEpisodes: { type: 'integer' },
+    createdAt: { type: 'string' },
+  },
+}
+
+const seriesList = { type: 'object', required: ['series'], properties: { series: { type: 'array', items: series } } }
 
 const savedStory = {
   type: 'object',
@@ -47,6 +88,8 @@ const optionsQuery = {
     exclude: { type: 'array', maxItems: 20, items: uuid },
   },
 }
+
+const idParams = { type: 'object', required: ['id'], properties: { id: uuid } }
 
 const writeBody = {
   type: 'object',
@@ -88,12 +131,18 @@ export async function storiesRoutes(app, { controller }) {
     { config, schema: { response: { 200: { type: 'array', items: savedStory }, ...errors } } },
     controller.list,
   )
-  app.get(
-    '/stories/:id',
-    {
-      config,
-      schema: { params: { type: 'object', properties: { id: uuid } }, response: { 200: story, ...storyErrors } },
-    },
-    controller.find,
+  app.get('/stories/:id', { config, schema: { params: idParams, response: { 200: story, ...storyErrors } } }, controller.find)
+
+  // Series (JUG-59). Starting one and writing an episode both need the LLM,
+  // so both can say the feature is off; a series that is already as long as it
+  // gets answers 409, like a story the family profile can't fill.
+  app.post(
+    '/stories/:id/series',
+    { config, schema: { params: idParams, response: { 201: series, ...writeErrors } } },
+    controller.makeSeries,
   )
+  app.get('/series', { config, schema: { response: { 200: seriesList, ...errors } } }, controller.listSeries)
+  app.get('/series/:id', { config, schema: { params: idParams, response: { 200: series, ...storyErrors } } }, controller.findSeries)
+  app.delete('/series/:id', { config, schema: { params: idParams, response: storyErrors } }, controller.removeSeries)
+  app.post('/series/:id/episodes', { config, schema: { params: idParams, response: writeErrors } }, controller.writeEpisode)
 }

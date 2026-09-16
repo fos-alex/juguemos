@@ -122,6 +122,28 @@ export function castKeyword(profile, { keyword, weights = DEFAULT_WEIGHTS, rando
 }
 
 /**
+ * The casting of a story that was never drawn one: a plot from before castings
+ * existed, or a template story a family is turning into a series. Everybody
+ * plays, so the story still knows who it is about.
+ * @param {Profile} profile
+ * @returns {Casting}
+ */
+export function castEveryone(profile) {
+  const lead = profile.kids[0]
+  return {
+    kind: 'cast',
+    anchorIn: true,
+    lead: lead ? { type: 'kid', id: lead.id, name: lead.name } : { type: 'new', id: null, name: NEW_CHARACTER },
+    kids: profile.kids.map((kid) => kid.id),
+    pet: profile.pets[0] ? { id: profile.pets[0].id, name: profile.pets[0].name } : null,
+    toy: profile.toys[0] ? { id: profile.toys[0].id, name: profile.toys[0].name } : null,
+    theme: profile.interests[0] ?? null,
+    draws: { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null },
+    weights: DEFAULT_WEIGHTS,
+  }
+}
+
+/**
  * The same casting without the family's props: the kids star as they were
  * drawn, and the model invents the rest. A pet or a toy that was leading
  * hands the lead back to the kids, since they are all that is left.

@@ -5,16 +5,23 @@
  * what the controller calls; it picks the source and keeps the library.
  * Either way a story is generated once, saved, and reads again exactly as it
  * did; the web never tells the kinds apart.
+ *
+ * A story the family wants more of becomes a series (`series.js`, JUG-59).
+ * Its episodes live in the same table and read the same way; what the library
+ * does with them is show them under their series instead of on their own.
  */
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull, or } from 'drizzle-orm'
 import { NotFoundError, UnavailableError, ValidationError } from '../errors.js'
 import { createGeneratedStories } from './generated-stories.js'
+import { createStorySeries } from './series.js'
 import { storyColumns, toStory } from './shared.js'
-import { stories } from './stories.schema.js'
+import { stories, storySeries } from './stories.schema.js'
 import { createStoryAudit } from './story-audit.js'
 import { createTemplateStories } from './template-stories.js'
 
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
+/** @typedef {import('./series.js').Series} Series */
+/** @typedef {import('./series.js').Episode} Episode */
 /** @typedef {import('./generated-stories.js').OptionEvent} OptionEvent what an options screen sends, one at a time */
 /**
  * @typedef {object} Story
@@ -22,6 +29,8 @@ import { createTemplateStories } from './template-stories.js'
  * @property {string | null} templateId
  * @property {string | null} plotId
  * @property {string | null} keyword the interest the parent tapped to get it (JUG-140)
+ * @property {{ id: string, title: string, episode: number } | null} series the series
+ *   this story is an episode of (JUG-59), and which episode it is
  * @property {string} title
  * @property {string} teaser
  * @property {number} minutes
@@ -54,6 +63,9 @@ import { createTemplateStories } from './template-stories.js'
 /** How many stories a family keeps: stories are for re-reading, not for hoarding. */
 const LIBRARY_CAP = 20
 
+/** How long a series grows when nobody says otherwise, which config.js does. */
+const DEFAULT_SERIES_EPISODES = 10
+
 /**
  * @param {{
  *   db: Db,
@@ -64,9 +76,11 @@ const LIBRARY_CAP = 20
  *   logger?: { error: (details: object, message: string) => void } | null,
  *   random?: () => number,
  *   now?: () => Date,
+ *   maxEpisodes?: number,
  * }} deps `llm` absent means template stories only; `model` is the model's name,
  *   which the story audit records; `logger` is where a failed audit row is
- *   reported; `now` lets tests fix the moment.
+ *   reported; `now` lets tests fix the moment; `maxEpisodes` is how long a
+ *   series may grow.
  */
 export function createStoriesService({
   db,
@@ -77,12 +91,15 @@ export function createStoriesService({
   logger = null,
   random = Math.random,
   now = () => new Date(),
+  maxEpisodes = DEFAULT_SERIES_EPISODES,
 }) {
   const templates = createTemplateStories({ db, catalog, families, random })
   // What was offered, picked and written, for adjusting the casting weights (JUG-139).
   const audit = createStoryAudit({ db, logger })
   // Built without an LLM too, since a plot's story that was already written replays without one.
   const generated = createGeneratedStories({ db, llm, families, audit, model, random, now })
+  // A series is only ever written by the model; without one it refuses to start.
+  const series = createStorySeries({ db, llm, families, audit, model, maxEpisodes, now })
 
   return {
     /**
@@ -154,6 +171,9 @@ export function createStoriesService({
     /**
      * The family's recent stories, the ones worth reading again. Newest
      * first; short, because stories are for re-reading, not for hoarding.
+     * The episodes of a series are not in here: they are read under their
+     * series (JUG-50). A series the family stopped following leaves its
+     * episodes behind, and those come back as the stories they are.
      * @param {string} familyId
      * @returns {Promise<SavedStory[]>}
      */
@@ -161,25 +181,67 @@ export function createStoriesService({
       const rows = await db
         .select({ id: stories.id, title: stories.title, teaser: stories.teaser, minutes: stories.minutes, createdAt: stories.createdAt })
         .from(stories)
-        .where(eq(stories.familyId, familyId))
+        .leftJoin(storySeries, eq(stories.seriesId, storySeries.id))
+        .where(and(eq(stories.familyId, familyId), or(isNull(stories.seriesId), isNotNull(storySeries.removedAt))))
         .orderBy(desc(stories.createdAt), desc(stories.id))
         .limit(LIBRARY_CAP)
       return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))
     },
 
     /**
-     * One saved story, if the family wrote it.
+     * One saved story, if the family wrote it, with the series it is an
+     * episode of when it is one.
      * @param {string} familyId
      * @param {string} storyId
      * @returns {Promise<Story>}
      */
     async find(familyId, storyId) {
-      const [story] = await db
-        .select(storyColumns)
+      const [row] = await db
+        .select({ ...storyColumns, episode: stories.episode, seriesId: storySeries.id, seriesTitle: storySeries.title })
         .from(stories)
+        .leftJoin(storySeries, and(eq(stories.seriesId, storySeries.id), isNull(storySeries.removedAt)))
         .where(and(eq(stories.familyId, familyId), eq(stories.id, storyId)))
-      if (!story) throw new NotFoundError('No such story')
-      return toStory(story)
+      if (!row) throw new NotFoundError('No such story')
+      const { seriesId, seriesTitle, episode, ...story } = row
+      return toStory(story, seriesId ? { id: seriesId, title: seriesTitle, episode: episode ?? 1 } : null)
+    },
+
+    /**
+     * Turns a story the family has read into the first episode of a series
+     * (JUG-59), which they can then ask for more of.
+     * @param {string} familyId
+     * @param {string} storyId
+     * @returns {Promise<Series>}
+     */
+    async makeSeries(familyId, storyId) {
+      return series.fromStory(familyId, storyId)
+    },
+
+    /** The family's series, newest first, each with its episodes in order. @param {string} familyId @returns {Promise<Series[]>} */
+    async seriesList(familyId) {
+      return series.list(familyId)
+    },
+
+    /** One of the family's series. @param {string} familyId @param {string} id @returns {Promise<Series>} */
+    async findSeries(familyId, id) {
+      return series.find(familyId, id)
+    },
+
+    /** The family stops following a series; its episodes stay readable. @param {string} familyId @param {string} id */
+    async removeSeries(familyId, id) {
+      return series.remove(familyId, id)
+    },
+
+    /**
+     * The next episode of a series, read out as it is written, like any other
+     * story.
+     * @param {string} familyId
+     * @param {string} id
+     * @param {{ signal?: AbortSignal }} [options]
+     * @returns {Promise<AsyncGenerator<StoryEvent, void, void>>}
+     */
+    async episodeStream(familyId, id, { signal } = {}) {
+      return series.writeEpisode(familyId, id, { signal })
     },
   }
 }
