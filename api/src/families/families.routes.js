@@ -11,9 +11,11 @@ const named = {
   properties: { id: { type: 'string' }, name: { type: 'string' } },
 }
 
+const words = { type: 'array', items: { type: 'string' } }
+
 const profile = {
   type: 'object',
-  required: ['id', 'name', 'kids', 'pets', 'interests', 'toys'],
+  required: ['id', 'name', 'kids', 'pets', 'toys'],
   properties: {
     id: { type: 'string' },
     name: { type: ['string', 'null'] },
@@ -21,18 +23,19 @@ const profile = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['id', 'name', 'age', 'playing'],
+        required: ['id', 'name', 'age', 'playing', 'interests'],
         properties: {
           id: { type: 'string' },
           name: { type: 'string' },
           age: { type: ['integer', 'null'] },
           // Whether the kid plays with the signed-in adult (JUG-107).
           playing: { type: 'boolean' },
+          // What this kid loves (JUG-144).
+          interests: words,
         },
       },
     },
     pets: { type: 'array', items: named },
-    interests: { type: 'array', items: { type: 'string' } },
     toys: { type: 'array', items: named },
   },
 }
@@ -42,7 +45,7 @@ const profile = {
 const profileInput = {
   type: 'object',
   additionalProperties: false,
-  required: ['kids', 'pets', 'interests', 'toys'],
+  required: ['kids', 'pets', 'toys'],
   properties: {
     name: { type: ['string', 'null'], maxLength: 80 },
     kids: {
@@ -52,7 +55,13 @@ const profileInput = {
         type: 'object',
         additionalProperties: false,
         required: ['name', 'age'],
-        properties: { id, name: text(80), age: { type: ['integer', 'null'], minimum: 0, maximum: 17 } },
+        properties: {
+          id,
+          name: text(80),
+          age: { type: ['integer', 'null'], minimum: 0, maximum: 17 },
+          // What this kid loves (JUG-144); a kid sent without them loves nothing yet.
+          interests: { type: 'array', maxItems: 30, items: text(80) },
+        },
       },
     },
     pets: {
@@ -60,7 +69,6 @@ const profileInput = {
       maxItems: 10,
       items: { type: 'object', additionalProperties: false, required: ['name'], properties: { id, name: text(80) } },
     },
-    interests: { type: 'array', maxItems: 30, items: text(80) },
     toys: {
       type: 'array',
       maxItems: 200,
@@ -92,18 +100,17 @@ const understanding = {
   properties: {
     family: {
       type: 'object',
-      required: ['kids', 'pets', 'interests', 'toys'],
+      required: ['kids', 'pets', 'toys'],
       properties: {
         kids: {
           type: 'array',
           items: {
             type: 'object',
-            required: ['name', 'age'],
-            properties: { name: { type: 'string' }, age: { type: ['integer', 'null'] } },
+            required: ['name', 'age', 'interests'],
+            properties: { name: { type: 'string' }, age: { type: ['integer', 'null'] }, interests: words },
           },
         },
         pets: { type: 'array', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } } },
-        interests: { type: 'array', items: { type: 'string' } },
         toys: { type: 'array', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } } },
       },
     },

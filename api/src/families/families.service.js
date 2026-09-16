@@ -1,29 +1,31 @@
 /**
  * Families: the adults who belong to them, and the profile everything is
- * tailored to (kids, pets, interests, and toys). Each adult has one family for
- * now; the second parent joins in 0.6.
+ * tailored to (kids and what each one loves, pets, and toys). Each adult has
+ * one family for now; the second parent joins in 0.6.
  */
-import { and, eq, notInArray, sql } from 'drizzle-orm'
-import { families, familyMembers, interests, kids, kidsSittingOut, pets } from './families.schema.js'
+import { and, eq, inArray, notInArray, sql } from 'drizzle-orm'
+import { families, familyMembers, kidInterests, kids, kidsSittingOut, pets } from './families.schema.js'
 import { toys } from '../toys/toys.schema.js'
 import { NotFoundError, ValidationError } from '../errors.js'
 
 /** @typedef {{ id: string, name: string | null }} Family */
 /**
- * @typedef {{ id: string, name: string, age: number | null, playing: boolean }} Kid
- * `playing` is for the adult asking (JUG-107); with no adult named, every kid plays.
+ * @typedef {{ id: string, name: string, age: number | null, playing: boolean, interests: string[] }} Kid
+ * `playing` is for the adult asking (JUG-107); with no adult named, every kid
+ * plays. `interests` are this kid's own (JUG-144), as the parent typed them.
  */
 /** @typedef {{ id: string, name: string }} Named */
 /**
  * @typedef {{ id: string, name: string | null, kids: Kid[], pets: Named[], interests: string[], toys: Named[] }} Profile
+ * `interests` are those of the kids in the profile, each once: the whole
+ * family's in `profileOf`, and only the kids playing in `playingProfile`.
  */
 /**
  * @typedef {object} ProfileInput The whole profile, in order. Items that carry
  *   the id of one of the family's rows update it; the rest are new.
  * @property {string | null} [name]
- * @property {{ id?: string, name: string, age: number | null }[]} kids
+ * @property {{ id?: string, name: string, age: number | null, interests?: string[] }[]} kids
  * @property {{ id?: string, name: string }[]} pets
- * @property {string[]} interests
  * @property {{ id?: string, name: string }[]} toys
  */
 /** @typedef {import('../db/client.js').Db} Db */
@@ -46,15 +48,34 @@ const byPosition = (
 export const kidIdsOf = (profile) => profile.kids.map((kid) => kid.id).sort()
 
 /**
- * The profile with only these kids, or with all of them when none of these
- * is in the family any more.
+ * Everything these kids love, each once, in the order the kids and their
+ * interests come. Two kids who both love "los dinosaurios" give it once, as
+ * the first of them spelled it.
+ * @param {Pick<Kid, 'interests'>[]} someKids
+ */
+export function interestsOf(someKids) {
+  /** @type {Map<string, string>} */
+  const seen = new Map()
+  for (const kid of someKids) {
+    for (const interest of kid.interests) {
+      const key = interest.trim().toLocaleLowerCase('es')
+      if (!seen.has(key)) seen.set(key, interest)
+    }
+  }
+  return [...seen.values()]
+}
+
+/**
+ * The profile with only these kids, and their interests, or with all of them
+ * when none of these is in the family any more.
  * @param {Profile} profile
  * @param {string[]} kidIds
  * @returns {Profile}
  */
 export function withKids(profile, kidIds) {
   const chosen = profile.kids.filter((kid) => kidIds.includes(kid.id))
-  return { ...profile, kids: chosen.length > 0 ? chosen : profile.kids }
+  const kept = chosen.length > 0 ? chosen : profile.kids
+  return { ...profile, kids: kept, interests: interestsOf(kept) }
 }
 
 /** @param {{ db: Db }} deps */
@@ -73,9 +94,9 @@ export function createFamiliesService({ db }) {
           columns: { id: true, name: true },
           extras: (kid) => ({ age: currentAge(kid).mapWith(Number).as('age') }),
           orderBy: byPosition,
+          with: { interests: { columns: { label: true }, orderBy: byPosition } },
         },
         pets: { columns: { id: true, name: true }, orderBy: byPosition },
-        interests: { columns: { label: true }, orderBy: byPosition },
         toys: { columns: { id: true, name: true }, orderBy: byPosition },
       },
     })
@@ -87,25 +108,30 @@ export function createFamiliesService({ db }) {
     }
     // At least one kid always plays: when the one left playing was removed, everyone plays again.
     const nobodyPlays = family.kids.every((kid) => out.has(kid.id))
-    return {
-      ...family,
-      kids: family.kids.map((kid) => ({ ...kid, playing: nobodyPlays || !out.has(kid.id) })),
-      interests: family.interests.map((row) => row.label),
-    }
+    const familyKids = family.kids.map((kid) => ({
+      id: kid.id,
+      name: kid.name,
+      age: kid.age,
+      playing: nobodyPlays || !out.has(kid.id),
+      interests: kid.interests.map((row) => row.label),
+    }))
+    return { ...family, kids: familyKids, interests: interestsOf(familyKids) }
   }
 
   return {
     profileOf,
 
     /**
-     * The profile as this adult plays right now: only the kids playing.
+     * The profile as this adult plays right now: only the kids playing, and
+     * only what they love.
      * @param {string} familyId
      * @param {string | null} userId
      * @returns {Promise<Profile>}
      */
     async playingProfile(familyId, userId) {
       const profile = await profileOf(familyId, userId)
-      return { ...profile, kids: profile.kids.filter((kid) => kid.playing) }
+      const playing = profile.kids.filter((kid) => kid.playing)
+      return { ...profile, kids: playing, interests: interestsOf(playing) }
     },
 
     /**
@@ -173,7 +199,7 @@ export function createFamiliesService({ db }) {
         if (!familyId) familyId = (await insertFamily(tx, userId, input.name ?? null)).id
         else if (input.name !== undefined) await tx.update(families).set({ name: input.name }).where(eq(families.id, familyId))
 
-        await syncRows(tx, kids, familyId, input.kids, {
+        const kidIds = await syncRows(tx, kids, familyId, input.kids, {
           insert: (kid, position) => ({
             position,
             name: kid.name,
@@ -191,12 +217,14 @@ export function createFamiliesService({ db }) {
             }
           },
         })
+        // Each kid's interests are written again as the parent last saw them.
+        if (kidIds.length > 0) await tx.delete(kidInterests).where(inArray(kidInterests.kidId, kidIds))
+        const rows = input.kids.flatMap((kid, index) =>
+          (kid.interests ?? []).map((label, position) => ({ kidId: kidIds[index], position, label })),
+        )
+        if (rows.length > 0) await tx.insert(kidInterests).values(rows)
         await syncRows(tx, pets, familyId, input.pets, nameOnly)
         await syncRows(tx, toys, familyId, input.toys, nameOnly)
-        await tx.delete(interests).where(eq(interests.familyId, familyId))
-        if (input.interests.length > 0) {
-          await tx.insert(interests).values(input.interests.map((label, position) => ({ familyId, position, label })))
-        }
         return familyId
       })
       return profileOf(familyId, userId)
@@ -241,6 +269,7 @@ const nameOnly = {
  * @param {string} familyId
  * @param {Item[]} items
  * @param {{ insert: (item: Item, position: number) => object, update: (item: Item, position: number) => object }} values
+ * @returns {Promise<string[]>} each item's row id, in the items' order
  */
 async function syncRows(tx, table, familyId, items, values) {
   /** @type {string[]} */
@@ -262,4 +291,5 @@ async function syncRows(tx, table, familyId, items, values) {
     kept.push(row.id)
   }
   await tx.delete(table).where(and(eq(table.familyId, familyId), notInArray(table.id, kept)))
+  return kept
 }

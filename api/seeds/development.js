@@ -32,9 +32,8 @@ export const accounts = [
     password: PASSWORD,
     family: {
       name: 'Familia de prueba',
-      kids: [{ name: 'Milán', age: 2 }],
+      kids: [{ name: 'Milán', age: 2, interests: ['los dinosaurios', 'los caballos'] }],
       pets: [{ name: 'Inca' }],
-      interests: ['los dinosaurios', 'los caballos'],
       toys: [
         { name: 'el dinosaurio chiquito' },
         { name: 'el tren grandote' },
@@ -60,9 +59,8 @@ export const accounts = [
     password: PASSWORD,
     family: {
       name: 'Familia de Olivia',
-      kids: [{ name: 'Olivia', age: 0 }],
+      kids: [{ name: 'Olivia', age: 0, interests: ['las canciones', 'el agua'] }],
       pets: [],
-      interests: ['las canciones', 'el agua'],
       toys: [{ name: 'el sonajero' }, { name: 'la mantita' }],
     },
   },
@@ -73,12 +71,12 @@ export const accounts = [
     password: PASSWORD,
     family: {
       name: 'Familia de Tomás y Emma',
+      // Each with their own interests, and one they share (JUG-144).
       kids: [
-        { name: 'Tomás', age: 8 },
-        { name: 'Emma', age: 4 },
+        { name: 'Tomás', age: 8, interests: ['el fútbol', 'los piratas'] },
+        { name: 'Emma', age: 4, interests: ['dibujar', 'los piratas'] },
       ],
       pets: [{ name: 'Michi' }],
-      interests: ['el fútbol', 'los piratas', 'dibujar'],
       toys: [
         { name: 'la pelota de fútbol' },
         { name: 'los bloques de madera' },

@@ -21,14 +21,38 @@ const answer = (overrides = {}) =>
 test('the example paragraph becomes the family, with nothing to check', () => {
   assert.deepEqual(readUnderstanding(answer(), TEXT), {
     family: {
-      kids: [{ name: 'Milán', age: 2 }],
+      kids: [{ name: 'Milán', age: 2, interests: ['los dinosaurios', 'los caballos'] }],
       pets: [{ name: 'Inca' }],
-      interests: ['los dinosaurios', 'los caballos'],
       toys: [{ name: 'un tren de madera' }],
     },
     unsure: [],
     note: null,
   })
+})
+
+test('each kid gets what the text says they love, and what it leaves unclear goes to every kid', () => {
+  const text =
+    'Tenemos a Milán, de 2, y a Sofi, de 4. A Milán le encantan los dinosaurios, Sofi ama dibujar, y a los dos les gustan los trenes y la plaza.'
+  const understood = readUnderstanding(
+    answer({
+      kids: [
+        { name: 'Milán', age: 2, interests: ['los dinosaurios', 'los trenes'] },
+        { name: 'Sofi', age: 4, interests: ['dibujar'] },
+      ],
+      interests: ['los trenes', 'la plaza'],
+      // This text names no pet, and a pet it doesn't name would be flagged.
+      pets: [],
+    }),
+    text,
+  )
+  assert.deepEqual(
+    understood?.family.kids.map((kid) => [kid.name, kid.interests]),
+    [
+      ['Milán', ['los dinosaurios', 'los trenes', 'la plaza']],
+      ['Sofi', ['dibujar', 'los trenes', 'la plaza']],
+    ],
+  )
+  assert.deepEqual(understood?.unsure, [])
 })
 
 test('names keep the spelling the parent used, even when the model changes it', () => {
@@ -58,7 +82,7 @@ test('the model doubts are kept, and follow a kid when an empty one is dropped',
     }),
     TEXT,
   )
-  assert.deepEqual(understood?.family.kids, [{ name: 'Milán', age: 2 }])
+  assert.deepEqual(understood?.family.kids, [{ name: 'Milán', age: 2, interests: ['los dinosaurios', 'los caballos'] }])
   assert.deepEqual(understood?.unsure.sort(), ['kids.0', 'toys'])
   assert.equal(understood?.note, 'No me quedó claro si el tren es de Milán.')
 })

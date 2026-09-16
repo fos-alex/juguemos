@@ -15,10 +15,20 @@ import '../family.css'
 /** @typedef {import('../model').FormState} FormState */
 
 /**
- * 2h. The fallback, and it looks like a plain form: the same four groups in
- * the same order as the card. Everything is optional. Reached from
- * "Corregir", a flagged row (focused on that field), the opt-out in 2d, and
- * Mi familia.
+ * Whose interests a chip group holds. With one kid it's just "Le encanta".
+ * @param {FormState['kids'][number]} kid @param {number} index @param {number} count
+ */
+function interestsLabel(kid, index, count) {
+  if (count === 1) return 'Le encanta'
+  const name = kid.name.trim()
+  return name ? `A ${name} le encanta` : `Le encanta · chico ${index + 1}`
+}
+
+/**
+ * 2h. The fallback, and it looks like a plain form: the same groups in the
+ * same order as the card, with what each kid loves in its own group
+ * (JUG-144). Everything is optional. Reached from "Corregir", a flagged row
+ * (focused on that field), the opt-out in 2d, and Mi familia.
  */
 export function CorrectScreen() {
   const { campo } = useSearch({ from: '/familia/corregir' })
@@ -26,7 +36,8 @@ export function CorrectScreen() {
   const [onboarding] = useState(() => !read('family'))
   const goBack = useGoBack(onboarding ? '/familia/contanos' : '/familia')
   const [form, setForm] = useState(() => toForm(read('parseResult')?.family ?? read('family')))
-  const [newInterest, setNewInterest] = useState(/** @type {string | null} */ (null))
+  // The interest being typed for each kid, by the kid's row.
+  const [drafts, setDrafts] = useState(/** @type {Record<number, string | null>} */ ({}))
   const request = useRequest()
 
   useDocumentTitle('Corregir · Juguemos')
@@ -43,19 +54,28 @@ export function CorrectScreen() {
   /** @param {(draft: FormState) => FormState} change */
   const update = (change) => setForm((current) => change(current))
 
-  const commitInterest = () => {
-    const value = newInterest?.trim()
-    if (value) update((f) => ({ ...f, interests: [...f.interests, value] }))
-    setNewInterest(null)
+  /** @param {number} index @param {(interests: string[]) => string[]} change */
+  const changeInterests = (index, change) =>
+    update((f) => ({ ...f, kids: f.kids.map((kid, i) => (i === index ? { ...kid, interests: change(kid.interests) } : kid)) }))
+
+  /** @param {number} index */
+  const commitInterest = (index) => {
+    const value = drafts[index]?.trim()
+    if (value) changeInterests(index, (interests) => [...interests, value])
+    setDrafts((all) => ({ ...all, [index]: null }))
   }
 
   /** @param {React.FormEvent} event */
   const save = (event) => {
     event.preventDefault()
     if (request.busy) return
-    const interests = newInterest?.trim() ? [...form.interests, newInterest.trim()] : form.interests
+    // An interest still being typed is saved with the rest.
+    const kids = form.kids.map((kid, index) => {
+      const typed = drafts[index]?.trim()
+      return typed ? { ...kid, interests: [...kid.interests, typed] } : kid
+    })
     void request.run(async () => {
-      await saveFamily(toFamily({ ...form, interests }))
+      await saveFamily(toFamily({ ...form, kids }))
       void navigate({ to: onboarding ? '/' : '/familia', replace: true })
     })
   }
@@ -76,13 +96,18 @@ export function CorrectScreen() {
             onChange={(event) => update((f) => ({ ...f, pet: event.target.value }))}
           />
 
-          <InterestChips
-            interests={form.interests}
-            draft={newInterest}
-            onDraft={setNewInterest}
-            onCommit={commitInterest}
-            onRemove={(index) => update((f) => ({ ...f, interests: f.interests.filter((_, i) => i !== index) }))}
-          />
+          {form.kids.map((kid, index) => (
+            <InterestChips
+              key={index}
+              label={interestsLabel(kid, index, form.kids.length)}
+              field={`interests.${index}`}
+              interests={kid.interests}
+              draft={drafts[index] ?? null}
+              onDraft={(draft) => setDrafts((all) => ({ ...all, [index]: draft }))}
+              onCommit={() => commitInterest(index)}
+              onRemove={(position) => changeInterests(index, (interests) => interests.filter((_, i) => i !== position))}
+            />
+          ))}
 
           <ToyRows toys={form.toys} onChange={(change) => update((f) => ({ ...f, toys: change(f.toys) }))} />
 

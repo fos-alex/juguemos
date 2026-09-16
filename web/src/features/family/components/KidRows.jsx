@@ -37,7 +37,7 @@ export function KidRows({ kids, onChange }) {
           </div>
         ))}
       </div>
-      <button type="button" className="add-link" onClick={() => onChange((all) => [...all, { name: '', age: '' }])}>
+      <button type="button" className="add-link" onClick={() => onChange((all) => [...all, { name: '', age: '', interests: [] }])}>
         + agregar otro chico
       </button>
     </FieldGroup>
