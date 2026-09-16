@@ -31,8 +31,8 @@ const plot = (n) => ({
   premise: 'Salen a la plaza con el tren grandote. Vuelven a tiempo para la merienda.',
 })
 
-/** The whole options answer: one call, three plots, in the castings' order. */
-const PLOTS = (...plots) => JSON.stringify({ tramas: plots.length > 0 ? plots : [plot(1), plot(2), plot(3)] })
+/** The whole options answer: one call, two plots, in the castings' order. */
+const PLOTS = (...plots) => JSON.stringify({ tramas: plots.length > 0 ? plots : [plot(1), plot(2)] })
 
 const STORY = `PARTE 1
 Milán se despertó de golpe.
@@ -114,21 +114,24 @@ test('with the LLM, options are plot options written for the family and saved', 
   assert.equal(response.statusCode, 200)
   assert.match(String(response.headers['content-type']), /text\/event-stream/)
   const events = streamEvents(response.body.toString())
-  assert.deepEqual(events.map((event) => event.type), ['option', 'option', 'option', 'done'])
+  assert.deepEqual(events.map((event) => event.type), ['option', 'option', 'done'])
   const list = events.filter((event) => event.type === 'option').map((event) => event.option)
-  assert.equal(list.length, 3)
+  assert.equal(list.length, 2)
   for (const option of list) assert.match(option.id, /^[0-9a-f-]{36}$/)
-  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2', 'Trama 3'])
+  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2'])
   // Milán is two years and two months, so his band runs three to four minutes.
   assert.equal(list[0].minutes, 4)
 
-  const { rows } = await api.pool.query('select casting from story_plots')
-  assert.equal(rows.length, 3)
+  const { rows } = await api.pool.query('select casting from story_plots order by created_at')
+  assert.equal(rows.length, 2)
   for (const row of rows) {
     assert.ok(row.casting.lead.name, 'every plot keeps the casting it was drawn for')
-    assert.ok(row.casting.draws.anchorIn >= 0)
-    assert.equal(row.casting.weights.anchorIn, 0.85)
+    assert.ok(row.casting.draws.petIn >= 0)
+    assert.equal(row.casting.weights.petIn, 0.5)
   }
+  // The classic first, led by Milán, then the new one.
+  assert.deepEqual(rows.map((row) => row.casting.kind), ['cast', 'wildcard'])
+  assert.equal(rows[0].casting.lead.name, 'Milán')
 })
 
 test('the options ask for a bedtime story at night, and its history reaches the model', async () => {
@@ -140,7 +143,8 @@ test('the options ask for a bedtime story at night, and its history reaches the 
   assert.match(user, /La familia va a leer un cuento a TRANQUI, antes de dormir/)
   assert.match(user, /Milán, de 2 años y 2 meses/)
   assert.match(user, /El reparto de cada trama/)
-  assert.match(user, /Trama 3: /)
+  assert.match(user, /Trama 2: /)
+  assert.doesNotMatch(user, /Trama 3: /)
 })
 
 test('the system prompt carries one band and one moment, and nothing else', async () => {
@@ -154,11 +158,11 @@ test('the system prompt carries one band and one moment, and nothing else', asyn
   assert.match(system, /El momento: TRANQUI, antes de dormir/)
   assert.doesNotMatch(system, /UN AÑO|TRES AÑOS|CUATRO AÑOS|CINCO AÑOS/)
   assert.doesNotMatch(system, /CON PILAS/)
-  assert.equal(maxTokens, 1200, 'three short plots in one answer')
-  // One call carries the three castings, numbered in the order they come back.
-  assert.match(user, /Trama 1: Protagonista: /)
-  assert.match(user, /Trama 2: Protagonista: |Trama 2: Reparto libre: /)
-  assert.match(user, /Trama 3: Protagonista: |Trama 3: Reparto libre: /)
+  assert.equal(maxTokens, 1200, 'the short plots in one answer')
+  // One call carries both castings, numbered in the order they come back: the
+  // classic, then the new one.
+  assert.match(user, /Trama 1: Protagonista: Milán\./)
+  assert.match(user, /Trama 2: Propuesta nueva: /)
 })
 
 test('asking for other options retires the older plots and keeps the ones on screen', async () => {
@@ -168,12 +172,12 @@ test('asking for other options retires the older plots and keeps the ones on scr
   const first = await options(cookie)
   const second = await options(cookie, first.map((option) => option.id))
   const third = await options(cookie, second.map((option) => option.id))
-  assert.equal(second.length, 3)
-  assert.equal(third.length, 3)
+  assert.equal(second.length, 2)
+  assert.equal(third.length, 2)
 
   const { rows } = await api.pool.query('select id from story_plots where family_id = $1', [family.id])
   const alive = new Set(rows.map((row) => row.id))
-  assert.equal(rows.length, 6, 'the screen being chosen from, plus three fresh ones')
+  assert.equal(rows.length, 4, 'the screen being chosen from, plus two fresh ones')
   assert.ok(second.every((option) => alive.has(option.id)), 'the plots on screen stay pickable')
   assert.ok(!first.some((option) => alive.has(option.id)), 'the screen nobody can see any more is gone')
 })
@@ -198,9 +202,9 @@ test('an answer with no readable plot is asked once more', async () => {
   assert.equal(retryLlm.prompts.length, 2, 'the whole answer is asked once more, not each option')
 
   const list = await options(cookie, [], api2)
-  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2', 'Trama 3'])
+  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2'])
   const { rows } = await api2.pool.query(`select count(*)::int as n from story_audit where event = 'offered'`)
-  assert.equal(rows[0].n, 3)
+  assert.equal(rows[0].n, 2)
   await api2.close()
 })
 
@@ -216,14 +220,14 @@ test('an answer that lands on the second try is offered as it streams', async ()
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
   const list = await options(cookie, [], api2)
-  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2', 'Trama 3'])
+  assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2'])
   assert.equal(secondTry.prompts.length, 2)
   await api2.close()
 })
 
 test('the options that did arrive are kept when the answer stops early', async () => {
-  // The model writes two plots and then stops mid-object.
-  const cut = `{"tramas": [${JSON.stringify(plot(1))}, ${JSON.stringify(plot(2))}, {"title": "La tercera`
+  // The model writes one plot and then stops mid-object.
+  const cut = `{"tramas": [${JSON.stringify(plot(1))}, {"title": "La segunda`
   const cutLlm = fakeLlm(() => cut)
   const api2 = await startApi({
     signupEmails: ['pia@example.com'],
@@ -238,11 +242,11 @@ test('the options that did arrive are kept when the answer stops early', async (
   assert.equal(response.statusCode, 200)
   assert.deepEqual(
     streamEvents(response.body.toString()).map((event) => event.type),
-    ['option', 'option', 'done'],
+    ['option', 'done'],
   )
   assert.equal(cutLlm.prompts.length, 1, 'an answer with plots in it is not asked again')
   const { rows } = await api2.pool.query('select count(*)::int as n from story_plots')
-  assert.equal(rows[0].n, 2)
+  assert.equal(rows[0].n, 1)
   await api2.close()
 })
 
@@ -431,7 +435,7 @@ test('the audit records what was offered, what was picked, and what was written'
     'select event, band, mood, plot_id, keyword, casting, details from story_audit where family_id = $1 order by created_at, event',
     [family.id],
   )
-  assert.equal(rows.filter((row) => row.event === 'offered').length, 3)
+  assert.equal(rows.filter((row) => row.event === 'offered').length, 2)
   for (const row of rows) {
     assert.equal(row.band, '2')
     assert.equal(row.mood, 'calm')

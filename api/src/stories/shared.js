@@ -6,7 +6,7 @@
 import { stories } from './stories.schema.js'
 
 /** How many stories a family is offered at a time, whatever writes them. */
-export const OPTIONS = 3
+export const OPTIONS = 2
 
 /** @typedef {import('./stories.service.js').Story} Story */
 /** @typedef {import('./stories.service.js').StoryEvent} StoryEvent */

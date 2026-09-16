@@ -41,7 +41,9 @@ const NOTHING_HEARD = 'No se escuchó nada. ¿Probamos de nuevo?'
  *
  * While idle it shows `children` beside the mic (Listo, on 2d), and while
  * recording the strip takes their place, so nothing sits beside the mic to be
- * hit by mistake. The words come back through `onText` for the parent to
+ * hit by mistake. `children` can be a function given `record`, which starts a
+ * hands-free note the way tapping the mic does, for a button that is itself
+ * the way to talk (JUG-156). The words come back through `onText` for the parent to
  * check. `onMessage` says what went wrong, with a retry when the note is
  * still here to send again; the recording is held in memory only for that.
  *
@@ -50,7 +52,7 @@ const NOTHING_HEARD = 'No se escuchó nada. ¿Probamos de nuevo?'
  * says to hold it and talk. Pressing the mic, or tapping anywhere else, ends
  * it for good.
  * @param {{
- *   children: React.ReactNode,
+ *   children: React.ReactNode | ((record: () => void) => React.ReactNode),
  *   onText: (text: string) => void,
  *   onMessage: (message: VoiceMessage | null) => void,
  *   onRecording?: (recording: boolean) => void,
@@ -259,6 +261,12 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
     else if (phaseRef.current === 'idle') begin(true)
   }
 
+  /** A hands-free note, started from something other than the mic. */
+  const record = () => {
+    endSpotlight()
+    if (phaseRef.current === 'idle') begin(true)
+  }
+
   const label = {
     idle: 'Nota de voz: mantené apretado para grabar',
     starting: 'Abriendo el micrófono',
@@ -326,6 +334,8 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
             </>
           )}
         </div>
+      ) : typeof children === 'function' ? (
+        children(record)
       ) : (
         children
       )}

@@ -32,8 +32,9 @@ import '../stories.css'
  * 2s then 2t, for every way into a story: one the family picked from the
  * options or from their shelf, one written now because they tapped an interest
  * (JUG-140), one they asked for in a voice note (JUG-156), and the next episode
- * of a series (JUG-59). The last three have no id until the API saves them, so they arrive with a title of their own and
- * then take the URL of the story they were saved as. The page fills itself:
+ * of a series (JUG-59). The last three have no id until the API saves them,
+ * so they arrive with a title of their own and then take the URL of the story
+ * they were saved as. The page fills itself:
  * the title is set and the text arrives over placeholder lines at story
  * measure, so nothing reflows. The screen stays awake from the first moment.
  * The bar marks position in the story, never achievement. Night mode is one

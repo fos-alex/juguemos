@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { seededRandom } from '../../src/catalog/slots.js'
-import { castingLines, castScreen, DEFAULT_WEIGHTS } from '../../src/stories/casting.js'
+import { castingLines, castKeyword, castScreen, DEFAULT_WEIGHTS } from '../../src/stories/casting.js'
 
 /** The example family: Milán anchors it, since he is the youngest with an age. */
 const PROFILE = {
@@ -25,105 +25,97 @@ const PROFILE = {
 const weights = (overrides = {}) => ({ ...DEFAULT_WEIGHTS, ...overrides })
 
 /** @param {string} seed @param {object} [options] */
-const screen = (seed, options = {}) => castScreen(PROFILE, { count: 3, random: seededRandom(seed), ...options })
+const screen = (seed, options = {}) => castScreen(PROFILE, { random: seededRandom(seed), ...options })
 
-test('a screen of castings keeps the shape the prompt and the audit read', () => {
-  for (const casting of screen('reparto')) {
-    assert.ok(['cast', 'wildcard'].includes(casting.kind))
-    assert.ok(['kid', 'pet', 'toy', 'new'].includes(casting.lead.type))
-    assert.ok(casting.lead.name)
-    assert.deepEqual(casting.weights, DEFAULT_WEIGHTS)
-    assert.equal(typeof casting.draws.anchorIn, 'number')
-    assert.equal(typeof casting.draws.wildcard, 'number')
-    for (const id of casting.kids) assert.ok(PROFILE.kids.some((kid) => kid.id === id))
-    if (casting.toy) assert.ok(PROFILE.toys.some((toy) => toy.id === casting.toy.id))
-    if (casting.theme) assert.ok(PROFILE.interests.includes(casting.theme))
-    // The lead is one of the people the casting says are in the story.
-    if (casting.lead.type === 'kid') assert.ok(casting.kids.includes(casting.lead.id))
-    if (casting.lead.type === 'pet') assert.equal(casting.lead.id, casting.pet?.id)
-    if (casting.lead.type === 'toy') assert.equal(casting.lead.id, casting.toy?.id)
-  }
-})
-
-test('the anchor is out of the kids when its draw says so', () => {
-  for (const seed of ['uno', 'dos', 'tres', 'cuatro', 'cinco']) {
-    for (const casting of screen(seed)) {
-      assert.equal(casting.kids.includes('k-milan'), casting.anchorIn)
-      assert.ok(casting.kids.includes('k-sofi'), 'the other kid is always in')
+test('a screen is two castings that keep the shape the prompt and the audit read', () => {
+  for (const seed of ['reparto', 'uno', 'dos', 'tres']) {
+    const castings = screen(seed)
+    assert.equal(castings.length, 2)
+    for (const casting of castings) {
+      assert.ok(['kid', 'pet', 'toy', 'new'].includes(casting.lead.type))
+      assert.ok(casting.lead.name)
+      assert.deepEqual(casting.weights, DEFAULT_WEIGHTS)
+      assert.equal(typeof casting.draws.petIn, 'number')
+      assert.equal(typeof casting.draws.toyIn, 'number')
+      // Every kid playing is in both.
+      assert.deepEqual(casting.kids, ['k-milan', 'k-sofi'])
+      if (casting.toy) assert.ok(PROFILE.toys.some((toy) => toy.id === casting.toy.id))
+      if (casting.theme) assert.ok(PROFILE.interests.includes(casting.theme))
+      if (casting.lead.type === 'pet') assert.equal(casting.lead.id, casting.pet?.id)
+      if (casting.lead.type === 'toy') assert.equal(casting.lead.id, casting.toy?.id)
     }
   }
 })
 
-test('the toys and the themes of a screen are drawn without replacement', () => {
+test('the first option is the classic: the anchor kid leads it', () => {
+  for (const seed of ['uno', 'dos', 'tres', 'cuatro', 'cinco']) {
+    const [classic] = screen(seed)
+    assert.equal(classic.kind, 'cast')
+    assert.equal(classic.anchorIn, true)
+    assert.deepEqual(classic.lead, { type: 'kid', id: 'k-milan', name: 'Milán' })
+    assert.equal(classic.draws.lead, null, 'nothing is drawn for its lead')
+  }
+})
+
+test('the second option is new: someone else leads it, and it has no family theme', () => {
+  const leads = new Set()
+  for (const seed of ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho']) {
+    const [, fresh] = screen(seed)
+    assert.equal(fresh.kind, 'wildcard')
+    assert.equal(fresh.theme, null)
+    assert.equal(fresh.draws.themeIn, null)
+    assert.notEqual(fresh.lead.id, 'k-milan')
+    leads.add(fresh.lead.type)
+  }
+  assert.ok(leads.has('kid'), 'the other kid leads some of them')
+})
+
+test('the two options never share a toy while the family has more than one', () => {
   for (const seed of ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis']) {
-    const castings = screen(seed, { weights: weights({ wildcard: 0 }) })
-    const toys = castings.map((casting) => casting.toy?.id).filter(Boolean)
-    const themes = castings.map((casting) => casting.theme).filter(Boolean)
-    assert.equal(new Set(toys).size, toys.length, `toys repeat on the screen drawn from ${seed}`)
-    assert.equal(new Set(themes).size, themes.length, `themes repeat on the screen drawn from ${seed}`)
+    const [classic, fresh] = screen(seed, { weights: weights({ toyIn: 1 }) })
+    assert.ok(classic.toy && fresh.toy)
+    assert.notEqual(classic.toy.id, fresh.toy.id, `the screen drawn from ${seed} repeats a toy`)
   }
 })
 
-test('the three castings of a screen lead with different people, when the family has enough', () => {
-  const random = seededRandom('protagonistas')
-  let allDifferent = 0
-  for (let round = 0; round < 100; round += 1) {
-    const castings = castScreen(PROFILE, { count: 3, random, weights: weights({ wildcard: 0 }) })
-    const leads = castings.map((casting) => `${casting.lead.type}:${casting.lead.id}`)
-    if (new Set(leads).size === 3) allDifferent += 1
-  }
-  // Two kids, a pet and a toy can lead, so three different leads is the norm;
-  // a screen where the pet and the toys all stayed out has fewer to choose from.
-  assert.ok(allDifferent > 60, `only ${allDifferent} screens in 100 had three different leads`)
-})
-
-test('weights of 1 put the whole family in, and the anchor leads the first option', () => {
-  const castings = screen('todo', { weights: weights({ anchorIn: 1, anchorLead: 1, petIn: 1, toyIn: 1, themeIn: 1, wildcard: 0 }) })
-  for (const casting of castings) {
-    assert.equal(casting.kind, 'cast')
-    assert.equal(casting.anchorIn, true)
-    assert.deepEqual(casting.kids, ['k-milan', 'k-sofi'])
+test('weights of 1 put the pet, a toy and a theme in', () => {
+  const [classic, fresh] = screen('todo', { weights: weights({ petIn: 1, toyIn: 1, themeIn: 1 }) })
+  for (const casting of [classic, fresh]) {
     assert.equal(casting.pet?.name, 'Inca')
     assert.ok(casting.toy)
-    assert.ok(casting.theme)
   }
-  // Even at a weight of 1 the anchor leads once a screen: the other two
-  // options go to somebody else, so the three are not the same story.
-  assert.deepEqual(castings[0].lead, { type: 'kid', id: 'k-milan', name: 'Milán' })
-  assert.ok(castings.slice(1).every((casting) => casting.lead.id !== 'k-milan'))
+  assert.ok(classic.theme)
 })
 
-test('weights of 0 leave the anchor, the pet, the toys and the theme out', () => {
-  const castings = screen('nada', { weights: weights({ anchorIn: 0, anchorLead: 0, petIn: 0, toyIn: 0, themeIn: 0, wildcard: 0 }) })
-  for (const casting of castings) {
-    assert.equal(casting.anchorIn, false)
-    assert.deepEqual(casting.kids, ['k-sofi'])
+test('weights of 0 leave the pet, the toys and the theme out', () => {
+  const [classic, fresh] = screen('nada', { weights: weights({ petIn: 0, toyIn: 0, themeIn: 0 }) })
+  for (const casting of [classic, fresh]) {
     assert.equal(casting.pet, null)
     assert.equal(casting.toy, null)
     assert.equal(casting.theme, null)
-    // Only the other kid is left to lead.
-    assert.deepEqual(casting.lead, { type: 'kid', id: 'k-sofi', name: 'Sofi' })
-    assert.equal(casting.draws.anchorLead, null, 'a decision the profile never offered has no draw')
   }
+  // Only the other kid is left to lead the new one.
+  assert.deepEqual(fresh.lead, { type: 'kid', id: 'k-sofi', name: 'Sofi' })
 })
 
-test('with nobody else to lead, the anchor leads, and without the anchor a new character does', () => {
+test('with nobody else in the family, the anchor leads both, and with no kids a new character does', () => {
   const alone = { ...PROFILE, kids: [PROFILE.kids[0]], pets: [], toys: [], interests: [] }
-  const [leads] = castScreen(alone, { count: 1, random: seededRandom('solo'), weights: weights({ anchorIn: 1, anchorLead: 0, wildcard: 0 }) })
-  assert.deepEqual(leads.lead, { type: 'kid', id: 'k-milan', name: 'Milán' })
+  const [classic, fresh] = castScreen(alone, { random: seededRandom('solo') })
+  assert.deepEqual(classic.lead, { type: 'kid', id: 'k-milan', name: 'Milán' })
+  assert.deepEqual(fresh.lead, { type: 'kid', id: 'k-milan', name: 'Milán' })
+  assert.equal(classic.draws.petIn, null, 'a decision the profile never offered has no draw')
 
-  const [nobody] = castScreen(alone, { count: 1, random: seededRandom('solo'), weights: weights({ anchorIn: 0, wildcard: 0 }) })
-  assert.deepEqual(nobody.lead, { type: 'new', id: null, name: 'un personaje nuevo' })
-  assert.deepEqual(nobody.kids, [])
+  const nobody = castScreen({ ...alone, kids: [] }, { random: seededRandom('solo') })
+  for (const casting of nobody) assert.deepEqual(casting.lead, { type: 'new', id: null, name: 'un personaje nuevo' })
 })
 
 test('a toy used in the family last stories comes up less often', () => {
   const recent = [{ toy: { id: 't-dino' }, theme: 'los dinosaurios' }]
-  const only = weights({ toyIn: 1, themeIn: 1, wildcard: 0 })
+  const only = weights({ toyIn: 1, themeIn: 1 })
   const counts = { 't-dino': 0, other: 0 }
   const random = seededRandom('penalidad')
   for (let round = 0; round < 400; round += 1) {
-    const [casting] = castScreen(PROFILE, { count: 1, weights: only, random, recent })
+    const [casting] = castScreen(PROFILE, { weights: only, random, recent })
     counts[casting.toy.id === 't-dino' ? 't-dino' : 'other'] += 1
   }
   // One of four toys weighs 0.3 against three of 1: about one draw in eleven.
@@ -131,22 +123,12 @@ test('a toy used in the family last stories comes up less often', () => {
   assert.ok(counts['t-dino'] > 0, 'it is less likely, not impossible')
 })
 
-test('the wildcard drops the family props and keeps the kids', () => {
-  const castings = screen('comodin', { weights: weights({ wildcard: 1 }) })
-  const wild = castings.filter((casting) => casting.kind === 'wildcard')
-  assert.equal(wild.length, 1, 'one option a screen, at most')
-  assert.equal(wild[0].pet, null)
-  assert.equal(wild[0].toy, null)
-  assert.equal(wild[0].theme, null)
-  assert.ok(['kid', 'new'].includes(wild[0].lead.type), 'a pet or a toy that is out cannot lead')
-  assert.equal(wild[0].draws.wildcard, castings[0].draws.wildcard, 'one draw for the whole screen')
-})
-
-test('no wildcard when its draw misses', () => {
-  for (const seed of ['uno', 'dos', 'tres']) {
-    const castings = screen(seed, { weights: weights({ wildcard: 0 }) })
-    assert.ok(castings.every((casting) => casting.kind === 'cast'))
-  }
+test('a keyword casting is the classic, with the keyword as its theme', () => {
+  const casting = castKeyword(PROFILE, { keyword: 'los caballos', random: seededRandom('tema') })
+  assert.equal(casting.kind, 'keyword')
+  assert.equal(casting.theme, 'los caballos')
+  assert.deepEqual(casting.lead, { type: 'kid', id: 'k-milan', name: 'Milán' })
+  assert.equal(casting.draws.themeIn, null)
 })
 
 test('the same seed draws the same screen', () => {
@@ -158,7 +140,7 @@ test('the casting reaches the prompt as plain lines, with the names as the famil
     kind: 'cast',
     anchorIn: true,
     kids: ['k-milan', 'k-sofi'],
-    draws: { anchorIn: 0, anchorLead: 0, petIn: 0, toyIn: 0, themeIn: 0, wildcard: 0 },
+    draws: { petIn: 0, toyIn: 0, themeIn: 0, lead: null },
     weights: DEFAULT_WEIGHTS,
   }
   const full = castingLines(
@@ -184,6 +166,6 @@ test('the casting reaches the prompt as plain lines, with the names as the famil
     { ...base, kind: 'wildcard', kids: ['k-milan'], lead: { type: 'kid', id: 'k-milan', name: 'Milán' }, pet: null, toy: null, theme: null },
     PROFILE,
   )
-  assert.match(wild, /^Reparto libre: inventá el escenario o un personaje secundario nuevo que la familia no mencionó\./)
+  assert.match(wild, /^Propuesta nueva: inventá un lugar, un personaje secundario o una situación que la familia todavía no escuchó\./)
   assert.match(wild, /Protagonista: Milán\. Sin mascota, sin juguetes, sin tema de la familia\.$/)
 })
