@@ -21,6 +21,9 @@ import { AppError, UnavailableError } from './errors.js'
 import { createLlm } from './llm/client.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
+import { createMaterialsController } from './materials/materials.controller.js'
+import { materialsRoutes } from './materials/materials.routes.js'
+import { createMaterialsService } from './materials/materials.service.js'
 import { createStoriesController } from './stories/stories.controller.js'
 import { storiesRoutes } from './stories/stories.routes.js'
 import { createStoriesService } from './stories/stories.service.js'
@@ -56,9 +59,10 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const app = Fastify({ logger })
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
+  const materials = createMaterialsService({ db })
   // Every activity and story template comes from here.
   const catalog = createCatalogService({ db })
-  const activities = createActivitiesService({ db, catalog, families, random })
+  const activities = createActivitiesService({ db, catalog, families, materials, random })
   // One LLM for stories and for reading a family's text; null without a key.
   const llmClient = llm ?? createLlm({ config: config.llm })
   // `model` is the model's name, which the story audit records beside each call.
@@ -106,6 +110,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
   app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
   app.register(toysRoutes, { controller: createToysController({ toys, toysUnderstanding }) })
+  app.register(materialsRoutes, { controller: createMaterialsController({ materials }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }) })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }) })
   // Session access, not family: onboarding records a note before the family exists.

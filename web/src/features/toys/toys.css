@@ -14,10 +14,6 @@
   margin-top: 0;
 }
 
-.toy-box__materials {
-  margin-top: 10px;
-}
-
 .toy-form__remove {
   display: flex;
   flex-direction: column;

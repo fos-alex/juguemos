@@ -6,6 +6,7 @@ import {
   CloseIcon,
   Drawer,
   FamilyIcon,
+  MaterialsIcon,
   MoonIcon,
   RondaIcon,
   SettingsIcon,
@@ -26,7 +27,7 @@ export function AppMenu({ open, onClose, onStories }) {
   const account = useStored('account')
   const { dark, toggle } = useTheme()
 
-  /** @param {'/familia' | '/juguetes' | '/ajustes'} to */
+  /** @param {'/familia' | '/juguetes' | '/materiales' | '/ajustes'} to */
   const go = (to) => {
     onClose()
     void navigate({ to })
@@ -63,6 +64,11 @@ export function AppMenu({ open, onClose, onStories }) {
         <button type="button" className="drawer__item" onClick={() => go('/juguetes')}>
           <ToyBoxIcon size={22} />
           El baúl de juguetes
+        </button>
+        {/* JUG-153. Voice pass pending. */}
+        <button type="button" className="drawer__item" onClick={() => go('/materiales')}>
+          <MaterialsIcon size={22} />
+          Materiales
         </button>
         {/* Where el diario and recuerdos land. */}
         <div className="drawer__upcoming">próximas funciones</div>

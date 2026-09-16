@@ -7,6 +7,7 @@ import { loadConfig, loadDatabaseUrl } from './config.js'
 import { createDb } from './db/client.js'
 import { seedAccounts } from './db/seed.js'
 import { createFamiliesService } from './families/families.service.js'
+import { createMaterialsService } from './materials/materials.service.js'
 import { createToysService } from './toys/toys.service.js'
 
 // `node src/seed.js catalog` loads the catalog anywhere; the `migrate` service
@@ -38,6 +39,7 @@ try {
       auth: createAuth({ config: { ...config.auth, signupEmails }, db }),
       families,
       toys: createToysService({ db }),
+      materials: createMaterialsService({ db }),
       accounts,
       log: console.log,
     })

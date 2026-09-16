@@ -1,4 +1,5 @@
 import { errorBody, lines, text, uuid } from '../http/schemas.js'
+import { MATERIAL_KEYS } from '../materials/materials.js'
 
 /** @typedef {ReturnType<typeof import('./catalog.controller.js').createCatalogController>} CatalogController */
 
@@ -18,7 +19,8 @@ const fields = {
   energy: { type: 'string', enum: ['low', 'medium', 'high'] },
   categories: { type: 'array', minItems: 1, uniqueItems: true, items: { type: 'string', enum: CATEGORIES } },
   smallSpace: { type: 'boolean' },
-  materials: lines(20),
+  // By key: what the template can't be played without (JUG-153).
+  materials: { type: 'array', uniqueItems: true, maxItems: MATERIAL_KEYS.length, items: { type: 'string', enum: MATERIAL_KEYS } },
   skills: lines(20),
   safety: lines(20),
   why: text(600),
@@ -56,6 +58,27 @@ const template = {
   },
 }
 
+// The list a template's materials are picked from, by category.
+const materialCategories = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: ['key', 'label', 'materials'],
+    properties: {
+      key: { type: 'string' },
+      label: { type: 'string' },
+      materials: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['key', 'label'],
+          properties: { key: { type: 'string' }, label: { type: 'string' } },
+        },
+      },
+    },
+  },
+}
+
 const params = {
   type: 'object',
   required: ['id'],
@@ -88,4 +111,5 @@ export async function catalogRoutes(app, { controller }) {
     controller.updateTemplate,
   )
   app.delete(`${url}/:id`, { config, schema: { params, response: errors } }, controller.deleteTemplate)
+  app.get('/admin/materials', { config, schema: { response: { 200: materialCategories } } }, controller.materials)
 }

@@ -1,3 +1,5 @@
+import { MATERIAL_CATEGORIES } from '../materials/materials.js'
+
 /** @typedef {import('./catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('./catalog.service.js').ActivityTemplateInput} ActivityTemplateInput */
 /** @typedef {import('./catalog.service.js').ActivityTemplateUpdate} ActivityTemplateUpdate */
@@ -30,6 +32,11 @@ export function createCatalogController({ catalog }) {
     async deleteTemplate(request, reply) {
       await catalog.deleteTemplate(idOf(request))
       return reply.code(204).send()
+    },
+
+    /** The materials a template can name. @type {import('fastify').RouteHandlerMethod} */
+    async materials() {
+      return MATERIAL_CATEGORIES
     },
   }
 }

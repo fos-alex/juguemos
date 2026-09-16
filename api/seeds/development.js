@@ -12,13 +12,13 @@
  * @property {string} password
  * @property {import('../src/families/families.service.js').ProfileInput} [family] saved with the account as its first member
  * @property {SeedToyBox} [toyBox] added to the family's toys once it is saved
+ * @property {Record<string, boolean>} [materials] the family's answers, by material key; the rest stay at their defaults
  */
 /**
  * @typedef {object} SeedToyBox What the toy box knows beyond the toys' names.
  * @property {Record<string, import('../src/toys/toys.service.js').ToyInput & { kid?: string }>} [details]
  *   by the toy's name, with whose it is as a kid's name
  * @property {string[][]} [links] sets of linked toys, by name
- * @property {string[]} [materials] household materials, by key
  */
 
 const PASSWORD = 'ludi-local'
@@ -49,8 +49,9 @@ export const accounts = [
         'el osito marrón': { aliases: ['el tuto'], kid: 'Milán' },
       },
       links: [['el caballo grande', 'el caballo chico']],
-      materials: ['cajas', 'ollas', 'mantas'],
     },
+    // One material that starts off and is there, and one that starts on and isn't.
+    materials: { tizas: true, harina: false },
   },
   // The sparsest family: a baby, no pet, and two toys.
   {

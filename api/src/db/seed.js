@@ -8,19 +8,22 @@
 /** @typedef {import('../auth/auth.js').Auth} Auth */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../families/families.service.js').Profile} Profile */
+/** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
 /** @typedef {import('../toys/toys.service.js').ToysService} ToysService */
 /** @typedef {import('../../seeds/development.js').SeedToyBox} SeedToyBox */
 /** @typedef {import('../../seeds/development.js').SeedAccount} SeedAccount */
 
 /**
- * Creates the given accounts and their families, with their toy boxes.
+ * Creates the given accounts and their families, with their toy boxes and
+ * materials.
  * @param {{
- *   auth: Auth, families: FamiliesService, toys: ToysService, accounts: SeedAccount[], log?: (message: string) => void,
+ *   auth: Auth, families: FamiliesService, toys: ToysService, materials: MaterialsService, accounts: SeedAccount[],
+ *   log?: (message: string) => void,
  * }} options
  */
-export async function seedAccounts({ auth, families, toys, accounts, log = () => {} }) {
+export async function seedAccounts({ auth, families, toys, materials, accounts, log = () => {} }) {
   const { internalAdapter } = await auth.$context
-  for (const { name, email, password, family, toyBox } of accounts) {
+  for (const { name, email, password, family, toyBox, materials: answers = {} } of accounts) {
     const existing = await internalAdapter.findUserByEmail(email.toLowerCase())
     const user = existing?.user ?? (await auth.api.signUpEmail({ body: { name, email, password } })).user
     log(`${email}: ${existing ? 'already there' : 'created'}`)
@@ -28,6 +31,7 @@ export async function seedAccounts({ auth, families, toys, accounts, log = () =>
     if (family && !(await families.idOf(user.id))) {
       const profile = await families.saveProfile(user.id, family)
       if (toyBox) await fillToyBox(toys, profile, toyBox)
+      for (const [key, have] of Object.entries(answers)) await materials.mark(profile.id, key, have)
       log(`${email}: family created`)
     }
   }
@@ -40,7 +44,7 @@ export async function seedAccounts({ auth, families, toys, accounts, log = () =>
  * @param {Profile} profile
  * @param {SeedToyBox} toyBox
  */
-async function fillToyBox(toys, profile, { details = {}, links = [], materials = [] }) {
+async function fillToyBox(toys, profile, { details = {}, links = [] }) {
   /** @param {{ id: string, name: string }[]} rows @param {string} name */
   const idOf = (rows, name) => {
     const row = rows.find((candidate) => candidate.name === name)
@@ -57,5 +61,4 @@ async function fillToyBox(toys, profile, { details = {}, links = [], materials =
       rest.map((name) => idOf(profile.toys, name)),
     )
   }
-  if (materials.length > 0) await toys.chooseMaterials(profile.id, materials)
 }

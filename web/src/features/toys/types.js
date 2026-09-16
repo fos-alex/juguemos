@@ -19,7 +19,6 @@
  * saved: the family's name for it and what it is. A candidate becomes a toy
  * only once the parent confirms it.
  */
-/** @typedef {{ key: string, label: string, have: boolean }} Material A household material, from the API's fixed list. */
-/** @typedef {{ toys: Toy[], materials: Material[] }} ToyBox */
+/** @typedef {{ toys: Toy[] }} ToyBox */
 
 export {}

@@ -10,6 +10,7 @@ export {
   CloseIcon,
   FamilyIcon,
   LockIcon,
+  MaterialsIcon,
   MenuIcon,
   MicIcon,
   MoonIcon,

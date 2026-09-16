@@ -194,23 +194,6 @@ test("another family's toys are out of reach", async () => {
   )
 })
 
-test('household materials come from a fixed list, and the family marks the ones it has', async () => {
-  const { call } = await adultWithFamily('juan@example.com')
-  const first = (await call('GET', '/family/materials')).json().materials
-  assert.ok(first.length > 0)
-  assert.ok(first.every((/** @type {{ have: boolean, label: string }} */ material) => !material.have && material.label))
-
-  const chosen = await call('PUT', '/family/materials', { have: ['mantas', 'cajas'] })
-  assert.equal(chosen.statusCode, 200)
-  /** @param {{ key: string, have: boolean }[]} materials */
-  const had = (materials) => materials.filter((material) => material.have).map((material) => material.key)
-  assert.deepEqual(had(chosen.json().materials), ['cajas', 'mantas'])
-  assert.deepEqual(had((await call('GET', '/family/materials')).json().materials), ['cajas', 'mantas'])
-
-  assert.equal((await call('PUT', '/family/materials', { have: ['un avión'] })).statusCode, 400)
-  assert.deepEqual(had((await call('PUT', '/family/materials', { have: [] })).json().materials), [])
-})
-
 test('the box holds as many toys as the family form does', async () => {
   const toys = Array.from({ length: 200 }, (_, index) => ({ name: `juguete ${index + 1}` }))
   const { call } = await adultWithFamily('kari@example.com', { ...EXAMPLE_PROFILE, toys })
@@ -221,7 +204,6 @@ test('the box holds as many toys as the family form does', async () => {
 
 test('the toy box needs a session and a family', async () => {
   assert.equal((await api.app.inject({ method: 'GET', url: '/family/toys' })).statusCode, 401)
-  assert.equal((await api.app.inject({ method: 'GET', url: '/family/materials' })).statusCode, 401)
 
   const { cookie } = await signUpAs(api, 'lola@example.com')
   const headers = { cookie }

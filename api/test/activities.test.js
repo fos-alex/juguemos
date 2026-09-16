@@ -53,6 +53,7 @@ before(async () => {
       'fede@example.com',
       'gabi@example.com',
       'hugo@example.com',
+      'ines@example.com',
     ],
   })
   catalog = createCatalogService({ db: api.db })
@@ -194,4 +195,34 @@ test('{interest} is something the kid named loves, and only the kids playing cou
     previous = activity.id
   }
   assert.equal(found?.harder, 'Sumen cosas que le encantan a Sofi, como dibujar.')
+})
+
+test('a juego never needs a material the family does not have, and the common ones count as there (JUG-153)', async () => {
+  await catalog.addActivityTemplate(template({ slug: 'con-tizas', title: 'Con tizas', minAgeMonths: 96, maxAgeMonths: 119, materials: ['tizas'] }))
+  await catalog.addActivityTemplate(
+    template({ slug: 'con-almohadones', title: 'Con almohadones', minAgeMonths: 96, maxAgeMonths: 119, materials: ['almohadones'] }),
+  )
+  const { cookie } = await signUpAs(api, 'ines@example.com')
+  await putFamily(api, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [], kids: [{ name: 'Sofi', ageMonths: 100 }] })
+
+  /** The titles of a few suggestions in a row. */
+  const titles = async () => {
+    const seen = new Set()
+    let previous = null
+    for (let round = 0; round < 6; round++) {
+      const activity = (await suggest(cookie, previous)).json()
+      seen.add(activity.title)
+      previous = activity.id
+    }
+    return [...seen].sort()
+  }
+  /** @param {string} key @param {boolean} have */
+  const mark = (key, have) => api.app.inject({ method: 'PUT', url: `/family/materials/${key}`, headers: { cookie }, payload: { have } })
+
+  // Tizas start off and almohadones on. No other template is for an 8-year-old.
+  assert.deepEqual(await titles(), ['Con almohadones'])
+  await mark('tizas', true)
+  assert.deepEqual(await titles(), ['Con almohadones', 'Con tizas'])
+  await mark('almohadones', false)
+  assert.deepEqual(await titles(), ['Con tizas'])
 })

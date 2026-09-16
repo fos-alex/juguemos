@@ -1,5 +1,4 @@
 import { errorBody, text, uuid as id } from '../http/schemas.js'
-import { MATERIAL_KEYS } from './materials.js'
 import { MAX_TOYS } from './toys.service.js'
 
 /** @typedef {ReturnType<typeof import('./toys.controller.js').createToysController>} ToysController */
@@ -35,21 +34,6 @@ const toyList = {
   properties: { toys: { type: 'array', items: toy } },
 }
 
-const materialList = {
-  type: 'object',
-  required: ['materials'],
-  properties: {
-    materials: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['key', 'label', 'have'],
-        properties: { key: { type: 'string' }, label: { type: 'string' }, have: { type: 'boolean' } },
-      },
-    },
-  },
-}
-
 // Names stay exactly as typed: nothing here trims, corrects, or capitalizes them.
 const toyFields = {
   name: text(120),
@@ -69,13 +53,6 @@ const linksInput = {
   additionalProperties: false,
   required: ['toys'],
   properties: { toys: { type: 'array', maxItems: MAX_TOYS, uniqueItems: true, items: id } },
-}
-
-const materialsInput = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['have'],
-  properties: { have: { type: 'array', uniqueItems: true, items: { type: 'string', enum: MATERIAL_KEYS } } },
 }
 
 const toysUnderstandingInput = {
@@ -120,16 +97,10 @@ export async function toysRoutes(app, { controller }) {
     { config, schema: { params: toyParams, body: linksInput, response: { 200: toyList, ...toyErrors } } },
     controller.link,
   )
-  app.get('/family/materials', { config, schema: { response: { 200: materialList, ...errors } } }, controller.materials)
   // 503 with LLM_OFF when this server has no LLM to read the text with.
   app.post(
     '/family/toys/understanding',
     { config, schema: { body: toysUnderstandingInput, response: { 200: toysUnderstanding, ...inputErrors, 503: errorBody } } },
     controller.understand,
-  )
-  app.put(
-    '/family/materials',
-    { config, schema: { body: materialsInput, response: { 200: materialList, ...inputErrors } } },
-    controller.chooseMaterials,
   )
 }

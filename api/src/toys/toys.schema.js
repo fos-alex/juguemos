@@ -1,16 +1,11 @@
 /**
- * The toy box's tables: the family's toys, and the household materials they
- * have. Both belong to a family, and a toy may belong to one kid.
+ * The toy box's table: the family's toys. A toy belongs to a family, and may
+ * belong to one kid.
  */
 import { relations, sql } from 'drizzle-orm'
-import { boolean, check, index, pgTable, primaryKey, smallint, text, uuid } from 'drizzle-orm/pg-core'
+import { boolean, check, index, pgTable, smallint, text, uuid } from 'drizzle-orm/pg-core'
 import { createdAt } from '../db/columns.js'
 import { families, kids } from '../families/families.schema.js'
-
-const familyId = () =>
-  uuid()
-    .notNull()
-    .references(() => families.id, { onDelete: 'cascade' })
 
 // The toy box (JUG-18). A toy's name is the family's own, the only one the
 // parent ever sees; `description` says what the toy actually is, for the AI,
@@ -21,7 +16,9 @@ export const toys = pgTable(
   'toys',
   {
     id: uuid().primaryKey().defaultRandom(),
-    familyId: familyId(),
+    familyId: uuid()
+      .notNull()
+      .references(() => families.id, { onDelete: 'cascade' }),
     position: smallint().notNull(),
     name: text().notNull(),
     aliases: text().array().notNull().default(sql`'{}'`),
@@ -39,21 +36,6 @@ export const toys = pgTable(
   ],
 )
 
-// The household materials each family has, by their key in
-// src/toys/materials.js. They need no family name.
-export const householdMaterials = pgTable(
-  'household_materials',
-  {
-    familyId: familyId(),
-    material: text().notNull(),
-    createdAt: createdAt(),
-  },
-  (table) => [primaryKey({ columns: [table.familyId, table.material] })],
-)
-
-/** @param {typeof toys | typeof householdMaterials} table */
-const belongsToFamily = (table) =>
-  relations(table, ({ one }) => ({ family: one(families, { fields: [table.familyId], references: [families.id] }) }))
-
-export const toysRelations = belongsToFamily(toys)
-export const householdMaterialsRelations = belongsToFamily(householdMaterials)
+export const toysRelations = relations(toys, ({ one }) => ({
+  family: one(families, { fields: [toys.familyId], references: [families.id] }),
+}))

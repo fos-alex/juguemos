@@ -51,7 +51,7 @@ const input = (overrides) => ({
   energy: /** @type {const} */ ('medium'),
   categories: ['pretend'],
   smallSpace: true,
-  materials: ['un almohadón'],
+  materials: ['almohadones'],
   skills: [],
   safety: [],
   why: 'Porque sí.',
@@ -249,8 +249,26 @@ test('the admin refuses what the catalog cannot hold', async () => {
   assert.equal((await call('POST', URL, input({ slug: 'Con Mayúsculas' }))).statusCode, 400)
   assert.equal((await call('POST', URL, input({ slug: 'sin-pasos', steps: [] }))).statusCode, 400)
   assert.equal((await call('POST', URL, input({ slug: 'otra-cosa', categories: ['cocinar'] }))).statusCode, 400)
+  assert.equal((await call('POST', URL, input({ slug: 'con-palabras', materials: ['un almohadón'] }))).statusCode, 400)
   assert.equal((await call('GET', `${URL}/no-es-un-id`)).statusCode, 400)
   assert.equal((await call('GET', `${URL}/00000000-0000-4000-8000-000000000000`)).statusCode, 404)
+})
+
+test('the admin picks a template\'s materials from the list, by category', async () => {
+  const response = await call('GET', '/admin/materials')
+  assert.equal(response.statusCode, 200)
+  const categories = response.json()
+  assert.ok(categories.length > 1)
+  const keys = categories.flatMap((/** @type {{ materials: { key: string }[] }} */ category) => category.materials.map((m) => m.key))
+  assert.ok(keys.includes('almohadones'))
+  assert.equal(new Set(keys).size, keys.length, 'each material is in one category')
+})
+
+test('a template naming a material that is not on the list is refused', async () => {
+  await assert.rejects(catalogOf(api).addActivityTemplate(input({ slug: 'mal-material', materials: ['un almohadón'] })), {
+    name: 'ValidationError',
+    code: 'UNKNOWN_MATERIALS',
+  })
 })
 
 test('a template with an unknown slot is refused', async () => {
