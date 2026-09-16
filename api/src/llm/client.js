@@ -32,7 +32,7 @@ import { jsonIn } from './prompt.js'
  * @property {(call: LlmCall & { signal?: AbortSignal }) => AsyncGenerator<string>} stream
  */
 
-const USER_AGENT = 'juguemos-api/0.1'
+const USER_AGENT = 'ludi-api/0.1'
 
 /**
  * What each provider needs on top of the chat completions API.
@@ -47,9 +47,9 @@ const USER_AGENT = 'juguemos-api/0.1'
  * @type {Record<LlmConfig['provider'], (config: LlmConfig, call: { reasoning?: boolean }) => { headers: Record<string, string>, body: object }>}
  */
 const PROVIDER_EXTRAS = {
-  opencode: () => ({ headers: { 'x-opencode-session': `juguemos-${randomUUID()}` }, body: {} }),
+  opencode: () => ({ headers: { 'x-opencode-session': `ludi-${randomUUID()}` }, body: {} }),
   openrouter: (config, { reasoning }) => ({
-    headers: { 'HTTP-Referer': config.appUrl, 'X-Title': 'Juguemos' },
+    headers: { 'HTTP-Referer': config.appUrl, 'X-Title': 'Ludi' },
     body: { provider: { data_collection: 'deny' }, ...(reasoning === false ? { reasoning: { enabled: false } } : {}) },
   }),
 }

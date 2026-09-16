@@ -17,7 +17,7 @@ export function TemplateListScreen() {
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [switching, setSwitching] = useState(/** @type {string | null} */ (null))
 
-  useDocumentTitle('Juegos · Admin · Juguemos')
+  useDocumentTitle('Juegos · Admin · Ludi')
 
   useEffect(() => {
     listTemplates().then(setTemplates, (error) => setFailure(adminFailure(error)))

@@ -29,7 +29,7 @@ export function AccountScreen() {
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}))
   const request = useRequest()
 
-  useDocumentTitle(`${signingIn ? 'Entrá a tu cuenta' : 'Creá tu cuenta'} · Juguemos`)
+  useDocumentTitle(`${signingIn ? 'Entrá a tu cuenta' : 'Creá tu cuenta'} · Ludi`)
 
   /** @param {React.FormEvent<HTMLFormElement>} event */
   const submit = (event) => {

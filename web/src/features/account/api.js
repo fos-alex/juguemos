@@ -20,7 +20,7 @@ const MESSAGES = {
   INVALID_EMAIL: 'Revisá el email: parece que le falta algo.',
   PASSWORD_TOO_SHORT: 'Tiene que tener al menos 8 caracteres.',
   PASSWORD_TOO_LONG: 'Esa contraseña es demasiado larga.',
-  SIGNUP_NOT_ALLOWED: 'Por ahora Juguemos es solo por invitación.',
+  SIGNUP_NOT_ALLOWED: 'Por ahora Ludi es solo por invitación.',
 }
 
 /** How long a session check stands before the next navigation asks again. */

@@ -51,7 +51,7 @@ export function CorrectScreen() {
   const request = useRequest()
   const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
 
-  useDocumentTitle('Editar · Juguemos')
+  useDocumentTitle('Editar · Ludi')
 
   useEffect(() => {
     if (!campo) return

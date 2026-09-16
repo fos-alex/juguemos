@@ -12,7 +12,7 @@ export function FamilyScreen() {
   const goBack = useGoBack('/')
   const family = useStored('family')
 
-  useDocumentTitle('Mi familia · Juguemos')
+  useDocumentTitle('Mi familia · Ludi')
 
   return (
     <Screen>

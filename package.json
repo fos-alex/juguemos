@@ -1,5 +1,5 @@
 {
-  "name": "juguemos",
+  "name": "ludi",
   "private": true,
   "workspaces": ["api", "web"],
   "scripts": {

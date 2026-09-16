@@ -149,7 +149,7 @@ test('the system prompt carries one band and one moment, and nothing else', asyn
   await options(cookie)
 
   const { system, user, maxTokens } = llm.prompts.at(-1)
-  assert.match(system, /Sos el narrador de cuentos de Juguemos/)
+  assert.match(system, /Sos el narrador de cuentos de Ludi/)
   assert.match(system, /Cómo se escribe para este chico: DE DOS A DOS AÑOS Y MEDIO/)
   assert.match(system, /El momento: TRANQUI, antes de dormir/)
   assert.doesNotMatch(system, /UN AÑO|TRES AÑOS|CUATRO AÑOS|CINCO AÑOS/)

@@ -10,7 +10,7 @@ import '../account.css'
 export function EntryScreen() {
   const navigate = useNavigate()
 
-  useDocumentTitle('Juguemos')
+  useDocumentTitle('Ludi')
 
   return (
     <Screen className="entry">

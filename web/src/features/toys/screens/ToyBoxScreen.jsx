@@ -37,7 +37,7 @@ export function ToyBoxScreen() {
   // The toys heard in the last note, waiting to be confirmed.
   const [heard, setHeard] = useState(/** @type {ToyCandidate[] | null} */ (null))
 
-  useDocumentTitle('El baúl de juguetes · Juguemos')
+  useDocumentTitle('El baúl de juguetes · Ludi')
 
   useEffect(() => {
     // Another phone may have changed the box.

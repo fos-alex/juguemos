@@ -8,7 +8,7 @@
 
 /**
  * The screens a reload would interrupt: reading a story or writing one, the
- * next episode of a series, the timer, and telling Juguemos about the family,
+ * next episode of a series, the timer, and telling Ludi about the family,
  * where a voice note may be recording.
  */
 const BUSY = [/^\/cuento\//, /^\/serie\/[^/]+\/episodio\/?$/, /^\/idea\/[^/]+\/reloj\/?$/, /^\/familia\/contanos\/?$/]
@@ -17,7 +17,7 @@ const BUSY = [/^\/cuento\//, /^\/serie\/[^/]+\/episodio\/?$/, /^\/idea\/[^/]+\/r
 const CHECK_EVERY_MS = 30 * 60 * 1000
 
 /** At most one reload a minute for a missing chunk, so a chunk that's truly gone can't loop. */
-const CHUNK_RELOAD_KEY = 'juguemos:chunk-reload'
+const CHUNK_RELOAD_KEY = 'ludi:chunk-reload'
 
 /** A new version has taken over, and this page still runs the old one. */
 let pending = false

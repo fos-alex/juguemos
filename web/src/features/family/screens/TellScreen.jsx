@@ -23,7 +23,7 @@ const UNDO_MS = 6000
  * the parent checks them like anything typed, and "Listo" sends them on the
  * same path. While a note records, the prompt dims and the strip replaces
  * "Listo". The first time a device opens this screen, the mic is spotlighted,
- * since a voice note is the easiest way to tell Juguemos about the family
+ * since a voice note is the easiest way to tell Ludi about the family
  * (JUG-135).
  *
  * "Reiniciar", beside the help line, erases the text, and "Deshacer" brings it
@@ -44,7 +44,7 @@ export function TellScreen() {
   const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
   const [erased, setErased] = useState(/** @type {string | null} */ (null))
 
-  useDocumentTitle('Contame de tu familia · Juguemos')
+  useDocumentTitle('Contame de tu familia · Ludi')
 
   // "Deshacer" lasts a few seconds, and goes as soon as there's new text.
   useEffect(() => {

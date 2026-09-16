@@ -8,7 +8,7 @@ import { AS_TYPED, Chips, ChipToggle, Field, FieldGroup } from '../../../shared/
 /** @typedef {import('../../family').Kid} Kid */
 
 /**
- * The toy's fields: its family name, other names, what it is (for Juguemos,
+ * The toy's fields: its family name, other names, what it is (for Ludi,
  * never shown in place of the name), whose it is and whether it's a favorite,
  * and the toys it goes with.
  * @param {{
@@ -67,7 +67,7 @@ export function ToyForm({ form, update, nameError, onNameEdit, alias, kids, othe
           />
         </div>
         <p id="toy-description-help" className="field__help">
-          Para que Juguemos sepa qué es: tipo, tamaño y material, como «T-rex de plástico duro, unos 8 cm». Nunca
+          Para que Ludi sepa qué es: tipo, tamaño y material, como «T-rex de plástico duro, unos 8 cm». Nunca
           reemplaza el nombre.
         </p>
       </div>

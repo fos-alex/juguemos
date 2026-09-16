@@ -55,7 +55,7 @@ export function HomeScreen() {
   const [menuOpen, setMenuOpen] = useState(false)
   const picking = (family?.kids.length ?? 0) > 1
 
-  useDocumentTitle('Juguemos')
+  useDocumentTitle('Ludi')
 
   useEffect(() => {
     // Who's playing may have changed on another phone.

@@ -1,6 +1,6 @@
-# Juguemos — Architecture
+# Ludi — Architecture
 
-**Version:** 0.13 · September 2026 · Owner: Alex Otero
+**Version:** 0.14 · September 2026 · Owner: Alex Otero
 
 *A living document. It holds the technical decisions and the reasons behind them, so a decision can be revisited on purpose rather than drifted away from. How the code is actually laid out is in [web/AGENTS.md](../web/AGENTS.md) and [api/AGENTS.md](../api/AGENTS.md); what the product is, in [product-concept.md](product-concept.md); the principles, in [constitution.md](constitution.md).*
 
@@ -16,8 +16,8 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | Server | Node.js HTTP API (Fastify), long-running |
 | Database | PostgreSQL. If content grows heavy, a CMS with its own database joins later |
 | Database access | Drizzle ORM: the schema is code, drizzle-kit generates the SQL migrations from it (JUG-105) |
-| Hosting | An existing DigitalOcean droplet |
-| Local development | Docker Compose, the same file as production, at `https://juguemos.local` |
+| Hosting | An existing DigitalOcean droplet, at `https://ludi.ar` |
+| Local development | Docker Compose, the same file as production, at `https://ludi.local` |
 | TLS and proxy | Caddy: automatic certificates in production, its internal CA locally |
 | Language | JavaScript with JSDoc on both sides. Not typechecked, and that is deliberate (JUG-70): TypeScript was tried and dropped when the shared contract package proved only theoretical |
 | Repo layout | One repo, npm workspaces (`api`, `web`): one install, separate codebases, no shared package |
@@ -28,11 +28,11 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 
 Version 1 runs on the DigitalOcean droplet that already exists. Vercel's free Hobby plan was rejected for three reasons.
 
-**Hobby is non-commercial only.** Vercel restricts Hobby teams to personal use and requires Pro for anything used for financial gain. Juguemos is meant to be a real product, so that foundation would have to be abandoned as soon as it earned anything.
+**Hobby is non-commercial only.** Vercel restricts Hobby teams to personal use and requires Pro for anything used for financial gain. Ludi is meant to be a real product, so that foundation would have to be abandoned as soon as it earned anything.
 
 **Content on Hobby may be used for model training,** with an opt-out in team settings. For an app holding children's names, ages, photos, and voice notes, that is the wrong default and conflicts with the constitution's privacy guardrail.
 
-**The architecture fits a server better than serverless.** Juguemos is a React front end with a separate Node API, not a Next.js app, and voice transcription, activity tailoring, and story generation are all slow by nature. Serverless timeouts are a real constraint there. A long-running server has none, and the database sits next to the application instead of on another provider's free tier.
+**The architecture fits a server better than serverless.** Ludi is a React front end with a separate Node API, not a Next.js app, and voice transcription, activity tailoring, and story generation are all slow by nature. Serverless timeouts are a real constraint there. A long-running server has none, and the database sits next to the application instead of on another provider's free tier.
 
 The trade-off is accepted: backups, updates, and uptime are ours. For a pre-launch product with a handful of families that is a fair price for zero marginal cost. If operations become a distraction, DigitalOcean's App Platform and managed Postgres are a much shorter move than leaving Vercel would have been.
 
@@ -44,7 +44,7 @@ The rules that hold it together:
 
 - **The browser never talks to an LLM provider, a maps provider, or the database directly.** Everything goes through the API, so keys stay on the server and every AI call can be logged, rate-limited, and bounded by safety rules.
 - **The database is not exposed to the public internet.** Only the API reaches it.
-- **The same Compose file runs locally,** so there is no drift between a developer machine and the server. Local development runs at `https://juguemos.local` rather than `localhost` because microphone capture and service workers need a secure context, and because a real hostname lets a phone on the network load it. In production the same Caddyfile swaps the site address for the real domain.
+- **The same Compose file runs locally,** so there is no drift between a developer machine and the server. Local development runs at `https://ludi.local` rather than `localhost` because microphone capture and service workers need a secure context, and because a real hostname lets a phone on the network load it. In production the same Caddyfile swaps the site address for the real domain.
 - **Caddy serves hashed assets `immutable` and everything else `no-cache`,** which is what makes every deploy refresh cleanly on clients.
 - **Every deploy ships the web app.** Caddy's image builds it, so the stack never serves a build left over from before a pull.
 
@@ -52,7 +52,7 @@ The rules that hold it together:
 
 A single-page app, shipped as static files. TanStack Router gives per-route code splitting and prefetching on tap, so every screen after the first loads instantly, and no heavy UI library keeps the bundle small.
 
-**Next.js was considered and set aside.** Juguemos is a logged-in, phone-first app with no public pages to rank, and every piece of data and logic belongs to the API. Server-side rendering would add a second runtime next to it and buy nothing, while its hydration cost would land on the mid-range phones that matter most. If marketing pages that need SEO ever appear, they can be a tiny separate site.
+**Next.js was considered and set aside.** Ludi is a logged-in, phone-first app with no public pages to rank, and every piece of data and logic belongs to the API. Server-side rendering would add a second runtime next to it and buy nothing, while its hydration cost would land on the mid-range phones that matter most. If marketing pages that need SEO ever appear, they can be a tiny separate site.
 
 ### Devices
 
@@ -81,7 +81,7 @@ Play happens in plazas and bedrooms with weak signal, so current suggestions, ac
 
 ### After version 1: native
 
-After 1.0, Juguemos goes native, either React Native or fully native. That is decided now because it shapes v1: the client stays a thin rendering layer, all logic and AI orchestration live in the API so a native client is a port rather than a rebuild, browser-specific investment stops at what v1 needs, and what a native client would reuse — voice capture, the offline store, the API client — is written as isolated modules rather than woven through components.
+After 1.0, Ludi goes native, either React Native or fully native. That is decided now because it shapes v1: the client stays a thin rendering layer, all logic and AI orchestration live in the API so a native client is a port rather than a rebuild, browser-specific investment stops at what v1 needs, and what a native client would reuse — voice capture, the offline store, the API client — is written as isolated modules rather than woven through components.
 
 ## Server
 
@@ -152,7 +152,7 @@ Version 1 runs a single environment. Staging is worth adding once families outsi
 | Version | Change |
 |---|---|
 | 0.1 | React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
-| 0.2 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets, service worker and offline rules, `juguemos.local`, Fastify, PostgreSQL. |
+| 0.2 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets, service worker and offline rules, `ludi.local`, Fastify, PostgreSQL. |
 | 0.3 | The SPA built from the Plaza prototype in JavaScript with JSDoc, TypeScript tried and dropped. |
 | 0.4 | Better Auth with sessions in PostgreSQL and an email allowlist. API layered by domain, validated config, migrations run before the API starts, integration tests against a real database. |
 | 0.5 | The web runs on the API with no hardcoded data: family profile, the catalog in the database with code-filled slots, and every suggestion and story saved per family. |
@@ -164,3 +164,4 @@ Version 1 runs a single environment. Staging is worth adding once families outsi
 | 0.11 | `audit_transcripts` keeps parents' own words while auditing the playtest. |
 | 0.12 | Interests moved from the family to each kid. |
 | 0.13 | A kid's age is kept in months and counted by the month; story bands are six months wide under four years. |
+| 0.14 | Renamed to Ludi: `ludi.ar` in production and `ludi.local` locally, with Caddy's sites chosen by `CADDY_SITES`. |

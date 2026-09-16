@@ -44,7 +44,7 @@ export function SeriesScreen() {
   const [confirming, setConfirming] = useState(false)
   const [removing, setRemoving] = useState(false)
 
-  useDocumentTitle(series && `${series.title} · Juguemos`)
+  useDocumentTitle(series && `${series.title} · Ludi`)
 
   useEffect(() => {
     if (!online) return

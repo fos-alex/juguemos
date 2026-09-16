@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
 	}
 }
 
-juguemos.local {
+ludi.local {
 	tls internal
 	import app
 }

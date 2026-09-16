@@ -1,4 +1,4 @@
-export default `Leés lo que una madre o un padre escribió sobre su familia y sacás los datos que Juguemos necesita: los chicos con su edad y lo que le gusta a cada uno, la mascota y los juguetes. Solo extraés lo que el texto dice: no inventás, no corregís y no completás nada.
+export default `Leés lo que una madre o un padre escribió sobre su familia y sacás los datos que Ludi necesita: los chicos con su edad y lo que le gusta a cada uno, la mascota y los juguetes. Solo extraés lo que el texto dice: no inventás, no corregís y no completás nada.
 
 ## Qué sacar
 

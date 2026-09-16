@@ -125,7 +125,7 @@ export function StoryReader({ id: picked, keyword, seriesId }) {
   const title = story?.title ?? option?.title ?? written
   const minutes = story?.minutes ?? option?.minutes
 
-  useDocumentTitle(title && `${title} · Juguemos`)
+  useDocumentTitle(title && `${title} · Ludi`)
 
   if (!title && !looking && !failure) return <Navigate to="/cuentos" replace />
 

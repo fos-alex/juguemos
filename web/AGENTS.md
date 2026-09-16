@@ -11,7 +11,7 @@ npm run dev        # Vite at http://localhost:5173, no service worker
 npm run build      # production build, to check it compiles; Caddy's image builds its own
 ```
 
-`npm run dev` proxies `/api` to the Docker stack at `https://juguemos.local:3000`, so signing in needs `docker compose up` ([README](../README.md)). The stack hot-reloads the mounted `web/` folder, so `juguemos.local` and a phone both show a saved change without a rebuild.
+`npm run dev` proxies `/api` to the Docker stack at `https://ludi.local:3000`, so signing in needs `docker compose up` ([README](../README.md)). The stack hot-reloads the mounted `web/` folder, so `ludi.local` and a phone both show a saved change without a rebuild.
 
 **The service worker exists only in production builds.** In development Caddy answers `/sw.js` with a script that removes one left in the browser. To check the worker itself: `COMPOSE_FILE=docker-compose.yml docker compose up -d --build`.
 
@@ -149,7 +149,7 @@ Write the function in its feature's `api.js`, calling `request` from `shared/htt
 - **Colour is never the only signal.** Flagged rows get a tint, a bar, and words.
 - **Nothing that counts or compares:** no streaks, points, badges, percentages, or days since the family last played. The only progress bar marks position in a story.
 - **Thumb zone:** primary actions in the lower half, tap targets at least 48 px, design width 390 px capped with `max-width`.
-- **Copy is Rioplatense Spanish with *vos*.** What Juguemos suggests is a *juego*, never an *idea*, and Home's button says "¡Juguemos!" (JUG-69). Copy still waiting on a voice pass is marked `Voice pass pending` in the code.
+- **Copy is Rioplatense Spanish with *vos*.** What Ludi suggests is a *juego*, never an *idea*, and Home's button says "¡Juguemos!" (JUG-69). Copy still waiting on a voice pass is marked `Voice pass pending` in the code.
 - **Out of scope for 0.1, so don't build it:** goals, categories and filters, weather, the journal, tips, recaps, holidays, the partner invite, post-activity feedback, and an English interface.
 
 **Google sign-in** is hidden on the account screens until it arrives in 0.3; `GoogleButton` waits for it.

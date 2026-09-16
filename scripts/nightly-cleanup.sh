@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Nightly cleanup, run by the juguemos-nightly systemd user timer (JUG-150).
+# Nightly cleanup, run by the ludi-nightly systemd user timer (JUG-150).
 #
 # It does the two things agents used to do by hand at the start of every
 # session: remove worktrees whose PR has landed, and move Linear issues whose
@@ -12,7 +12,7 @@
 # close, so the agent only reads a status and sets it.
 #
 # Everything goes to the log and nothing interrupts anyone:
-#   cat ~/.local/state/juguemos/nightly.log
+#   cat ~/.local/state/ludi/nightly.log
 #
 # Options:
 #   --dry-run   say what would happen, change nothing
@@ -20,13 +20,13 @@
 
 set -uo pipefail
 
-REPO="${JUGUEMOS_REPO:-/home/alex/juegar}"
-LOG="${JUGUEMOS_LOG:-$HOME/.local/state/juguemos/nightly.log}"
-MODEL="${JUGUEMOS_MODEL:-haiku}"
-SINCE_DAYS="${JUGUEMOS_SINCE_DAYS:-3}"
-AGENT_TIMEOUT="${JUGUEMOS_AGENT_TIMEOUT:-300}"
+REPO="${LUDI_REPO:-/home/alex/juegar}"
+LOG="${LUDI_LOG:-$HOME/.local/state/ludi/nightly.log}"
+MODEL="${LUDI_MODEL:-haiku}"
+SINCE_DAYS="${LUDI_SINCE_DAYS:-3}"
+AGENT_TIMEOUT="${LUDI_AGENT_TIMEOUT:-300}"
 # Issues already settled, so a nightly run never asks about the same one twice.
-SETTLED="${JUGUEMOS_SETTLED:-$HOME/.local/state/juguemos/nightly-settled.txt}"
+SETTLED="${LUDI_SETTLED:-$HOME/.local/state/ludi/nightly-settled.txt}"
 
 # Untracked files that are install or build debris rather than somebody's work.
 # Anything else untracked makes a worktree count as dirty, and it is left alone.
@@ -41,6 +41,11 @@ for arg in "$@"; do
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
+
+# Before the rename to Ludi (JUG-151) the state lived under juguemos: move it once.
+if [[ $DRY_RUN -eq 0 && -d "$HOME/.local/state/juguemos" && ! -e "$HOME/.local/state/ludi" ]]; then
+  mv "$HOME/.local/state/juguemos" "$HOME/.local/state/ludi"
+fi
 
 if [[ $TO_STDOUT -eq 0 ]]; then
   mkdir -p "$(dirname "$LOG")"
@@ -227,7 +232,7 @@ elif [[ $DRY_RUN -eq 1 ]]; then
 else
   say "  linear: asking $MODEL about ${finished_line:-none} (mentions: ${mentioned_line:-none})"
 
-  prompt="You are reconciling Linear with what has landed on main in the Juguemos repo.
+  prompt="You are reconciling Linear with what has landed on main in the Ludi repo.
 
 FINISHED - a merged pull request or commit on this issue's own branch: ${finished_line:-none}
 For each, read its current status with the Linear MCP. If it is Done, Canceled or Duplicate, leave it alone. Otherwise set it to Done.

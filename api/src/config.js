@@ -4,7 +4,7 @@
  * to set, instead of failing later on a request.
  */
 
-const LOCAL_DATABASE_URL = 'postgres://juguemos:juguemos@localhost:5432/juguemos'
+const LOCAL_DATABASE_URL = 'postgres://ludi:ludi@localhost:5432/ludi'
 
 /**
  * The LLM providers stories can use: the setting that holds each one's key,

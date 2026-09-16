@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: false,
       manifest: {
-        name: 'Juguemos',
-        short_name: 'Juguemos',
+        name: 'Ludi',
+        short_name: 'Ludi',
         lang: 'es-AR',
         start_url: '/',
         scope: '/',
@@ -43,15 +43,15 @@ export default defineConfig({
   ],
   server: {
     // Behind Caddy in the dev stack (compose.dev.yml), requests arrive for
-    // juguemos.local and for the phone's Tailscale address.
-    allowedHosts: ['juguemos.local', '.ts.net'],
+    // ludi.local and for the phone's Tailscale address.
+    allowedHosts: ['ludi.local', '.ts.net'],
     proxy: {
       // The API trusts only its own origin, so the dev server passes as it.
       '/api': {
-        target: 'https://juguemos.local:3000',
+        target: 'https://ludi.local:3000',
         changeOrigin: true,
         secure: false,
-        headers: { origin: 'https://juguemos.local:3000' },
+        headers: { origin: 'https://ludi.local:3000' },
       },
     },
   },

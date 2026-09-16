@@ -101,7 +101,7 @@ test('an answer without text throws UpstreamError', async () => {
   )
 })
 
-const REQUIRED = { BETTER_AUTH_URL: 'https://juguemos.local:3000', BETTER_AUTH_SECRET: 'a-secret-that-is-at-least-32-chars' }
+const REQUIRED = { BETTER_AUTH_URL: 'https://ludi.local:3000', BETTER_AUTH_SECRET: 'a-secret-that-is-at-least-32-chars' }
 
 test('STT settings: off without a URL, the self-hosted model by default, and a key for hosted services', () => {
   assert.deepEqual(loadConfig(REQUIRED).stt, { url: null, model: DEFAULT_STT_MODEL, apiKey: null })

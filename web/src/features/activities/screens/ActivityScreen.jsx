@@ -39,7 +39,7 @@ export function ActivityScreen() {
   const [swap, setSwap] = useState(/** @type {'idle' | 'loading' | 'offline' | 'error'} */ ('idle'))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
 
-  useDocumentTitle(activity && `${activity.title} · Juguemos`)
+  useDocumentTitle(activity && `${activity.title} · Ludi`)
 
   useEffect(() => {
     if (activity) rememberLast(id)

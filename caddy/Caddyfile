@@ -16,12 +16,27 @@
 	}
 }
 
-juguemos.local {
-	tls internal
-	import app
+# Local: ludi.local with Caddy's own certificate authority, and plain HTTP for
+# Tailscale Serve, which terminates TLS in front so a phone on the tailnet can
+# reach the stack.
+(local) {
+	ludi.local {
+		tls internal
+		import app
+	}
+
+	:80 {
+		import app
+	}
 }
 
-# Plain HTTP for Tailscale Serve, which terminates TLS in front so a phone on the tailnet can reach the stack
-:80 {
-	import app
+# The droplet: ludi.ar, with certificates from Let's Encrypt. Caddy redirects
+# plain HTTP to HTTPS, and nothing is served without TLS.
+(production) {
+	ludi.ar {
+		import app
+	}
 }
+
+# Which sites to serve: CADDY_SITES in .env, local unless it says production.
+import {$CADDY_SITES:local}
