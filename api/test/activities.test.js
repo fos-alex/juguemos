@@ -52,6 +52,7 @@ before(async () => {
       'eva@example.com',
       'fede@example.com',
       'gabi@example.com',
+      'hugo@example.com',
     ],
   })
   catalog = createCatalogService({ db: api.db })
@@ -160,4 +161,37 @@ test('a juego suits only the kids playing, names them, and records who played', 
   assert.deepEqual([...titles].sort(), ['Juntos con Inca', 'Sofi arma una torre'])
   const { rows } = await api.pool.query('select kid_ids::text[] as kids from activities where id = $1', [previous])
   assert.deepEqual(rows[0].kids, [sofi.id])
+})
+
+test('{interest} is something the kid named loves, and only the kids playing count (JUG-144)', async () => {
+  await catalog.addActivityTemplate(
+    template({
+      slug: 'lo-que-le-encanta',
+      title: 'Lo que le encanta a {kid}',
+      harder: 'Sumen cosas que le encantan a {kid}, como {interest}.',
+      minAgeMonths: 12,
+      maxAgeMonths: 71,
+    }),
+  )
+  const { cookie } = await signUpAs(api, 'hugo@example.com')
+  const profile = (
+    await putFamily(api, cookie, {
+      ...EXAMPLE_PROFILE,
+      kids: [
+        { name: 'Milán', age: 2, interests: ['los dinosaurios'] },
+        { name: 'Sofi', age: 4, interests: ['dibujar'] },
+      ],
+    })
+  ).json()
+  await api.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids: [profile.kids[1].id] } })
+
+  /** @type {{ title: string, harder: string } | null} */
+  let found = null
+  let previous = null
+  for (let round = 0; round < 6 && !found; round++) {
+    const activity = (await suggest(cookie, previous)).json()
+    if (activity.title === 'Lo que le encanta a Sofi') found = activity
+    previous = activity.id
+  }
+  assert.equal(found?.harder, 'Sumen cosas que le encantan a Sofi, como dibujar.')
 })

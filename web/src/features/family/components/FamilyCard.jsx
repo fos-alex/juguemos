@@ -14,7 +14,7 @@ export function FamilyCard({ family, flagged = [], onFix }) {
   return (
     <div className="card family-card">
       {familyRows(family).map((row) => {
-        const isFlagged = flagged.includes(row.field)
+        const isFlagged = flagged.includes(row.flag ?? row.field)
         const content = (
           <>
             <MetaLabel as="span" wide tone={isFlagged ? 'primary' : 'faint'}>

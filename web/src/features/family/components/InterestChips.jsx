@@ -1,9 +1,12 @@
 import { ChipInput, Chips, FieldGroup } from '../../../shared/ui'
 
 /**
- * What the family loves, as chips: a tap removes one, and the + chip adds one
- * as typed. The one being typed belongs to the form, so saving includes it.
+ * What one kid loves, as chips (JUG-144): a tap removes one, and the + chip
+ * adds one as typed. The one being typed belongs to the form, so saving
+ * includes it. `field` is where a flagged row of the card opens the form.
  * @param {{
+ *   label: string,
+ *   field: string,
  *   interests: string[],
  *   draft: string | null,
  *   onDraft: (draft: string | null) => void,
@@ -11,15 +14,15 @@ import { ChipInput, Chips, FieldGroup } from '../../../shared/ui'
  *   onRemove: (index: number) => void,
  * }} props
  */
-export function InterestChips({ interests, draft, onDraft, onCommit, onRemove }) {
+export function InterestChips({ label, field, interests, draft, onDraft, onCommit, onRemove }) {
   return (
-    <FieldGroup label="Le encanta">
+    <FieldGroup label={label}>
       <Chips items={interests} onRemove={onRemove}>
         <ChipInput
           value={draft}
           onChange={onDraft}
           onCommit={onCommit}
-          field="interests"
+          field={field}
           addLabel="Agregar algo que le encanta"
           inputLabel="Algo que le encanta"
         />

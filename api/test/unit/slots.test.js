@@ -8,7 +8,7 @@ const fill = { kid: 'Milán', pet: 'Inca', toy: 'el osito marrón', toy2: 'la pe
 const profile = (overrides) => ({
   id: 'family',
   name: null,
-  kids: [{ id: 'k1', name: 'Milán', age: 2 }],
+  kids: [{ id: 'k1', name: 'Milán', age: 2, playing: true, interests: ['los dinosaurios'] }],
   pets: [{ id: 'p1', name: 'Inca' }],
   interests: ['los dinosaurios'],
   toys: [
@@ -56,8 +56,10 @@ test('a template is filled only when the family has what it needs', () => {
   assert.equal(fillFor(profile(), template(['{kid} y {pet}']), random)?.pet, 'Inca')
   assert.equal(fillFor(profile({ pets: [] }), template(['{kid} y {pet}']), random), null)
   assert.equal(fillFor(profile(), template(['{toy}, {toy2} y {toy3}']), random), null)
-  assert.equal(fillFor(profile({ interests: [] }), template(['{interest}']), random), null)
-  assert.equal(fillFor(profile({ kids: [{ id: 'k', name: 'Sofi', age: 6 }] }), template(['{kid}']), random), null)
+  const noInterests = [{ id: 'k1', name: 'Milán', age: 2, playing: true, interests: [] }]
+  assert.equal(fillFor(profile({ kids: noInterests, interests: [] }), template(['{interest}']), random), null)
+  const tooOld = [{ id: 'k', name: 'Sofi', age: 6, playing: true, interests: [] }]
+  assert.equal(fillFor(profile({ kids: tooOld }), template(['{kid}']), random), null)
 
   const toys = fillFor(profile(), template(['{toy} y {toy2}']), random)
   assert.notEqual(toys?.toy, toys?.toy2)
@@ -65,8 +67,8 @@ test('a template is filled only when the family has what it needs', () => {
 
 test('everyKid needs the whole family in the age range', () => {
   const kids = [
-    { id: 'k1', name: 'Milán', age: 1 },
-    { id: 'k2', name: 'Sofi', age: 4 },
+    { id: 'k1', name: 'Milán', age: 1, playing: true, interests: [] },
+    { id: 'k2', name: 'Sofi', age: 4, playing: true, interests: [] },
   ]
   const toddlers = { texts: ['{kid}'], minAgeMonths: 12, maxAgeMonths: 47 }
   assert.equal(fillFor(profile({ kids }), toddlers, Math.random)?.kid, 'Milán')
@@ -77,11 +79,24 @@ test('everyKid needs the whole family in the age range', () => {
 
 test('the kid in the slot is the first one in the age range', () => {
   const kids = [
-    { id: 'k1', name: 'Sofi', age: 6 },
-    { id: 'k2', name: 'Milán', age: 2 },
+    { id: 'k1', name: 'Sofi', age: 6, playing: true, interests: [] },
+    { id: 'k2', name: 'Milán', age: 2, playing: true, interests: [] },
   ]
   const filled = fillFor(profile({ kids }), { texts: ['{kid}'], minAgeMonths: 12, maxAgeMonths: 47 }, Math.random)
   assert.equal(filled?.kid, 'Milán')
+})
+
+test('{interest} is something the kid in {kid} loves, so that kid has to love something', () => {
+  const kids = [
+    { id: 'k1', name: 'Milán', age: 2, playing: true, interests: [] },
+    { id: 'k2', name: 'Sofi', age: 3, playing: true, interests: ['dibujar'] },
+  ]
+  const texts = ['Cosas que le encantan a {kid}, como {interest}.']
+  const filled = fillFor(profile({ kids }), { texts, minAgeMonths: 12, maxAgeMonths: 47 }, seededRandom('x'))
+  assert.equal(filled?.kid, 'Sofi')
+  assert.equal(filled?.interest, 'dibujar')
+  // A template without {interest} still names the first kid in range.
+  assert.equal(fillFor(profile({ kids }), { texts: ['{kid}'], minAgeMonths: 12, maxAgeMonths: 47 }, Math.random)?.kid, 'Milán')
 })
 
 test('a seeded random repeats itself, and stays in [0, 1)', () => {

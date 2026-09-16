@@ -70,18 +70,22 @@ export const pets = pgTable(
   (table) => [index('pets_family_id_idx').on(table.familyId), check('pets_name_check', sql`${table.name} <> ''`)],
 )
 
-export const interests = pgTable(
-  'interests',
+// What each kid loves (JUG-144), in the parent's order and words. Kids like
+// different things, so interests belong to a kid, not to the family.
+export const kidInterests = pgTable(
+  'kid_interests',
   {
     id: uuid().primaryKey().defaultRandom(),
-    familyId: familyId(),
+    kidId: uuid()
+      .notNull()
+      .references(() => kids.id, { onDelete: 'cascade' }),
     position: smallint().notNull(),
     label: text().notNull(),
     createdAt: createdAt(),
   },
   (table) => [
-    index('interests_family_id_idx').on(table.familyId),
-    check('interests_label_check', sql`${table.label} <> ''`),
+    index('kid_interests_kid_id_idx').on(table.kidId),
+    check('kid_interests_label_check', sql`${table.label} <> ''`),
   ],
 )
 
@@ -106,16 +110,22 @@ export const familiesRelations = relations(families, ({ many }) => ({
   members: many(familyMembers),
   kids: many(kids),
   pets: many(pets),
-  interests: many(interests),
   toys: many(toys),
   householdMaterials: many(householdMaterials),
 }))
 
-/** @param {typeof familyMembers | typeof kids | typeof pets | typeof interests} table */
+/** @param {typeof familyMembers | typeof pets} table */
 const belongsToFamily = (table) =>
   relations(table, ({ one }) => ({ family: one(families, { fields: [table.familyId], references: [families.id] }) }))
 
 export const familyMembersRelations = belongsToFamily(familyMembers)
-export const kidsRelations = belongsToFamily(kids)
 export const petsRelations = belongsToFamily(pets)
-export const interestsRelations = belongsToFamily(interests)
+
+export const kidsRelations = relations(kids, ({ one, many }) => ({
+  family: one(families, { fields: [kids.familyId], references: [families.id] }),
+  interests: many(kidInterests),
+}))
+
+export const kidInterestsRelations = relations(kidInterests, ({ one }) => ({
+  kid: one(kids, { fields: [kidInterests.kidId], references: [kids.id] }),
+}))

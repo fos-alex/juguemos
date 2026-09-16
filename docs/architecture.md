@@ -1,6 +1,6 @@
 # Juguemos — Architecture
 
-**Version:** 0.11 · September 2026 · Owner: Alex Otero
+**Version:** 0.12 · September 2026 · Owner: Alex Otero
 
 *A living document. Decisions here are revisited as the product takes shape, and each release may change it.*
 
@@ -139,7 +139,7 @@ Postgres also offers two things worth having later: JSONB for the flexible parts
 
 **Accounts.** Better Auth uses `users`, `sessions`, `accounts`, and `verifications`; `families` and `family_members` link each adult to one family. Signing up creates only the account; a family is created explicitly, never as a side effect. Every table uses plural names and snake_case columns, Better Auth's included (defined in `api/src/auth/auth.schema.js`).
 
-**The family profile** is `kids`, `pets`, `interests`, and `toys`, each kept in the parent's order and with names exactly as typed. A kid's age is stored as the years the parent gave and the day they gave it, so it stays current without asking for a birthday. Saving the profile updates rows by id, so ids stay stable for what will reference them later.
+**The family profile** is `kids`, `pets`, and `toys`, each kept in the parent's order and with names exactly as typed, and each kid's own interests in `kid_interests` (JUG-144), since kids like different things. What the API calls the family's interests is derived from the kids it is looking at, so a story or a juego uses only what the kids playing love. A kid's age is stored as the years the parent gave and the day they gave it, so it stays current without asking for a birthday. Saving the profile updates rows by id, so ids stay stable for what will reference them later.
 
 **The toy box** (JUG-18) adds to each row in `toys` its aliases, a description for the AI, whose it is (one kid, shared, or not said), and whether it's a favorite. Toys the kid tells apart by comparison share a `link_group`. Saving the profile changes only a toy's name and order, so the rest stays. `household_materials` holds the materials each family has, by their key in a fixed list (`api/src/toys/materials.js`), since they need no family name. Activities and stories still get only a toy's family name, and a toy with only a name fills the slots any toy can, as in 0.1.
 
@@ -218,3 +218,4 @@ Version 1 runs a single environment. A separate staging environment is worth add
 | 0.9 | September 2026 | Stories can use OpenCode Go or OpenRouter, switched with `LLM_PROVIDER`, with the model set by `LLM_MODEL`. One client serves both. OpenRouter requests refuse upstream providers that store or train on prompts. |
 | 0.10 | September 2026 | Voice notes: a recorder module in the web, `POST /voice/transcribe` in the API, and a self-hosted Whisper server (speaches) as the `stt` service in Compose. Any OpenAI-compatible transcription service can replace it by env var. The audio is kept in memory only. |
 | 0.11 | September 2026 | `audit_transcripts` keeps the family text and voice note transcriptions for auditing the playtest, only while `AUDIT_TRANSCRIPTS` is on. |
+| 0.12 | September 2026 | Interests moved from the family to each kid (`kid_interests`), carried over by a migration. Onboarding ties each interest to its kid and shares the rest, and stories and activities use only the interests of the kids playing. |

@@ -52,6 +52,10 @@ export function fitsAge(kid, { minAgeMonths, maxAgeMonths }) {
  * template needs one. Choices are drawn from `random`, so a seeded random
  * always fills the same way. `everyKid` asks that every kid fits the age
  * range, not just one: an activity's safety rules hold only within its range.
+ *
+ * `{interest}` is something `{kid}` loves ("cosas que le encantan a {kid},
+ * como {interest}"), so it comes from that kid's own interests (JUG-144), and
+ * a template that uses it names a kid who has some.
  * @param {Profile} profile
  * @param {Slotted} template
  * @param {() => number} random
@@ -60,14 +64,15 @@ export function fitsAge(kid, { minAgeMonths, maxAgeMonths }) {
  */
 export function fillFor(profile, template, random, { everyKid = false } = {}) {
   const used = placeholdersIn(template.texts)
-  const kid = profile.kids.find((candidate) => fitsAge(candidate, template))
+  const fitting = profile.kids.filter((candidate) => fitsAge(candidate, template))
+  if (fitting.length === 0) return null
+  if (everyKid && fitting.length < profile.kids.length) return null
+  const kid = used.has('interest') ? fitting.find((candidate) => candidate.interests.length > 0) : fitting[0]
   if (!kid) return null
-  if (everyKid && !profile.kids.every((candidate) => fitsAge(candidate, template))) return null
 
   const toysNeeded = TOY_SLOTS.findLastIndex((slot) => used.has(slot)) + 1
   if (profile.toys.length < toysNeeded) return null
   if (used.has('pet') && profile.pets.length === 0) return null
-  if (used.has('interest') && profile.interests.length === 0) return null
 
   const toys = shuffle(
     profile.toys.map((toy) => toy.name),
@@ -79,7 +84,7 @@ export function fillFor(profile, template, random, { everyKid = false } = {}) {
     toy: toys[0],
     toy2: toys[1],
     toy3: toys[2],
-    interest: shuffle(profile.interests, random)[0],
+    interest: shuffle(kid.interests, random)[0],
   }
 }
 

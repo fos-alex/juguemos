@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { playingInterests } from '../../family'
 import { savedStories, savedStory, storyOptions } from '../api'
 import { OptionSkeleton } from '../components/OptionSkeleton'
 import { failureText } from '../../../shared/format'
@@ -16,7 +17,7 @@ import '../stories.css'
 const OPTIONS = 3
 
 /**
- * 2r, with the family's own interests under the three plots (JUG-140) and
+ * 2r, with what the kids playing love under the three plots (JUG-140, JUG-144) and
  * their shelf of already-written stories below those. Three plots of equal
  * weight: the app suggests, it doesn't recommend. Reading time is always the
  * last line, because it decides things at 8 pm. No cover art, no
@@ -33,7 +34,8 @@ export function StoryOptionsScreen() {
   const online = useOnline()
   const options = useStored('storyOptions')
   const stories = useStored('stories')
-  const interests = useStored('family')?.interests ?? []
+  // What the kids playing love (JUG-144): a keyword the story is about.
+  const interests = playingInterests(useStored('family'))
   const arrived = options?.length ?? 0
   const [loading, setLoading] = useState(arrived === 0)
   const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))

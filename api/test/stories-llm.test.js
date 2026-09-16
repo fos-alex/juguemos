@@ -692,6 +692,25 @@ test('a keyword the family never saved is not a theme', async () => {
   assert.equal(response.headers['content-type'], 'application/json; charset=utf-8')
 })
 
+test('a keyword is one of the interests of the kids playing, not of a kid sitting out (JUG-144)', async () => {
+  const { cookie } = await signUp()
+  const profile = (
+    await putFamily(api, cookie, {
+      ...EXAMPLE_PROFILE,
+      kids: [
+        { name: 'Milán', age: 2, interests: ['los dinosaurios'] },
+        { name: 'Sofi', age: 4, interests: ['dibujar'] },
+      ],
+    })
+  ).json()
+  await api.app.inject({ method: 'PUT', url: '/family/playing', headers: { cookie }, payload: { kids: [profile.kids[0].id] } })
+
+  const sittingOut = await streamKeyword(cookie, 'dibujar')
+  assert.equal(sittingOut.statusCode, 400)
+  assert.equal(sittingOut.json().code, 'UNKNOWN_KEYWORD')
+  assert.equal((await streamKeyword(cookie, 'los dinosaurios')).statusCode, 200)
+})
+
 test('a story comes from an id or from a keyword, never both and never neither', async () => {
   const { cookie } = await signUp()
   await putFamily(api, cookie, EXAMPLE_PROFILE)

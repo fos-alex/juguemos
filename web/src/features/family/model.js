@@ -5,12 +5,18 @@
 
 /** @typedef {import('./types').Family} Family */
 /** @typedef {import('./types').FamilyToy} FamilyToy */
+/** @typedef {import('./types').Kid} Kid */
 /**
  * @typedef {{
- *   kids: { id?: string, name: string, age: string }[], pet: string, interests: string[],
+ *   kids: { id?: string, name: string, age: string, interests: string[] }[], pet: string,
  *   toys: FamilyToy[],
  * }} FormState
  * The family form (2h) as typed: ages stay text until saved.
+ */
+/**
+ * @typedef {{ field: string, label: string, value: string, aside?: string, flag?: string }} FamilyRow
+ * `field` is where the form opens for this row; `flag` is the key the review
+ * card flags it by, when that isn't `field` (every interests row is 'interests').
  */
 
 /** @param {number} age */
@@ -37,34 +43,83 @@ export function playingNames(family) {
 }
 
 /**
+ * What the kids playing on this device love (JUG-144), each once, in the
+ * order the kids and their interests come. Two kids who both love "los
+ * dinosaurios" give it once, as the first of them spelled it.
+ * @param {Family | null | undefined} family
+ */
+export function playingInterests(family) {
+  /** @type {Map<string, string>} */
+  const seen = new Map()
+  for (const kid of family?.kids ?? []) {
+    if (kid.playing === false) continue
+    for (const interest of kid.interests ?? []) {
+      const key = interest.trim().toLocaleLowerCase('es')
+      if (!seen.has(key)) seen.set(key, interest)
+    }
+  }
+  return [...seen.values()]
+}
+
+/** The same interests, in any order and case. @param {string[]} a @param {string[]} b */
+function sameInterests(a, b) {
+  const key = (/** @type {string[]} */ list) => list.map((item) => item.trim().toLocaleLowerCase('es')).sort().join('\n')
+  return key(a) === key(b)
+}
+
+/** The interests as one line that reads as a sentence: joined, with a capital. @param {string[]} interests */
+function interestsLine(interests) {
+  const line = interests.join(' · ')
+  return line[0].toUpperCase() + line.slice(1)
+}
+
+/**
  * The family card's rows in a fixed order: each kid, the pet, what they love,
- * the toys. Toy names are joined exactly as typed; only the interests line is
- * capitalised, because it reads as a sentence.
+ * the toys. Names are joined exactly as typed; only the interests lines are
+ * capitalised, because they read as sentences.
+ *
+ * What they love goes kid by kid (JUG-144). When every kid loves the same
+ * things, as when the parent's text didn't say whose each one was, it is one
+ * row for all of them.
  * @param {Family} family
+ * @returns {FamilyRow[]}
  */
 export function familyRows(family) {
-  /** @type {{ field: string, label: string, value: string, aside?: string }[]} */
+  /** @type {FamilyRow[]} */
   const rows = family.kids.map((kid, index) =>
     kid.age == null
       ? { field: `kids.${index}`, label: 'Chicos', value: kid.name, aside: '· sin edad' }
       : { field: `kids.${index}`, label: 'Chicos', value: `${kid.name} · ${ageText(kid.age)}` },
   )
   if (family.pet) rows.push({ field: 'pet', label: 'Mascota', value: family.pet })
-  if (family.interests.length > 0) {
-    const interests = family.interests.join(' · ')
-    rows.push({ field: 'interests', label: 'Le encanta', value: interests[0].toUpperCase() + interests.slice(1) })
+
+  const [first, ...others] = family.kids
+  const shared = first && first.interests.length > 0 && others.every((kid) => sameInterests(kid.interests, first.interests))
+  if (shared) {
+    rows.push({ field: 'interests.0', flag: 'interests', label: others.length > 0 ? 'Les encanta' : 'Le encanta', value: interestsLine(first.interests) })
+  } else {
+    family.kids.forEach((kid, index) => {
+      if (kid.interests.length === 0) return
+      rows.push({ field: `interests.${index}`, flag: 'interests', label: `A ${kid.name} le encanta`, value: interestsLine(kid.interests) })
+    })
   }
+
   if (family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.map((toy) => toy.name).join(' · ') })
   return rows
 }
 
 /** @param {Family | null | undefined} family @returns {FormState} */
 export function toForm(family) {
-  const kids = family?.kids.map((kid) => ({ id: kid.id, name: kid.name, age: kid.age == null ? '' : String(kid.age) })) ?? []
+  const kids =
+    family?.kids.map((kid) => ({
+      id: kid.id,
+      name: kid.name,
+      age: kid.age == null ? '' : String(kid.age),
+      interests: [...(kid.interests ?? [])],
+    })) ?? []
   return {
-    kids: kids.length > 0 ? kids : [{ name: '', age: '' }],
+    kids: kids.length > 0 ? kids : [{ name: '', age: '', interests: [] }],
     pet: family?.pet ?? '',
-    interests: family?.interests ?? [],
     toys: family?.toys.length ? family.toys : [{ name: '' }],
   }
 }
@@ -74,9 +129,13 @@ export function toFamily(form) {
   return {
     kids: form.kids
       .filter((kid) => kid.name.trim())
-      .map((kid) => ({ id: kid.id, name: kid.name.trim(), age: kid.age ? Number(kid.age) : null })),
+      .map((kid) => ({
+        id: kid.id,
+        name: kid.name.trim(),
+        age: kid.age ? Number(kid.age) : null,
+        interests: kid.interests.map((interest) => interest.trim()).filter(Boolean),
+      })),
     pet: form.pet.trim(),
-    interests: form.interests,
     // Each toy keeps its id, so the toy box keeps what it knows about it.
     toys: form.toys.map((toy) => ({ id: toy.id, name: toy.name.trim() })).filter((toy) => toy.name),
   }

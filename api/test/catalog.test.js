@@ -6,17 +6,25 @@ import { accounts } from '../seeds/development.js'
 import { buildApp } from '../src/app.js'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { fillFor, render, seededRandom, unknownPlaceholders } from '../src/catalog/slots.js'
+import { interestsOf } from '../src/families/families.service.js'
 import { EXAMPLE_PROFILE, optionsFrom, putFamily, signUpAs, startApi } from './helpers.js'
 
 const [developer] = accounts
 const family = /** @type {NonNullable<typeof developer.family>} */ (developer.family)
 // The development family as the slots see it.
+const kids = family.kids.map((kid, index) => ({
+  id: `k${index}`,
+  name: kid.name,
+  age: kid.age,
+  playing: true,
+  interests: kid.interests ?? [],
+}))
 const profile = {
   id: 'development',
   name: family.name ?? null,
-  kids: family.kids.map((kid, index) => ({ id: `k${index}`, name: kid.name, age: kid.age })),
+  kids,
   pets: family.pets.map((pet, index) => ({ id: `p${index}`, name: pet.name })),
-  interests: family.interests,
+  interests: interestsOf(kids),
   toys: family.toys.map((toy, index) => ({ id: `t${index}`, name: toy.name })),
 }
 

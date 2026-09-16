@@ -18,6 +18,7 @@ before(async () => {
       'eva@example.com',
       'fede@example.com',
       'gabi@example.com',
+      'hugo@example.com',
     ],
   })
   families = createFamiliesService({ db: api.db })
@@ -61,7 +62,11 @@ test('saving the profile starts the family and keeps everything in order, as typ
     profile.pets.map((pet) => pet.name),
     ['Inca'],
   )
-  assert.deepEqual(profile.interests, ['los dinosaurios', 'los caballos'])
+  assert.deepEqual(
+    profile.kids.map((kid) => kid.interests),
+    [['los dinosaurios', 'los caballos']],
+  )
+  assert.equal(profile.interests, undefined, 'interests belong to the kids, not the family')
   assert.deepEqual(
     profile.toys.map((toy) => toy.name),
     EXAMPLE_PROFILE.toys.map((toy) => toy.name),
@@ -79,9 +84,8 @@ test('saving again updates rows by id, adds new ones, and drops the rest', async
 
   const second = (
     await putFamily(api, cookie, {
-      kids: first.kids,
+      kids: first.kids.map((kid) => ({ ...kid, interests: ['los trenes'] })),
       pets: [],
-      interests: ['los trenes'],
       toys: [{ id: dino.id, name: 'el dino' }, { name: 'la pelota' }],
     })
   ).json()
@@ -89,7 +93,7 @@ test('saving again updates rows by id, adds new ones, and drops the rest', async
   assert.equal(second.id, first.id)
   assert.equal(second.kids[0].id, first.kids[0].id)
   assert.deepEqual(second.pets, [])
-  assert.deepEqual(second.interests, ['los trenes'])
+  assert.deepEqual(second.kids[0].interests, ['los trenes'])
   assert.deepEqual(
     second.toys.map((toy) => toy.name),
     ['el dino', 'la pelota'],
@@ -200,6 +204,46 @@ test('at least one kid always plays', async () => {
   await choosePlaying(cookie, [sofi.id])
   const left = (await putFamily(api, cookie, { ...TWO_KIDS, kids: [{ id: milan.id, name: 'Milán', age: 1 }] })).json()
   assert.deepEqual(playing(left), [['Milán', true]])
+})
+
+test('each kid keeps what they love, and the kids playing bring only theirs', async () => {
+  const user = await signUpAs(api, 'hugo@example.com')
+  const profile = (
+    await putFamily(api, user.cookie, {
+      ...EXAMPLE_PROFILE,
+      kids: [
+        { name: 'Milán', age: 1, interests: ['los dinosaurios', 'los trenes'] },
+        { name: 'Sofi', age: 4, interests: ['Los trenes', 'dibujar'] },
+        { name: 'Lupe', age: 3 },
+      ],
+    })
+  ).json()
+  assert.deepEqual(
+    profile.kids.map((kid) => [kid.name, kid.interests]),
+    [
+      ['Milán', ['los dinosaurios', 'los trenes']],
+      ['Sofi', ['Los trenes', 'dibujar']],
+      ['Lupe', []],
+    ],
+  )
+
+  // The family's interests, inside the API, are the kids' own, each once.
+  const familyId = /** @type {string} */ (await families.idOf(user.id))
+  const whole = await families.profileOf(familyId, user.id)
+  assert.deepEqual(whole.interests, ['los dinosaurios', 'los trenes', 'dibujar'])
+
+  const [, sofi, lupe] = profile.kids
+  await choosePlaying(user.cookie, [sofi.id, lupe.id])
+  const playingNow = await families.playingProfile(familyId, user.id)
+  assert.deepEqual(playingNow.interests, ['Los trenes', 'dibujar'])
+
+  // A kid who leaves the family takes what they love along.
+  await putFamily(api, user.cookie, { ...EXAMPLE_PROFILE, kids: [{ id: sofi.id, name: 'Sofi', age: 4, interests: ['dibujar'] }] })
+  const { rows } = await api.pool.query(
+    'select count(*)::int as n from kid_interests where kid_id not in (select id from kids)',
+  )
+  assert.equal(rows[0].n, 0)
+  assert.deepEqual((await getFamily(user.cookie)).json().kids.map((kid) => kid.interests), [['dibujar']])
 })
 
 test('choosing who plays needs a session and a family', async () => {

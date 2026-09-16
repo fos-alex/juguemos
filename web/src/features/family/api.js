@@ -11,17 +11,16 @@ import { ApiError, request } from '../../shared/http'
 /** @typedef {import('./types').Kid} Kid */
 /**
  * @typedef {{
- *   kids: { id?: string, name: string, age: number | null, playing?: boolean }[], pets: { name: string }[],
- *   interests: string[], toys: { id?: string, name: string }[],
+ *   kids: { id?: string, name: string, age: number | null, playing?: boolean, interests?: string[] }[],
+ *   pets: { name: string }[], toys: { id?: string, name: string }[],
  * }} Profile
  */
 
 /** @param {Profile} profile @returns {Family} */
 function toFamily(profile) {
   return {
-    kids: profile.kids.map(({ id, name, age, playing }) => ({ id, name, age, playing })),
+    kids: profile.kids.map(({ id, name, age, playing, interests = [] }) => ({ id, name, age, playing, interests })),
     pet: profile.pets[0]?.name ?? '',
-    interests: profile.interests,
     toys: profile.toys.map(({ id, name }) => ({ id, name })),
   }
 }
@@ -33,22 +32,27 @@ function toFamily(profile) {
  */
 function toProfile(family) {
   return {
-    kids: family.kids.map(({ id, name, age }) => (id ? { id, name, age } : { name, age })),
+    kids: family.kids.map(({ id, name, age, interests }) => (id ? { id, name, age, interests } : { name, age, interests })),
     pets: family.pet ? [{ name: family.pet }] : [],
-    interests: family.interests,
     toys: family.toys.map(({ id, name }) => (id ? { id, name } : { name })),
   }
 }
 
 /**
- * A family cached before the toy box has its toys as bare names. They become
- * toys without ids until the next load brings the ids.
+ * Brings a family cached by an older version up to date until the next load
+ * replaces it: toys cached as bare names become toys without ids, and the
+ * family's own interests, from before each kid had theirs (JUG-144), go to
+ * every kid, as the API's migration did.
  */
 export function upgradeCachedFamily() {
   const family = read('family')
-  if (!family?.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')) return
+  if (!family) return
+  const bareToys = family.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')
+  if (!bareToys && !Array.isArray(family.interests)) return
+  const { interests = [], ...rest } = family
   write('family', {
-    ...family,
+    ...rest,
+    kids: family.kids.map((/** @type {Kid} */ kid) => ({ ...kid, interests: kid.interests ?? interests })),
     toys: family.toys.map((/** @type {string | import('./types').FamilyToy} */ toy) => (typeof toy === 'string' ? { name: toy } : toy)),
   })
 }

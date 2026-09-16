@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
@@ -109,6 +109,44 @@ test('a Drizzle record that matches no file is refused', async () => {
     await client.end()
 
     await assert.rejects(migrate({ databaseUrl, migrationsFolder: await migrationsFolder([first]) }), /matches no file/)
+  })
+})
+
+test('0008 gives each family its interests on every one of its kids, and drops the old table (JUG-144)', async () => {
+  await withEmptyDatabase(async (databaseUrl) => {
+    const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql') && f < '0008').sort()
+    const earlier = await Promise.all(
+      files.map(async (f) => ({ tag: f.replace('.sql', ''), sql: await readFile(join(MIGRATIONS_DIR, f), 'utf8') })),
+    )
+    await migrate({ databaseUrl, migrationsFolder: await migrationsFolder(earlier) })
+
+    const client = new pg.Client({ connectionString: databaseUrl })
+    await client.connect()
+    try {
+      const {
+        rows: [family],
+      } = await client.query(`insert into families (name) values ('Los Pérez') returning id`)
+      await client.query(`insert into kids (family_id, position, name) values ($1, 0, 'Milán'), ($1, 1, 'Sofi')`, [family.id])
+      await client.query(`insert into interests (family_id, position, label) values ($1, 0, 'los dinosaurios'), ($1, 1, 'dibujar')`, [
+        family.id,
+      ])
+
+      assert.deepEqual(await migrate({ databaseUrl }), ['0008_kid-interests'])
+      const { rows } = await client.query(
+        `select k.name, array_agg(i.label order by i.position) as interests
+         from kid_interests i join kids k on k.id = i.kid_id group by k.name order by k.name`,
+      )
+      assert.deepEqual(rows, [
+        { name: 'Milán', interests: ['los dinosaurios', 'dibujar'] },
+        { name: 'Sofi', interests: ['los dinosaurios', 'dibujar'] },
+      ])
+      const {
+        rows: [old],
+      } = await client.query(`select to_regclass('public.interests') as regclass`)
+      assert.equal(old.regclass, null)
+    } finally {
+      await client.end()
+    }
   })
 })
 

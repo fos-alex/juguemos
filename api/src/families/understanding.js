@@ -26,8 +26,9 @@ const CHECK_NOTE = 'Revisá lo marcado: no lo encontré tal cual en lo que escri
 
 /**
  * @typedef {object} Understanding
- * @property {{ kids: { name: string, age: number | null }[], pets: { name: string }[], interests: string[], toys: { name: string }[] }} family
- *   a profile for the parent to confirm, not saved
+ * @property {{ kids: { name: string, age: number | null, interests: string[] }[], pets: { name: string }[], toys: { name: string }[] }} family
+ *   a profile for the parent to confirm, not saved. Each kid has what the text
+ *   says they love, plus what it doesn't tie to one kid (JUG-144).
  * @property {string[]} unsure fields the parent should check: 'kids.0', 'pet', 'interests', 'toys'
  * @property {string | null} note one line saying what may be wrong
  */
@@ -87,8 +88,12 @@ export function readUnderstanding(answer, text) {
     // A name the text doesn't contain was changed or invented: the parent checks it.
     if (!found) flaggedHere = true
     if (!found || doubts.has(`kids.${index}`)) unsure.add(`kids.${kids.length}`)
-    kids.push({ name, age: ageOf(kid?.age) })
+    kids.push({ name, age: ageOf(kid?.age), interests: wordsOf(kid?.interests, text, LIMITS.name) })
   })
+
+  // What the text doesn't tie to one kid goes on every kid (JUG-144).
+  const shared = wordsOf(parsed.interests, text, LIMITS.name)
+  for (const kid of kids) kid.interests = [...new Set([...kid.interests, ...shared])].slice(0, LIMITS.interests)
 
   /** @type {Understanding['family']['pets']} */
   const pets = []
@@ -105,14 +110,13 @@ export function readUnderstanding(answer, text) {
   // The card shows one pet in 0.1, so a second one is flagged for the parent to check.
   if (pets.length > 1) unsure.add('pet')
 
-  const interests = wordsOf(parsed.interests, text, LIMITS.name).slice(0, LIMITS.interests)
   const toys = wordsOf(parsed.toys, text, LIMITS.toy)
     .slice(0, LIMITS.toys)
     .map((name) => ({ name }))
 
   const modelNote = cleanText(parsed.note).slice(0, LIMITS.note) || null
   const note = unsure.size === 0 ? null : (modelNote ?? (flaggedHere ? CHECK_NOTE : null))
-  return { family: { kids, pets, interests, toys }, unsure: [...unsure], note }
+  return { family: { kids, pets, toys }, unsure: [...unsure], note }
 }
 
 /**
