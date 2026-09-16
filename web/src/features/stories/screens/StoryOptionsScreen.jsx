@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { playingAgeMonths, playingInterests } from '../../family'
-import { savedStories, savedStory, storyOptions } from '../api'
+import { familySeries, makeSeries, savedStories, savedStory, storyOptions } from '../api'
+import { KeywordChips } from '../components/KeywordChips'
 import { OptionSkeleton } from '../components/OptionSkeleton'
+import { SeriesShelf } from '../components/SeriesShelf'
+import { StoryShelf } from '../components/StoryShelf'
 import { waitingVariant } from '../model'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
@@ -10,27 +13,30 @@ import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
 import { useSlowWait } from '../../../shared/hooks/useSlowWait'
 import { useStored } from '../../../shared/store'
-import { Body, Card, Chips, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton, Waiting } from '../../../shared/ui'
+import { Body, Card, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton, Waiting } from '../../../shared/ui'
 import '../stories.css'
 
 /** @typedef {import('../types').SavedStorySummary} SavedStorySummary */
+/** @typedef {import('../types').Series} Series */
 
 /** How many options a screen holds, which is how many skeletons it starts with. */
 const OPTIONS = 3
 
 /**
- * 2r, with what the kids playing love under the three plots (JUG-140, JUG-144) and
- * their shelf of already-written stories below those. Three plots of equal
- * weight: the app suggests, it doesn't recommend. Reading time is always the
- * last line, because it decides things at 8 pm. No cover art, no
- * illustration, no mascot. The library is offscreen content, so its fetch may
- * come and go quietly — the options are the story.
+ * 2r, the four ways into a story, in the order a parent reaches for them:
+ * three fresh plots, the series they are already following (JUG-59), what the
+ * kids playing love (JUG-140, JUG-144), and the shelf of stories to read again
+ * (JUG-50). Three plots of equal weight: the app suggests, it doesn't
+ * recommend. Reading time is always the last line, because it decides things at
+ * 8 pm. No cover art, no illustration, no mascot.
  *
  * The options arrive one at a time, so a card takes its skeleton's place as
  * soon as the model has written it, and a card that is there can be tapped
  * while the others are still coming. Until the first one lands there is
  * nothing to hold a place for, so the waiting animation waits there instead
- * (JUG-132), and gives way the moment a card arrives.
+ * (JUG-132), and gives way the moment a card arrives. The series and the shelf are the family's
+ * own: the series are kept on the device, so they are there offline, and the
+ * shelf is offscreen content whose fetch may come and go quietly.
  */
 export function StoryOptionsScreen() {
   const navigate = useNavigate()
@@ -38,13 +44,16 @@ export function StoryOptionsScreen() {
   const online = useOnline()
   const options = useStored('storyOptions')
   const stories = useStored('stories')
+  const series = /** @type {Series[]} */ (useStored('series') ?? [])
   const family = useStored('family')
   // What the kids playing love (JUG-144): a keyword the story is about.
   const interests = playingInterests(family)
   const arrived = options?.length ?? 0
   const [loading, setLoading] = useState(arrived === 0)
-  const [library, setLibrary] = useState(/** @type {SavedStorySummary[] | null} */ (null))
+  const [shelf, setShelf] = useState(/** @type {SavedStorySummary[] | null} */ (null))
   const [notice, setNotice] = useState(/** @type {string | null} */ (null))
+  // The story whose series is being made, so its row shows the wait.
+  const [starting, setStarting] = useState(/** @type {string | null} */ (null))
   // The stream in flight, so asking for others, or leaving, stops the old one
   // instead of letting two of them write options over each other.
   const asking = useRef(/** @type {AbortController | null} */ (null))
@@ -82,17 +91,22 @@ export function StoryOptionsScreen() {
 
   useEffect(() => {
     if (!online) {
-      setLibrary(null)
+      setShelf(null)
       return
     }
     savedStories()
-      .then(setLibrary)
-      .catch(() => setLibrary(null))
+      .then(setShelf)
+      .catch(() => setShelf(null))
+    // The series are stored, so a failure here leaves the last ones on screen.
+    familySeries().catch(() => {})
   }, [online])
+
+  /** Whether a story this device hasn't kept can be opened at all. @param {string} id */
+  const reachable = (id) => online || Boolean(stories?.[id])
 
   /** @param {string} id */
   const pick = (id) => {
-    if (!online && !stories?.[id]) {
+    if (!reachable(id)) {
       setNotice('Estás sin conexión.')
       return
     }
@@ -110,15 +124,41 @@ export function StoryOptionsScreen() {
   }
 
   /** @param {SavedStorySummary} saved */
-  const openLibraryStory = async (saved) => {
-    if (!online && !stories?.[saved.id]) {
+  const openStory = async (saved) => {
+    if (!reachable(saved.id)) {
       setNotice('Estás sin conexión.')
       return
     }
-    if (!stories?.[saved.id]) {
-      await savedStory(saved.id).catch(() => {})
-    }
+    if (!stories?.[saved.id]) await savedStory(saved.id).catch(() => {})
     void navigate({ to: '/cuento/$id', params: { id: saved.id } })
+  }
+
+  /** A story the family wants more of (JUG-59): it becomes the first episode. @param {SavedStorySummary} saved */
+  const startSeries = async (saved) => {
+    if (!online) {
+      setNotice('Estás sin conexión.')
+      return
+    }
+    setNotice(null)
+    setStarting(saved.id)
+    try {
+      const started = await makeSeries(saved.id)
+      setShelf((kept) => kept?.filter((story) => story.id !== saved.id) ?? null)
+      void navigate({ to: '/serie/$id', params: { id: started.id } })
+    } catch (error) {
+      setNotice(failureText(error))
+    } finally {
+      setStarting(null)
+    }
+  }
+
+  /** @param {Series} followed */
+  const continueSeries = (followed) => {
+    if (!online) {
+      setNotice('Estás sin conexión.')
+      return
+    }
+    void navigate({ to: '/serie/$id/episodio', params: { id: followed.id } })
   }
 
   return (
@@ -148,39 +188,13 @@ export function StoryOptionsScreen() {
           Array.from({ length: Math.max(OPTIONS - arrived, 0) }, (_, index) => <OptionSkeleton key={`skeleton-${index}`} />)
         )}
         <StatusLine role="alert">{notice}</StatusLine>
-        {interests.length > 0 && (
-          <section className="story-keywords">
-            {/* Voice pass pending: "Un cuento de…". */}
-            <h2 className="story-keywords__heading">Un cuento de…</h2>
-            <Chips>
-              {interests.map((interest) => (
-                <button
-                  key={interest}
-                  type="button"
-                  className={`chip story-keyword${online && !loading ? '' : ' is-unavailable'}`}
-                  aria-disabled={!online || loading || undefined}
-                  onClick={() => pickKeyword(interest)}
-                >
-                  {interest}
-                </button>
-              ))}
-            </Chips>
-          </section>
-        )}
-        {library && library.length > 0 && (
-          <section className="story-library">
-            {/* Voice pass pending: "Para volver a leer". */}
-            <h2 className="story-library__heading">Para volver a leer</h2>
-            {library.map((saved) => (
-              <Card key={saved.id} className="story-option" onClick={() => void openLibraryStory(saved)}>
-                <span className="story-option__title">{saved.title}</span>
-                <MetaLabel as="span" className="story-option__time">
-                  {saved.minutes} min
-                </MetaLabel>
-              </Card>
-            ))}
-          </section>
-        )}
+        <SeriesShelf
+          series={series}
+          onOpen={(followed) => void navigate({ to: '/serie/$id', params: { id: followed.id } })}
+          onContinue={continueSeries}
+        />
+        <KeywordChips interests={interests} unavailable={!online || loading} onPick={pickKeyword} />
+        <StoryShelf stories={shelf ?? []} startingId={starting} onOpen={openStory} onStartSeries={startSeries} />
       </Body>
       <Footer>
         {/* Voice pass pending: "Otras opciones". */}

@@ -7,13 +7,35 @@
  * way, from the saved copy. A story written from one of the family's
  * interests (JUG-140) has no option behind it, so it is kept under the id it
  * was saved with and announces its title first.
+ *
+ * A series (JUG-59) is the family's own, so its list is kept in the store and
+ * a screen can show it before the API answers. Its episodes are stories like
+ * any other: they stream the same way and are cached under their own ids.
  */
 import { read, write } from '../../shared/store'
-import { ApiError, endSession, OfflineError, request } from '../../shared/http'
+import { ApiError, endSession, OfflineError, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').StoryOption} StoryOption */
 /** @typedef {import('./types').Story} Story */
 /** @typedef {import('./types').SavedStorySummary} SavedStorySummary */
+/** @typedef {import('./types').Series} Series */
+
+/** Series copy still needs a voice pass. */
+const SERIES_MESSAGES = {
+  LLM_OFF: 'Por ahora no podemos armar series.',
+  SERIES_FULL: 'Esta serie ya tiene todos sus episodios.',
+  ALREADY_IN_SERIES: 'Ese cuento ya es parte de una serie.',
+}
+
+/**
+ * A series failure the parent can do something about, in words, instead of the
+ * generic line. Anything else is left as it is.
+ * @param {unknown} error
+ */
+function seriesFailure(error) {
+  const words = error instanceof ApiError && error.code ? SERIES_MESSAGES[error.code] : undefined
+  return words ? new WordedError(words) : error
+}
 
 /**
  * The options already on their way, so Home asking for them early and the
@@ -83,7 +105,7 @@ async function askForOptions(exclude, signal) {
 export async function writeStory(id, { signal, onParagraph } = {}) {
   const cached = read('stories')?.[id]
   if (cached) return cached
-  return await readStory({ id }, { key: id, signal, onParagraph })
+  return await readStory('/api/stories/write', { id }, { key: id, signal, onParagraph })
 }
 
 /**
@@ -100,13 +122,41 @@ export async function writeStory(id, { signal, onParagraph } = {}) {
  * @returns {Promise<Story>}
  */
 export async function writeKeywordStory(keyword, { signal, onTitle, onParagraph } = {}) {
-  return await readStory({ keyword }, { signal, onTitle, onParagraph })
+  return await readStory('/api/stories/write', { keyword }, { signal, onTitle, onParagraph })
+}
+
+/**
+ * The next episode of a series (JUG-59), written now, arriving the same way a
+ * story does: its own title first, then the paragraphs. It is kept under the
+ * id the API saved it with, which is where the reading screen sends the URL,
+ * and the series it belongs to is refreshed, since the second episode is what
+ * gives a series its name.
+ * @param {string} seriesId
+ * @param {{
+ *   signal?: AbortSignal,
+ *   onTitle?: (title: string) => void,
+ *   onParagraph?: (paragraph: { part: number, text: string }) => void,
+ * }} [options]
+ * @returns {Promise<Story>}
+ */
+export async function writeEpisode(seriesId, { signal, onTitle, onParagraph } = {}) {
+  let episode
+  try {
+    episode = await readStory(`/api/series/${seriesId}/episodes`, null, { signal, onTitle, onParagraph })
+  } catch (error) {
+    throw seriesFailure(error)
+  }
+  // The second episode is what gives a series its name, so the list is asked
+  // for again; a failure there leaves the screen with what it had.
+  await familySeries().catch(() => {})
+  return episode
 }
 
 /**
  * The story the API writes for what it is asked, paragraph by paragraph, kept
  * for offline once it is whole.
- * @param {{ id: string } | { keyword: string }} asked
+ * @param {string} url the stream to open
+ * @param {{ id: string } | { keyword: string } | null} asked what to write, when the URL doesn't say it
  * @param {{
  *   key?: string,
  *   signal?: AbortSignal,
@@ -116,11 +166,11 @@ export async function writeKeywordStory(keyword, { signal, onTitle, onParagraph 
  *   the id the API saved it with.
  * @returns {Promise<Story>}
  */
-async function readStory(asked, { key, signal, onTitle, onParagraph }) {
-  const body = await openStream('/api/stories/write', {
+async function readStory(url, asked, { key, signal, onTitle, onParagraph }) {
+  const body = await openStream(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(asked),
+    headers: asked ? { 'Content-Type': 'application/json' } : undefined,
+    body: asked ? JSON.stringify(asked) : undefined,
     signal,
   })
 
@@ -216,10 +266,66 @@ export async function savedStories() {
 export async function savedStory(id) {
   const cached = read('stories')?.[id]
   if (cached) return cached
-  const { title, teaser, minutes, parts, keyword } = await request('GET', `/stories/${id}`)
-  const story = { id, title, teaser, minutes, parts, keyword }
+  const { title, teaser, minutes, parts, keyword, series: inSeries } = await request('GET', `/stories/${id}`)
+  const story = { id, title, teaser, minutes, parts, keyword, series: inSeries }
   write('stories', { ...read('stories'), [id]: story })
   return story
+}
+
+/**
+ * The family's series, newest first, each with its episodes in order. They are
+ * kept on the device, so the screen shows the last ones it saw while the API
+ * answers, and offline.
+ * @returns {Promise<Series[]>}
+ */
+export async function familySeries() {
+  const { series } = await request('GET', '/series')
+  write('series', series)
+  return /** @type {Series[]} */ (series)
+}
+
+/**
+ * One series, with its episodes. The stored list is kept in step with it, so
+ * the screen the parent goes back to shows the same thing.
+ * @param {string} id
+ * @returns {Promise<Series>}
+ */
+export async function series(id) {
+  const found = /** @type {Series} */ (await request('GET', `/series/${id}`))
+  remember(found)
+  return found
+}
+
+/**
+ * Turns a story the family has read into a series, whose first episode it
+ * becomes (JUG-59).
+ * @param {string} storyId
+ * @returns {Promise<Series>}
+ */
+export async function makeSeries(storyId) {
+  try {
+    const started = /** @type {Series} */ (await request('POST', `/stories/${storyId}/series`))
+    remember(started)
+    return started
+  } catch (error) {
+    throw seriesFailure(error)
+  }
+}
+
+/**
+ * The family stops following a series. It shows up nowhere from now on, and
+ * its episodes go back to the library as the stories they are.
+ * @param {string} id
+ */
+export async function forgetSeries(id) {
+  await request('DELETE', `/series/${id}`)
+  write('series', (read('series') ?? []).filter((/** @type {Series} */ kept) => kept.id !== id))
+}
+
+/** Keeps the stored list in step with one series. @param {Series} series */
+function remember(series) {
+  const rest = (read('series') ?? []).filter((/** @type {Series} */ kept) => kept.id !== series.id)
+  write('series', [series, ...rest])
 }
 
 /** Forgets the options on this device, so the story screen asks for new ones. */

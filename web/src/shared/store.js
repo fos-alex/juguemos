@@ -18,7 +18,7 @@ import { useSyncExternalStore } from 'react'
 /** @typedef {'voiceIntroSeen'} VoiceKey Whether this device has seen the mic spotlighted on 2d. */
 /** @typedef {'toyBox'} ToysKey */
 /** @typedef {'activities' | 'lastActivityId' | 'timer'} ActivitiesKey */
-/** @typedef {'storyOptions' | 'stories' | 'storyPositions'} StoriesKey */
+/** @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series'} StoriesKey */
 /** @typedef {'theme'} AppKey The night-mode choice, written by app/ThemeProvider.jsx. */
 
 const PREFIX = 'juguemos:'

@@ -52,6 +52,8 @@ services:
       OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
       OPENCODE_MODEL: ${OPENCODE_MODEL:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      # How many episodes a story series holds (JUG-59).
+      STORY_SERIES_EPISODES: ${STORY_SERIES_EPISODES:-}
       ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
       AUDIT_TRANSCRIPTS: ${AUDIT_TRANSCRIPTS:-false}
       # Speech to text for voice notes: the stt service below, unless .env

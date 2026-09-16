@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import { buildApp } from '../src/app.js'
+import { DEFAULT_SERIES_EPISODES } from '../src/config.js'
 import { createDb } from '../src/db/client.js'
 import { migrate } from '../src/db/migrate.js'
 
@@ -20,19 +21,21 @@ export const ORIGIN = 'http://localhost:3000'
  *   databaseUrl?: string,
  *   auth?: Partial<Config['auth']>,
  *   llm?: Partial<Config['llm']>,
+ *   stories?: Partial<Config['stories']>,
  *   stt?: Partial<Config['stt']>,
  *   admin?: Partial<Config['admin']>,
  *   audit?: Partial<Config['audit']>,
  * }} [overrides]
  * @returns {Config}
  */
-export function testConfig({ auth, llm, stt, admin, audit, ...rest } = {}) {
+export function testConfig({ auth, llm, stories, stt, admin, audit, ...rest } = {}) {
   return {
     port: 0,
     databaseUrl: '',
     auth: { url: ORIGIN, trustedOrigins: [], secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(), ...auth },
     // No key: template stories, unless a test passes its own `llm` to startApi.
     llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN, ...llm },
+    stories: { episodesPerSeries: DEFAULT_SERIES_EPISODES, ...stories },
     // No service: voice notes are off, unless a test passes its own `transcriber`.
     stt: { url: null, model: '', apiKey: null, ...stt },
     admin: { enabled: false, ...admin },
@@ -81,9 +84,19 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], trustedOrigins?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean }} [options]
+ * @param {{ signupEmails?: string[], trustedOrigins?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
  */
-export async function startApi({ signupEmails = [], trustedOrigins = [], random, now, llm, transcriber, admin = false, auditTranscripts = false } = {}) {
+export async function startApi({
+  signupEmails = [],
+  trustedOrigins = [],
+  random,
+  now,
+  llm,
+  transcriber,
+  admin = false,
+  auditTranscripts = false,
+  maxEpisodes = DEFAULT_SERIES_EPISODES,
+} = {}) {
   const database = await createDatabase()
   await migrate({ databaseUrl: database.url })
 
@@ -91,6 +104,7 @@ export async function startApi({ signupEmails = [], trustedOrigins = [], random,
   const config = testConfig({
     databaseUrl: database.url,
     auth: { trustedOrigins, signupEmails: new Set(signupEmails) },
+    stories: { episodesPerSeries: maxEpisodes },
     admin: { enabled: admin },
     audit: { transcripts: auditTranscripts },
   })

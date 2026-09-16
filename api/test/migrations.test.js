@@ -171,7 +171,8 @@ test('0009 turns the years a parent gave into months, keeping the day they gave 
         [family.id],
       )
 
-      assert.deepEqual(await migrate({ databaseUrl }), ['0009_kids-age-in-months'])
+      // Whatever came after it runs too, so only the first one is named here.
+      assert.equal((await migrate({ databaseUrl }))[0], '0009_kids-age-in-months')
       const { rows } = await client.query(`select name, age_months, age_set_on from kids order by position`)
       assert.deepEqual(rows, [
         { name: 'Milán', age_months: 24, age_set_on: new Date('2026-01-10T00:00:00') },

@@ -1,7 +1,21 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { systemPrompt } from '../../src/stories/prompts/compose.js'
-import { ageLine, anchorOf, clampMinutes, familyLines, moodAt, OptionsParser, StoryParser, toPlot, wordsIn } from '../../src/stories/storytelling.js'
+import {
+  ageLine,
+  anchorOf,
+  charactersIn,
+  clampMinutes,
+  episodeLines,
+  familyLines,
+  mergeCharacters,
+  moodAt,
+  OptionsParser,
+  seriesLines,
+  StoryParser,
+  toPlot,
+  wordsIn,
+} from '../../src/stories/storytelling.js'
 
 /** @param {{ name: string, ageMonths: number | null }[]} kids */
 const profileOf = (kids) => ({
@@ -195,4 +209,75 @@ test('a title said inside the story is a paragraph, not the title', () => {
   const done = parser.push('PARTE 1\nTítulo: eso lo dice un personaje.\n\n')
   assert.equal(parser.takeTitle(), '')
   assert.deepEqual(done, [{ part: 1, text: 'Título: eso lo dice un personaje.' }])
+})
+
+test('an episode answer keeps its bookkeeping out of the story (JUG-59)', () => {
+  const parser = new StoryParser()
+  const answer = `SERIE: Las tardes de Milán.
+LUGAR: la plaza de la esquina
+ANTES: Milán salió con el tren.
+TÍTULO: Milán y la caracola.
+
+PARTE 1
+Milán se despertó.
+
+PARTE 2
+Encontró un caracol.
+
+RESUMEN: Milán conoció a Caracola.
+PERSONAJES: Caracola: un caracol lento
+`
+  /** @type {{ part: number, text: string }[]} */
+  const done = []
+  // In pieces, the way the model writes it.
+  for (let at = 0; at < answer.length; at += 5) done.push(...parser.push(answer.slice(at, at + 5)))
+  assert.equal(parser.takeTitle(), 'Milán y la caracola.')
+  done.push(...parser.end())
+
+  assert.deepEqual(done, [
+    { part: 1, text: 'Milán se despertó.' },
+    { part: 2, text: 'Encontró un caracol.' },
+  ])
+  assert.deepEqual(parser.takeFields(), {
+    series: 'Las tardes de Milán.',
+    setting: 'la plaza de la esquina',
+    before: 'Milán salió con el tren.',
+    summary: 'Milán conoció a Caracola.',
+    characters: 'Caracola: un caracol lento',
+  })
+})
+
+test('the characters of a series are read, and the ones it already had are kept', () => {
+  assert.deepEqual(charactersIn('Caracola: un caracol lento; Don Sapo (salta alto); La luna'), [
+    { name: 'Caracola', note: 'un caracol lento' },
+    { name: 'Don Sapo', note: 'salta alto' },
+    { name: 'La luna', note: '' },
+  ])
+  assert.deepEqual(charactersIn('   '), [])
+
+  const kept = [{ name: 'Caracola', note: 'un caracol lento' }]
+  assert.deepEqual(mergeCharacters(kept, charactersIn('Caracola: otro caracol; Don Sapo: salta alto')), [
+    { name: 'Caracola', note: 'un caracol lento' },
+    { name: 'Don Sapo', note: 'salta alto' },
+  ])
+  assert.deepEqual(mergeCharacters([{ name: 'Caracola', note: '' }], charactersIn('Caracola: un caracol lento')), [
+    { name: 'Caracola', note: 'un caracol lento' },
+  ])
+})
+
+test('the series and its episodes reach the prompt without the parts it does not know yet', () => {
+  const series = { title: 'Las tardes de Milán.', storyline: 'Juegan en la plaza.', setting: '', characters: [] }
+  assert.equal(seriesLines(series), 'La serie se llama «Las tardes de Milán.».\nEl hilo de la serie, que ningún episodio cambia: Juegan en la plaza.')
+
+  const known = seriesLines({ ...series, setting: 'la plaza', characters: [{ name: 'Caracola', note: 'un caracol' }] })
+  assert.match(known, /Dónde pasa: la plaza/)
+  assert.match(known, /Personajes que ya aparecieron y podés traer de vuelta: Caracola \(un caracol\)/)
+
+  assert.equal(
+    episodeLines([
+      { episode: 1, title: 'Uno', summary: 'Pasó algo.' },
+      { episode: 2, title: 'Dos', summary: '' },
+    ]),
+    '1. «Uno»: Pasó algo.\n2. «Dos»',
+  )
 })

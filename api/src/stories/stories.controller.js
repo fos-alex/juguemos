@@ -135,5 +135,46 @@ export function createStoriesController({ stories }) {
       const { id } = /** @type {{ id: string }} */ (request.params)
       return stories.find(familyOf(request), id)
     },
+
+    /**
+     * Turns a story the family has read into a series (JUG-59). It answers
+     * with the series, whose only episode is that story.
+     * @type {import('fastify').RouteHandlerMethod}
+     */
+    async makeSeries(request, reply) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      return reply.code(201).send(await stories.makeSeries(familyOf(request), id))
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async listSeries(request) {
+      return { series: await stories.seriesList(familyOf(request)) }
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async findSeries(request) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      return stories.findSeries(familyOf(request), id)
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async removeSeries(request, reply) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      await stories.removeSeries(familyOf(request), id)
+      return reply.code(204).send()
+    },
+
+    /**
+     * The next episode of a series, as the same server-sent events a story
+     * arrives as. A series that is full, or that this family doesn't have,
+     * answers cleanly before the stream starts.
+     * @type {import('fastify').RouteHandlerMethod}
+     */
+    async writeEpisode(request, reply) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      const signal = leavingSignal(reply)
+      const stream = await stories.episodeStream(familyOf(request), id, { signal })
+      await sendEvents(reply, stream, 'story', signal)
+    },
   }
 }

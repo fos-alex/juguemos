@@ -26,3 +26,10 @@ export function waitingVariant(ageMonths) {
   if (months < 60) return 'petals'
   return 'rayuela'
 }
+
+/**
+ * How many episodes a series has, in words. It counts what there is to read,
+ * never progress: a series is not a goal to finish.
+ * @param {number} episodes
+ */
+export const episodesLine = (episodes) => (episodes === 1 ? '1 episodio' : `${episodes} episodios`)

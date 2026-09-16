@@ -34,6 +34,11 @@ const LLM_PROVIDERS = {
  */
 
 /**
+ * @typedef {object} StoriesConfig
+ * @property {number} episodesPerSeries how many episodes one story series may hold (JUG-59)
+ */
+
+/**
  * @typedef {object} SttConfig
  * @property {string | null} url an OpenAI-compatible transcriptions API, up to its /v1; without it voice notes are off
  * @property {string} model as the service names it
@@ -46,10 +51,14 @@ const LLM_PROVIDERS = {
  * @property {string} databaseUrl
  * @property {AuthConfig} auth
  * @property {LlmConfig} llm
+ * @property {StoriesConfig} stories
  * @property {SttConfig} stt speech to text, for voice notes
  * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
  * @property {{ transcripts: boolean }} audit whether parents' own words are kept in audit_transcripts (JUG-116)
  */
+
+/** How many episodes a story series holds before it is finished (JUG-59). */
+export const DEFAULT_SERIES_EPISODES = 10
 
 /** Whisper large-v3-turbo, as the self-hosted speaches server names it. */
 export const DEFAULT_STT_MODEL = 'deepdml/faster-whisper-large-v3-turbo-ct2'
@@ -79,6 +88,7 @@ export function loadConfig(env = process.env) {
     databaseUrl: loadDatabaseUrl(env),
     auth: { url, trustedOrigins: originList(env.TRUSTED_ORIGINS), secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
     llm: loadLlm(env, url),
+    stories: { episodesPerSeries: whole(env, 'STORY_SERIES_EPISODES', DEFAULT_SERIES_EPISODES, 2) },
     stt: loadStt(env),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
     // Off unless set: the texts hold the family's names.
@@ -120,6 +130,23 @@ function loadLlm(env, appUrl) {
     throw new ConfigError(`LLM_MODEL is not set, and ${provider} has no default model. Set it to a model id from openrouter.ai/models`)
   }
   return { provider, apiKey, baseUrl, model, appUrl }
+}
+
+/**
+ * A whole-number setting, with the value it keeps when nobody sets it.
+ * @param {NodeJS.ProcessEnv} env
+ * @param {string} name
+ * @param {number} fallback
+ * @param {number} least the smallest value that still makes sense
+ */
+function whole(env, name, fallback, least) {
+  const raw = env[name]?.trim()
+  if (!raw) return fallback
+  const value = Number(raw)
+  if (!Number.isInteger(value) || value < least) {
+    throw new ConfigError(`${name} must be a whole number of at least ${least}, not "${env[name]}"`)
+  }
+  return value
 }
 
 /** A true or false setting, false when unset. @param {NodeJS.ProcessEnv} env @param {string} name */

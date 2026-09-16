@@ -54,20 +54,55 @@
   color: var(--ink-faint);
 }
 
-/* The family's own shelf, below the three options. */
+/* The family's own: the series they follow (JUG-59) and the shelf of stories
+   to read again (JUG-50), below the three options. Each row is a card with two
+   things to tap, so the card itself isn't the button. */
 
-.story-library {
+.story-shelf {
   margin-top: 30px;
   display: grid;
   gap: 14px;
 }
 
-.story-keywords__heading,
-.story-library__heading {
+.story-shelf__heading {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 500;
   color: var(--ink-body-soft);
+}
+
+.story-shelf__row {
+  display: grid;
+  gap: 14px;
+  justify-items: stretch;
+}
+
+.story-shelf__open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+/* The series and the episode a reading screen belongs to. */
+
+.series {
+  gap: 14px;
+  padding-top: 22px;
+}
+
+.series__remove {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.story-episode {
+  margin-bottom: -12px;
 }
 
 /* 2s / 2t / 2u Lectura */
