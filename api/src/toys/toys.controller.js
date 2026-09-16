@@ -2,9 +2,10 @@ import { familyOf } from '../families/require-family.js'
 
 /** @typedef {import('./toys.service.js').ToysService} ToysService */
 /** @typedef {import('./toys.service.js').ToyInput} ToyInput */
+/** @typedef {import('./understanding.js').ToysUnderstandingService} ToysUnderstandingService */
 
-/** The signed-in adult's toy box. @param {{ toys: ToysService }} deps */
-export function createToysController({ toys }) {
+/** The signed-in adult's toy box. @param {{ toys: ToysService, toysUnderstanding: ToysUnderstandingService }} deps */
+export function createToysController({ toys, toysUnderstanding }) {
   /** @param {import('fastify').FastifyRequest} request */
   const toyOf = (request) => /** @type {{ id: string }} */ (request.params).id
 
@@ -35,6 +36,12 @@ export function createToysController({ toys }) {
     async link(request) {
       const { toys: linked } = /** @type {{ toys: string[] }} */ (request.body)
       return { toys: await toys.link(familyOf(request), toyOf(request), linked) }
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async understand(request) {
+      const { text } = /** @type {{ text: string }} */ (request.body)
+      return toysUnderstanding.understand(text)
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
