@@ -44,17 +44,17 @@ export const kids = pgTable(
     familyId: familyId(),
     position: smallint().notNull(),
     name: text().notNull(),
-    // Parents give an age in years. Counting from the day they gave it keeps it
-    // current without asking for a birthday.
-    ageYears: smallint(),
+    // Parents give an age in years and months (JUG-145). Counting from the day
+    // they gave it keeps it current without asking for a birthday.
+    ageMonths: smallint(),
     ageSetOn: date(),
     createdAt: createdAt(),
   },
   (table) => [
     index('kids_family_id_idx').on(table.familyId),
     check('kids_name_check', sql`${table.name} <> ''`),
-    check('kids_age_years_check', sql`${table.ageYears} between 0 and 17`),
-    check('kids_age_check', sql`(${table.ageYears} is null) = (${table.ageSetOn} is null)`),
+    check('kids_age_months_check', sql`${table.ageMonths} between 0 and 215`),
+    check('kids_age_check', sql`(${table.ageMonths} is null) = (${table.ageSetOn} is null)`),
   ],
 )
 

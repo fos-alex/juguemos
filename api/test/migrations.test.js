@@ -131,7 +131,8 @@ test('0008 gives each family its interests on every one of its kids, and drops t
         family.id,
       ])
 
-      assert.deepEqual(await migrate({ databaseUrl }), ['0008_kid-interests'])
+      const [applied] = await migrate({ databaseUrl })
+      assert.equal(applied, '0008_kid-interests', 'the pending migrations run in order, 0008 first')
       const { rows } = await client.query(
         `select k.name, array_agg(i.label order by i.position) as interests
          from kid_interests i join kids k on k.id = i.kid_id group by k.name order by k.name`,
@@ -144,6 +145,38 @@ test('0008 gives each family its interests on every one of its kids, and drops t
         rows: [old],
       } = await client.query(`select to_regclass('public.interests') as regclass`)
       assert.equal(old.regclass, null)
+    } finally {
+      await client.end()
+    }
+  })
+})
+
+test('0009 turns the years a parent gave into months, keeping the day they gave them (JUG-145)', async () => {
+  await withEmptyDatabase(async (databaseUrl) => {
+    const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql') && f < '0009').sort()
+    const earlier = await Promise.all(
+      files.map(async (f) => ({ tag: f.replace('.sql', ''), sql: await readFile(join(MIGRATIONS_DIR, f), 'utf8') })),
+    )
+    await migrate({ databaseUrl, migrationsFolder: await migrationsFolder(earlier) })
+
+    const client = new pg.Client({ connectionString: databaseUrl })
+    await client.connect()
+    try {
+      const {
+        rows: [family],
+      } = await client.query(`insert into families (name) values ('Los Pérez') returning id`)
+      await client.query(
+        `insert into kids (family_id, position, name, age_years, age_set_on)
+         values ($1, 0, 'Milán', 2, date '2026-01-10'), ($1, 1, 'Sofi', null, null)`,
+        [family.id],
+      )
+
+      assert.deepEqual(await migrate({ databaseUrl }), ['0009_kids-age-in-months'])
+      const { rows } = await client.query(`select name, age_months, age_set_on from kids order by position`)
+      assert.deepEqual(rows, [
+        { name: 'Milán', age_months: 24, age_set_on: new Date('2026-01-10T00:00:00') },
+        { name: 'Sofi', age_months: null, age_set_on: null },
+      ])
     } finally {
       await client.end()
     }

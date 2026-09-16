@@ -15,7 +15,7 @@ const family = /** @type {NonNullable<typeof developer.family>} */ (developer.fa
 const kids = family.kids.map((kid, index) => ({
   id: `k${index}`,
   name: kid.name,
-  age: kid.age,
+  ageMonths: kid.ageMonths,
   playing: true,
   interests: kid.interests ?? [],
 }))

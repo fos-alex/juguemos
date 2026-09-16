@@ -8,8 +8,8 @@ const PROFILE = {
   id: 'fam',
   name: null,
   kids: [
-    { id: 'k-milan', name: 'Milán', age: 2, playing: true },
-    { id: 'k-sofi', name: 'Sofi', age: 4, playing: true },
+    { id: 'k-milan', name: 'Milán', ageMonths: 26, playing: true },
+    { id: 'k-sofi', name: 'Sofi', ageMonths: 52, playing: true },
   ],
   pets: [{ id: 'p-inca', name: 'Inca' }],
   interests: ['los dinosaurios', 'los caballos', 'la plaza'],

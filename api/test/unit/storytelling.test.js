@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { systemPrompt } from '../../src/stories/prompts/compose.js'
-import { anchorOf, clampMinutes, familyLines, moodAt, OptionsParser, StoryParser, toPlot, wordsIn } from '../../src/stories/storytelling.js'
+import { ageLine, anchorOf, clampMinutes, familyLines, moodAt, OptionsParser, StoryParser, toPlot, wordsIn } from '../../src/stories/storytelling.js'
 
-/** @param {{ name: string, age: number | null }[]} kids */
+/** @param {{ name: string, ageMonths: number | null }[]} kids */
 const profileOf = (kids) => ({
   id: 'fam',
   name: null,
@@ -14,13 +14,18 @@ const profileOf = (kids) => ({
 })
 
 test('the youngest kid with an age anchors the story, and its band comes with it', () => {
+  // Six months a band under four years, a year a band at four and five (JUG-145).
   const cases = [
-    [[{ name: 'Bebé', age: 1 }], '1', [2, 2], [150, 220]],
-    [[{ name: 'Milán', age: 2 }], '2', [3, 4], [300, 450]],
-    [[{ name: 'Nina', age: 3 }], '3', [4, 5], [450, 600]],
-    [[{ name: 'Sofi', age: 4 }], '4', [5, 6], [600, 750]],
-    [[{ name: 'Lu', age: 5 }], '5', [6, 7], [750, 900]],
-    [[{ name: 'Tomi', age: 9 }], '5', [6, 7], [750, 900]],
+    [[{ name: 'Bebé', ageMonths: 8 }], '1', [2, 3], [200, 300]],
+    [[{ name: 'Milán', ageMonths: 12 }], '1', [2, 3], [200, 300]],
+    [[{ name: 'Milán', ageMonths: 22 }], '1.5', [3, 3], [280, 380]],
+    [[{ name: 'Milán', ageMonths: 26 }], '2', [3, 4], [350, 480]],
+    [[{ name: 'Nina', ageMonths: 30 }], '2.5', [4, 5], [450, 600]],
+    [[{ name: 'Nina', ageMonths: 36 }], '3', [4, 5], [520, 680]],
+    [[{ name: 'Nina', ageMonths: 47 }], '3.5', [5, 6], [620, 780]],
+    [[{ name: 'Sofi', ageMonths: 52 }], '4', [5, 6], [700, 850]],
+    [[{ name: 'Lu', ageMonths: 60 }], '5', [6, 7], [800, 1000]],
+    [[{ name: 'Tomi', ageMonths: 110 }], '5', [6, 7], [800, 1000]],
   ]
   for (const [kids, id, minutes, words] of cases) {
     const { band, anchor } = anchorOf(profileOf(/** @type {any} */ (kids)))
@@ -32,12 +37,12 @@ test('the youngest kid with an age anchors the story, and its band comes with it
 })
 
 test('kids with no age do not anchor, and a family with no ages at all gets band 3', () => {
-  const mixed = anchorOf(profileOf([{ name: 'Sin edad', age: null }, { name: 'Sofi', age: 4 }]))
+  const mixed = anchorOf(profileOf([{ name: 'Sin edad', ageMonths: null }, { name: 'Sofi', ageMonths: 52 }]))
   assert.equal(mixed.anchor?.name, 'Sofi')
   assert.equal(mixed.band.id, '4')
 
-  const none = anchorOf(profileOf([{ name: 'Sin edad', age: null }]))
-  assert.equal(none.anchorAge, 3)
+  const none = anchorOf(profileOf([{ name: 'Sin edad', ageMonths: null }]))
+  assert.equal(none.anchorMonths, 36)
   assert.equal(none.band.id, '3')
 })
 
@@ -46,7 +51,7 @@ test('the system prompt is the core plus one band and one moment', () => {
   assert.match(prompt, /Sos el narrador de cuentos de Juguemos/)
   assert.match(prompt, /## La familia/)
   assert.match(prompt, /## Lo que nunca pasa/)
-  assert.match(prompt, /## Cómo se escribe para este chico: TRES AÑOS/)
+  assert.match(prompt, /## Cómo se escribe para este chico: DE TRES A TRES AÑOS Y MEDIO/)
   assert.match(prompt, /## El momento: TRANQUI, antes de dormir/)
   assert.doesNotMatch(prompt, /UN AÑO|DOS AÑOS|CUATRO AÑOS|CINCO AÑOS/)
   assert.doesNotMatch(prompt, /CON PILAS/)
@@ -59,11 +64,11 @@ test('a band or a moment with no fragment is a bug, not a quiet story', () => {
 })
 
 test('the family lines name only what the castings hold, each name once', () => {
-  const profile = profileOf([{ name: 'Milán', age: 2 }, { name: 'Sofi', age: 4 }])
+  const profile = profileOf([{ name: 'Milán', ageMonths: 26 }, { name: 'Sofi', ageMonths: 52 }])
   const one = familyLines(profile, [
     /** @type {any} */ ({ kids: ['k1'], pet: null, toy: { id: 't', name: 'el tren grandote' }, theme: null }),
   ])
-  assert.equal(one.kids, 'Sofi, de 4 años')
+  assert.equal(one.kids, 'Sofi, de 4 años y 4 meses')
   assert.equal(one.pet, 'no aparece en este cuento')
   assert.equal(one.toys, 'el tren grandote')
   assert.equal(one.interests, 'sin tema fijo')
@@ -74,7 +79,7 @@ test('the family lines name only what the castings hold, each name once', () => 
     /** @type {any} */ ({ kids: ['k0', 'k1'], pet: { id: 'p', name: 'Inca' }, toy: { id: 't', name: 'el tren grandote' }, theme: null }),
     /** @type {any} */ ({ kids: ['k1'], pet: null, toy: null, theme: 'los caballos' }),
   ])
-  assert.equal(screen.kids, 'Milán, de 2 años y Sofi, de 4 años')
+  assert.equal(screen.kids, 'Milán, de 2 años y 2 meses y Sofi, de 4 años y 4 meses')
   assert.equal(screen.pet, 'Inca')
   assert.equal(screen.toys, 'el tren grandote')
   assert.equal(screen.interests, 'los dinosaurios, los caballos')
@@ -131,7 +136,7 @@ test('a plot that stops half-written is not offered, and the ones before it are'
 })
 
 test('an option becomes a plot only when it has a title, a teaser and a premise', () => {
-  const band = anchorOf(profileOf([{ name: 'Milán', age: 2 }])).band
+  const band = anchorOf(profileOf([{ name: 'Milán', ageMonths: 26 }])).band
   assert.deepEqual(toPlot(PLOT, band), PLOT)
   assert.equal(toPlot({ title: 'Sin premisa', teaser: 'Nada.' }, band), null)
   assert.equal(toPlot(null, band), null)
@@ -140,7 +145,7 @@ test('an option becomes a plot only when it has a title, a teaser and a premise'
 })
 
 test('the minutes stay inside the band, and an answer without them gets its shortest story', () => {
-  const band = { id: '2', maxAge: 2, minutes: /** @type {[number, number]} */ ([3, 4]), words: /** @type {[number, number]} */ ([300, 450]) }
+  const band = { id: '2', maxMonths: 29, minutes: /** @type {[number, number]} */ ([3, 4]), words: /** @type {[number, number]} */ ([350, 480]) }
   assert.equal(clampMinutes(9, band), 4)
   assert.equal(clampMinutes(1, band), 3)
   assert.equal(clampMinutes('cuatro', band), 3)
@@ -151,6 +156,14 @@ test('the minutes stay inside the band, and an answer without them gets its shor
 test('the word count is every paragraph of every part', () => {
   assert.equal(wordsIn([['Milán se despertó.', 'Inca movió la cola.'], ['Fin.']]), 8)
   assert.equal(wordsIn([]), 0)
+})
+
+test('an age reads aloud in years and months', () => {
+  assert.equal(ageLine(8), '8 meses')
+  assert.equal(ageLine(12), '1 año')
+  assert.equal(ageLine(13), '1 año y 1 mes')
+  assert.equal(ageLine(22), '1 año y 10 meses')
+  assert.equal(ageLine(52), '4 años y 4 meses')
 })
 
 test('the moment follows the Buenos Aires clock', () => {

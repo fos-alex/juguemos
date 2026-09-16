@@ -119,7 +119,7 @@ test('with the LLM, options are plot options written for the family and saved', 
   assert.equal(list.length, 3)
   for (const option of list) assert.match(option.id, /^[0-9a-f-]{36}$/)
   assert.deepEqual(list.map((option) => option.title), ['Trama 1', 'Trama 2', 'Trama 3'])
-  // Milán is two, so band 2 runs three to four minutes.
+  // Milán is two years and two months, so his band runs three to four minutes.
   assert.equal(list[0].minutes, 4)
 
   const { rows } = await api.pool.query('select casting from story_plots')
@@ -138,7 +138,7 @@ test('the options ask for a bedtime story at night, and its history reaches the 
 
   const { user } = llm.prompts.at(-1)
   assert.match(user, /La familia va a leer un cuento a TRANQUI, antes de dormir/)
-  assert.match(user, /Milán, de 2 años/)
+  assert.match(user, /Milán, de 2 años y 2 meses/)
   assert.match(user, /El reparto de cada trama/)
   assert.match(user, /Trama 3: /)
 })
@@ -150,7 +150,7 @@ test('the system prompt carries one band and one moment, and nothing else', asyn
 
   const { system, user, maxTokens } = llm.prompts.at(-1)
   assert.match(system, /Sos el narrador de cuentos de Juguemos/)
-  assert.match(system, /Cómo se escribe para este chico: DOS AÑOS/)
+  assert.match(system, /Cómo se escribe para este chico: DE DOS A DOS AÑOS Y MEDIO/)
   assert.match(system, /El momento: TRANQUI, antes de dormir/)
   assert.doesNotMatch(system, /UN AÑO|TRES AÑOS|CUATRO AÑOS|CINCO AÑOS/)
   assert.doesNotMatch(system, /CON PILAS/)
@@ -417,8 +417,8 @@ test('the chosen plot streams paragraph by paragraph and then saves the story', 
   // The story call repeats the casting and gets the band's word budget.
   const story = llm.prompts.at(-1)
   assert.match(story.user, /El reparto de este cuento:/)
-  assert.match(story.system, /Cómo se escribe para este chico: DOS AÑOS/)
-  assert.equal(story.maxTokens, 450 * 3)
+  assert.match(story.system, /Cómo se escribe para este chico: DE DOS A DOS AÑOS Y MEDIO/)
+  assert.equal(story.maxTokens, 480 * 3)
 })
 
 test('the audit records what was offered, what was picked, and what was written', async () => {
@@ -456,8 +456,8 @@ test('the audit records what was offered, what was picked, and what was written'
   assert.equal(written.details.parts, 3)
   assert.equal(written.details.paragraphs, 7)
   assert.equal(written.details.words, 42)
-  assert.equal(written.details.wordsMin, 300)
-  assert.equal(written.details.wordsMax, 450)
+  assert.equal(written.details.wordsMin, 350)
+  assert.equal(written.details.wordsMax, 480)
   assert.equal(written.details.insideBand, false, 'the fake story is far shorter than the band asks for')
   assert.ok(written.details.msTotal >= 0)
 })
@@ -544,8 +544,8 @@ test('plots are for the kids playing, and their story stars and records those ki
     await putFamily(api2, cookie, {
       ...EXAMPLE_PROFILE,
       kids: [
-        { name: 'Milán', age: 1 },
-        { name: 'Sofi', age: 4 },
+        { name: 'Milán', ageMonths: 12 },
+        { name: 'Sofi', ageMonths: 52 },
       ],
     })
   ).json()
@@ -557,7 +557,7 @@ test('plots are for the kids playing, and their story stars and records those ki
   await choosePlaying([sofi.id])
   const [option] = await options(cookie, [], api2)
   // Sofi is four, so her band is the one that reaches the model.
-  assert.match(kidsLlm.prompts[0].user, /Los chicos: Sofi, de 4 años\./)
+  assert.match(kidsLlm.prompts[0].user, /Los chicos: Sofi, de 4 años y 4 meses\./)
   assert.match(kidsLlm.prompts[0].system, /Cómo se escribe para este chico: CUATRO AÑOS/)
 
   // Milán joining after the plot was proposed doesn't change who its story is for.
@@ -599,7 +599,7 @@ test('an interest the parent tapped becomes a story of its own, its title first'
   assert.equal(final.story.keyword, 'los dinosaurios')
   assert.equal(final.story.plotId, null)
   assert.equal(final.story.templateId, null)
-  // Milán is two: the band's longest story.
+  // Milán is two and two months: the band's longest story.
   assert.equal(final.story.minutes, 4)
   assert.equal(final.story.parts.length, 3)
 
@@ -619,7 +619,7 @@ test('an interest the parent tapped becomes a story of its own, its title first'
   assert.match(call.user, /El tema es: los dinosaurios\./)
   assert.match(call.user, /Tema: los dinosaurios\./)
   assert.doesNotMatch(call.user, /La trama elegida/)
-  assert.match(call.system, /Cómo se escribe para este chico: DOS AÑOS/)
+  assert.match(call.system, /Cómo se escribe para este chico: DE DOS A DOS AÑOS Y MEDIO/)
 
   // The saved story opens again by its own id, keyword and all.
   const one = await api.app.inject({ method: 'GET', url: `/stories/${final.story.id}`, headers: { cookie } })
@@ -698,8 +698,8 @@ test('a keyword is one of the interests of the kids playing, not of a kid sittin
     await putFamily(api, cookie, {
       ...EXAMPLE_PROFILE,
       kids: [
-        { name: 'Milán', age: 2, interests: ['los dinosaurios'] },
-        { name: 'Sofi', age: 4, interests: ['dibujar'] },
+        { name: 'Milán', ageMonths: 26, interests: ['los dinosaurios'] },
+        { name: 'Sofi', ageMonths: 52, interests: ['dibujar'] },
       ],
     })
   ).json()

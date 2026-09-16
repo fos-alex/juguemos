@@ -10,9 +10,10 @@ import { NotFoundError, ValidationError } from '../errors.js'
 
 /** @typedef {{ id: string, name: string | null }} Family */
 /**
- * @typedef {{ id: string, name: string, age: number | null, playing: boolean, interests: string[] }} Kid
- * `playing` is for the adult asking (JUG-107); with no adult named, every kid
- * plays. `interests` are this kid's own (JUG-144), as the parent typed them.
+ * @typedef {{ id: string, name: string, ageMonths: number | null, playing: boolean, interests: string[] }} Kid
+ * `ageMonths` is the kid's age today, in months (JUG-145). `playing` is for the
+ * adult asking (JUG-107); with no adult named, every kid plays. `interests` are
+ * this kid's own (JUG-144), as the parent typed them.
  */
 /** @typedef {{ id: string, name: string }} Named */
 /**
@@ -24,7 +25,7 @@ import { NotFoundError, ValidationError } from '../errors.js'
  * @typedef {object} ProfileInput The whole profile, in order. Items that carry
  *   the id of one of the family's rows update it; the rest are new.
  * @property {string | null} [name]
- * @property {{ id?: string, name: string, age: number | null, interests?: string[] }[]} kids
+ * @property {{ id?: string, name: string, ageMonths: number | null, interests?: string[] }[]} kids
  * @property {{ id?: string, name: string }[]} pets
  * @property {{ id?: string, name: string }[]} toys
  */
@@ -33,10 +34,14 @@ import { NotFoundError, ValidationError } from '../errors.js'
 /** @typedef {ReturnType<typeof createFamiliesService>} FamiliesService */
 
 /**
- * A kid's age today: the age the parent gave, plus the years since they gave it.
- * @param {{ ageYears: import('drizzle-orm').Column, ageSetOn: import('drizzle-orm').Column }} kid
+ * A kid's age today, in months: the age the parent gave, plus the whole months
+ * since they gave it.
+ * @param {{ ageMonths: import('drizzle-orm').Column, ageSetOn: import('drizzle-orm').Column }} kid
  */
-const currentAge = (kid) => sql`${kid.ageYears} + extract(year from age(current_date, ${kid.ageSetOn}))::int`
+const currentAge = (kid) => {
+  const since = sql`age(current_date, ${kid.ageSetOn})`
+  return sql`${kid.ageMonths} + (extract(year from ${since}) * 12 + extract(month from ${since}))::int`
+}
 
 /** Profile rows come back in the order the parent gave them. */
 const byPosition = (
@@ -92,7 +97,7 @@ export function createFamiliesService({ db }) {
       with: {
         kids: {
           columns: { id: true, name: true },
-          extras: (kid) => ({ age: currentAge(kid).mapWith(Number).as('age') }),
+          extras: (kid) => ({ ageMonths: currentAge(kid).mapWith(Number).as('age_months') }),
           orderBy: byPosition,
           with: { interests: { columns: { label: true }, orderBy: byPosition } },
         },
@@ -111,7 +116,7 @@ export function createFamiliesService({ db }) {
     const familyKids = family.kids.map((kid) => ({
       id: kid.id,
       name: kid.name,
-      age: kid.age,
+      ageMonths: kid.ageMonths,
       playing: nobodyPlays || !out.has(kid.id),
       interests: kid.interests.map((row) => row.label),
     }))
@@ -203,17 +208,17 @@ export function createFamiliesService({ db }) {
           insert: (kid, position) => ({
             position,
             name: kid.name,
-            ageYears: kid.age,
-            ageSetOn: kid.age === null ? null : sql`current_date`,
+            ageMonths: kid.ageMonths,
+            ageSetOn: kid.ageMonths === null ? null : sql`current_date`,
           }),
           // An age that comes back unchanged keeps counting from the day it was first given.
           update: (kid, position) => {
-            const unchanged = sql`${kid.age}::smallint is not distinct from ${currentAge(kids)}`
+            const unchanged = sql`${kid.ageMonths}::smallint is not distinct from ${currentAge(kids)}`
             return {
               position,
               name: kid.name,
-              ageYears: sql`case when ${unchanged} then ${kids.ageYears} else ${kid.age}::smallint end`,
-              ageSetOn: sql`case when ${unchanged} then ${kids.ageSetOn} when ${kid.age}::smallint is null then null else current_date end`,
+              ageMonths: sql`case when ${unchanged} then ${kids.ageMonths} else ${kid.ageMonths}::smallint end`,
+              ageSetOn: sql`case when ${unchanged} then ${kids.ageSetOn} when ${kid.ageMonths}::smallint is null then null else current_date end`,
             }
           },
         })

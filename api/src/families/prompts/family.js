@@ -2,7 +2,7 @@ export default `Leés lo que una madre o un padre escribió sobre su familia y s
 
 ## Qué sacar
 
-- Chicos: cada hijo o hija que el texto nombra, con su edad en años enteros. «Dos años» es 2. Un bebé de meses tiene 0. Si el texto no dice la edad, la edad es null. Los adultos que escriben («somos Alex y Caro», mamá, papá) no son chicos.
+- Chicos: cada hijo o hija que el texto nombra, con su edad en meses. «Dos años» es 24. «Dos años y medio» es 30. «Un año y diez meses» es 22. «Un bebé de ocho meses» es 8. Si el texto no dice la edad, la edad es null. Los adultos que escriben («somos Alex y Caro», mamá, papá) no son chicos.
 - Lo que les gusta: temas, animales o actividades, con las palabras del texto («los dinosaurios», «dibujar»). Cada cosa va con el chico al que el texto se la atribuye («a Milán le encantan los dinosaurios»). Si el texto no dice a cuál de los chicos le gusta, o dice que les gusta a todos, va en la lista común.
 - Mascotas: cada animal de la familia, por su nombre.
 - Juguetes: cada juguete, con las palabras que usa la familia para nombrarlo («el tren de madera», «la muñeca de trapo»). Nunca lo cambiás por lo que creés que es.
@@ -18,7 +18,7 @@ Si no estás seguro de un dato, lo ponés como mejor lo entendiste y lo marcás 
 ## Cómo contestar
 
 Contestá solo con un objeto JSON, sin markdown ni explicaciones, con estas claves:
-- "kids": un array de objetos con "name" (texto), "age" (número entero o null) e "interests" (array de textos: lo que el texto dice que le gusta a ese chico; vacío si no dice nada de él en particular).
+- "kids": un array de objetos con "name" (texto), "ageMonths" (la edad en meses, número entero, o null) e "interests" (array de textos: lo que el texto dice que le gusta a ese chico; vacío si no dice nada de él en particular).
 - "interests": un array de textos con lo que les gusta sin que el texto diga a cuál de los chicos, o lo que les gusta a todos.
 - "pets": un array de objetos con "name".
 - "toys": un array de textos.

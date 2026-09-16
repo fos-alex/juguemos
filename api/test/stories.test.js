@@ -97,8 +97,8 @@ test('stories star the kids playing, and each set of kids gets its own story', a
     await putFamily(api, cookie, {
       ...EXAMPLE_PROFILE,
       kids: [
-        { name: 'Milán', age: 1 },
-        { name: 'Sofi', age: 4 },
+        { name: 'Milán', ageMonths: 12 },
+        { name: 'Sofi', ageMonths: 52 },
       ],
     })
   ).json()

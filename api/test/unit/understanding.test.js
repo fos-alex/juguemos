@@ -9,7 +9,7 @@ const TEXT =
 /** @param {object} overrides */
 const answer = (overrides = {}) =>
   JSON.stringify({
-    kids: [{ name: 'Milán', age: 2 }],
+    kids: [{ name: 'Milán', ageMonths: 26 }],
     pets: [{ name: 'Inca' }],
     interests: ['los dinosaurios', 'los caballos'],
     toys: ['un tren de madera'],
@@ -21,7 +21,7 @@ const answer = (overrides = {}) =>
 test('the example paragraph becomes the family, with nothing to check', () => {
   assert.deepEqual(readUnderstanding(answer(), TEXT), {
     family: {
-      kids: [{ name: 'Milán', age: 2, interests: ['los dinosaurios', 'los caballos'] }],
+      kids: [{ name: 'Milán', ageMonths: 26, interests: ['los dinosaurios', 'los caballos'] }],
       pets: [{ name: 'Inca' }],
       toys: [{ name: 'un tren de madera' }],
     },
@@ -36,8 +36,8 @@ test('each kid gets what the text says they love, and what it leaves unclear goe
   const understood = readUnderstanding(
     answer({
       kids: [
-        { name: 'Milán', age: 2, interests: ['los dinosaurios', 'los trenes'] },
-        { name: 'Sofi', age: 4, interests: ['dibujar'] },
+        { name: 'Milán', ageMonths: 26, interests: ['los dinosaurios', 'los trenes'] },
+        { name: 'Sofi', ageMonths: 52, interests: ['dibujar'] },
       ],
       interests: ['los trenes', 'la plaza'],
       // This text names no pet, and a pet it doesn't name would be flagged.
@@ -57,7 +57,7 @@ test('each kid gets what the text says they love, and what it leaves unclear goe
 
 test('names keep the spelling the parent used, even when the model changes it', () => {
   const text = 'tenemos a milán y a inca, que juega con el osito'
-  const understood = readUnderstanding(answer({ kids: [{ name: 'Milán', age: null }], toys: ['El Osito'] }), text)
+  const understood = readUnderstanding(answer({ kids: [{ name: 'Milán', ageMonths: null }], toys: ['El Osito'] }), text)
   assert.equal(understood?.family.kids[0].name, 'milán')
   assert.equal(understood?.family.pets[0].name, 'inca')
   assert.deepEqual(understood?.family.toys, [{ name: 'el osito' }])
@@ -66,7 +66,7 @@ test('names keep the spelling the parent used, even when the model changes it', 
 
 test('a kid or pet the text does not name is flagged, with a note', () => {
   const understood = readUnderstanding(
-    answer({ kids: [{ name: 'Milán', age: 2 }, { name: 'Sofía', age: 4 }], pets: [{ name: 'Firulais' }] }),
+    answer({ kids: [{ name: 'Milán', ageMonths: 26 }, { name: 'Sofía', ageMonths: 52 }], pets: [{ name: 'Firulais' }] }),
     TEXT,
   )
   assert.deepEqual(understood?.unsure.sort(), ['kids.1', 'pet'])
@@ -76,13 +76,13 @@ test('a kid or pet the text does not name is flagged, with a note', () => {
 test('the model doubts are kept, and follow a kid when an empty one is dropped', () => {
   const understood = readUnderstanding(
     answer({
-      kids: [{ name: '', age: 3 }, { name: 'Milán', age: 2 }],
+      kids: [{ name: '', ageMonths: 40 }, { name: 'Milán', ageMonths: 26 }],
       unsure: ['kids.1', 'toys', 'otra cosa'],
       note: 'No me quedó claro si el tren es de Milán.',
     }),
     TEXT,
   )
-  assert.deepEqual(understood?.family.kids, [{ name: 'Milán', age: 2, interests: ['los dinosaurios', 'los caballos'] }])
+  assert.deepEqual(understood?.family.kids, [{ name: 'Milán', ageMonths: 26, interests: ['los dinosaurios', 'los caballos'] }])
   assert.deepEqual(understood?.unsure.sort(), ['kids.0', 'toys'])
   assert.equal(understood?.note, 'No me quedó claro si el tren es de Milán.')
 })
@@ -92,11 +92,11 @@ test('a second pet is flagged, since the card shows one', () => {
   assert.deepEqual(understood?.unsure, ['pet'])
 })
 
-test('ages are whole years from 0 to 17, or nothing', () => {
-  const ages = [2, '3', 2.7, -1, 30, 'dos', null].map(
-    (age) => readUnderstanding(answer({ kids: [{ name: 'Milán', age }] }), TEXT)?.family.kids[0].age,
+test('ages are whole months from 0 to 215, or nothing', () => {
+  const ages = [26, '30', 26.7, -1, 216, 'dos', null].map(
+    (ageMonths) => readUnderstanding(answer({ kids: [{ name: 'Milán', ageMonths }] }), TEXT)?.family.kids[0].ageMonths,
   )
-  assert.deepEqual(ages, [2, 3, 2, null, null, null, null])
+  assert.deepEqual(ages, [26, 30, 26, null, null, null, null])
 })
 
 test('a fenced answer is read, and an answer with no JSON is not', () => {

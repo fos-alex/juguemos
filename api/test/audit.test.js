@@ -4,7 +4,7 @@ import { buildApp } from '../src/app.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
 const TEXT = 'Somos Alex y Caro, tenemos a Milán, de dos años, y a Inca, nuestra mascota.'
-const ANSWER = JSON.stringify({ kids: [{ name: 'Milán', age: 2 }], pets: [{ name: 'Inca' }], interests: [], toys: [], unsure: [], note: null })
+const ANSWER = JSON.stringify({ kids: [{ name: 'Milán', ageMonths: 26 }], pets: [{ name: 'Inca' }], interests: [], toys: [], unsure: [], note: null })
 const llm = {
   async *stream() {
     yield ANSWER

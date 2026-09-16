@@ -4,10 +4,11 @@
  */
 
 /**
- * @typedef {{ id?: string, name: string, age: number | null, playing?: boolean, interests: string[] }} Kid
- * `id` is missing only for a kid the form hasn't saved yet. `playing` is whether
- * the kid plays with this parent (JUG-107); a kid without it plays. `interests`
- * are what this kid loves (JUG-144), as the family typed them.
+ * @typedef {{ id?: string, name: string, ageMonths: number | null, playing?: boolean, interests: string[] }} Kid
+ * `ageMonths` is the kid's age today, in months (JUG-145). `id` is missing only
+ * for a kid the form hasn't saved yet. `playing` is whether the kid plays with
+ * this parent (JUG-107); a kid without it plays. `interests` are what this kid
+ * loves (JUG-144), as the family typed them.
  */
 /**
  * @typedef {{ id?: string, name: string }} FamilyToy

@@ -8,10 +8,11 @@
 /** @typedef {import('./types').Kid} Kid */
 /**
  * @typedef {{
- *   kids: { id?: string, name: string, age: string, interests: string[] }[], pet: string,
- *   toys: FamilyToy[],
+ *   kids: { id?: string, name: string, years: string, months: string, interests: string[] }[],
+ *   pet: string, toys: FamilyToy[],
  * }} FormState
- * The family form (2h) as typed: ages stay text until saved.
+ * The family form (2h) as typed: the years and the months of each age stay
+ * text until saved (JUG-145).
  */
 /**
  * @typedef {{ field: string, label: string, value: string, aside?: string, flag?: string }} FamilyRow
@@ -19,14 +20,24 @@
  * card flags it by, when that isn't `field` (every interests row is 'interests').
  */
 
-/** @param {number} age */
-export function ageText(age) {
-  return age === 1 ? '1 año' : `${age} años`
+/**
+ * An age in months in words: `8 meses`, `2 años`, `1 año y 10 meses`.
+ * @param {number} ageMonths
+ * @param {{ alwaysMonths?: boolean }} [options] `alwaysMonths` says `y 0 meses`
+ *   too, so a parent who gave only the years sees what the app took and fixes it
+ */
+export function ageText(ageMonths, { alwaysMonths = false } = {}) {
+  const years = Math.floor(ageMonths / 12)
+  const months = ageMonths % 12
+  const monthsText = months === 1 ? '1 mes' : `${months} meses`
+  if (years === 0) return monthsText
+  const yearsText = years === 1 ? '1 año' : `${years} años`
+  return months === 0 && !alwaysMonths ? yearsText : `${yearsText} y ${monthsText}`
 }
 
 /** The Home header line: the kids only. The pet turns up in ideas and stories. @param {Family} family */
 export function familyLine(family) {
-  return family.kids.map((kid) => (kid.age == null ? kid.name : `${kid.name}, ${ageText(kid.age)}`)).join(' · ')
+  return family.kids.map((kid) => (kid.ageMonths == null ? kid.name : `${kid.name}, ${ageText(kid.ageMonths)}`)).join(' · ')
 }
 
 const SPANISH_LIST = new Intl.ListFormat('es', { type: 'conjunction' })
@@ -87,9 +98,9 @@ function interestsLine(interests) {
 export function familyRows(family) {
   /** @type {FamilyRow[]} */
   const rows = family.kids.map((kid, index) =>
-    kid.age == null
+    kid.ageMonths == null
       ? { field: `kids.${index}`, label: 'Chicos', value: kid.name, aside: '· sin edad' }
-      : { field: `kids.${index}`, label: 'Chicos', value: `${kid.name} · ${ageText(kid.age)}` },
+      : { field: `kids.${index}`, label: 'Chicos', value: `${kid.name} · ${ageText(kid.ageMonths, { alwaysMonths: true })}` },
   )
   if (family.pet) rows.push({ field: 'pet', label: 'Mascota', value: family.pet })
 
@@ -114,17 +125,23 @@ export function toForm(family) {
     family?.kids.map((kid) => ({
       id: kid.id,
       name: kid.name,
-      age: kid.age == null ? '' : String(kid.age),
+      years: kid.ageMonths == null ? '' : String(Math.floor(kid.ageMonths / 12)),
+      months: kid.ageMonths == null ? '' : String(kid.ageMonths % 12),
       interests: [...(kid.interests ?? [])],
     })) ?? []
   return {
-    kids: kids.length > 0 ? kids : [{ name: '', age: '', interests: [] }],
+    kids: kids.length > 0 ? kids : [{ name: '', years: '', months: '', interests: [] }],
     pet: family?.pet ?? '',
     toys: family?.toys.length ? family.toys : [{ name: '' }],
   }
 }
 
-/** Drops what was left empty; never touches how a name is spelled. @param {FormState} form @returns {Family} */
+/**
+ * Drops what was left empty; never touches how a name is spelled. An age with
+ * only the years is that many years and no months; one left blank is unknown.
+ * @param {FormState} form
+ * @returns {Family}
+ */
 export function toFamily(form) {
   return {
     kids: form.kids
@@ -132,7 +149,7 @@ export function toFamily(form) {
       .map((kid) => ({
         id: kid.id,
         name: kid.name.trim(),
-        age: kid.age ? Number(kid.age) : null,
+        ageMonths: kid.years || kid.months ? Number(kid.years || 0) * 12 + Number(kid.months || 0) : null,
         interests: kid.interests.map((interest) => interest.trim()).filter(Boolean),
       })),
     pet: form.pet.trim(),

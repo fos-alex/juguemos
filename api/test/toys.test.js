@@ -119,8 +119,8 @@ test('saving the family form keeps what the box knows about each toy', async () 
   const twoKids = {
     ...EXAMPLE_PROFILE,
     kids: [
-      { name: 'Milán', age: 2 },
-      { name: 'Sofi', age: 4 },
+      { name: 'Milán', ageMonths: 26 },
+      { name: 'Sofi', ageMonths: 52 },
     ],
   }
   const { cookie, call, profile } = await adultWithFamily('fede@example.com', twoKids)
@@ -136,7 +136,7 @@ test('saving the family form keeps what the box knows about each toy', async () 
 
   // The form sends each toy with its id, renamed or not. Sofi leaves the family.
   await putFamily(api, cookie, {
-    kids: [{ id: milan.id, name: 'Milán', age: 2 }],
+    kids: [{ id: milan.id, name: 'Milán', ageMonths: 26 }],
     pets: [],
     interests: [],
     toys: profile.toys.map((/** @type {Toy} */ { id, name }) => ({ id, name: id === dino.id ? 'el dino chiquito' : name })),
