@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from '@tanstack/react-router'
+import { playingAgeMonths } from '../../family'
 import { savedStory, writeKeywordStory, writeStory } from '../api'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
 import { StoryText } from './StoryText'
-import { groupByPart } from '../model'
+import { groupByPart, waitingVariant } from '../model'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
+import { useSlowWait } from '../../../shared/hooks/useSlowWait'
 import { useWakeLock } from '../../../shared/hooks/useWakeLock'
 import { read, useStored } from '../../../shared/store'
 import {
@@ -21,6 +23,7 @@ import {
   StatusLine,
   TertiaryButton,
   ThemeToggle,
+  Waiting,
 } from '../../../shared/ui'
 import '../stories.css'
 
@@ -30,9 +33,15 @@ import '../stories.css'
  * interest (JUG-140), which arrives with a title of its own and takes the
  * URL of the story it was saved as. The page fills itself: the title is set
  * and the text arrives over placeholder lines at story measure, so nothing
- * reflows. The screen stays awake from the first moment. No illustration,
- * ever; the bar marks position in the story, never achievement. Night mode is
- * one tap away in the footer, under the thumb.
+ * reflows. The screen stays awake from the first moment. The bar marks
+ * position in the story, never achievement. Night mode is one tap away in the
+ * footer, under the thumb.
+ *
+ * A story can take a couple of minutes to start, so until its first paragraph
+ * arrives the waiting animation takes the dots' place in the footer (JUG-132),
+ * held back so it doesn't brighten a dim room, and one line says what is
+ * happening once the wait is long. It goes the moment there are words, and
+ * the story itself is never illustrated.
  * @param {{ id?: string, keyword?: string }} props one of the two: the story
  *   to read, or the interest to write one about
  */
@@ -45,6 +54,7 @@ export function StoryReader({ id: picked, keyword }) {
   const id = picked ?? savedId
   const story = useStored('stories')?.[id ?? '']
   const option = useStored('storyOptions')?.find((candidate) => candidate.id === id)
+  const family = useStored('family')
   const [written, setWritten] = useState(/** @type {string | null} */ (null))
   const [paragraphs, setParagraphs] = useState(/** @type {{ part: number, text: string }[]} */ ([]))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
@@ -52,6 +62,10 @@ export function StoryReader({ id: picked, keyword }) {
   // An id that is neither an option nor an already-read story may still be a
   // saved story opened by its own id; wait for that answer before leaving.
   const [looking, setLooking] = useState(!story && !option)
+  // Nothing to read yet. Once a paragraph lands, reading starts and the
+  // animation gives way to it, whether or not the rest has arrived.
+  const writing = !story && !failure && paragraphs.length === 0
+  const slow = useSlowWait(writing)
 
   useEffect(() => {
     if (picked && read('stories')?.[picked]) return
@@ -126,6 +140,8 @@ export function StoryReader({ id: picked, keyword }) {
         <StoryText parts={parts} done={Boolean(story)} />
         {!story && !failure && <StorySkeleton paragraphs={paragraphs.length === 0 ? 3 : 2} />}
         <StatusLine role="alert">{failure}</StatusLine>
+        {/* Voice pass pending. */}
+        {slow && <StatusLine role="status">Sigo escribiéndolo. Ya casi está.</StatusLine>}
       </Body>
       {story ? (
         <StoryProgress id={/** @type {string} */ (id)} total={story.parts.length} />
@@ -134,6 +150,8 @@ export function StoryReader({ id: picked, keyword }) {
           <ThemeToggle />
           {failure ? (
             <TertiaryButton onClick={() => setAttempt((count) => count + 1)}>Probar de nuevo</TertiaryButton>
+          ) : writing ? (
+            <Waiting variant={waitingVariant(playingAgeMonths(family))} size="screen" tone="reading" />
           ) : (
             <Dots tone="page" />
           )}

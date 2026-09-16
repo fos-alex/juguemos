@@ -126,6 +126,16 @@
   padding: 16px 30px calc(38px + env(safe-area-inset-bottom));
 }
 
+/* Nothing to read yet: the animation waits where the three cards will go. */
+.story-writing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 44px 0;
+  text-align: center;
+}
+
 /* While the story is written: the night toggle on the left, the dots centred. */
 .reading-footer--waiting {
   display: grid;
@@ -133,6 +143,11 @@
   align-items: center;
   justify-items: center;
   padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+
+/* The footer has room for the animation, but not for it at its full size. */
+.reading-footer--waiting .waiting {
+  --waiting-size: 64px;
 }
 
 .reading-footer--waiting .theme-toggle {
