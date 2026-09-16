@@ -6,7 +6,8 @@
  * while the model still talks; an already-written story streams the same
  * way, from the saved copy. A story written from one of the family's
  * interests (JUG-140) has no option behind it, so it is kept under the id it
- * was saved with and announces its title first.
+ * was saved with and announces its title first. So is a story the parent
+ * asked for in a voice note (JUG-156), once they have seen what Ludi heard.
  *
  * A series (JUG-59) is the family's own, so its list is kept in the store and
  * a screen can show it before the API answers. Its episodes are stories like
@@ -19,6 +20,7 @@ import { ApiError, endSession, OfflineError, request, WordedError } from '../../
 /** @typedef {import('./types').Story} Story */
 /** @typedef {import('./types').SavedStorySummary} SavedStorySummary */
 /** @typedef {import('./types').Series} Series */
+/** @typedef {import('./types').StoryRequest} StoryRequest */
 
 /** Series copy still needs a voice pass. */
 const SERIES_MESSAGES = {
@@ -35,6 +37,22 @@ const SERIES_MESSAGES = {
 function seriesFailure(error) {
   const words = error instanceof ApiError && error.code ? SERIES_MESSAGES[error.code] : undefined
   return words ? new WordedError(words) : error
+}
+
+/** This server has no LLM to read a story request with: a state to word plainly, not a failure. */
+export class StoryRequestOffError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('Por ahora no puedo escribir cuentos a pedido. Elegí uno de estos.')
+  }
+}
+
+/** The words asked for no story, which is an answer and not a failure either. */
+export class NoStoryHeardError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('No escuché qué cuento querés. ¿Probamos de nuevo?')
+  }
 }
 
 /**
@@ -126,6 +144,59 @@ export async function writeKeywordStory(keyword, { signal, onTitle, onParagraph 
 }
 
 /**
+ * What story a voice note's words ask for (JUG-156): who is in it, where it
+ * happens, its theme, and what happens, for the parent to see before anything
+ * is written. Words that ask for no story say so in words.
+ * @param {string} text the words of the voice note
+ * @returns {Promise<StoryRequest>}
+ */
+export async function understandStoryRequest(text) {
+  /** @type {StoryRequest} */
+  let heard
+  try {
+    heard = await request('POST', '/stories/understanding', { text })
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'LLM_OFF') throw new StoryRequestOffError()
+    throw error
+  }
+  if (!heard.summary) throw new NoStoryHeardError()
+  return heard
+}
+
+/**
+ * The parent said yes to the story they asked for: it is kept on the device
+ * until it is written, so the reading screen can write it and try again.
+ * @param {StoryRequest} asked
+ */
+export function askForStory(asked) {
+  write('storyRequest', asked)
+}
+
+/**
+ * The story the parent asked for (JUG-156), written now, arriving the way a
+ * keyword story does: its own title first, then the paragraphs. Once it is
+ * saved the request is forgotten, since the story now has an id of its own.
+ * @param {StoryRequest} asked
+ * @param {{
+ *   signal?: AbortSignal,
+ *   onTitle?: (title: string) => void,
+ *   onParagraph?: (paragraph: { part: number, text: string }) => void,
+ * }} [options]
+ * @returns {Promise<Story>}
+ */
+export async function writeRequestedStory(asked, { signal, onTitle, onParagraph } = {}) {
+  let story
+  try {
+    story = await readStory('/api/stories/write', { request: asked }, { signal, onTitle, onParagraph })
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'LLM_OFF') throw new StoryRequestOffError()
+    throw error
+  }
+  write('storyRequest', null)
+  return story
+}
+
+/**
  * The next episode of a series (JUG-59), written now, arriving the same way a
  * story does: its own title first, then the paragraphs. It is kept under the
  * id the API saved it with, which is where the reading screen sends the URL,
@@ -156,7 +227,7 @@ export async function writeEpisode(seriesId, { signal, onTitle, onParagraph } = 
  * The story the API writes for what it is asked, paragraph by paragraph, kept
  * for offline once it is whole.
  * @param {string} url the stream to open
- * @param {{ id: string } | { keyword: string } | null} asked what to write, when the URL doesn't say it
+ * @param {{ id: string } | { keyword: string } | { request: StoryRequest } | null} asked what to write, when the URL doesn't say it
  * @param {{
  *   key?: string,
  *   signal?: AbortSignal,

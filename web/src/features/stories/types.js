@@ -10,6 +10,15 @@
  */
 /** @typedef {{ id: string, title: string, episode: number }} StoryInSeries where a story sits in its series */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStorySummary */
+/**
+ * @typedef {object} StoryRequest the story a parent asked for in a voice note (JUG-156)
+ * @property {string} summary one line saying what story it is
+ * @property {string[]} family the kids, pets, and toys it names, as the family spells them
+ * @property {string[]} characters everyone else it asks for
+ * @property {string | null} setting where it happens
+ * @property {string | null} theme what it is about
+ * @property {string | null} plot what happens
+ */
 /** @typedef {{ id: string, title: string, minutes: number, episode: number, createdAt: string }} Episode */
 /**
  * @typedef {object} Series stories that share a world, in the order they were written (JUG-59)

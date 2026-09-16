@@ -19,6 +19,7 @@ import { Route as VerificarRouteImport } from './routes/verificar'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminIdRouteImport } from './routes/admin.$id'
 import { Route as CuentoIdRouteImport } from './routes/cuento.$id'
+import { Route as CuentoPedidoRouteImport } from './routes/cuento.pedido'
 import { Route as FamiliaIndexRouteImport } from './routes/familia.index'
 import { Route as FamiliaContanosRouteImport } from './routes/familia.contanos'
 import { Route as FamiliaCorregirRouteImport } from './routes/familia.corregir'
@@ -79,6 +80,11 @@ const AdminIdRoute = AdminIdRouteImport.update({
 const CuentoIdRoute = CuentoIdRouteImport.update({
   id: '/cuento/$id',
   path: '/cuento/$id',
+  getParentRoute: () => rootRouteImport,
+})
+const CuentoPedidoRoute = CuentoPedidoRouteImport.update({
+  id: '/cuento/pedido',
+  path: '/cuento/pedido',
   getParentRoute: () => rootRouteImport,
 })
 const FamiliaIndexRoute = FamiliaIndexRouteImport.update({
@@ -147,6 +153,7 @@ const rootRouteChildren = {
   VerificarRoute: VerificarRoute,
   AdminIdRoute: AdminIdRoute,
   CuentoIdRoute: CuentoIdRoute,
+  CuentoPedidoRoute: CuentoPedidoRoute,
   FamiliaContanosRoute: FamiliaContanosRoute,
   FamiliaCorregirRoute: FamiliaCorregirRoute,
   FamiliaRevisarRoute: FamiliaRevisarRoute,

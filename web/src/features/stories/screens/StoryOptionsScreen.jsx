@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { playingAgeMonths, playingInterests } from '../../family'
-import { familySeries, makeSeries, savedStories, savedStory, storyOptions } from '../api'
+import { askForStory, familySeries, makeSeries, savedStories, savedStory, storyOptions, understandStoryRequest } from '../api'
 import { KeywordChips } from '../components/KeywordChips'
 import { OptionSkeleton } from '../components/OptionSkeleton'
 import { SeriesShelf } from '../components/SeriesShelf'
+import { StoryRequestReview } from '../components/StoryRequestReview'
 import { StoryShelf } from '../components/StoryShelf'
 import { waitingVariant } from '../model'
+import { VoiceLine, VoiceUnderstanding } from '../../voice'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
@@ -18,6 +20,7 @@ import '../stories.css'
 
 /** @typedef {import('../types').SavedStorySummary} SavedStorySummary */
 /** @typedef {import('../types').Series} Series */
+/** @typedef {import('../types').StoryRequest} StoryRequest */
 
 /** How many options a screen holds, which is how many skeletons it starts with. */
 const OPTIONS = 3
@@ -37,6 +40,10 @@ const OPTIONS = 3
  * (JUG-132), and gives way the moment a card arrives. The series and the shelf are the family's
  * own: the series are kept on the device, so they are there offline, and the
  * shelf is offscreen content whose fetch may come and go quietly.
+ *
+ * The mic beside "Otras opciones" takes a voice note asking for a story of the
+ * parent's own (JUG-156). What Ludi heard takes over the screen until the
+ * parent writes it or goes back; nothing is written before that.
  */
 export function StoryOptionsScreen() {
   const navigate = useNavigate()
@@ -54,6 +61,9 @@ export function StoryOptionsScreen() {
   const [notice, setNotice] = useState(/** @type {string | null} */ (null))
   // The story whose series is being made, so its row shows the wait.
   const [starting, setStarting] = useState(/** @type {string | null} */ (null))
+  const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
+  // The story the last voice note asked for, waiting for the parent to say yes.
+  const [heard, setHeard] = useState(/** @type {StoryRequest | null} */ (null))
   // The stream in flight, so asking for others, or leaving, stops the old one
   // instead of letting two of them write options over each other.
   const asking = useRef(/** @type {AbortController | null} */ (null))
@@ -161,6 +171,28 @@ export function StoryOptionsScreen() {
     void navigate({ to: '/serie/$id/episodio', params: { id: followed.id } })
   }
 
+  /** @param {string} text the words of a voice note asking for a story */
+  const readNote = async (text) => {
+    setNotice(null)
+    setHeard(await understandStoryRequest(text))
+  }
+
+  const writeHeard = () => {
+    if (!heard) return
+    askForStory(heard)
+    void navigate({ to: '/cuento/pedido' })
+  }
+
+  if (heard) {
+    return (
+      <Screen>
+        {/* Voice pass pending. */}
+        <Header onBack={() => setHeard(null)} title="¿Este cuento?" />
+        <StoryRequestReview request={heard} read={readNote} onWrite={writeHeard} />
+      </Screen>
+    )
+  }
+
   return (
     <Screen>
       <Header onBack={goBack} />
@@ -195,12 +227,22 @@ export function StoryOptionsScreen() {
         />
         <KeywordChips interests={interests} unavailable={!online || loading} onPick={pickKeyword} />
         <StoryShelf stories={shelf ?? []} startingId={starting} onOpen={openStory} onStartSeries={startSeries} />
+        {/* Voice pass pending. */}
+        <p className="story-options__voice-help">¿Tenés otro cuento en mente? Mantené apretado el micrófono y contámelo.</p>
+        <VoiceLine message={voiceMessage} />
       </Body>
-      <Footer>
-        {/* Voice pass pending: "Otras opciones". */}
-        <TertiaryButton size="lg" disabled={loading} onClick={() => void load(options?.map((option) => option.id) ?? [])}>
-          {arrived > 0 ? 'Otras opciones' : 'Probar de nuevo'}
-        </TertiaryButton>
+      <Footer row className="story-options__voice">
+        <VoiceUnderstanding read={readNote} onMessage={setVoiceMessage}>
+          {/* Voice pass pending: "Otras opciones". */}
+          <TertiaryButton
+            size="lg"
+            className="grow"
+            disabled={loading}
+            onClick={() => void load(options?.map((option) => option.id) ?? [])}
+          >
+            {arrived > 0 ? 'Otras opciones' : 'Probar de nuevo'}
+          </TertiaryButton>
+        </VoiceUnderstanding>
       </Footer>
     </Screen>
   )

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import { playingAgeMonths } from '../../family'
-import { rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeStory } from '../api'
+import { rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeRequestedStory, writeStory } from '../api'
 import { StoryEnd } from './StoryEnd'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
@@ -31,8 +31,8 @@ import '../stories.css'
 /**
  * 2s then 2t, for every way into a story: one the family picked from the
  * options or from their shelf, one written now because they tapped an interest
- * (JUG-140), and the next episode of a series (JUG-59). The last two have no
- * id until the API saves them, so they arrive with a title of their own and
+ * (JUG-140), one they asked for in a voice note (JUG-156), and the next episode
+ * of a series (JUG-59). The last three have no id until the API saves them, so they arrive with a title of their own and
  * then take the URL of the story they were saved as. The page fills itself:
  * the title is set and the text arrives over placeholder lines at story
  * measure, so nothing reflows. The screen stays awake from the first moment.
@@ -47,11 +47,11 @@ import '../stories.css'
  *
  * Once the story is whole, it is the one Home offers again, and its end says
  * what comes next: Listo, and a series or its next episode (JUG-154).
- * @param {{ id?: string, keyword?: string, seriesId?: string }} props one of the
- *   three: the story to read, the interest to write one about, or the series to
- *   write the next episode of
+ * @param {{ id?: string, keyword?: string, request?: import('../types').StoryRequest, seriesId?: string }} props
+ *   one of the four: the story to read, the interest to write one about, the
+ *   story the parent asked for, or the series to write the next episode of
  */
-export function StoryReader({ id: picked, keyword, seriesId }) {
+export function StoryReader({ id: picked, keyword, request, seriesId }) {
   const navigate = useNavigate()
   const awake = useWakeLock()
   // A story written now has no id until the API saves it; from then on it is read like any other.
@@ -89,9 +89,11 @@ export function StoryReader({ id: picked, keyword, seriesId }) {
     // of its own once it is saved.
     const unwritten = keyword
       ? writeKeywordStory(keyword, handlers)
-      : seriesId
-        ? writeEpisode(seriesId, handlers)
-        : null
+      : request
+        ? writeRequestedStory(request, handlers)
+        : seriesId
+          ? writeEpisode(seriesId, handlers)
+          : null
     if (unwritten) {
       unwritten
         .then((saved) => {
@@ -124,7 +126,7 @@ export function StoryReader({ id: picked, keyword, seriesId }) {
       setLooking(false)
     })
     return () => controller.abort()
-  }, [picked, keyword, seriesId, attempt])
+  }, [picked, keyword, request, seriesId, attempt])
 
   useEffect(() => {
     if (story && id) rememberLastStory(id)

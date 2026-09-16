@@ -6,13 +6,19 @@
  * Either way a story is generated once, saved, and reads again exactly as it
  * did; the web never tells the kinds apart.
  *
+ * A story can also be asked for in the parent's own words (`requests.js`,
+ * JUG-156): the words are read into a request the parent confirms, and the
+ * model writes that story like any other.
+ *
  * A story the family wants more of becomes a series (`series.js`, JUG-59).
  * Its episodes live in the same table and read the same way; what the library
  * does with them is show them under their series instead of on their own.
  */
 import { and, desc, eq, isNotNull, isNull, or } from 'drizzle-orm'
+import { withKids } from '../families/families.service.js'
 import { NotFoundError, UnavailableError, ValidationError } from '../errors.js'
 import { createGeneratedStories } from './generated-stories.js'
+import { createStoryRequests, isEmpty, requestFor } from './requests.js'
 import { createStorySeries } from './series.js'
 import { storyColumns, toStory } from './shared.js'
 import { stories, storySeries } from './stories.schema.js'
@@ -20,6 +26,7 @@ import { createStoryAudit } from './story-audit.js'
 import { createTemplateStories } from './template-stories.js'
 
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
+/** @typedef {import('./requests.js').StoryRequest} StoryRequest */
 /** @typedef {import('./series.js').Series} Series */
 /** @typedef {import('./series.js').Episode} Episode */
 /** @typedef {import('./generated-stories.js').OptionEvent} OptionEvent what an options screen sends, one at a time */
@@ -100,6 +107,7 @@ export function createStoriesService({
   const generated = createGeneratedStories({ db, llm, families, audit, model, random, now })
   // A series is only ever written by the model; without one it refuses to start.
   const series = createStorySeries({ db, llm, families, audit, model, maxEpisodes, now })
+  const requests = createStoryRequests({ llm, families })
 
   return {
     /**
@@ -166,6 +174,40 @@ export function createStoriesService({
       const interest = profile.interests.find((saved) => saved.trim() === keyword.trim())
       if (!interest) throw new ValidationError('That is not one of the family interests', 'UNKNOWN_KEYWORD')
       return generated.writeKeyword(familyId, profile, interest, { signal })
+    },
+
+    /**
+     * What story the parent's words ask for (JUG-156), for them to see before
+     * it is written. Nothing is saved. Only the model reads these, so a server
+     * with no LLM says the feature is off.
+     * @param {string} familyId
+     * @param {string} text the words of the parent's voice note
+     * @returns {Promise<StoryRequest>}
+     */
+    async understandRequest(familyId, text) {
+      return requests.understand(familyId, text)
+    },
+
+    /**
+     * The story the parent asked for, once they saw the request (JUG-156).
+     * The request comes back from the web, so it is held to the family's names
+     * again: a name that isn't the family's is a character, not a family
+     * member. It is written for the kids it names, or for the kids playing
+     * when it names none, and a request that asks for nothing is a mistake.
+     * @param {string} familyId
+     * @param {StoryRequest} asked
+     * @param {{ signal?: AbortSignal, userId?: string | null }} [options] `userId` is the
+     *   adult asking, whose kids playing the story is for when it names none
+     * @returns {Promise<AsyncGenerator<StoryEvent, void, void>>}
+     */
+    async writeRequestStream(familyId, asked, { signal, userId = null } = {}) {
+      if (!llm) throw new UnavailableError('No LLM is configured to write a story', 'LLM_OFF')
+      const everyone = await families.profileOf(familyId)
+      const request = requestFor(asked, everyone)
+      if (isEmpty(request)) throw new ValidationError('That request asks for no story', 'EMPTY_REQUEST')
+      const named = everyone.kids.filter((kid) => request.family.includes(kid.name)).map((kid) => kid.id)
+      const profile = named.length > 0 ? withKids(everyone, named) : await families.playingProfile(familyId, userId)
+      return generated.writeRequest(familyId, profile, request, { signal })
     },
 
     /**

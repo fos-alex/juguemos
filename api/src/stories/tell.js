@@ -1,7 +1,8 @@
 /**
  * The one streaming story call, which every story the model writes goes
  * through: the story of a plot the family chose, the story of an interest they
- * tapped (JUG-140), and an episode of a series (JUG-59). The paragraphs come
+ * tapped (JUG-140), the story they asked for in a voice note (JUG-156), and an
+ * episode of a series (JUG-59). The paragraphs come
  * out as the parser finishes them, and the title before them when the prompt
  * asked for one, so the reader has something on screen while the model is
  * still writing.
@@ -42,16 +43,18 @@ export const nothingKept = () => ({ title: '', paragraphs: [], fields: {}, msFir
  *   llm: Llm,
  *   system: string,
  *   user: string,
+ *   data?: string,
  *   maxTokens: number,
  *   signal?: AbortSignal,
  *   fallbackTitle?: string,
- * }} call a `fallbackTitle` means this prompt asked the model for a `TÍTULO:`
- *   line: it is the title used when the model wrote none, so the story always
- *   has one and it is always the first event.
+ * }} call `data` is the family's own words, which go to the model as data
+ *   (JUG-90). A `fallbackTitle` means this prompt asked the model for a
+ *   `TÍTULO:` line: it is the title used when the model wrote none, so the
+ *   story always has one and it is always the first event.
  * @param {Kept} kept
  * @returns {AsyncGenerator<StoryEvent, void, void>}
  */
-export async function* tellStory({ llm, system, user, maxTokens, signal, fallbackTitle = '' }, kept) {
+export async function* tellStory({ llm, system, user, data, maxTokens, signal, fallbackTitle = '' }, kept) {
   const parser = new StoryParser()
   const started = Date.now()
   /** @type {number | null} */
@@ -70,7 +73,7 @@ export async function* tellStory({ llm, system, user, maxTokens, signal, fallbac
     }
   }
 
-  for await (const chunk of llm.stream({ system, user, maxTokens, reasoning: false, signal })) {
+  for await (const chunk of llm.stream({ system, user, data, maxTokens, reasoning: false, signal })) {
     first ??= Date.now() - started
     const done = parser.push(chunk)
     const title = parser.takeTitle()

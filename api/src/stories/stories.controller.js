@@ -106,7 +106,8 @@ export function createStoriesController({ stories }) {
 
     /**
      * The chosen story, as server-sent events: the story behind an option the
-     * family picked, or a new one about an interest they tapped (JUG-140).
+     * family picked, a new one about an interest they tapped (JUG-140), or the
+     * one they asked for in a voice note (JUG-156).
      * Unknown ids — a story nobody in this family picked — and a keyword that
      * is not one of the family's interests answer cleanly before the stream
      * starts; the rest answer with paragraphs and end with the whole story.
@@ -116,13 +117,27 @@ export function createStoriesController({ stories }) {
      * @type {import('fastify').RouteHandlerMethod}
      */
     async writeStream(request, reply) {
-      const { id, keyword } = /** @type {{ id?: string, keyword?: string }} */ (request.body)
+      const body = /** @type {{ id?: string, keyword?: string, request?: import('./requests.js').StoryRequest }} */ (
+        request.body
+      )
       const signal = leavingSignal(reply)
       const asked = { signal, userId: userOf(request).id }
-      const stream = keyword
-        ? await stories.writeKeywordStream(familyOf(request), keyword, asked)
-        : await stories.writeStream(familyOf(request), /** @type {string} */ (id), asked)
+      const stream = body.request
+        ? await stories.writeRequestStream(familyOf(request), body.request, asked)
+        : body.keyword
+          ? await stories.writeKeywordStream(familyOf(request), body.keyword, asked)
+          : await stories.writeStream(familyOf(request), /** @type {string} */ (body.id), asked)
       await sendEvents(reply, stream, 'story', signal)
+    },
+
+    /**
+     * What story a voice note's words ask for (JUG-156), for the parent to see
+     * before it is written.
+     * @type {import('fastify').RouteHandlerMethod}
+     */
+    async understand(request) {
+      const { text } = /** @type {{ text: string }} */ (request.body)
+      return stories.understandRequest(familyOf(request), text)
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
