@@ -46,6 +46,17 @@ export function BackIcon(props) {
   )
 }
 
+/** Straight to Home, from a screen whose back goes somewhere else. @param {IconProps} props */
+export function HomeIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M3.5 11 12 4l8.5 7" />
+      <path d="M6 9v11h12V9" />
+      <path d="M10 20v-5.5h4V20" />
+    </Icon>
+  )
+}
+
 /** Close a drawer or a sheet. @param {IconProps} props */
 export function CloseIcon(props) {
   return (

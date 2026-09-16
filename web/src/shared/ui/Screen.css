@@ -97,6 +97,7 @@ body[data-tone='reading'] .screen__footer--sticky {
 }
 
 .back-button,
+.home-button,
 .close-button,
 .theme-toggle {
   display: inline-flex;
@@ -118,6 +119,23 @@ body[data-tone='reading'] .screen__footer--sticky {
 
 .close-button {
   font-size: 22px;
+}
+
+/* Back with words beside the arrow, when the arrow alone doesn't say where it goes. */
+.back-button--labelled {
+  gap: 8px;
+  width: auto;
+  padding: 0 12px;
+  font-size: 18px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.header__trailing {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  white-space: nowrap;
 }
 
 /* Shared page pieces */

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
+import { Navigate, useNavigate, useParams, useRouterState } from '@tanstack/react-router'
 import { rememberLast, startTimer, suggestActivity } from '../api'
 import { ActivitySkeleton, ActivityView } from '../components/ActivityView'
 import { placeText } from '../model'
@@ -23,14 +23,19 @@ import {
 import '../activities.css'
 
 /**
- * 2m, with 2p as its swap state. "Otra idea" turns the blocks into
- * placeholders in place and pushes the next idea, so back returns to the
- * previous one. No counter of ideas seen, no shuffle animation.
+ * 2m, with 2p as its swap state. "Otro juego" turns the blocks into
+ * placeholders in place and pushes the next juego, so back returns to the
+ * previous one. No counter of juegos seen, no shuffle animation.
+ *
+ * A juego reached through Otro juego says so on its back button, *Juego
+ * anterior*, and has the way straight to Home in the top bar (JUG-155). The
+ * mark is kept in that history entry, so it survives a reload.
  */
 export function ActivityScreen() {
   const { id } = useParams({ from: '/idea/$id/' })
   const navigate = useNavigate()
   const goBack = useGoBack('/')
+  const swapped = useRouterState({ select: (state) => Boolean(state.location.state?.swapped) })
   const online = useOnline()
   const activity = useStored('activities')?.[id]
   const timer = useStored('timer')
@@ -57,7 +62,7 @@ export function ActivityScreen() {
     setSwap('loading')
     try {
       const next = await suggestActivity({ after: id })
-      await navigate({ to: '/idea/$id', params: { id: next.id } })
+      await navigate({ to: '/idea/$id', params: { id: next.id }, state: { swapped: true } })
       setSwap('idle')
     } catch (error) {
       setFailure(failureText(error))
@@ -93,7 +98,13 @@ export function ActivityScreen() {
 
   return (
     <Screen>
-      <Header onBack={goBack} trailing={trailing} />
+      {/* Voice pass pending: "Juego anterior". */}
+      <Header
+        onBack={goBack}
+        backLabel={swapped ? 'Juego anterior' : undefined}
+        onHome={swapped ? () => void navigate({ to: '/' }) : undefined}
+        trailing={trailing}
+      />
       <Body className="activity-body">
         {loading ? <ActivitySkeleton /> : <ActivityView activity={activity} />}
       </Body>

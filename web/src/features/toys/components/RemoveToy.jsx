@@ -17,7 +17,7 @@ export function RemoveToy({ confirming, removing, disabled, onAsk, onCancel, onR
   if (!confirming) {
     return (
       <TertiaryButton size="inline" disabled={disabled} onClick={onAsk}>
-        Ya no lo tenemos
+        Borrar juguete
       </TertiaryButton>
     )
   }

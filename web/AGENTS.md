@@ -68,7 +68,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/materiales` | Materiales: the household materials by category, each a chip that saves on its tap (JUG-153). Built from the primitives, with no design of its own |
 | `/ajustes` | Ajustes, not designed yet and kept minimal. **Cerrar sesión** lives here: it is account, not navigation |
 | `/` | Home. The drawer, thinking, and offline are states of it. With more than one kid, who's playing sits above the buttons (JUG-107). While a juego is played, its card takes the last juego's place with the time left and has *Terminamos* under it (JUG-134). Under it, the last story opened, with *Hacer una serie*, or *Leer otro episodio* for an episode (JUG-154) |
-| `/idea/$id` | Actividad. Otro juego swaps in place and pushes history, so back returns to the previous one |
+| `/idea/$id` | Actividad. Otro juego swaps in place and pushes history, so back returns to the previous one. A juego reached that way says *Juego anterior* on its back button and has a home button in the top bar (JUG-155) |
 | `/idea/$id/reloj` | El reloj |
 | `/cuentos` | ¿Cuál leemos hoy?: the three plots, the family's series under *Series de cuentos*, each with *Leer otro episodio* (JUG-59), a chip per interest of the kids playing (JUG-140), and the stories to read again, each with *Hacer una serie* (JUG-50). Until the first plot lands, the waiting animation holds the three cards' place (JUG-132) |
 | `/cuento/$id` | Escribiendo, with the waiting animation in the footer until the story's first paragraph (JUG-132), then the reading screen. Under the last paragraph, *Listo* goes Home, with *Hacer una serie*, or *Leer otro episodio* for an episode (JUG-154) |

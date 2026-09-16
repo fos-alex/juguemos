@@ -1,6 +1,6 @@
 import { useLayoutEffect } from 'react'
 import { syncThemeColor } from '../hooks/useTheme'
-import { BackIcon } from './Icons'
+import { BackIcon, HomeIcon } from './Icons'
 import './Screen.css'
 
 /**
@@ -23,26 +23,56 @@ export function Screen({ tone = 'default', className = '', children }) {
 }
 
 /**
- * Back arrow, optional inline title, optional trailing slot.
- * @param {{ onBack?: () => void, title?: string, trailing?: React.ReactNode }} props
+ * Back arrow, optional inline title, optional trailing slot. `backLabel` puts
+ * words beside the arrow when back goes somewhere the arrow alone doesn't say,
+ * and `onHome` adds the way straight to Home at the far end.
+ * @param {{
+ *   onBack?: () => void,
+ *   backLabel?: string,
+ *   onHome?: () => void,
+ *   title?: string,
+ *   trailing?: React.ReactNode,
+ * }} props
  */
-export function Header({ onBack, title, trailing }) {
+export function Header({ onBack, backLabel, onHome, title, trailing }) {
   return (
-    <header className={`header${trailing ? ' header--split' : ''}`}>
+    <header className={`header${trailing || onHome ? ' header--split' : ''}`}>
       <div className="header__lead">
-        {onBack && <BackButton onClick={onBack} />}
+        {onBack && <BackButton label={backLabel} onClick={onBack} />}
         {title && <h1 className="header__title">{title}</h1>}
       </div>
-      {trailing}
+      {onHome ? (
+        <div className="header__trailing">
+          {trailing}
+          <HomeButton onClick={onHome} />
+        </div>
+      ) : (
+        trailing
+      )}
     </header>
   )
 }
 
-/** @param {{ onClick: () => void }} props */
-export function BackButton({ onClick }) {
+/** @param {{ label?: string, onClick: () => void }} props */
+export function BackButton({ label, onClick }) {
   return (
-    <button type="button" className="back-button" onClick={onClick} aria-label="Volver">
+    <button
+      type="button"
+      className={`back-button${label ? ' back-button--labelled' : ''}`}
+      onClick={onClick}
+      aria-label={label ? undefined : 'Volver'}
+    >
       <BackIcon />
+      {label}
+    </button>
+  )
+}
+
+/** @param {{ onClick: () => void }} props */
+export function HomeButton({ onClick }) {
+  return (
+    <button type="button" className="home-button" onClick={onClick} aria-label="Ir al inicio">
+      <HomeIcon />
     </button>
   )
 }

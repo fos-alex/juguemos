@@ -9,6 +9,7 @@ export {
   CheckIcon,
   CloseIcon,
   FamilyIcon,
+  HomeIcon,
   LockIcon,
   MaterialsIcon,
   MenuIcon,
@@ -20,7 +21,7 @@ export {
   SunIcon,
   ToyBoxIcon,
 } from './Icons'
-export { BackButton, Body, Footer, Header, Screen } from './Screen'
+export { BackButton, Body, Footer, Header, HomeButton, Screen } from './Screen'
 export { Dots, GoogleButton, PrimaryButton, QuietButton, SecondaryButton, TertiaryButton } from './Buttons'
 export { Card, Label, MetaLabel, Skeleton } from './Card'
 export { StatusLine } from './StatusLine'

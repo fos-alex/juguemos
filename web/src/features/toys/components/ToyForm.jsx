@@ -67,8 +67,7 @@ export function ToyForm({ form, update, nameError, onNameEdit, alias, kids, othe
           />
         </div>
         <p id="toy-description-help" className="field__help">
-          Para que Ludi sepa qué es: tipo, tamaño y material, como «T-rex de plástico duro, unos 8 cm». Nunca
-          reemplaza el nombre.
+          Para que Ludi sepa qué es: tipo, tamaño y material, como «T-rex verde de plástico duro, unos 8 cm».
         </p>
       </div>
 
@@ -100,7 +99,7 @@ export function ToyForm({ form, update, nameError, onNameEdit, alias, kids, othe
               </ChipToggle>
             ))}
           </Chips>
-          <p className="field__help">Los que se distinguen comparándolos, como el caballo grande y el caballo chico.</p>
+          <p className="field__help">y aparecen juntos en los cuentos.</p>
         </FieldGroup>
       )}
     </>
