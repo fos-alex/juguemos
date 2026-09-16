@@ -13,6 +13,12 @@
  * goes with.
  */
 /** @typedef {Partial<Omit<Toy, 'id' | 'linked'>>} ToyChanges */
+/**
+ * @typedef {{ name: string, description: string | null }} ToyCandidate
+ * A toy Juguemos heard in the parent's words (JUG-146), before anything is
+ * saved: the family's name for it and what it is. A candidate becomes a toy
+ * only once the parent confirms it.
+ */
 /** @typedef {{ key: string, label: string, have: boolean }} Material A household material, from the API's fixed list. */
 /** @typedef {{ toys: Toy[], materials: Material[] }} ToyBox */
 

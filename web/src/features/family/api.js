@@ -5,7 +5,7 @@
  * the toy box's (./toys).
  */
 import { read, write } from '../../shared/store'
-import { ApiError, request } from '../../shared/http'
+import { ApiError, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').Family} Family */
 /** @typedef {import('./types').Kid} Kid */
@@ -98,6 +98,43 @@ export async function understandFamily(text) {
   const parse = { family: toFamily(family), flagged: unsure, note }
   write('parseResult', parse)
   return parse
+}
+
+/** This server has no LLM to read the parent's words with: a state to word plainly, not a failure. */
+export class UnderstandingOffError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('No puedo leer lo que me contás por ahora. Escribilo y listo.')
+  }
+}
+
+/** The words said nothing about the family, which is an answer and not a failure either. */
+export class NothingHeardError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('No escuché nada para cambiar. ¿Probamos de nuevo?')
+  }
+}
+
+/**
+ * Reads what the parent just said about their family, for the edit form to
+ * fold into what it already has (JUG-103). Unlike onboarding it keeps
+ * nothing: the form the parent is looking at is where the change waits, and
+ * "Guardar" is what saves it.
+ * @param {string} text
+ * @returns {Promise<Family>}
+ */
+export async function understandChanges(text) {
+  let heard
+  try {
+    heard = await request('POST', '/family/understanding', { text })
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'LLM_OFF') throw new UnderstandingOffError()
+    throw error
+  }
+  const family = toFamily(heard.family)
+  if (family.kids.length === 0 && !family.pet && family.toys.length === 0) throw new NothingHeardError()
+  return family
 }
 
 /** @param {Family} family @returns {Promise<Family>} */

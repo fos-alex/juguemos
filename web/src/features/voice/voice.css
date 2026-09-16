@@ -269,3 +269,10 @@
     opacity: 0.9;
   }
 }
+
+/* The line a note shows when it couldn't do its part, and the retry under it. */
+.voice-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

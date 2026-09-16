@@ -3,12 +3,29 @@
  * cached family's toys, so Mi familia and the family form see it at once.
  */
 import { read, write } from '../../shared/store'
-import { request } from '../../shared/http'
+import { ApiError, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').Toy} Toy */
 /** @typedef {import('./types').ToyBox} ToyBox */
 /** @typedef {import('./types').ToyChanges} ToyChanges */
 /** @typedef {import('./types').Material} Material */
+/** @typedef {import('./types').ToyCandidate} ToyCandidate */
+
+/** This server has no LLM to read toys with: a state to word plainly, not a failure. */
+export class ToysOffError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('No puedo leer juguetes por ahora. Escribilo y listo.')
+  }
+}
+
+/** The words named no toy, which is an answer and not a failure either. */
+export class NoToysHeardError extends WordedError {
+  constructor() {
+    // Voice pass pending.
+    super('No escuché ningún juguete. ¿Probamos de nuevo?')
+  }
+}
 
 /** Caches the box, and the family's toys in the box's order. @param {ToyBox} box @returns {ToyBox} */
 function keep(box) {
@@ -69,6 +86,25 @@ export async function linkToy(id, ids) {
   /** @type {{ toys: Toy[] }} */
   const { toys } = await request('PUT', `/family/toys/${id}/links`, { toys: ids })
   await merge((box) => ({ ...box, toys }))
+}
+
+/**
+ * Sends the parent's own words to the API, whose LLM reads the toys in them
+ * (JUG-147). Nothing is saved: the parent confirms each candidate, and only
+ * then does `addToy` put it in the box.
+ * @param {string} text
+ * @returns {Promise<ToyCandidate[]>}
+ */
+export async function understandToys(text) {
+  let heard
+  try {
+    heard = await request('POST', '/family/toys/understanding', { text })
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'LLM_OFF') throw new ToysOffError()
+    throw error
+  }
+  if (heard.toys.length === 0) throw new NoToysHeardError()
+  return heard.toys
 }
 
 /** Says which household materials the family has. @param {string[]} keys @returns {Promise<ToyBox>} */

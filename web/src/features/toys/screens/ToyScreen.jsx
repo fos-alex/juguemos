@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { addToy, editToy, linkToy, loadToyBox, removeToy } from '../api'
+import { addToy, editToy, linkToy, loadToyBox, removeToy, understandToys } from '../api'
 import { RemoveToy } from '../components/RemoveToy'
 import { ToyForm } from '../components/ToyForm'
 import { EMPTY, joining, NEW, owner, sameName, sameSet, toForm } from '../model'
+import { VoiceLine, VoiceUnderstanding } from '../../voice'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
@@ -15,11 +16,20 @@ import '../toys.css'
 /** @typedef {import('../types').ToyChanges} ToyChanges */
 /** @typedef {import('../model').FormState} FormState */
 
+// Voice pass pending.
+const ONLY_THE_FIRST = 'Escuché más de uno. Anoté el primero; los otros los podés agregar desde el baúl.'
+
 /**
  * One toy in the toy box, or a new one at /juguetes/nuevo: its family name,
  * other names, what it is (for Juguemos, never shown in place of the name),
  * whose it is, favorite, and the toys it goes with. Built before the 0.2
  * design (JUG-84); all of its copy needs a voice pass.
+ *
+ * A new toy also has the mic beside "Guardar" (JUG-146): the note's words go
+ * to the API, which reads the toy in them, and its name and what it is fill
+ * the form for the parent to check. Nothing is saved until "Guardar", so the
+ * words replace what those two fields hold. A note about several toys fills
+ * the form with the first and says where the others go.
  */
 export function ToyScreen() {
   const { id } = useParams({ from: '/juguetes/$id' })
@@ -32,6 +42,7 @@ export function ToyScreen() {
   const [form, setForm] = useState(/** @type {FormState | null} */ (isNew ? EMPTY : toy ? toForm(toy) : null))
   const [newAlias, setNewAlias] = useState(/** @type {string | null} */ (null))
   const [nameError, setNameError] = useState(/** @type {string | null} */ (null))
+  const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
   // One request at a time: saving the toy, or taking it out once the parent confirms.
   const request = useRequest()
   const [action, setAction] = useState(/** @type {'save' | 'remove'} */ ('save'))
@@ -94,6 +105,14 @@ export function ToyScreen() {
     })
   }
 
+  /** @param {string} text the words of a voice note about this toy */
+  const readNote = async (text) => {
+    const [first, ...others] = await understandToys(text)
+    setNameError(null)
+    update((f) => ({ ...f, name: first.name, description: first.description ?? '' }))
+    if (others.length > 0) setVoiceMessage({ text: ONLY_THE_FIRST })
+  }
+
   const remove = () => {
     if (!online) return request.fail('Estás sin conexión.')
     setAction('remove')
@@ -122,6 +141,18 @@ export function ToyScreen() {
     )
   }
 
+  const saveButton = (
+    <PrimaryButton
+      className={isNew ? 'grow' : ''}
+      type="submit"
+      busy={request.busy && action === 'save'}
+      busyLabel="Guardando"
+      unavailable={!online}
+    >
+      Guardar
+    </PrimaryButton>
+  )
+
   return (
     <Screen>
       <Header onBack={goBack} title={isNew ? 'Nuevo juguete' : 'Juguete'} />
@@ -148,16 +179,10 @@ export function ToyScreen() {
             />
           )}
           <StatusLine role="alert">{request.failure}</StatusLine>
+          <VoiceLine message={voiceMessage} />
         </Body>
-        <Footer sticky>
-          <PrimaryButton
-            type="submit"
-            busy={request.busy && action === 'save'}
-            busyLabel="Guardando"
-            unavailable={!online}
-          >
-            Guardar
-          </PrimaryButton>
+        <Footer row={isNew} sticky>
+          {isNew ? <VoiceUnderstanding read={readNote} onMessage={setVoiceMessage}>{saveButton}</VoiceUnderstanding> : saveButton}
         </Footer>
       </form>
     </Screen>

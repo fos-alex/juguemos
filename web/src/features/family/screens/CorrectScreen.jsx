@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { saveFamily } from '../api'
+import { saveFamily, understandChanges } from '../api'
 import { InterestChips } from '../components/InterestChips'
 import { KidRows } from '../components/KidRows'
 import { ToyRows } from '../components/ToyRows'
-import { toFamily, toForm } from '../model'
+import { toFamily, toForm, withChanges } from '../model'
+import { VoiceLine, VoiceUnderstanding } from '../../voice'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useRequest } from '../../../shared/hooks/useRequest'
@@ -24,11 +25,20 @@ function interestsLabel(kid, index, count) {
   return name ? `A ${name} le encanta` : `Le encanta · chico ${index + 1}`
 }
 
+// Voice pass pending.
+const HEARD = 'Lo anoté acá arriba. Revisalo y tocá Guardar.'
+
 /**
  * 2h. The fallback, and it looks like a plain form: the same groups in the
  * same order as the card, with what each kid loves in its own group
  * (JUG-144). Everything is optional. Reached from "Corregir", a flagged row
  * (focused on that field), the opt-out in 2d, and Mi familia.
+ *
+ * The mic beside "Guardar" is how the parent says what changed (JUG-103): the
+ * note's words go to the API, which reads a family in them, and what it read
+ * is folded into the form. Nothing is taken away by not being named in the
+ * note, and nothing is saved until "Guardar", so this form is where the
+ * parent checks the change, the way the card is after onboarding.
  */
 export function CorrectScreen() {
   const { campo } = useSearch({ from: '/familia/corregir' })
@@ -39,6 +49,7 @@ export function CorrectScreen() {
   // The interest being typed for each kid, by the kid's row.
   const [drafts, setDrafts] = useState(/** @type {Record<number, string | null>} */ ({}))
   const request = useRequest()
+  const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
 
   useDocumentTitle('Corregir · Juguemos')
 
@@ -63,6 +74,13 @@ export function CorrectScreen() {
     const value = drafts[index]?.trim()
     if (value) changeInterests(index, (interests) => [...interests, value])
     setDrafts((all) => ({ ...all, [index]: null }))
+  }
+
+  /** @param {string} text the words of a voice note about what changed */
+  const readNote = async (text) => {
+    const said = await understandChanges(text)
+    update((f) => withChanges(f, said))
+    setVoiceMessage({ text: HEARD })
   }
 
   /** @param {React.FormEvent} event */
@@ -112,12 +130,17 @@ export function CorrectScreen() {
           <ToyRows toys={form.toys} onChange={(change) => update((f) => ({ ...f, toys: change(f.toys) }))} />
 
           <StatusLine role="alert">{request.failure}</StatusLine>
+          <VoiceLine message={voiceMessage} />
+          {/* Voice pass pending. */}
+          <p className="correct__voice-help">Contame qué cambió y lo anoto acá.</p>
         </Body>
-        <Footer sticky>
-          {/* Voice pass pending: "Guardar". */}
-          <PrimaryButton type="submit" busy={request.busy} busyLabel="Guardando">
-            Guardar
-          </PrimaryButton>
+        <Footer row sticky>
+          <VoiceUnderstanding read={readNote} onMessage={setVoiceMessage}>
+            {/* Voice pass pending: "Guardar". */}
+            <PrimaryButton className="grow" type="submit" busy={request.busy} busyLabel="Guardando">
+              Guardar
+            </PrimaryButton>
+          </VoiceUnderstanding>
         </Footer>
       </form>
     </Screen>

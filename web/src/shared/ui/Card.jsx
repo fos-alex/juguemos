@@ -2,14 +2,18 @@ import './Card.css'
 
 /**
  * A white card with a hairline border, or the lilac `accent` card kept for
- * "Por qué ahora". Pass `onClick` to make the whole card one tap target.
- * @param {{ tone?: 'default' | 'accent', onClick?: () => void, className?: string, children: React.ReactNode }} props
+ * "Por qué ahora". Pass `onClick` to make the whole card one tap target, and
+ * `pressed` as well when that tap turns the card on and off.
+ * @param {{
+ *   tone?: 'default' | 'accent', onClick?: () => void, pressed?: boolean,
+ *   className?: string, children: React.ReactNode,
+ * }} props
  */
-export function Card({ tone = 'default', onClick, className = '', children }) {
+export function Card({ tone = 'default', onClick, pressed, className = '', children }) {
   const classes = `card card--${tone} ${className}`
   if (onClick) {
     return (
-      <button type="button" className={`${classes} card--button`} onClick={onClick}>
+      <button type="button" className={`${classes} card--button`} aria-pressed={pressed} onClick={onClick}>
         {children}
       </button>
     )
