@@ -137,6 +137,75 @@ export function toForm(family) {
 }
 
 /**
+ * A name as it sounds, only to tell whether the parent is talking about
+ * someone or something the form already has: no case, accents, or extra
+ * spaces. What is saved is always the name as typed.
+ * @param {string} name
+ */
+const heard = (name) =>
+  name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/** A row the parent hasn't written anything in, which a voice note fills instead of pushing down. */
+const blankKid = (/** @type {FormState['kids'][number]} */ kid) =>
+  !kid.name.trim() && !kid.years && !kid.months && kid.interests.length === 0
+
+/**
+ * What the parent just said about the family, folded into the form they have
+ * open (JUG-103). A note on the edit form says what changed, so nothing is
+ * taken away by being left out of it: a kid already on the form keeps their
+ * place, their id, and the spelling the family gave them, and takes the age
+ * and whatever new they love; a name the form doesn't have yet is added at
+ * the end, and so are toys it doesn't have. The pet changes only when the
+ * note names one.
+ *
+ * Names are matched as they sound, so "milan" is the Milán already there.
+ * Nothing is saved here either: the form is what the parent checks, and
+ * "Guardar" is what saves it.
+ * @param {FormState} form
+ * @param {Family} said what the API read in the parent's words
+ * @returns {FormState}
+ */
+export function withChanges(form, said) {
+  const kids = form.kids.filter((kid) => !blankKid(kid))
+  const toys = form.toys.filter((toy) => toy.name.trim())
+
+  for (const kid of said.kids) {
+    const years = kid.ageMonths == null ? null : String(Math.floor(kid.ageMonths / 12))
+    const months = kid.ageMonths == null ? null : String(kid.ageMonths % 12)
+    const at = kids.findIndex((each) => heard(each.name) === heard(kid.name))
+    if (at < 0) {
+      kids.push({ name: kid.name, years: years ?? '', months: months ?? '', interests: [...kid.interests] })
+      continue
+    }
+    const known = kids[at]
+    kids[at] = {
+      ...known,
+      years: years ?? known.years,
+      months: months ?? known.months,
+      interests: [
+        ...known.interests,
+        ...kid.interests.filter((one) => !known.interests.some((each) => heard(each) === heard(one))),
+      ],
+    }
+  }
+
+  for (const toy of said.toys) {
+    if (!toys.some((each) => heard(each.name) === heard(toy.name))) toys.push({ name: toy.name })
+  }
+
+  return {
+    kids: kids.length > 0 ? kids : toForm(null).kids,
+    pet: said.pet || form.pet,
+    toys: toys.length > 0 ? toys : toForm(null).toys,
+  }
+}
+
+/**
  * Drops what was left empty; never touches how a name is spelled. An age with
  * only the years is that many years and no months; one left blank is unknown.
  * @param {FormState} form

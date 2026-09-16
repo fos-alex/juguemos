@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { loadToyBox } from '../api'
+import { loadToyBox, understandToys } from '../api'
 import { MaterialsPicker } from '../components/MaterialsPicker'
+import { ToyCandidates } from '../components/ToyCandidates'
 import { ToyList } from '../components/ToyList'
 import { NEW } from '../model'
+import { VoiceLine, VoiceUnderstanding } from '../../voice'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
@@ -12,11 +14,18 @@ import { useStored } from '../../../shared/store'
 import { Body, Footer, Header, OfflineNotice, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
 import '../toys.css'
 
+/** @typedef {import('../types').ToyCandidate} ToyCandidate */
+
 /**
  * El baúl de juguetes (JUG-94): the family's toys by their own names, and the
  * household materials they have. The 0.2 design (JUG-84) doesn't exist yet,
  * so this is built from the Plaza primitives; restyle it when the design
  * lands. All of its copy needs a voice pass.
+ *
+ * The mic beside "Agregar juguete" takes a voice note about the toys, and the
+ * API reads the toys in its words (JUG-146). They come back as candidates,
+ * which take over the screen until the parent confirms the ones to add or
+ * leaves them; nothing is saved before that.
  */
 export function ToyBoxScreen() {
   const navigate = useNavigate()
@@ -25,6 +34,9 @@ export function ToyBoxScreen() {
   const box = useStored('toyBox')
   const family = useStored('family')
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+  const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
+  // The toys heard in the last note, waiting to be confirmed.
+  const [heard, setHeard] = useState(/** @type {ToyCandidate[] | null} */ (null))
 
   useDocumentTitle('El baúl de juguetes · Juguemos')
 
@@ -41,6 +53,21 @@ export function ToyBoxScreen() {
     else open(NEW)
   }
 
+  /** @param {string} text the words of a voice note about the toys */
+  const readNote = async (text) => {
+    setFailure(null)
+    setHeard(await understandToys(text))
+  }
+
+  if (heard) {
+    return (
+      <Screen>
+        <Header onBack={() => setHeard(null)} title="¿Los agrego?" />
+        <ToyCandidates candidates={heard} box={box} onDone={() => setHeard(null)} />
+      </Screen>
+    )
+  }
+
   return (
     <Screen>
       <Header onBack={goBack} title="El baúl de juguetes" />
@@ -49,11 +76,14 @@ export function ToyBoxScreen() {
         <ToyList box={box} kids={family?.kids ?? []} onOpen={open} />
         {box && <MaterialsPicker materials={box.materials} offline={offline} onFailure={setFailure} />}
         <StatusLine role="alert">{failure}</StatusLine>
+        <VoiceLine message={voiceMessage} />
       </Body>
-      <Footer>
-        <PrimaryButton unavailable={!offline.online} onClick={add}>
-          Agregar juguete
-        </PrimaryButton>
+      <Footer row className="toy-box__voice">
+        <VoiceUnderstanding read={readNote} onMessage={setVoiceMessage}>
+          <PrimaryButton className="grow" unavailable={!offline.online} onClick={add}>
+            Agregar juguete
+          </PrimaryButton>
+        </VoiceUnderstanding>
       </Footer>
     </Screen>
   )

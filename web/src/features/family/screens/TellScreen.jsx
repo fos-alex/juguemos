@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { VoiceNote } from '../../voice'
+import { VoiceLine, VoiceNote } from '../../voice'
 import { addToDraft, keepDraft, understandFamily } from '../api'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useRequest } from '../../../shared/hooks/useRequest'
@@ -93,17 +93,7 @@ export function TellScreen() {
           onChange={(event) => keepDraft(event.target.value)}
         />
         <StatusLine role="alert">{request.failure}</StatusLine>
-        {voiceMessage && (
-          <div className="tell__voice-message">
-            <StatusLine role="status">{voiceMessage.text}</StatusLine>
-            {voiceMessage.retry && (
-              // Voice pass pending.
-              <TertiaryButton size="inline" onClick={voiceMessage.retry}>
-                Mandar de nuevo
-              </TertiaryButton>
-            )}
-          </div>
-        )}
+        <VoiceLine message={voiceMessage} className="tell__voice-message" />
         {/* Voice pass pending: "Listo", "Prefiero un formulario", "Reiniciar", and "Deshacer". */}
         <div className="tell__help-row">
           <p className="tell__help">Escribilo, o mantené apretado el micrófono y contámelo.</p>

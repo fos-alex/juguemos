@@ -68,12 +68,6 @@
   padding-top: 14px;
 }
 
-.tell__voice-message {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 /* 2e: while a note records, the prompt dims and the box waits for its words. */
 .tell .prompt {
   transition: color 150ms ease-out;
@@ -209,4 +203,11 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--link);
+}
+
+/* 2h: the mic sits beside "Guardar", and this says what it is for. */
+.correct__voice-help {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-muted);
 }
