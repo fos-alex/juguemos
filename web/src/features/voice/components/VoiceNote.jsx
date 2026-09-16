@@ -4,7 +4,8 @@ import { haptic } from '../haptics'
 import { OfflineError } from '../../../shared/http'
 import { clockText, failureText } from '../../../shared/format'
 import { canRecord, MicDeniedError, startRecording } from '../recorder'
-import { Dots } from '../../../shared/ui/Buttons'
+import { useSlowWait } from '../../../shared/hooks/useSlowWait'
+import { Waiting } from '../../../shared/ui/Waiting'
 import '../voice.css'
 
 /** How far the finger travels, in px, to lock the note or to drop it. */
@@ -104,6 +105,8 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
   }, [spotlight])
 
   const active = phase === 'held' || phase === 'locked' || phase === 'sending'
+  // A transcription that takes a while says so, instead of one word and an animation.
+  const slow = useSlowWait(phase === 'sending')
   useEffect(() => {
     latest.current.onRecording?.(active)
   }, [active])
@@ -294,8 +297,9 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
         <div className="voice__strip" role="status">
           {phase === 'sending' ? (
             <>
-              <Dots tone="page" />
-              <span className="voice__sending">Transcribiendo</span>
+              <Waiting size="strip" />
+              {/* Voice pass pending. */}
+              <span className="voice__sending">{slow ? 'Sigo escuchando. Ya casi está.' : 'Transcribiendo'}</span>
             </>
           ) : (
             <>

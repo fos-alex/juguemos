@@ -5,10 +5,15 @@ import './Buttons.css'
  * taps; `unavailable` looks flat but still receives taps, so a screen can
  * answer them (offline repeats its line instead of failing).
  *
+ * `busyMark` puts something else in the dots' place, which is how a long wait
+ * gets the waiting animation (JUG-133) without every button in the app taking
+ * it on.
+ *
  * @typedef {{
  *   size?: string,
  *   busy?: boolean,
  *   busyLabel?: string,
+ *   busyMark?: React.ReactNode,
  *   unavailable?: boolean,
  *   className?: string,
  *   children: React.ReactNode,
@@ -21,6 +26,7 @@ function Button({
   size,
   busy = false,
   busyLabel = 'Pensando',
+  busyMark,
   unavailable = false,
   className = '',
   type = 'button',
@@ -46,7 +52,7 @@ function Button({
       onClick={busy ? (event) => event.preventDefault() : onClick}
       {...rest}
     >
-      {busy ? <Dots size={size === 'home' ? 'lg' : 'md'} /> : children}
+      {busy ? (busyMark ?? <Dots size={size === 'home' ? 'lg' : 'md'} />) : children}
     </button>
   )
 }

@@ -2,7 +2,8 @@ import { useRef, useState } from 'react'
 import { VoiceNote } from './VoiceNote'
 import { failureText } from '../../../shared/format'
 import { WordedError } from '../../../shared/http'
-import { Dots } from '../../../shared/ui/Buttons'
+import { useSlowWait } from '../../../shared/hooks/useSlowWait'
+import { Waiting } from '../../../shared/ui/Waiting'
 import '../voice.css'
 
 /** @typedef {import('./VoiceNote').VoiceMessage} VoiceMessage */
@@ -31,6 +32,8 @@ import '../voice.css'
  */
 export function VoiceUnderstanding({ read, onMessage, onRecording, children }) {
   const [reading, setReading] = useState(false)
+  // Reading that takes a while says so, instead of one word and an animation.
+  const slow = useSlowWait(reading)
   const latest = useRef(0)
 
   /** @param {string} text */
@@ -52,9 +55,9 @@ export function VoiceUnderstanding({ read, onMessage, onRecording, children }) {
     <VoiceNote onText={understand} onMessage={onMessage} onRecording={onRecording}>
       {reading ? (
         <div className="voice__strip" role="status">
-          <Dots tone="page" />
+          <Waiting size="strip" />
           {/* Voice pass pending. */}
-          <span className="voice__sending">Leyendo</span>
+          <span className="voice__sending">{slow ? 'Sigo leyendo. Ya casi está.' : 'Leyendo'}</span>
         </div>
       ) : (
         children

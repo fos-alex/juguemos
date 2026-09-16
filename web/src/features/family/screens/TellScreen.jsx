@@ -4,8 +4,9 @@ import { VoiceLine, VoiceNote } from '../../voice'
 import { addToDraft, keepDraft, understandFamily } from '../api'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useRequest } from '../../../shared/hooks/useRequest'
+import { SLOW_AFTER_MS } from '../../../shared/hooks/useSlowWait'
 import { useStored } from '../../../shared/store'
-import { Body, Footer, PrimaryButton, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import { Body, Footer, PrimaryButton, Screen, StatusLine, TertiaryButton, Waiting } from '../../../shared/ui'
 import '../family.css'
 
 const EXAMPLE =
@@ -29,13 +30,16 @@ const UNDO_MS = 6000
  * back for a few seconds after.
  *
  * "Listo" sends the text to the API, whose LLM reads the family in it (JUG-11),
- * and opens the review card. If that fails, the text stays for another try.
- * With nothing written, "Listo" opens the form.
+ * and opens the review card. Reading takes a while, so the button holds the
+ * waiting animation and a line under it says so once the wait is long
+ * (JUG-133); the parent's own words stay on screen the whole time. If it
+ * fails, the text stays for another try. With nothing written, "Listo" opens
+ * the form.
  */
 export function TellScreen() {
   const navigate = useNavigate()
   const draft = useStored('familyDraft') ?? ''
-  const request = useRequest()
+  const request = useRequest({ slowAfter: SLOW_AFTER_MS })
   const [recording, setRecording] = useState(false)
   const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
   const [erased, setErased] = useState(/** @type {string | null} */ (null))
@@ -93,6 +97,8 @@ export function TellScreen() {
           onChange={(event) => keepDraft(event.target.value)}
         />
         <StatusLine role="alert">{request.failure}</StatusLine>
+        {/* Voice pass pending. */}
+        {request.state === 'slow' && <StatusLine role="status">Sigo leyendo lo que escribiste. Ya casi está.</StatusLine>}
         <VoiceLine message={voiceMessage} className="tell__voice-message" />
         {/* Voice pass pending: "Listo", "Prefiero un formulario", "Reiniciar", and "Deshacer". */}
         <div className="tell__help-row">
@@ -115,7 +121,13 @@ export function TellScreen() {
       </Body>
       <Footer row>
         <VoiceNote onText={addToDraft} onMessage={setVoiceMessage} onRecording={setRecording} introduce>
-          <PrimaryButton className="grow" busy={request.busy} busyLabel="Leyendo" onClick={understand}>
+          <PrimaryButton
+            className="grow"
+            busy={request.busy}
+            busyLabel="Leyendo"
+            busyMark={<Waiting size="strip" tone="on-primary" />}
+            onClick={understand}
+          >
             Listo
           </PrimaryButton>
         </VoiceNote>
