@@ -96,7 +96,7 @@ export function ageLine(ageMonths) {
  * The family as the prompt gets it, cut down to the castings it carries:
  * only the kids, the pet, the toys and the themes that were drawn are named,
  * so the model isn't tempted to bring in the rest of the family. The options
- * prompt holds the three castings of a screen and the story prompt holds
+ * prompt holds the two castings of a screen and the story prompt holds
  * one. Names stay exactly as the family typed them.
  * @param {Profile} profile
  * @param {Casting[]} castings

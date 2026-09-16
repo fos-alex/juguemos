@@ -1,4 +1,4 @@
-// Stories: the three options, the family's interests, a story asked for by voice, their series,
+// Stories: the two options, the family's interests, a story asked for by voice, their series,
 // their shelf, and reading.
 export { EpisodeScreen } from './screens/EpisodeScreen'
 export { LastStoryCard } from './components/LastStoryCard'

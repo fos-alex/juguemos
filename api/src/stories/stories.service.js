@@ -111,11 +111,11 @@ export function createStoriesService({
 
   return {
     /**
-     * Three stories the family could read, starring the kids playing, as
+     * Two stories the family could read, starring the kids playing, as
      * events: one option as each lands, then `done`. With the LLM configured
      * they are plot options the model wrote for the castings code drew, and
      * they arrive one at a time while it is still writing the next; without
-     * it they are catalog templates with their slots filled, and all three
+     * it they are catalog templates with their slots filled, and both
      * land at once. The ones in `exclude` (already on screen) come last, only
      * if they still fit.
      * @param {string} familyId

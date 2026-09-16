@@ -47,7 +47,7 @@ const options = (cookie, exclude = []) =>
 const write = (cookie, templateId) =>
   api.app.inject({ method: 'POST', url: '/stories', headers: { cookie }, payload: { templateId } })
 
-test('three options, filled for the family, leaving out what it cannot fill', async () => {
+test('two options, filled for the family, leaving out what it cannot fill', async () => {
   const { cookie } = await signUpAs(api, 'ana@example.com')
   await putFamily(api, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [{ name: 'el dinosaurio chiquito' }] })
 
@@ -55,7 +55,7 @@ test('three options, filled for the family, leaving out what it cannot fill', as
   assert.equal(response.statusCode, 200)
   assert.match(String(response.headers['content-type']), /text\/event-stream/)
   const list = optionsFrom(response)
-  assert.equal(list.length, 3)
+  assert.equal(list.length, 2)
   for (const option of list) {
     assert.match(option.title, /^El dinosaurio chiquito y el/)
     assert.equal(option.teaser, 'Con Milán.')
@@ -68,7 +68,7 @@ test('other options leave out the ones on screen', async () => {
 
   const shown = optionsFrom(await options(cookie)).map((option) => option.id)
   const next = optionsFrom(await options(cookie, shown))
-  assert.equal(next.length, 3)
+  assert.equal(next.length, 2)
   assert.ok(!shown.includes(next[0].id), 'the fresh template comes first')
 })
 

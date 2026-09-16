@@ -124,7 +124,7 @@ test('with the catalog loaded, the development family gets activities and storie
   const activity = await api.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: {} })
   assert.equal(activity.statusCode, 201)
   const options = await api.app.inject({ method: 'GET', url: '/stories/options', headers: { cookie } })
-  assert.equal(optionsFrom(options).length, 3)
+  assert.equal(optionsFrom(options).length, 2)
 })
 
 /** No cookie: the admin has no login yet. @param {string} method @param {string} url @param {object} [payload] */

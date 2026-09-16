@@ -1,10 +1,13 @@
 /**
  * The casting draw (JUG-139). Before the model is asked for anything, code
- * decides who a story is about: whether the anchor kid is in it, who leads,
- * whether the pet and a toy are in, and which of the family's interests is
- * the theme. Every decision is one random number compared to one weight, and
- * both the numbers and the weights are kept on the casting, so an audit row
- * is enough to replay a draw and to tell whether the weights need moving.
+ * decides who a story is about. A screen has two options, each with its own
+ * role: the classic one, where the anchor kid leads and a family interest may
+ * be the theme, and a new one, led by someone else from the family when there
+ * is anyone, that asks the model for a place, a character, or a situation the
+ * family hasn't heard yet. In both, whether the pet and a toy are in is one
+ * random number compared to one weight, and both the numbers and the weights
+ * are kept on the casting, so an audit row is enough to replay a draw and to
+ * tell whether the weights need moving.
  *
  * Pure: it takes the random function it uses, so a test with a seeded one
  * gets the same screen every time.
@@ -15,30 +18,26 @@ import { anchorOf } from './storytelling.js'
 /** @typedef {{ type: 'kid' | 'pet' | 'toy' | 'new', id: string | null, name: string }} Lead */
 /**
  * @typedef {object} Weights
- * @property {number} anchorIn how often the anchor kid is in the story
- * @property {number} anchorLead how often the anchor leads it, when in
  * @property {number} petIn how often the pet is in, when the family has one
  * @property {number} toyIn how often a toy is in, when the family has any
- * @property {number} themeIn how often a family interest is the theme
- * @property {number} wildcard how often one option of a screen is a wildcard
+ * @property {number} themeIn how often a family interest is the theme of the classic option
  * @property {number} recentPenalty what a toy or a theme used lately weighs
  */
 /**
  * @typedef {object} Draws the random numbers each decision came from, null
- *   for a decision the family's profile never offered
- * @property {number | null} anchorIn
- * @property {number | null} anchorLead
+ *   for a decision the family's profile or the option's role never offered
  * @property {number | null} petIn
  * @property {number | null} toyIn
  * @property {number | null} themeIn
- * @property {number | null} wildcard one draw for the whole screen
+ * @property {number | null} lead which of the family leads the new option
  */
 /**
  * @typedef {object} Casting who one story is about
- * @property {'cast' | 'wildcard' | 'keyword' | 'request'} kind a wildcard drops the
- *   family's props and asks the model to invent the setting or a secondary
- *   character; a keyword casting is one the parent asked for by tapping an
- *   interest, and a request casting one they asked for in a voice note
+ * @property {'cast' | 'wildcard' | 'keyword' | 'request'} kind `cast` is the
+ *   classic option, led by the anchor kid; `wildcard` is the new one, which
+ *   asks the model to invent a place, a character, or a situation; a keyword
+ *   casting is one the parent asked for by tapping an interest, and a request
+ *   casting one they asked for in a voice note
  * @property {boolean} anchorIn
  * @property {Lead} lead
  * @property {string[]} kids the ids of the kids in the story
@@ -51,75 +50,51 @@ import { anchorOf } from './storytelling.js'
 
 /** The weights a screen is drawn with until a family has its own. @type {Weights} */
 export const DEFAULT_WEIGHTS = {
-  anchorIn: 0.85,
-  anchorLead: 0.6,
   petIn: 0.5,
   toyIn: 0.6,
   themeIn: 0.7,
-  wildcard: 0.5,
   recentPenalty: 0.3,
 }
 
 /** What the model is told to invent when nobody from the family can lead. */
 const NEW_CHARACTER = 'un personaje nuevo'
 
-/** How many times a lead that another option already has is drawn again. */
-const LEAD_TRIES = 4
+/** No decision drawn yet. @returns {Draws} */
+const noDraws = () => ({ petIn: null, toyIn: null, themeIn: null, lead: null })
 
 /**
- * The castings for one screen of options, each different from the others:
- * different leads while the family has enough of them, and toys and themes
- * drawn without replacement while there are enough to go round. One draw per
- * screen decides whether one of them — chosen uniformly — is a wildcard.
+ * The two castings of a screen, in the order they are shown: the classic
+ * option, then the new one. Every kid playing is in both. The two never get
+ * the same toy while the family has more than one, and a toy or a theme from
+ * the family's last stories weighs less.
  * @param {Profile} profile the kids playing, with the pets, toys and interests
- * @param {{ count: number, weights?: Weights, random: () => number, recent?: (Casting | null)[] }} options
- *   `recent` is the castings of the family's last stories, whose toys and
- *   themes weigh less; `random` is the only source of chance.
- * @returns {Casting[]}
+ * @param {{ weights?: Weights, random: () => number, recent?: (Casting | null)[] }} options
+ *   `recent` is the castings of the family's last stories; `random` is the
+ *   only source of chance.
+ * @returns {[Casting, Casting]}
  */
-export function castScreen(profile, { count, weights = DEFAULT_WEIGHTS, random, recent = [] }) {
-  const recentToys = new Set(recent.map((casting) => casting?.toy?.id).filter(Boolean))
-  const recentThemes = new Set(recent.map((casting) => casting?.theme).filter(Boolean))
-  const usedToys = new Set()
-  const usedThemes = new Set()
-  const usedLeads = new Set()
-
-  const castings = []
-  for (let index = 0; index < count; index += 1) {
-    castings.push(castOne(profile, { weights, random, recentToys, recentThemes, usedToys, usedThemes, usedLeads }))
+export function castScreen(profile, { weights = DEFAULT_WEIGHTS, random, recent = [] }) {
+  const screen = {
+    weights,
+    random,
+    recentToys: new Set(recent.map((casting) => casting?.toy?.id).filter(Boolean)),
+    recentThemes: new Set(recent.map((casting) => casting?.theme).filter(Boolean)),
+    usedToys: new Set(),
   }
-
-  // One draw for the screen: when it hits, one option steps outside the
-  // family's props altogether, to see how often that one gets chosen.
-  const wildcard = random()
-  const wild = wildcard < weights.wildcard ? Math.min(castings.length - 1, Math.floor(random() * castings.length)) : -1
-  return castings.map((casting, index) => ({
-    ...(index === wild ? wildcardOf(casting, profile) : casting),
-    draws: { ...casting.draws, wildcard },
-  }))
+  return [castClassic(profile, screen), castNew(profile, screen)]
 }
 
 /**
  * The casting of a story the parent asked for by tapping one of the family's
- * interests (JUG-140). It is drawn like any other, except that the theme is
- * the keyword they tapped and the story is never a wildcard: they already
- * said what they want the story to be about.
+ * interests (JUG-140): the classic option, with the keyword they tapped as its
+ * theme.
  * @param {Profile} profile
  * @param {{ keyword: string, weights?: Weights, random: () => number }} options
  * @returns {Casting}
  */
 export function castKeyword(profile, { keyword, weights = DEFAULT_WEIGHTS, random }) {
-  const casting = castOne(profile, {
-    weights,
-    random,
-    recentToys: new Set(),
-    recentThemes: new Set(),
-    usedToys: new Set(),
-    usedThemes: new Set(),
-    usedLeads: new Set(),
-    theme: keyword,
-  })
-  return { ...casting, kind: 'keyword' }
+  const screen = { weights, random, recentToys: new Set(), recentThemes: new Set(), usedToys: new Set() }
+  return { ...castClassic(profile, { ...screen, theme: keyword }), kind: 'keyword' }
 }
 
 /**
@@ -165,7 +140,7 @@ export function castRequest(profile, request) {
     pet: pet ? { id: /** @type {string} */ (pet.id), name: pet.name } : null,
     toy: toy ? { id: /** @type {string} */ (toy.id), name: toy.name } : null,
     theme: request.theme,
-    draws: { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null },
+    draws: noDraws(),
     weights: DEFAULT_WEIGHTS,
   }
 }
@@ -187,149 +162,113 @@ export function castEveryone(profile) {
     pet: profile.pets[0] ? { id: profile.pets[0].id, name: profile.pets[0].name } : null,
     toy: profile.toys[0] ? { id: profile.toys[0].id, name: profile.toys[0].name } : null,
     theme: profile.interests[0] ?? null,
-    draws: { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null },
+    draws: noDraws(),
     weights: DEFAULT_WEIGHTS,
   }
 }
 
 /**
- * The same casting without the family's props: the kids star as they were
- * drawn, and the model invents the rest. A pet or a toy that was leading
- * hands the lead back to the kids, since they are all that is left.
- * @param {Casting} casting
- * @param {Profile} profile
- * @returns {Casting}
+ * @typedef {object} Screen what the options of one screen share
+ * @property {Weights} weights
+ * @property {() => number} random
+ * @property {Set<unknown>} recentToys
+ * @property {Set<unknown>} recentThemes
+ * @property {Set<string>} usedToys the toys another option of the screen already has
+ * @property {string | null} [theme] the theme the story must have, when the parent chose it
  */
-function wildcardOf(casting, profile) {
-  const stillIn = casting.lead.type === 'kid' && casting.kids.includes(/** @type {string} */ (casting.lead.id))
-  const first = profile.kids.find((kid) => kid.id === casting.kids[0])
-  const lead = stillIn
-    ? casting.lead
-    : first
-      ? /** @type {Lead} */ ({ type: 'kid', id: first.id, name: first.name })
-      : /** @type {Lead} */ ({ type: 'new', id: null, name: NEW_CHARACTER })
-  return { ...casting, kind: 'wildcard', lead, pet: null, toy: null, theme: null }
-}
 
 /**
- * One casting, drawn in a fixed order so a seeded random gives a fixed
- * answer: the anchor, the lead, the pet, the toy, and the theme.
+ * The classic option: the anchor kid leads, the pet and a toy are in when
+ * their draws say so, and a family interest is the theme when its draw does.
+ * Drawn in a fixed order, so a seeded random gives a fixed answer.
  * @param {Profile} profile
- * @param {{
- *   weights: Weights,
- *   random: () => number,
- *   recentToys: Set<unknown>,
- *   recentThemes: Set<unknown>,
- *   usedToys: Set<string>,
- *   usedThemes: Set<string>,
- *   usedLeads: Set<string>,
- *   theme?: string | null,
- * }} screen `theme` is the theme the story must have, when the parent chose it
- *   instead of the draw
+ * @param {Screen} screen
  * @returns {Casting}
  */
-function castOne(profile, { weights, random, recentToys, recentThemes, usedToys, usedThemes, usedLeads, theme: fixed = null }) {
+function castClassic(profile, screen) {
+  const { weights, random, recentThemes } = screen
   const { anchor } = anchorOf(profile)
-  /** @type {Draws} */
-  const draws = { anchorIn: null, anchorLead: null, petIn: null, toyIn: null, themeIn: null, wildcard: null }
-
-  if (anchor) draws.anchorIn = random()
-  const anchorIn = anchor != null && /** @type {number} */ (draws.anchorIn) < weights.anchorIn
-  if (anchorIn) draws.anchorLead = random()
-
-  const others = profile.kids.filter((kid) => kid.id !== anchor?.id)
-  const kids = anchorIn ? profile.kids : others
-
-  /** @type {{ id: string, name: string } | null} */
-  let pet = null
-  if (profile.pets.length > 0) {
-    draws.petIn = random()
-    if (draws.petIn < weights.petIn) pet = { id: profile.pets[0].id, name: profile.pets[0].name }
-  }
-
-  /** @type {{ id: string, name: string } | null} */
-  let toy = null
-  if (profile.toys.length > 0) {
-    draws.toyIn = random()
-    if (draws.toyIn < weights.toyIn) {
-      const pool = fresh(profile.toys, usedToys, (item) => item.id)
-      const picked = weightedPick(pool, (item) => (recentToys.has(item.id) ? weights.recentPenalty : 1), random)
-      usedToys.add(picked.id)
-      toy = { id: picked.id, name: picked.name }
-    }
-  }
+  const draws = noDraws()
+  const pet = drawPet(profile, screen, draws)
+  const toy = drawToy(profile, screen, draws)
 
   /** @type {string | null} */
-  let theme = fixed
+  let theme = screen.theme ?? null
   if (!theme && profile.interests.length > 0) {
     draws.themeIn = random()
     if (draws.themeIn < weights.themeIn) {
-      const pool = fresh(profile.interests, usedThemes, (item) => item)
-      theme = weightedPick(pool, (item) => (recentThemes.has(item) ? weights.recentPenalty : 1), random)
-      usedThemes.add(theme)
+      theme = weightedPick(profile.interests, (item) => (recentThemes.has(item) ? weights.recentPenalty : 1), random)
     }
   }
 
-  // The anchor leads when the draw says so, and also when nobody else can.
-  // An anchor that already led another option on this screen steps aside, so
-  // the three options don't all open with the same name.
+  /** @type {Lead} */
+  const lead = anchor
+    ? { type: 'kid', id: anchor.id, name: anchor.name }
+    : pet
+      ? { type: 'pet', id: pet.id, name: pet.name }
+      : toy
+        ? { type: 'toy', id: toy.id, name: toy.name }
+        : { type: 'new', id: null, name: NEW_CHARACTER }
+  return { kind: 'cast', anchorIn: anchor != null, lead, kids: profile.kids.map((kid) => kid.id), pet, toy, theme, draws, weights }
+}
+
+/**
+ * The new option: the pet and a toy are in when their draws say so, and it is
+ * led by someone from the family other than the anchor kid — another kid, or
+ * the pet or the toy that came in — drawn evenly, or by the anchor when there
+ * is nobody else. It has no family theme: the model invents something the
+ * family hasn't heard.
+ * @param {Profile} profile
+ * @param {Screen} screen
+ * @returns {Casting}
+ */
+function castNew(profile, screen) {
+  const { weights, random } = screen
+  const { anchor } = anchorOf(profile)
+  const draws = noDraws()
+  const pet = drawPet(profile, screen, draws)
+  const toy = drawToy(profile, screen, draws)
+
   /** @type {Lead[]} */
   const pool = [
-    ...others.map((kid) => /** @type {Lead} */ ({ type: 'kid', id: kid.id, name: kid.name })),
+    ...profile.kids.filter((kid) => kid.id !== anchor?.id).map((kid) => /** @type {Lead} */ ({ type: 'kid', id: kid.id, name: kid.name })),
     ...(pet ? [/** @type {Lead} */ ({ type: 'pet', id: pet.id, name: pet.name })] : []),
     ...(toy ? [/** @type {Lead} */ ({ type: 'toy', id: toy.id, name: toy.name })] : []),
   ]
-  const anchorLead = anchor ? /** @type {Lead} */ ({ type: 'kid', id: anchor.id, name: anchor.name }) : null
-  const anchorWins = anchorIn && (/** @type {number} */ (draws.anchorLead) < weights.anchorLead || pool.length === 0)
   /** @type {Lead} */
   let lead
-  if (anchorLead && anchorWins && (pool.length === 0 || !usedLeads.has(keyOf(anchorLead)))) {
-    lead = anchorLead
-  } else if (pool.length > 0) {
-    lead = pickLead(pool, usedLeads, random)
+  if (pool.length > 0) {
+    draws.lead = random()
+    lead = pool[Math.min(pool.length - 1, Math.floor(draws.lead * pool.length))]
   } else {
-    // The anchor is out and there is nobody else: the model invents the lead.
-    lead = { type: 'new', id: null, name: NEW_CHARACTER }
+    lead = anchor ? { type: 'kid', id: anchor.id, name: anchor.name } : { type: 'new', id: null, name: NEW_CHARACTER }
   }
-  usedLeads.add(keyOf(lead))
-
-  return {
-    kind: 'cast',
-    anchorIn,
-    lead,
-    kids: kids.map((kid) => kid.id),
-    pet,
-    toy,
-    theme,
-    draws,
-    weights,
-  }
+  return { kind: 'wildcard', anchorIn: anchor != null, lead, kids: profile.kids.map((kid) => kid.id), pet, toy, theme: null, draws, weights }
 }
 
-/** A lead nobody else on the screen has, if a few draws find one. @param {Lead[]} pool @param {Set<string>} used @param {() => number} random */
-function pickLead(pool, used, random) {
-  let lead = pool[0]
-  for (let tries = 0; tries < LEAD_TRIES; tries += 1) {
-    lead = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))]
-    if (!used.has(keyOf(lead))) return lead
-  }
-  return lead
+/** The family's pet, when its draw says so. @param {Profile} profile @param {Screen} screen @param {Draws} draws */
+function drawPet(profile, { weights, random }, draws) {
+  if (profile.pets.length === 0) return null
+  draws.petIn = random()
+  return draws.petIn < weights.petIn ? { id: profile.pets[0].id, name: profile.pets[0].name } : null
 }
-
-/** @param {Lead} lead */
-const keyOf = (lead) => `${lead.type}:${lead.id ?? lead.name}`
 
 /**
- * What is left to draw from: whatever this screen hasn't used yet, or all of
- * it again once the family's own list has run out.
- * @template T
- * @param {T[]} items
- * @param {Set<string>} used
- * @param {(item: T) => string} keyOf
+ * One of the family's toys, when its draw says so: one the screen hasn't used
+ * while there is one, and one used lately less often.
+ * @param {Profile} profile
+ * @param {Screen} screen
+ * @param {Draws} draws
  */
-function fresh(items, used, keyOf) {
-  const left = items.filter((item) => !used.has(keyOf(item)))
-  return left.length > 0 ? left : items
+function drawToy(profile, { weights, random, recentToys, usedToys }, draws) {
+  if (profile.toys.length === 0) return null
+  draws.toyIn = random()
+  if (draws.toyIn >= weights.toyIn) return null
+  const left = profile.toys.filter((item) => !usedToys.has(item.id))
+  const pool = left.length > 0 ? left : profile.toys
+  const picked = weightedPick(pool, (item) => (recentToys.has(item.id) ? weights.recentPenalty : 1), random)
+  usedToys.add(picked.id)
+  return { id: picked.id, name: picked.name }
 }
 
 /**
@@ -371,7 +310,7 @@ export function castingLines(casting, profile) {
 
   const sentences = []
   if (casting.kind === 'wildcard') {
-    sentences.push('Reparto libre: inventá el escenario o un personaje secundario nuevo que la familia no mencionó.')
+    sentences.push('Propuesta nueva: inventá un lugar, un personaje secundario o una situación que la familia todavía no escuchó.')
   }
   sentences.push(`Protagonista: ${casting.lead.name}.`)
   const also = [...rest, ...props]

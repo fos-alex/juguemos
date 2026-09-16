@@ -1,9 +1,9 @@
 /**
  * Stories the LLM writes (JUG-71). Code draws a casting for each option on
- * the screen (`casting.js`) and hands the three of them to one model call,
+ * the screen (`casting.js`) and hands the two of them to one model call,
  * whose answer is read as it streams: each plot is saved and sent on as soon
  * as the model finishes writing it, so the first option is on screen long
- * before the third (JUG-139). The chosen plot becomes a story that arrives
+ * before the second (JUG-139). The chosen plot becomes a story that arrives
  * paragraph by paragraph the same way, saved once it ends and read again
  * from what was saved. A parent who taps one of the family's interests
  * instead gets a story on that theme with no plot behind it, written and
@@ -41,7 +41,7 @@ import { nothingKept, tellStory, tokensFor, writtenDetails } from './tell.js'
  *   what an options screen sends: one option as each lands, then the end
  */
 
-/** The most the three options together may run to: each is a title, a line, and two sentences. */
+/** The most the options together may run to: each is a title, a line, and two sentences. */
 const OPTION_TOKENS = 1200
 
 /** How many of the family's last stories the casting draw avoids repeating. */
@@ -86,7 +86,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
     },
 
     /**
-     * The model's plot options for the family: one call for the three
+     * The model's plot options for the family: one call for the two
      * castings the code drew, read as it streams, so each plot is saved and
      * sent on as soon as the model closes its braces instead of when the
      * whole answer lands. An answer with no readable plot at all is asked
@@ -109,7 +109,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
       const titles = latest.slice(0, RECENT_TITLES).map((row) => `«${row.title}»`)
       const avoid = titles.length > 0 ? `Títulos ya usados, para no repetir: ${titles.join(', ')}.` : ''
       const recent = /** @type {(Casting | null)[]} */ (latest.slice(0, RECENT_CASTINGS).map((row) => row.casting))
-      const castings = castScreen(profile, { count: OPTIONS, weights: DEFAULT_WEIGHTS, random, recent })
+      const castings = castScreen(profile, { weights: DEFAULT_WEIGHTS, random, recent })
 
       const lines = familyLines(profile, castings)
       const user = render(storyOptionsPrompt, {
@@ -289,7 +289,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
 
     /**
      * A story about one of the family's interests, which the parent tapped
-     * instead of picking one of the three options (JUG-140). There is no plot:
+     * instead of picking one of the options (JUG-140). There is no plot:
      * code draws the casting with that interest as the theme, and the model
      * invents the story and its title in one call. Every tap writes a new
      * story; nothing is deduplicated. A reader who leaves early hears no more
