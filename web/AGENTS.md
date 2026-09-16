@@ -22,6 +22,7 @@ npm run build      # production build, to check it compiles; Caddy's image build
 ```
 index.html            the shell; no inline scripts
 vite.config.js        router plugin, React, and the PWA manifest and service worker
+public/               the app icon and the favicon, and the PNGs rendered from them
 src/
   app/                the shell: main.jsx (router, service worker, first theme), the root layout
                       and its guard, ThemeProvider, the menu, updates
@@ -62,7 +63,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/familia/revisar` | ¿Está bien así?, or Entendió mal when the parse flags fields |
 | `/familia/corregir` | The correction form, the fallback path, and where a voice note says what changed (JUG-103). `?campo=` focuses one field |
 | `/familia` | Mi familia, the card's permanent home after onboarding |
-| `/juguetes` | El baúl de juguetes: the toys by family name, and the household materials, which save on each tap. A voice note on its mic comes back as toys to confirm (JUG-146). Built from the primitives ahead of the 0.2 design (JUG-84) |
+| `/juguetes` | El baúl de juguetes: the toys by family name, and the household materials, which save on each tap. A voice note on its mic comes back as toys to confirm (JUG-146). Built from the primitives, with no design of its own |
 | `/juguetes/$id` | One toy: its name, other names, what it is, whose it is, favorite, the toys it goes with, and *Ya no lo tenemos*. `/juguetes/nuevo` adds one, and a voice note fills its name and what it is (JUG-146) |
 | `/ajustes` | Ajustes, not designed yet and kept minimal. **Cerrar sesión** lives here: it is account, not navigation |
 | `/` | Home. The drawer, thinking, and offline are states of it. With more than one kid, who's playing sits above the buttons (JUG-107). While a juego is played, its card takes the last juego's place with the time left and has *Terminamos* under it (JUG-134) |
@@ -84,7 +85,7 @@ The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), 
   - **A 401 signs the device out,** from that check or any other call: `request` in `shared/http.js` (and the story stream) calls `endSession()`, except under `/auth`, where a 401 means a wrong password. No answer at all — offline, weak signal, a server failure — keeps the cached account, so the last juego stays readable.
   - A device whose session ended goes to `/cuenta?modo=entrar`; one that never had an account, or signed out, goes to `/entrada`. `signOut()` waits for the API, since only the server can end the httpOnly cookie; offline it says so and the parent stays signed in.
   - **First run holds its order,** in `firstRunTarget()`: no account goes to `/entrada`, and no family to `/familia/contanos`. When `/api/me` says `familyFromText` is false (no LLM), no family goes to the form at `/familia/corregir` instead.
-- **Build screens from the primitives** in `shared/ui/`, exported by its `index.js`, rather than one-off layouts: `Screen` (with `Header`, `Body`, `Footer`, `BackButton`), the buttons, `Card`, `Field`, `Chips`, `StepList`, `Drawer`, `Dots`, `Waiting`, `Skeleton`, `StatusLine`, `OfflineNotice`, `MetaLabel`, `Label`, `Wordmark`, `ThemeToggle`. `Screen`'s `tone` sets the page background.
+- **Build screens from the primitives** in `shared/ui/`, exported by its `index.js`, rather than one-off layouts: `Screen` (with `Header`, `Body`, `Footer`, `BackButton`), the buttons, `Card`, `Field`, `Chips`, `StepList`, `Drawer`, `Dots`, `Waiting`, `Skeleton`, `StatusLine`, `OfflineNotice`, `MetaLabel`, `Label`, `Wordmark`, `ThemeToggle`, and the icons in `Icons.jsx`. `Screen`'s `tone` sets the page background.
 - **Screen patterns are hooks in `shared/hooks/`,** so no screen writes them again: `useRequest()` (`idle`, `loading`, `slow` after a delay, or `error` with the failure in words), `useOfflineNotice()` with `<OfflineNotice>`, `useSerialSaves()` for taps that save one after another, `useSlowWait()` for a wait that has gone on long enough to say something about, `useReducedMotion()`, and `useDocumentTitle()`.
 - **Data comes only from each feature's `api.js`,** through `request` in `shared/http.js`. Screens never call `fetch` themselves and the web hardcodes no data. The two story streams and the voice upload call `fetch` directly, since `request` only speaks JSON, but they fail the same way. Screens work with the shapes in their feature's `types.js`, and `api.js` translates the API's shapes to them. `features/account/mock.js` holds only email verification.
 - **Failures** go through `failureText()` in `shared/format.js`: the generic line, the offline line, or the words of a `WordedError` from `shared/http.js`. No error codes reach the screen.
@@ -140,7 +141,8 @@ Write the function in its feature's `api.js`, calling `request` from `shared/htt
 
 [`docs/design.md`](../docs/design.md) has the whole set. These are the ones a code change undoes by accident:
 
-- **Tokens only, never a hex.** The palette is the token set and nothing more.
+- **Tokens only, never a hex.** The palette is the token set and nothing more. The one place hex is written out is `public/icon.svg` and `public/favicon.svg`, which are outside the app and can't read `tokens.css`; they change with the tokens.
+- **Icons come from `shared/ui/Icons.jsx`.** Never write an `<svg>` in a screen or a feature: add the icon to the set, on the 24 px grid with a 2 px `currentColor` stroke, so it stays one weight and night mode needs no second drawing. `size` is the only prop worth changing. An icon is decorative (`aria-hidden`) and the button around it carries the label; an icon never replaces the words on a button.
 - **No sound, ever,** including when the timer ends. The only vibration is the voice note's ticks (JUG-135).
 - **Motion is 120–200 ms ease-out,** no bounce or spring, and `prefers-reduced-motion` is respected. The waiting animations are the exception: they are slow ambient loops that end where they began, so they never read as progress.
 - **The family's words stay exactly as typed,** so those inputs set `autoCorrect="off"` and `autoCapitalize="none"`.

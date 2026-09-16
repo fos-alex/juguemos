@@ -6,6 +6,7 @@ import { clockText, failureText } from '../../../shared/format'
 import { canRecord, MicDeniedError, startRecording } from '../recorder'
 import { useSlowWait } from '../../../shared/hooks/useSlowWait'
 import { Waiting } from '../../../shared/ui/Waiting'
+import { ArrowUpIcon, BackIcon, LockIcon, MicIcon } from '../../../shared/ui/Icons'
 import '../voice.css'
 
 /** How far the finger travels, in px, to lock the note or to drop it. */
@@ -284,10 +285,9 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
         <div className={`voice__lock${drag.y < -LOCK_AT / 2 ? ' is-near' : ''}`} aria-hidden="true">
           <span className="voice__lock-mark">
             <span className="voice__padlock">
-              <span className="voice__shackle" />
-              <span className="voice__lockbody" />
+              <LockIcon size={22} />
             </span>
-            <span className="voice__arrow">↑</span>
+            <ArrowUpIcon size={20} className="voice__arrow" />
           </span>
           <span className="voice__lock-hint">desplazá hacia arriba para fijar</span>
         </div>
@@ -319,7 +319,8 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
                   className="voice__cancel"
                   style={{ opacity: Math.max(0.4, 1 - drag.x / -CANCEL_AT) }}
                 >
-                  ← cancelar
+                  <BackIcon size={15} />
+                  cancelar
                 </span>
               )}
             </>
@@ -343,32 +344,8 @@ export function VoiceNote({ children, onText, onMessage, onRecording, introduce 
         onClick={onClick}
         onContextMenu={(event) => event.preventDefault()}
       >
-        {phase === 'locked' ? <span className="mic__send">Enviar</span> : <MicGlyph />}
+        {phase === 'locked' ? <span className="mic__send">Enviar</span> : <MicIcon size={28} className="mic__glyph" />}
       </button>
     </div>
-  )
-}
-
-/** A microphone in the Plaza's 2 px line: the capsule, its holder, and the stand. */
-function MicGlyph() {
-  return (
-    <svg
-      className="mic__glyph"
-      viewBox="0 0 24 24"
-      width="28"
-      height="28"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <rect x="9" y="2.5" width="6" height="11.5" rx="3" />
-      <path d="M5.5 10.5a6.5 6.5 0 0 0 13 0" />
-      <path d="M12 17v4" />
-      <path d="M8.5 21h7" />
-    </svg>
   )
 }

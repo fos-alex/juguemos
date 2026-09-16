@@ -18,9 +18,8 @@ import '../toys.css'
 
 /**
  * El baúl de juguetes (JUG-94): the family's toys by their own names, and the
- * household materials they have. The 0.2 design (JUG-84) doesn't exist yet,
- * so this is built from the Plaza primitives; restyle it when the design
- * lands. All of its copy needs a voice pass.
+ * household materials they have. It was never given a design of its own: it
+ * is built from the Plaza primitives, and all of its copy needs a voice pass.
  *
  * The mic beside "Agregar juguete" takes a voice note about the toys, and the
  * API reads the toys in its words (JUG-146). They come back as candidates,

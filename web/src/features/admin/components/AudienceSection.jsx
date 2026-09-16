@@ -1,6 +1,6 @@
 import { CATEGORIES, ENERGIES, PLACES } from '../model'
 import { Check, Select } from './TemplateInputs'
-import { Chips, Field, FieldGroup, Label } from '../../../shared/ui'
+import { CheckIcon, Chips, Field, FieldGroup, Label } from '../../../shared/ui'
 
 /** @typedef {import('../model').FormState} FormState */
 /** @typedef {import('../model').Errors} Errors */
@@ -60,7 +60,8 @@ export function AudienceSection({ form, errors, update }) {
                   })
                 }
               >
-                {on ? `✓ ${name}` : name}
+                {on && <CheckIcon size={16} />}
+                {name}
               </button>
             )
           })}

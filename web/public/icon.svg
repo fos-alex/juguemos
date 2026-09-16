@@ -1,0 +1,14 @@
+<!--
+  The Juguemos app icon: the wordmark's ronda of three dots on a jacarandá
+  field. Full bleed, because a maskable icon is cropped to whatever shape the
+  phone uses. The ronda sits inside the maskable safe zone (the middle 80%),
+  so one drawing covers "any" and "maskable". Colours are the Plaza light
+  tokens, written out because a file outside the app can't read tokens.css.
+  The dots are a ronda, not a face, and never get one.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Juguemos">
+  <rect width="512" height="512" fill="#6B4EA8"/>
+  <circle cx="256" cy="156" r="80" fill="#E8C98A"/>
+  <circle cx="169.4" cy="306" r="80" fill="#8FD49E"/>
+  <circle cx="342.6" cy="306" r="80" fill="#FFF9F0"/>
+</svg>

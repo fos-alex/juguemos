@@ -12,6 +12,7 @@ import { read, useStored } from '../../../shared/store'
 import {
   Card,
   Footer,
+  MenuIcon,
   MetaLabel,
   OfflineNotice,
   PrimaryButton,
@@ -119,9 +120,7 @@ export function HomeScreen() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
-            <span />
-            <span />
-            <span />
+            <MenuIcon />
           </button>
           <Wordmark />
         </div>

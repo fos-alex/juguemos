@@ -22,8 +22,8 @@ const ONLY_THE_FIRST = 'Escuché más de uno. Anoté el primero; los otros los p
 /**
  * One toy in the toy box, or a new one at /juguetes/nuevo: its family name,
  * other names, what it is (for Juguemos, never shown in place of the name),
- * whose it is, favorite, and the toys it goes with. Built before the 0.2
- * design (JUG-84); all of its copy needs a voice pass.
+ * whose it is, favorite, and the toys it goes with. Built from the Plaza
+ * primitives with no design of its own; all of its copy needs a voice pass.
  *
  * A new toy also has the mic beside "Guardar" (JUG-146): the note's words go
  * to the API, which reads the toy in them, and its name and what it is fill

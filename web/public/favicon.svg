@@ -1,0 +1,10 @@
+<!--
+  The same mark, drawn tighter: a favicon has no safe zone to keep clear, and
+  at 16 px the ronda needs every pixel it can take.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Juguemos">
+  <rect width="512" height="512" rx="96" fill="#6B4EA8"/>
+  <circle cx="256" cy="146" r="92" fill="#E8C98A"/>
+  <circle cx="160.4" cy="311" r="92" fill="#8FD49E"/>
+  <circle cx="351.6" cy="311" r="92" fill="#FFF9F0"/>
+</svg>

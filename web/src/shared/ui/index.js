@@ -2,6 +2,23 @@
 // right after the tokens and base styles, so the primitives' CSS always loads
 // before any feature's, and a feature that restyles a primitive wins. The
 // order below is the order their CSS loads in.
+export {
+  ArrowUpIcon,
+  BackIcon,
+  BookIcon,
+  CheckIcon,
+  CloseIcon,
+  FamilyIcon,
+  LockIcon,
+  MenuIcon,
+  MicIcon,
+  MoonIcon,
+  PlusIcon,
+  RondaIcon,
+  SettingsIcon,
+  SunIcon,
+  ToyBoxIcon,
+} from './Icons'
 export { BackButton, Body, Footer, Header, Screen } from './Screen'
 export { Dots, GoogleButton, PrimaryButton, QuietButton, SecondaryButton, TertiaryButton } from './Buttons'
 export { Card, Label, MetaLabel, Skeleton } from './Card'

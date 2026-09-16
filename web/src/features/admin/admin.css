@@ -112,6 +112,13 @@
   accent-color: var(--primary);
 }
 
+/* The check goes beside the name, so the chip is a row. */
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .admin-chip[aria-pressed='true'] {
   border-color: var(--primary);
   background: var(--surface-accent);

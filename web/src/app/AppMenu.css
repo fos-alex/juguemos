@@ -33,6 +33,9 @@
 }
 
 .drawer__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   width: 100%;
   min-height: 54px;
   padding: 13px 14px;
