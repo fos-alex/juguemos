@@ -6,7 +6,7 @@ import { createDb } from '../src/db/client.js'
 import { migrate } from '../src/db/migrate.js'
 
 // A Postgres the tests can create databases in. `docker compose up db` is one.
-const SERVER_URL = process.env.TEST_DATABASE_URL ?? 'postgres://juguemos:juguemos@localhost:5432/postgres'
+const SERVER_URL = process.env.TEST_DATABASE_URL ?? 'postgres://ludi:ludi@localhost:5432/postgres'
 
 export const ORIGIN = 'http://localhost:3000'
 
@@ -58,7 +58,7 @@ export const EXAMPLE_PROFILE = {
 
 /** A new, empty database on the test server; `drop` removes it. */
 export async function createDatabase() {
-  const name = `juguemos_test_${randomUUID().replaceAll('-', '')}`
+  const name = `ludi_test_${randomUUID().replaceAll('-', '')}`
   const admin = new pg.Client({ connectionString: SERVER_URL })
   await admin.connect()
   await admin.query(`create database ${name}`)

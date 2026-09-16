@@ -15,7 +15,7 @@ export function SettingsScreen() {
   const [account] = useState(() => read('account'))
   const request = useRequest()
 
-  useDocumentTitle('Ajustes · Juguemos')
+  useDocumentTitle('Ajustes · Ludi')
 
   // Signing out waits for the API; offline it says so and the parent stays signed in.
   const leave = () => {

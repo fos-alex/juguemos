@@ -15,7 +15,7 @@ before(async () => {
       'dani@example.com',
       'eva@example.com',
       'fede@example.com',
-      '@juguemos.local',
+      '@ludi.local',
     ],
   })
 })
@@ -55,8 +55,8 @@ test('an email outside the allowlist cannot sign up', async () => {
 })
 
 test('an @domain entry lets any email at that domain sign up, and only that domain', async () => {
-  assert.equal((await signUp('Cualquiera@Juguemos.local')).statusCode, 200)
-  for (const email of ['alguien@notjuguemos.local', 'alguien@juguemos.local.example.com']) {
+  assert.equal((await signUp('Cualquiera@Ludi.local')).statusCode, 200)
+  for (const email of ['alguien@notludi.local', 'alguien@ludi.local.example.com']) {
     const response = await signUp(email)
     assert.equal(response.statusCode, 403, email)
     assert.equal(response.json().code, 'SIGNUP_NOT_ALLOWED')

@@ -1,4 +1,4 @@
-# Juguemos — Design
+# Ludi — Design
 
 What the app looks like, and the rules behind it. The values live in the code: the colour tokens and the type scale in `web/src/styles/tokens.css`, the primitives every screen is built from in `web/src/shared/ui/`, the icons in `web/src/shared/ui/Icons.jsx`, the app icon in `web/public/`. This document is the reasoning around them, so a UI change can be checked against something. The research behind the rules is in [similar-apps.md](similar-apps.md), and the brand decisions still open are in [brand-brief.md](brand-brief.md).
 
@@ -10,7 +10,7 @@ A parent, never a child. At 6pm on a rainy Tuesday, out of ideas, one hand on th
 
 Children don't look at the screen. Stories have no illustrations, so the child watches the parent read.
 
-**Juguemos is a tool for grown-ups, about play.** The playfulness comes from the words and the colour, not from styling the app like a kids' app. Kid styling tells a child the phone is for them, which works against *screens off, play on*.
+**Ludi is a tool for grown-ups, about play.** The playfulness comes from the words and the colour, not from styling the app like a kids' app. Kid styling tells a child the phone is for them, which works against *screens off, play on*.
 
 ## What the design has to do
 
@@ -34,7 +34,7 @@ From the five commitments in [constitution.md](constitution.md):
 
 **No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, or an icon from the set. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS.
 
-**The wordmark** is "Juguemos" in Fredoka 600 with three dots in grass, sun, and jacarandá. The dots are a *ronda*, not a face. It is a working wordmark; trademark and domain checks are pending.
+**The wordmark** is "Ludi" in Fredoka 600 with three dots in grass, sun, and jacarandá. The dots are a *ronda*, not a face. It is a working wordmark: the domain is `ludi.ar`, and the trademark check is pending.
 
 **The app icon** is that same ronda on a jacarandá field. See [The app icon](#the-app-icon) below.
 
@@ -131,7 +131,7 @@ One set, in `web/src/shared/ui/Icons.jsx`, exported through `shared/ui/index.js`
 
 ## The app icon
 
-`web/public/icon.svg` is the mark: the wordmark's ronda of three dots on a jacarandá field, in sun, grass, and sand. The wordmark itself is not in it, because "Juguemos" is unreadable at 48 px.
+`web/public/icon.svg` is the mark: the wordmark's ronda of three dots on a jacarandá field, in sun, grass, and sand. The wordmark itself is not in it: even at four letters it can't be read at 16 px, and a phone already writes the name under the icon.
 
 - **Full bleed,** because a maskable icon is cropped to whatever shape the phone uses. The ronda sits inside the maskable safe zone — the middle 80% — so one drawing covers both `any` and `maskable` and the manifest lists it once.
 - The colours are written out as hex, not tokens, because a file outside the app can't read `tokens.css`. **Both files change together** when a brand colour changes.

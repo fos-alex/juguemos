@@ -1,5 +1,5 @@
 /**
- * Every call to the Juguemos API goes through `request`: JSON in and out,
+ * Every call to the Ludi API goes through `request`: JSON in and out,
  * with the session cookie, and failures turned into errors the screens know
  * how to word. A 401 means the session ended, and the device forgets it.
  */

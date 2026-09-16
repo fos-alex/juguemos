@@ -21,14 +21,14 @@
  * @property {string[]} [materials] household materials, by key
  */
 
-const PASSWORD = 'juguemos-local'
+const PASSWORD = 'ludi-local'
 
 /** @type {SeedAccount[]} */
 export const accounts = [
   // The brief's example family: a toddler and a pet.
   {
     name: 'Prueba',
-    email: 'prueba@juguemos.local',
+    email: 'prueba@ludi.local',
     password: PASSWORD,
     family: {
       name: 'Familia de prueba',
@@ -55,7 +55,7 @@ export const accounts = [
   // The sparsest family: a baby, no pet, and two toys.
   {
     name: 'Bebé',
-    email: 'bebe@juguemos.local',
+    email: 'bebe@ludi.local',
     password: PASSWORD,
     family: {
       name: 'Familia de Olivia',
@@ -67,7 +67,7 @@ export const accounts = [
   // Two kids far apart in age, so a juego has to suit both.
   {
     name: 'Hermanos',
-    email: 'hermanos@juguemos.local',
+    email: 'hermanos@ludi.local',
     password: PASSWORD,
     family: {
       name: 'Familia de Tomás y Emma',

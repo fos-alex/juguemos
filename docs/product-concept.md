@@ -1,4 +1,4 @@
-# Juguemos — Product Concept
+# Ludi — Product Concept
 
 *Chosen name. Trademark, domain, and app store availability still to be confirmed.*
 
@@ -14,7 +14,7 @@
 
 ## 1. Vision
 
-Juguemos helps parents turn the time they have into play that is fun and meaningful. It knows who is in the family, what each kid loves, which toys are in the house, the weather outside, and what each child is working on learning. It uses all of that to answer one everyday question: *"¿Qué hacemos ahora?"* ("What should we do right now?")
+Ludi helps parents turn the time they have into play that is fun and meaningful. It knows who is in the family, what each kid loves, which toys are in the house, the weather outside, and what each child is working on learning. It uses all of that to answer one everyday question: *"¿Qué hacemos ahora?"* ("What should we do right now?")
 
 Setting it up is as easy as sending a voice note about your family. Beyond play, it gives parents timely, practical tips for the stage their family is in, from the terrible twos to getting two kids to bed at once to preparing a toddler for a new sibling.
 
@@ -22,7 +22,9 @@ Over time it becomes a record of the family's shared moments and of the progress
 
 ## 2. Name
 
-**Juguemos** is Spanish for "let's play." It is an invitation rather than the name of a tool, and it says exactly what the product wants families to do. It feels native in Argentina and across Latin America, and it is easy for English speakers to say ("hoo-GEH-mos") if the product expands beyond the region.
+**Ludi** is Latin for "games", the plural of *ludus*, and the root of the Spanish *lúdico*, playful. It is short, it names what the product is about rather than a tool, and it is as easy to say in English as in Spanish if the product expands beyond the region. The app lives at `ludi.ar`.
+
+The invitation stays in the app: Home's button says *¡Juguemos!*, "let's play," which was the product's name before Ludi.
 
 Tagline options:
 
@@ -88,11 +90,11 @@ Each piece of the product exists somewhere, but nothing combines them around a f
 
 - *AI generators* (Oscar Stories, Bedtimestory.ai, and dozens more) let parents pick a character, setting, or moral, then produce an illustrated and often narrated story. The phone does the storytelling.
 - *Sleep audio* (Moshi) is built around the transition to sleep. Its stories slow in rhythm as they progress, the narration gets sleepier, and the background sounds fade toward the end.
-- *Parent read-aloud* (Readmio) is closest to what Juguemos wants. The parent reads a story from the phone while the app listens and plays sound effects. The stories intentionally have no illustrations so the child's attention stays on the parent, and the app offers storytelling tips such as character voices and dramatization cues. Its stories come from a fixed library rather than being personalized.
+- *Parent read-aloud* (Readmio) is closest to what Ludi wants. The parent reads a story from the phone while the app listens and plays sound effects. The stories intentionally have no illustrations so the child's attention stays on the parent, and the app offers storytelling tips such as character voices and dramatization cues. Its stories come from a fixed library rather than being personalized.
 
-Stories alone are not a product. Juguemos combines the parent-read model with personalization: stories in Rioplatense Spanish, starring the family's kids, toys, and pet, adapted to the time of day, with performance notes for the parent.
+Stories alone are not a product. Ludi combines the parent-read model with personalization: stories in Rioplatense Spanish, starring the family's kids, toys, and pet, adapted to the time of day, with performance notes for the parent.
 
-**Where Juguemos is different:** persistent family memory (people, pets, interests, toys) plus goal-driven play that adapts, timely stage-based tips, and a moments journal, all designed locally for Argentine families.
+**Where Ludi is different:** persistent family memory (people, pets, interests, toys) plus goal-driven play that adapts, timely stage-based tips, and a moments journal, all designed locally for Argentine families.
 
 ## 6. Target users
 
@@ -114,7 +116,7 @@ Every feature either feeds this loop with better context (profile, toy box, weat
 
 ### 8.1 Conversational onboarding
 
-The main way to set up Juguemos is to talk to it. The parent sends a voice note (or types) describing the family in their own words: *"Somos Alex y Caro, tenemos a Milán, de dos años, y a Inca, nuestra mascota. A Milán le encantan los dinosaurios y los caballos, y tiene un tren de madera que no suelta."*
+The main way to set up Ludi is to talk to it. The parent sends a voice note (or types) describing the family in their own words: *"Somos Alex y Caro, tenemos a Milán, de dos años, y a Inca, nuestra mascota. A Milán le encantan los dinosaurios y los caballos, y tiene un tren de madera que no suelta."*
 
 The agent pulls out who is in the family, ages, interests, toys, home type, neighborhood, languages, and upcoming changes. It then shows a summary card to confirm ("¿Está bien así?") and asks at most one or two follow-up questions for essentials that are missing. Everything else can be filled in later. Nothing is saved to the profile without the parent's confirmation.
 
@@ -248,7 +250,7 @@ The app knows the calendar of the family's country, plus the family's own dates,
 
 **Surprise mode.** When an activity is a gift for another adult in the household, the app plans it with one parent and hides it from the other parent's suggestions, reminders, and moments until the day. For example, ten days before Día del Padre, Caro gets a gift project to make with Milán for Alex, and none of it appears on Alex's phone. After the celebration, the moment appears in the shared journal.
 
-**Per-country calendars.** Juguemos maintains its own Latin American holiday calendar, with one calendar per country, starting with Argentina for v1. Dates differ across the region. Mother's Day, for example, is in October in Argentina but in May in many other countries. Argentina also moves some holidays each year. The holiday calendar therefore has to be a maintained data source per country and per year, not something hardcoded.
+**Per-country calendars.** Ludi maintains its own Latin American holiday calendar, with one calendar per country, starting with Argentina for v1. Dates differ across the region. Mother's Day, for example, is in October in Argentina but in May in many other countries. Argentina also moves some holidays each year. The holiday calendar therefore has to be a maintained data source per country and per year, not something hardcoded.
 
 ### 8.7 Grow (goals)
 
@@ -385,7 +387,7 @@ The same approach applies to goals and parenting tips, which are also reviewed b
 
 ## 10. Product principles
 
-All product decisions are guided by **The Juguemos Constitution** (separate document), which sets out our five commitments, the guardrails that protect them, and how to resolve conflicts between them. The principles below show how it applies to this concept.
+All product decisions are guided by **The Ludi Constitution** (separate document), which sets out our five commitments, the guardrails that protect them, and how to resolve conflicts between them. The principles below show how it applies to this concept.
 
 **Local first.** Built for Buenos Aires families: their language, calendar, weather, homes, and places. Expansion adapts content per country rather than translating it.
 
@@ -419,14 +421,14 @@ Payments, subscriptions, and token pricing; countries other than Argentina; chil
 | Places and events | Maps data is enough for v1. |
 | Recaps | Monthly by default; parents can change the frequency. |
 | Voice onboarding | Transcription is the default path. The technical challenge of accuracy for Rioplatense Spanish, children's names, and background noise will be solved during the build. |
-| Holiday calendar | Juguemos builds and maintains its own Latin American calendar, one per country, starting with Argentina. |
+| Holiday calendar | Ludi builds and maintains its own Latin American calendar, one per country, starting with Argentina. |
 | Households | One household per family in v1. |
 
 ### Still open
 
 - **Reviewers:** which Argentine professionals (educators, pediatricians, child psychologists, occupational therapists) will review activities, goals, and tips?
 - **Catalog size:** how many activities, goals, and tips are needed before launch?
-- **Name:** are trademark (INPI) and domain available for Juguemos, and what are the native Spanish taglines?
+- **Name:** is Ludi available as a trademark (INPI), and what are the native Spanish taglines? The domain is `ludi.ar`.
 - **Interface language:** should English be available as an interface language in v1, or only as a learning goal?
 - **Expansion:** after Argentina, which country comes next: Uruguay (same dialect and culture) or larger markets like Mexico and Colombia?
 

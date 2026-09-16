@@ -62,7 +62,7 @@ test('kids with no age do not anchor, and a family with no ages at all gets band
 
 test('the system prompt is the core plus one band and one moment', () => {
   const prompt = systemPrompt({ band: '3', mood: 'calm' })
-  assert.match(prompt, /Sos el narrador de cuentos de Juguemos/)
+  assert.match(prompt, /Sos el narrador de cuentos de Ludi/)
   assert.match(prompt, /## La familia/)
   assert.match(prompt, /## Lo que nunca pasa/)
   assert.match(prompt, /## Cómo se escribe para este chico: DE TRES A TRES AÑOS Y MEDIO/)

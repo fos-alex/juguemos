@@ -18,7 +18,7 @@ let api
 let scratch
 before(async () => {
   api = await startApi()
-  scratch = await mkdtemp(join(tmpdir(), 'juguemos-migrations-'))
+  scratch = await mkdtemp(join(tmpdir(), 'ludi-migrations-'))
 })
 after(async () => {
   await api.close()

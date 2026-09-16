@@ -30,7 +30,7 @@ export function VerifyScreen() {
   const [resendAt, setResendAt] = useState(() => Date.now() + RESEND_AFTER_MS)
   const resendIn = useCountdown(resendAt)
 
-  useDocumentTitle('Revisá tu email · Juguemos')
+  useDocumentTitle('Revisá tu email · Ludi')
 
   /** @param {string} value */
   const verify = async (value) => {

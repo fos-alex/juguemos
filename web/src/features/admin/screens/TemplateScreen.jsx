@@ -36,7 +36,7 @@ export function TemplateScreen() {
   // A taken slug is a field to fix, so it points at the fields instead of failing.
   const request = useRequest({ describe: (error) => (slugTaken(error) ? CHECK_FIELDS : adminFailure(error)) })
 
-  useDocumentTitle(`${isNew ? 'Nuevo juego' : 'Editar juego'} · Admin · Juguemos`)
+  useDocumentTitle(`${isNew ? 'Nuevo juego' : 'Editar juego'} · Admin · Ludi`)
 
   useEffect(() => {
     if (isNew) return

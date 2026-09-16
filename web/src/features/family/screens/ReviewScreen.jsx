@@ -19,7 +19,7 @@ export function ReviewScreen() {
   const [parse] = useState(() => read('parseResult'))
   const request = useRequest()
 
-  useDocumentTitle('¿Está bien así? · Juguemos')
+  useDocumentTitle('¿Está bien así? · Ludi')
 
   if (!parse) return <Navigate to="/familia/contanos" replace />
 

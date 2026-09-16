@@ -14,7 +14,7 @@ const PIECES = { ronda: 5, petals: 5, rayuela: 5 }
 
 /**
  * The waiting animation (JUG-132, JUG-133): a calm, slow loop that says
- * Juguemos is working on it, for the waits the dots alone make look frozen.
+ * Ludi is working on it, for the waits the dots alone make look frozen.
  *
  * It is the dots for the first moment and takes over only if the wait lasts,
  * and it is the dots for good when the phone asks for less motion. There is

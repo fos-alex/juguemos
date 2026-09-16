@@ -10,7 +10,7 @@ import '../toys.css'
 /** @typedef {import('../types').ToyCandidate} ToyCandidate */
 
 /**
- * The toys Juguemos heard in a voice note, for the parent to confirm before
+ * The toys Ludi heard in a voice note, for the parent to confirm before
  * any of them is saved (JUG-146). Every one starts chosen, except one the box
  * already has by that name, which says so and starts out of the list, so a
  * toy isn't added twice without the parent meaning it. A tap takes a toy in

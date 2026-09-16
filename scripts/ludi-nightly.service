@@ -1,5 +1,5 @@
 [Unit]
-Description=Juguemos nightly cleanup: stale worktrees and Linear statuses
+Description=Ludi nightly cleanup: stale worktrees and Linear statuses
 After=network-online.target
 
 [Service]

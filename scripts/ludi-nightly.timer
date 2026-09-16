@@ -1,5 +1,5 @@
 [Unit]
-Description=Run the Juguemos nightly cleanup
+Description=Run the Ludi nightly cleanup
 
 [Timer]
 OnCalendar=*-*-* 03:00:00

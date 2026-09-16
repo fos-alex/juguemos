@@ -50,7 +50,7 @@ const config = (overrides) => ({
   apiKey: 'the-key',
   baseUrl,
   model: 'glm-5.3-flash',
-  appUrl: 'https://juguemos.local:3000',
+  appUrl: 'https://ludi.local:3000',
   ...overrides,
 })
 const openRouter = () => config({ provider: 'openrouter', model: 'some-lab/some-model' })
@@ -84,7 +84,7 @@ test('OpenCode gets the model, the key, the prompts, and a new session id per st
     { role: 'system', content: withGuardrails('sistema') },
     { role: 'user', content: 'usuario' },
   ])
-  assert.match(String(first.headers['x-opencode-session']), /^juguemos-/)
+  assert.match(String(first.headers['x-opencode-session']), /^ludi-/)
   assert.notEqual(first.headers['x-opencode-session'], second.headers['x-opencode-session'])
   assert.equal(first.body.provider, undefined)
 })
@@ -97,8 +97,8 @@ test('OpenRouter gets the app name and refuses providers that store or train on 
   const [request] = received
   assert.equal(request.body.model, 'some-lab/some-model')
   assert.deepEqual(request.body.provider, { data_collection: 'deny' })
-  assert.equal(request.headers['http-referer'], 'https://juguemos.local:3000')
-  assert.equal(request.headers['x-title'], 'Juguemos')
+  assert.equal(request.headers['http-referer'], 'https://ludi.local:3000')
+  assert.equal(request.headers['x-title'], 'Ludi')
   assert.equal(request.headers['x-opencode-session'], undefined)
 })
 

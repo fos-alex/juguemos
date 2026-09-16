@@ -1,8 +1,8 @@
-# Juguemos — Brand Brief
+# Ludi — Brand Brief
 
 **Version:** 0.2 · September 2026 · Owner: Alex Otero · Issue: JUG-17
 
-0.1 gave Juguemos a name, a wordmark, a palette, and a type scale. This is what 0.2 adds — iconography, the app icon, and a direction for illustration — written for you to judge rather than for an agent to build from. The rules an agent follows are in [design.md](design.md); where the two disagree, design.md is the one in force.
+0.1 gave Ludi a name, a wordmark, a palette, and a type scale. This is what 0.2 adds — iconography, the app icon, and a direction for illustration — written for you to judge rather than for an agent to build from. The rules an agent follows are in [design.md](design.md); where the two disagree, design.md is the one in force.
 
 **Three things need your decision.** They are listed at the end. Everything else here is built and in the branch.
 
@@ -10,7 +10,7 @@
 
 ## 1. What the brand has to be
 
-Juguemos is a play coach for families in Buenos Aires with children aged 1 to 5. A parent holds the phone, tired, one-handed, at 6pm on a rainy Tuesday. The child never looks at it.
+Ludi is a play coach for families in Buenos Aires with children aged 1 to 5. A parent holds the phone, tired, one-handed, at 6pm on a rainy Tuesday. The child never looks at it.
 
 So the brand has one difficult job: **be warm and playful without looking like a kids' app.** Kid styling — a mascot, glossy buttons, primary-colour blocks — tells a child the phone is for them, which is the opposite of what the app is for. The playfulness lives in the words and the colour. Everything drawn stays calm.
 
@@ -18,7 +18,7 @@ The second job is to be **from here**. Plaza, jacarandá, *rayuela*, *la ronda*,
 
 ## 2. What was already decided, and still holds
 
-- **The name and wordmark.** "Juguemos" in Fredoka 600, with three dots in grass, sun, and jacarandá. The dots are a *ronda*. Trademark and domain checks are still pending from 0.1 — that is the oldest open item on the brand.
+- **The name and wordmark.** "Ludi" in Fredoka 600, with three dots in grass, sun, and jacarandá. The dots are a *ronda*. Ludi replaced the working name, Juguemos, in September 2026; Home's button still says *¡Juguemos!* The domain is `ludi.ar`, and the trademark check is still pending.
 - **Two fonts.** Fredoka for display and buttons, Nunito Sans for body and story text. Fredoka 600 is the one childish-reading lever and it is at its limit.
 - **One palette,** light and dark, in `tokens.css`. Sand background, jacarandá primary, grass for meta labels.
 - **Flat.** No gradients, gloss, 3D, or drop shadows.
@@ -27,7 +27,7 @@ The second job is to be **from here**. Plaza, jacarandá, *rayuela*, *la ronda*,
 
 ![The app icon under a circle mask, a squircle mask, and at 180, 96, 48, 32 and 16 px](brand/app-icon.png)
 
-**The mark is the ronda, not the wordmark.** "Juguemos" is nine letters and it is unreadable at 48 px, let alone at 16. The three dots are the part of the identity that survives being shrunk, and they carry all three brand colours.
+**The mark is the ronda, not the wordmark.** Even at four letters, "Ludi" on a tile is hard to read at 48 px and a smudge at 16, and the phone already writes the name under the icon. The three dots are the part of the identity that survives being shrunk, and they carry all three brand colours.
 
 **The field is jacarandá,** with the dots in sun, grass, and sand. Two reasons: a light sand tile disappears among saturated app icons on a home screen, and a purple field reads on a light and a dark home screen without needing two versions. The trade is that the icon no longer contains a jacarandá *dot* — the field became the jacarandá.
 
@@ -35,7 +35,7 @@ The second job is to be **from here**. Plaza, jacarandá, *rayuela*, *la ronda*,
 
 The icon does not follow night mode. A home-screen icon can't.
 
-**Not proposed:** a letterform J, which loses the ronda; the wordmark on a tile, which is illegible; and anything with a face.
+**Not proposed:** a letterform L, which loses the ronda; the wordmark on a tile, which is illegible at the small sizes; and anything with a face.
 
 ## 4. Iconography
 
@@ -108,7 +108,7 @@ Pablo Bernasconi is the best-known Argentine illustrator working in collage, and
 2. **The menu's icons.** Keep the icon on each drawer row, or leave the menu as words. The only judgment call in the branch.
 3. **The app icon's field:** jacarandá as built, or sand with the three wordmark dots, which matches the wordmark exactly but goes quiet on a home screen.
 
-And one older item, still open from 0.1: **the wordmark's trademark and domain checks.**
+And one older item, still open from 0.1: **the trademark check for Ludi** (INPI). The domain is settled: `ludi.ar`.
 
 ---
 

@@ -21,7 +21,7 @@ import { useSyncExternalStore } from 'react'
 /** @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series'} StoriesKey */
 /** @typedef {'theme'} AppKey The night-mode choice, written by app/ThemeProvider.jsx. */
 
-const PREFIX = 'juguemos:'
+const PREFIX = 'ludi:'
 const cache = new Map()
 const listeners = new Set()
 

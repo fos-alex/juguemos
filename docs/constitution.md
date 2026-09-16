@@ -1,10 +1,10 @@
-# The Juguemos Constitution
+# The Ludi Constitution
 
 *Version 1.0 · September 2026*
 
 ## Why this exists
 
-Juguemos will face hundreds of decisions: what to build, what to cut, how the AI should talk, what to measure, and when to say no. This document is what we come back to when the answer isn't obvious. It applies to features, content, design, the AI's behavior, and how we define success.
+Ludi will face hundreds of decisions: what to build, what to cut, how the AI should talk, what to measure, and when to say no. This document is what we come back to when the answer isn't obvious. It applies to features, content, design, the AI's behavior, and how we define success.
 
 It has four parts: our five commitments, the guardrails that protect them, how to decide when they conflict, and how to use this document day to day.
 
@@ -24,7 +24,7 @@ Every feature exists to get a family playing together. The app is the invitation
 
 ### 2. Screens off, play on
 
-The best Juguemos session is a short one: open the app, get a great idea, put the phone down. We minimize screen time for the kids and for the parents. The play itself happens in the real world.
+The best Ludi session is a short one: open the app, get a great idea, put the phone down. We minimize screen time for the kids and for the parents. The play itself happens in the real world.
 
 **In practice:** Getting an idea takes seconds. Activity steps can be understood at a glance or listened to. Stories are made to be read aloud by a parent or listened to, not watched. Children are not the ones using the screen. Notifications are rare and genuinely useful ("Día del Padre is in 10 days"), never bait to reopen the app.
 
@@ -36,7 +36,7 @@ The best Juguemos session is a short one: open the app, get a great idea, put th
 
 ### 3. We walk alongside every family
 
-Juguemos accompanies families through their journey: first words, the terrible twos, a new sibling, the first bike ride, starting school. It shows up at the right moments, remembers what happened, celebrates the wins, and supports the hard stages without judgment.
+Ludi accompanies families through their journey: first words, the terrible twos, a new sibling, the first bike ride, starting school. It shows up at the right moments, remembers what happened, celebrates the wins, and supports the hard stages without judgment.
 
 Parents are the experts on their own kids. The app suggests; it never prescribes.
 
@@ -48,7 +48,7 @@ Parents are the experts on their own kids. The app suggests; it never prescribes
 
 ### 4. Just talk to it
 
-Using Juguemos should feel like talking to someone who knows your family. Voice is the primary interface. Screens are simple, calm, and obvious.
+Using Ludi should feel like talking to someone who knows your family. Voice is the primary interface. Screens are simple, calm, and obvious.
 
 **In practice:** Anything important can be done with a voice note, in the way families actually speak (Rioplatense Spanish first). The app asks at most one question at a time, confirms instead of interrogating, and never asks for something it already knows. It works one-handed, with a toddler on your hip and background noise. Forms exist as a fallback, not as the main path.
 
@@ -56,7 +56,7 @@ Using Juguemos should feel like talking to someone who knows your family. Voice 
 
 **The test:** *Could a parent do this by voice, with a toddler on their hip?*
 
-### 5. Juguemos grows with your family
+### 5. Ludi grows with your family
 
 The app and its content adapt to what the kids love, and they evolve as the family changes. Everything is personal: the kids' interests, their toys by the family's own names, each parent's style, and the family's stage of life.
 

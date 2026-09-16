@@ -24,9 +24,9 @@ export async function migrate({ databaseUrl, migrationsFolder = MIGRATIONS_DIR, 
   const client = new pg.Client({ connectionString: databaseUrl })
   await client.connect()
   try {
-    await client.query(`select pg_advisory_lock(hashtext('juguemos:migrations'))`)
+    await client.query(`select pg_advisory_lock(hashtext('ludi:migrations'))`)
     await client.query(`
-      create table if not exists public.juguemos_migrations (
+      create table if not exists public.ludi_migrations (
         name      text primary key,
         hash      text not null,
         applied_at timestamptz not null default now()
@@ -41,7 +41,7 @@ export async function migrate({ databaseUrl, migrationsFolder = MIGRATIONS_DIR, 
       await client.query('begin')
       try {
         await client.query(sql)
-        await client.query('insert into public.juguemos_migrations (name, hash) values ($1, $2)', [name, hash])
+        await client.query('insert into public.ludi_migrations (name, hash) values ($1, $2)', [name, hash])
         await client.query('commit')
       } catch (err) {
         await client.query('rollback')
@@ -78,7 +78,7 @@ function readMigrations(migrationsFolder) {
  */
 async function adoptDrizzleRecords(client, migrations) {
   const { rows } = await client.query(
-    `select to_regclass($1) is not null as "exists", (select count(*)::int from public.juguemos_migrations) as "recorded"`,
+    `select to_regclass($1) is not null as "exists", (select count(*)::int from public.ludi_migrations) as "recorded"`,
     [DRIZZLE_APPLIED],
   )
   if (!rows[0].exists || rows[0].recorded > 0) return
@@ -92,7 +92,7 @@ async function adoptDrizzleRecords(client, migrations) {
         `Drizzle recorded a migration that matches no file in api/migrations (sha256 ${hash}). Restore that file, or rebuild the database.`,
       )
     }
-    await client.query('insert into public.juguemos_migrations (name, hash) values ($1, $2)', [name, hash])
+    await client.query('insert into public.ludi_migrations (name, hash) values ($1, $2)', [name, hash])
   }
 }
 
@@ -105,7 +105,7 @@ async function adoptDrizzleRecords(client, migrations) {
 async function pendingMigrations(client, migrations) {
   /** @type {Map<string, string>} applied migration name → hash */
   const applied = new Map()
-  const { rows: records } = await client.query('select name, hash from public.juguemos_migrations')
+  const { rows: records } = await client.query('select name, hash from public.ludi_migrations')
   for (const record of records) applied.set(record.name, record.hash)
   const names = migrations.map(({ name }) => name)
   const latestIndex = Math.max(-1, ...[...applied.keys()].map((name) => names.indexOf(name)))

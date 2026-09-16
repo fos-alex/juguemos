@@ -62,7 +62,7 @@ export function StoryOptionsScreen() {
   const writing = loading && arrived === 0
   const slow = useSlowWait(writing)
 
-  useDocumentTitle('Hora del cuento · Juguemos')
+  useDocumentTitle('Hora del cuento · Ludi')
 
   /** @param {string[]} exclude */
   const load = async (exclude) => {

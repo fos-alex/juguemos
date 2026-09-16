@@ -9,10 +9,10 @@ test('the rules say the two things they exist for', () => {
 })
 
 test('a task prompt goes between the rules and the reminder', () => {
-  const system = withGuardrails('Sos el narrador de cuentos de Juguemos.')
+  const system = withGuardrails('Sos el narrador de cuentos de Ludi.')
   assert.ok(system.startsWith(GUARDRAILS), 'the rules open every system prompt, and every prompt cache with them')
-  assert.match(system, /Sos el narrador de cuentos de Juguemos\./)
-  assert.match(system.slice(system.indexOf('Sos el narrador')), /Recordá las reglas de Juguemos/)
+  assert.match(system, /Sos el narrador de cuentos de Ludi\./)
+  assert.match(system.slice(system.indexOf('Sos el narrador')), /Recordá las reglas de Ludi/)
 })
 
 test("the family's words arrive marked as data", () => {

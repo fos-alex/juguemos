@@ -1,14 +1,14 @@
-# Juguemos — Similar Apps
+# Ludi — Similar Apps
 
 **Version:** 0.1 · September 2026 · Owner: Alex Otero
 
-*Research on how similar apps look and feel, done for the basic branding in 0.1 (JUG-10). It covers design and styling. The rules it produced are in [design.md](design.md), which is the one to read before changing the UI; this is the evidence behind them. For what each app does and where Juguemos is different, see section 5 of [product-concept.md](product-concept.md).*
+*Research on how similar apps look and feel, done for the basic branding in 0.1 (JUG-10). It covers design and styling. The rules it produced are in [design.md](design.md), which is the one to read before changing the UI; this is the evidence behind them. For what each app does and where Ludi is different, see section 5 of [product-concept.md](product-concept.md).*
 
 ---
 
 ## 1. Summary
 
-The question behind this research: should Juguemos look like a kids' app, since it's about playing with little kids, or like a tool for the adults who hold the phone?
+The question behind this research: should Ludi look like a kids' app, since it's about playing with little kids, or like a tool for the adults who hold the phone?
 
 **Answer: design for the adults, and let the playfulness come from the words, colour and handwork.** This is where "a tool for grown-ups, about play" comes from.
 
@@ -44,7 +44,7 @@ Also looked at: TinyPlay (photos of real kids and household objects, and a "tire
 
 The newest apps, like Willo and TinyPlay, lean warm, with cream backgrounds, soft serifs and calm copy.
 
-**Most copy sells certainty and fear of falling behind:** "Know.", "the best start", "invest now". Vroom's brand guidelines are the clear exception, and the closest to the Juguemos constitution:
+**Most copy sells certainty and fear of falling behind:** "Know.", "the best start", "invest now". Vroom's brand guidelines are the clear exception, and the closest to the Ludi constitution:
 
 - Its materials may not be used on anything meant for children.
 - It never corrects parents and never talks about bad outcomes.
@@ -125,9 +125,9 @@ The local scene is crafted and artful, and made to be enjoyed by adults as well 
 - **Colour.** Keep brightness low with amber and brown tones, and avoid bright white and blue.
 - **Surfaces.** Material Design recommends dark grey (#121212) rather than pure black, desaturated colours, and at least 4.5:1 contrast. Tinting the greys warm is our inference, not a source's.
 - **Text.** Light mode is more legible for most people, and the gap grows as text gets smaller (NN/g). Dark mode therefore needs large text. Design blogs also suggest one weight heavier on dark backgrounds.
-- **No competitor has a warm night theme.** Readmio reportedly offers only a black-and-white inversion. A warm night mode would set Juguemos apart.
+- **No competitor has a warm night theme.** Readmio reportedly offers only a black-and-white inversion. A warm night mode would set Ludi apart.
 
-## 8. What this means for Juguemos
+## 8. What this means for Ludi
 
 **Five levers for playful without childish:**
 

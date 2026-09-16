@@ -1,4 +1,4 @@
-# Working on Juguemos
+# Working on Ludi
 
 Rules for any agent working in this repo. Claude Code reads this through `CLAUDE.md`, and opencode reads it directly. Each project has its own guide as well, so read the one for the code you are changing:
 
@@ -9,7 +9,7 @@ Rules for any agent working in this repo. Claude Code reads this through `CLAUDE
 
 ## The project
 
-Juguemos is a play coach for families in Buenos Aires. Start with these documents:
+Ludi is a play coach for families in Buenos Aires. Start with these documents:
 
 | Document | Read it for |
 |---|---|
@@ -34,12 +34,12 @@ An npm workspace with two projects, run locally by Docker Compose behind Caddy:
 |---|---|
 | `web/` | The React SPA |
 | `api/` | The Fastify API and its PostgreSQL migrations |
-| `caddy/` | Caddy's image, which builds the web app (`Dockerfile`), and its `Caddyfile`, which serves it and proxies `/api` to the API, at `https://juguemos.local:3000` and on `127.0.0.1:3001` for phones over Tailscale |
+| `caddy/` | Caddy's image, which builds the web app (`Dockerfile`), and its `Caddyfile`, which serves it and proxies `/api` to the API, at `https://ludi.local:3000` and on `127.0.0.1:3001` for phones over Tailscale, or at `https://ludi.ar` on the droplet |
 | `docker-compose.yml` | Postgres, the one-shot migrations, the API, and Caddy |
 | `scripts/` | Repo tooling, run by timers rather than by agents. See [Nightly cleanup](#nightly-cleanup) |
 | `docs/` | Product, architecture, design, and releases |
 
-Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, and activities and stories from templates in the database. Only Google sign-in (0.3) and email verification are still missing, since they need services Juguemos doesn't have yet.
+Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, and activities and stories from templates in the database. Only Google sign-in (0.3) and email verification are still missing, since they need services Ludi doesn't have yet.
 
 **JSDoc guides, nothing enforces it.** Both projects are plain JavaScript. JSDoc types are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or a `tsconfig` or `jsconfig`.
 
@@ -51,7 +51,7 @@ Every 0.1 screen is built and runs on the API: accounts with a required session,
 
 Linear must always show what is being built and what has finished.
 
-- **Workspace:** Juguemos, team **Juguemos**, issue keys `JUG-…`
+- **Workspace:** Juguemos, team **Juguemos**, issue keys `JUG-…`. Linear and the GitHub repo (`fos-alex/juguemos`) keep the old name; the product is Ludi
 - **Projects:** one per release (`0.1 — ¿Me gusta?` through `1.0 — Juguemos`), plus `Later` for work after 1.0 and parked ideas
 - **Labels:** Feature, Content, Infrastructure, Decision, Guardrails, Improvement, Bug
 - **Statuses:** Backlog → Todo → In Progress → In Review → Done, plus Canceled and Duplicate
@@ -97,5 +97,5 @@ We work on `main`, and every PR targets `main`.
 - **Removes worktrees whose PR has been merged or closed,** with their local and remote branches. It never touches a worktree with uncommitted changes or unpushed commits, and never one whose PR is still open or that has no PR yet.
 - **Moves Linear issues whose work has landed to Done.** An issue id in a merged PR's branch name is that PR's own issue and gets closed; an id that appears only in the title is a mention, and is reported rather than changed.
 
-It writes to `~/.local/state/juguemos/nightly.log` and interrupts nobody.
-`~/.local/state/juguemos/nightly-settled.txt` is the list of issues it has already dealt with, so it never asks about the same one twice. Delete a line to have it look at that issue again.
+It writes to `~/.local/state/ludi/nightly.log` and interrupts nobody.
+`~/.local/state/ludi/nightly-settled.txt` is the list of issues it has already dealt with, so it never asks about the same one twice. Delete a line to have it look at that issue again.

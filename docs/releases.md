@@ -1,12 +1,12 @@
-# Juguemos — Releases
+# Ludi — Releases
 
-**Version:** 0.14 draft · September 2026 · Owner: Alex Otero
+**Version:** 0.15 draft · September 2026 · Owner: Alex Otero
 
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
 ---
 
-> **Release gate: guardrails first.** Nobody outside our family uses Juguemos until the guardrails are complete. Getting the agent's guardrails right needs a lot of trial and error, and it won't be rushed. Until then, Juguemos is played and tested only by Alex's family.
+> **Release gate: guardrails first.** Nobody outside our family uses Ludi until the guardrails are complete. Getting the agent's guardrails right needs a lot of trial and error, and it won't be rushed. Until then, Ludi is played and tested only by Alex's family.
 
 ## 1. How releases work
 
@@ -28,11 +28,11 @@
 
 | Release | Theme | The question it answers |
 |---|---|---|
-| **0.1** | *¿Me gusta?* | Do we reach for Juguemos on our own, and do its ideas and stories feel made for us? |
+| **0.1** | *¿Me gusta?* | Do we reach for Ludi on our own, and do its ideas and stories feel made for us? |
 | **0.2** | *Nos conoce* | Does knowing the family deeply make suggestions clearly better? |
 | **0.3** | *El momento justo* | Does knowing the weather and the time of day bring the right idea at the right moment? |
 | **0.4** | *Jugar para crecer* | Do goals make play feel like progress without feeling like homework? |
-| **0.5** | *Con cuidado* | Is Juguemos safe enough to put in the hands of other families? |
+| **0.5** | *Con cuidado* | Is Ludi safe enough to put in the hands of other families? |
 | **0.6** | *Nuestros momentos* | Does the journal become the family's shared memory? |
 | **0.7** | *La fábrica* | Can the catalog grow fast without losing quality or safety? |
 | **0.8** | *Hablale* | Can a parent do everything important by voice? |
@@ -49,7 +49,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Family onboarding.** Conversational, by text, for one parent. The parent writes about the family in their own words, and the AI extracts the kids (name and age), the pet, interests, and toys by their family names. It shows a *"¿Está bien así?"* card to confirm, and a plain form covers corrections.
 - **Suggest an activity.** The one-tap *"¡Juguemos!"* button. It picks one activity from the catalog that fits the kids' ages and fills it in with their names, interests, and the pet. *"Otro juego"* shows a different one. *"Empezar"* starts a silent timer, and while it runs Home shows the juego and the time left, with a way to end it.
 - **Tell a story.** *"Hora del cuento"* offers three plot options starring the kids, the pet, and their toys by family name. The three options are cast by code from a tweakable probability distribution — who leads, whether the pet and a toy are in, which interest is the theme, and an occasional wildcard outside all of it — and interest keywords under them write a story on that theme in one tap. Each option appears as soon as it is written, so the first card is there while the rest are still coming. The parent picks one and reads it on a screen with large text that stays awake. Until the LLM provider is chosen, stories come from templates filled in by code.
-- **Who's playing.** Home shows the kids, all marked. The parent unmarks whoever isn't playing, and games and stories are made for the kids who are. Juguemos remembers the choice for next time.
+- **Who's playing.** Home shows the kids, all marked. The parent unmarks whoever isn't playing, and games and stories are made for the kids who are. Ludi remembers the choice for next time.
 - **Night mode.** Dark from 19:00 to 07:00 local time, switching on its own, and one tap to change between light and dark, above all on the reading screen. It uses the Plaza dark palette; warming it is still open.
 - **First iteration of content.** 30–40 activity templates for ages 1–3, drafted with AI, reviewed by Alex, loaded into the database by the catalog seeds, and tagged with the full taxonomy. A short guideline for story length and tone.
 - **Admin for the catalog.** A page where Alex adds, edits, switches off, and deletes activity templates while playtesting. It has no login yet, so it's off unless turned on, and never on where anyone outside the family can reach it.
@@ -75,11 +75,11 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Weather.** Current conditions and the forecast for the family's neighborhood, with rain and heat-wave alternatives.
 - **Time-aware activities and stories.** Based on the time of day and each child's routine, so an energetic game doesn't show up just before bed and bedtime stories are calm.
 - **Enhanced stories with notes to parents.** Voices, sounds, gestures, props from the toy box, and pauses for the child to join in, matched to each child's age.
-- **Story series.** Stories that share a setting and characters are grouped into a series. From a series, the parent asks for the next chapter, and Juguemos writes it as a continuation of what happened before.
+- **Story series.** Stories that share a setting and characters are grouped into a series. From a series, the parent asks for the next chapter, and Ludi writes it as a continuation of what happened before.
 - **Story library and rereads.** Save a story and reread it with one tap. A series keeps its chapters together, in order.
 - **Sign in with Google.** Parents can sign in with their Google account, which shares only their name and email. Until the guardrails are complete, only the family's own accounts get in.
 - **An animation while a story is written** (nice to have). A story from the LLM can take up to two minutes before there's anything to read, so an animation shows that it's being written, and it varies with the kids' ages. It gives way to the text as soon as the first words arrive.
-- **An animation while a voice note is read** (nice to have). The same for onboarding, while a voice note becomes words and while Juguemos reads the family from them. One animation for everyone here: during onboarding Juguemos doesn't know the kids yet.
+- **An animation while a voice note is read** (nice to have). The same for onboarding, while a voice note becomes words and while Ludi reads the family from them. One animation for everyone here: during onboarding Ludi doesn't know the kids yet.
 
 ### 0.4 — *Jugar para crecer*
 
@@ -120,7 +120,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Each parent's play style.** Energy level, favorite kinds of play, and what they'd rather avoid.
 - **Monthly recaps.** What was practiced and achieved.
 - **Printable activities.** Pages to print, cut, fold, and colour: letters, numbers, and colours, animals to sort into groups, simple board and card games, colouring pages, and things to build for the family's toys, like a stable for the horse or a rocket to fold for the astronaut. Each page is made for the family, with the kids' names and the animals they love, and piece size follows the kids' ages.
-- **Legal work.** Review under Ley 25.326, registration of the database with the AAIP if required, terms of use and privacy policy, and INPI trademark and domain confirmed.
+- **Legal work.** Review under Ley 25.326, registration of the database with the AAIP if required, terms of use and privacy policy, and the INPI trademark for Ludi confirmed.
 
 ### 1.0 — *Juguemos*
 
@@ -146,11 +146,11 @@ Changes from the first draft of this plan, and suggestions that were considered 
 
 | Decision | Why |
 |---|---|
-| 0.1 activities and stories use a simple profile (names, ages, interests, pet) | Without it, 0.1 tests a generic idea generator, not Juguemos. |
+| 0.1 activities and stories use a simple profile (names, ages, interests, pet) | Without it, 0.1 tests a generic idea generator, not Ludi. |
 | Toys captured by family name in 0.1 onboarding and used in stories; the toy box stays in 0.2 | Hearing *el dinosaurio chiquito* in a story is the cheapest "it knows us" moment. |
 | Voice notes in 0.2, live voice conversation in 0.8 | Recording and transcribing a note is standard work. A live voice agent is the hard part. |
 | No guardrails in 0.1; basic in 0.2, complete in 0.5 | 0.1 is used only by Alex's family. Guardrails need a lot of trial and error with the agent and won't be rushed. |
-| No outside testers until guardrails are complete | Other families only use Juguemos once it is safe to. |
+| No outside testers until guardrails are complete | Other families only use Ludi once it is safe to. |
 | Close friends join by invitation only; no public alpha until 1.0 | Alex playtests a lot first, then close friends for a while. |
 | Goal setting moved from 0.3 to 0.4 | Keeps 0.3 about context and 0.4 about goals. |
 | Feedback tap in 0.2 | It feeds the profile-based recommendations that arrive in the same release. |
@@ -179,7 +179,7 @@ Changes from the first draft of this plan, and suggestions that were considered 
 
 ## 6. Open questions
 
-- **Styling by age.** Home's look is still an open question, and the recommendation is still no: age already shapes the games and stories, and styling by age would make Juguemos look like a kids' app, which [design.md](design.md) rules out. The animation while a story is written is decided and does vary with age; see the decisions above.
+- **Styling by age.** Home's look is still an open question, and the recommendation is still no: age already shapes the games and stories, and styling by age would make Ludi look like a kids' app, which [design.md](design.md) rules out. The animation while a story is written is decided and does vary with age; see the decisions above.
 
 - **The LLM in 0.1.** Does the playtest wait for the LLM provider, or start with template stories and the family form, adding conversational onboarding and bespoke stories when they're ready?
 - **Friends and guardrails.** The first target for friends was 0.3 or 0.4, but guardrails complete in 0.5. Should guardrails move earlier so friends can join sooner, or do friends wait for 0.5?
@@ -205,3 +205,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.12 draft | September 2026 | Added printable activities to 0.9. |
 | 0.13 draft | September 2026 | Added the casting draw, interest keywords, and the story audit to 0.1's Tell a story. |
 | 0.14 draft | September 2026 | Settled the waiting animations: shapes from the plaza rather than a character, varying with the age of the kids playing, and allowed on the reading screen until the story's first words. |
+| 0.15 draft | September 2026 | Renamed the product from Juguemos to Ludi, at `ludi.ar`. Home's button still says *¡Juguemos!*, and the 1.0 release keeps the name *Juguemos*. |
