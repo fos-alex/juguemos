@@ -84,7 +84,7 @@ const sendEvents = async (reply, stream, last, signal) => {
 export function createStoriesController({ stories }) {
   return {
     /**
-     * The three options, as server-sent events: one `option` as each lands,
+     * The two options, as server-sent events: one `option` as each lands,
      * then `done`. A model that answers nothing readable fails before the
      * stream starts, so the family gets a clean error instead of an empty
      * screen; a failure once it has started is one last `error` event, as

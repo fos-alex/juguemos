@@ -1,12 +1,13 @@
 /* 2r ¿Cuál leemos hoy? */
 
 .story-options {
-  gap: 14px;
-  padding-top: 22px;
+  gap: 12px;
+  padding-top: 16px;
 }
 
+/* Tight enough that both plots and the button under them fit above the fold on an iPhone SE in Safari. */
 .story-option {
-  padding: 18px;
+  padding: 16px 18px;
 }
 
 .story-option__title {
@@ -19,24 +20,25 @@
 
 .story-option__teaser {
   display: block;
-  margin-top: 7px;
+  margin-top: 5px;
   font-size: 16px;
   line-height: 1.45;
   color: var(--ink-body-soft);
 }
 
 .story-option__time {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .story-option--skeleton {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 122px;
+  /* About a card with a two-line title and a two-line teaser, so the button under them doesn't jump. */
+  min-height: 154px;
 }
 
-/* The family's own interests, under the three options: one tap writes a
+/* The family's own interests, under the options: one tap writes a
    story on that theme (JUG-140). */
 
 .story-keywords {
@@ -55,7 +57,7 @@
 }
 
 /* The family's own: the series they follow (JUG-59) and the shelf of stories
-   to read again (JUG-50), below the three options. Each row is a card with two
+   to read again (JUG-50), below the options. Each row is a card with two
    things to tap, so the card itself isn't the button. */
 
 .story-shelf {
@@ -169,13 +171,15 @@
   padding: 16px 30px calc(38px + env(safe-area-inset-bottom));
 }
 
-/* Nothing to read yet: the animation waits where the three cards will go. */
+/* Nothing to read yet: the animation waits where the two cards will go. */
 .story-writing {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 18px;
-  padding: 44px 0;
+  /* The height of the two cards it waits for, so the button under them stays put. */
+  min-height: 320px;
   text-align: center;
 }
 
@@ -251,14 +255,28 @@
   line-height: 1.4;
 }
 
-.story-request__footer,
-.story-options__voice {
+.story-request__footer {
   padding-top: 14px;
 }
 
-.story-options__voice-help {
-  margin-top: 26px;
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--ink-muted);
+/* The third way in, under the two plots: a button that opens the mic, and the mic. */
+.story-ask {
+  display: grid;
+  gap: 8px;
+}
+
+.story-ask__button {
+  flex: 1;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 18px;
+  border-style: dashed;
+  border-color: var(--hairline-strong);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: left;
+  color: var(--primary);
 }

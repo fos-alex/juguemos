@@ -2,7 +2,7 @@ import { Chips } from '../../../shared/ui'
 import '../stories.css'
 
 /**
- * What the kids playing love (JUG-140, JUG-144), under the three plots: one tap
+ * What the kids playing love (JUG-140, JUG-144), under the plots: one tap
  * writes a story on that theme. A chip that can't be tapped right now — offline,
  * or while the options are still coming — looks flat but still answers, so the
  * screen can say why.

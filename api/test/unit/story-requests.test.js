@@ -98,7 +98,7 @@ test('the casting follows the request: whoever it names first leads, with the pe
   // It names no kid, so every kid in the profile is in it.
   assert.deepEqual(casting.kids, ['k-milan', 'k-sofi'])
   assert.equal(casting.theme, 'la valentía')
-  assert.equal(casting.draws.anchorIn, null)
+  assert.equal(casting.draws.petIn, null, 'nothing is drawn')
 })
 
 test('a request that names only its own characters is led by the first of them, with the kids along', () => {

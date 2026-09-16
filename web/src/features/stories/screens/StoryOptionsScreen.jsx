@@ -5,10 +5,10 @@ import { askForStory, familySeries, makeSeries, savedStories, savedStory, storyO
 import { KeywordChips } from '../components/KeywordChips'
 import { OptionSkeleton } from '../components/OptionSkeleton'
 import { SeriesShelf } from '../components/SeriesShelf'
+import { StoryAsk } from '../components/StoryAsk'
 import { StoryRequestReview } from '../components/StoryRequestReview'
 import { StoryShelf } from '../components/StoryShelf'
 import { waitingVariant } from '../model'
-import { VoiceLine, VoiceUnderstanding } from '../../voice'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
@@ -23,27 +23,31 @@ import '../stories.css'
 /** @typedef {import('../types').StoryRequest} StoryRequest */
 
 /** How many options a screen holds, which is how many skeletons it starts with. */
-const OPTIONS = 3
+const OPTIONS = 2
 
 /**
- * 2r, the four ways into a story, in the order a parent reaches for them:
- * three fresh plots, the series they are already following (JUG-59), what the
- * kids playing love (JUG-140, JUG-144), and the shelf of stories to read again
- * (JUG-50). Three plots of equal weight: the app suggests, it doesn't
- * recommend. Reading time is always the last line, because it decides things at
- * 8 pm. No cover art, no illustration, no mascot.
+ * 2r, the ways into a story, in the order a parent reaches for them: two
+ * fresh plots and a story of their own asked for by voice, which fit above the
+ * fold together on a small phone; then the series they are already following
+ * (JUG-59), what the kids playing love (JUG-140, JUG-144), and the shelf of
+ * stories to read again (JUG-50). The first plot is the classic, led by the
+ * kid the story is for, and the second proposes something new (JUG-157); the
+ * cards look the same, since the app suggests and doesn't recommend. Reading
+ * time is always the last line, because it decides things at 8 pm. No cover
+ * art, no illustration, no mascot.
  *
  * The options arrive one at a time, so a card takes its skeleton's place as
  * soon as the model has written it, and a card that is there can be tapped
- * while the others are still coming. Until the first one lands there is
- * nothing to hold a place for, so the waiting animation waits there instead
- * (JUG-132), and gives way the moment a card arrives. The series and the shelf are the family's
- * own: the series are kept on the device, so they are there offline, and the
- * shelf is offscreen content whose fetch may come and go quietly.
+ * while the other is still coming. Until the first one lands there is nothing
+ * to hold a place for, so the waiting animation waits there instead
+ * (JUG-132), in the same height, and gives way the moment a card arrives. The
+ * series and the shelf are the family's own: the series are kept on the
+ * device, so they are there offline, and the shelf is offscreen content whose
+ * fetch may come and go quietly.
  *
- * The mic beside "Otras opciones" takes a voice note asking for a story of the
- * parent's own (JUG-156). What Ludi heard takes over the screen until the
- * parent writes it or goes back; nothing is written before that.
+ * "Contame qué cuento querés escuchar" opens the mic (JUG-157). What Ludi
+ * heard takes over the screen until the parent writes it or goes back;
+ * nothing is written before that.
  */
 export function StoryOptionsScreen() {
   const navigate = useNavigate()
@@ -61,13 +65,12 @@ export function StoryOptionsScreen() {
   const [notice, setNotice] = useState(/** @type {string | null} */ (null))
   // The story whose series is being made, so its row shows the wait.
   const [starting, setStarting] = useState(/** @type {string | null} */ (null))
-  const [voiceMessage, setVoiceMessage] = useState(/** @type {import('../../voice').VoiceMessage | null} */ (null))
   // The story the last voice note asked for, waiting for the parent to say yes.
   const [heard, setHeard] = useState(/** @type {StoryRequest | null} */ (null))
   // The stream in flight, so asking for others, or leaving, stops the old one
   // instead of letting two of them write options over each other.
   const asking = useRef(/** @type {AbortController | null} */ (null))
-  // Nothing to read yet: the animation waits in the three cards' place
+  // Nothing to read yet: the animation waits in the two cards' place
   // (JUG-132), and says what it is doing once the wait is long.
   const writing = loading && arrived === 0
   const slow = useSlowWait(writing)
@@ -200,7 +203,8 @@ export function StoryOptionsScreen() {
         <h1 className="page-title">¿Cuál leemos hoy?</h1>
       </div>
       <Body className="story-options">
-        {options?.map((option) => (
+        {/* A device that stored a screen of three before JUG-157 shows the first two. */}
+        {options?.slice(0, OPTIONS).map((option) => (
           <Card key={option.id} className="story-option" onClick={() => pick(option.id)}>
             <span className="story-option__title">{option.title}</span>
             <span className="story-option__teaser">{option.teaser}</span>
@@ -219,6 +223,7 @@ export function StoryOptionsScreen() {
           loading &&
           Array.from({ length: Math.max(OPTIONS - arrived, 0) }, (_, index) => <OptionSkeleton key={`skeleton-${index}`} />)
         )}
+        <StoryAsk read={readNote} />
         <StatusLine role="alert">{notice}</StatusLine>
         <SeriesShelf
           series={series}
@@ -227,22 +232,12 @@ export function StoryOptionsScreen() {
         />
         <KeywordChips interests={interests} unavailable={!online || loading} onPick={pickKeyword} />
         <StoryShelf stories={shelf ?? []} startingId={starting} onOpen={openStory} onStartSeries={startSeries} />
-        {/* Voice pass pending. */}
-        <p className="story-options__voice-help">¿Tenés otro cuento en mente? Mantené apretado el micrófono y contámelo.</p>
-        <VoiceLine message={voiceMessage} />
       </Body>
-      <Footer row className="story-options__voice">
-        <VoiceUnderstanding read={readNote} onMessage={setVoiceMessage}>
-          {/* Voice pass pending: "Otras opciones". */}
-          <TertiaryButton
-            size="lg"
-            className="grow"
-            disabled={loading}
-            onClick={() => void load(options?.map((option) => option.id) ?? [])}
-          >
-            {arrived > 0 ? 'Otras opciones' : 'Probar de nuevo'}
-          </TertiaryButton>
-        </VoiceUnderstanding>
+      <Footer>
+        {/* Voice pass pending: "Otras opciones". */}
+        <TertiaryButton size="lg" disabled={loading} onClick={() => void load(options?.map((option) => option.id) ?? [])}>
+          {arrived > 0 ? 'Otras opciones' : 'Probar de nuevo'}
+        </TertiaryButton>
       </Footer>
     </Screen>
   )

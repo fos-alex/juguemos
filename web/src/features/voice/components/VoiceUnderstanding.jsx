@@ -27,8 +27,8 @@ import '../voice.css'
  *   read: (text: string) => Promise<void>,
  *   onMessage: (message: VoiceMessage | null) => void,
  *   onRecording?: (recording: boolean) => void,
- *   children: React.ReactNode,
- * }} props
+ *   children: React.ReactNode | ((record: () => void) => React.ReactNode),
+ * }} props `children` as a function is given `record`, as `VoiceNote` gives it
  */
 export function VoiceUnderstanding({ read, onMessage, onRecording, children }) {
   const [reading, setReading] = useState(false)
@@ -53,15 +53,19 @@ export function VoiceUnderstanding({ read, onMessage, onRecording, children }) {
 
   return (
     <VoiceNote onText={understand} onMessage={onMessage} onRecording={onRecording}>
-      {reading ? (
-        <div className="voice__strip" role="status">
-          <Waiting size="strip" />
-          {/* Voice pass pending. */}
-          <span className="voice__sending">{slow ? 'Sigo leyendo. Ya casi está.' : 'Leyendo'}</span>
-        </div>
-      ) : (
-        children
-      )}
+      {(record) =>
+        reading ? (
+          <div className="voice__strip" role="status">
+            <Waiting size="strip" />
+            {/* Voice pass pending. */}
+            <span className="voice__sending">{slow ? 'Sigo leyendo. Ya casi está.' : 'Leyendo'}</span>
+          </div>
+        ) : typeof children === 'function' ? (
+          children(record)
+        ) : (
+          children
+        )
+      }
     </VoiceNote>
   )
 }
