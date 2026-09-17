@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from '@tanstack/react-router'
 import { interestMark, playingAgeMonths } from '../../family'
 import { forgetOptions, rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeRequestedStory, writeStory } from '../api'
 import { StoryEnd } from './StoryEnd'
+import { StoryMark } from './StoryMark'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
 import { StoryText } from './StoryText'
@@ -45,7 +46,8 @@ import '../stories.css'
  * held back so it doesn't brighten a dim room, and one line says what is
  * happening once the wait is long. It draws the mark of what the story is
  * about when there is one (JUG-160). It goes the moment there are words, and
- * the story text itself is never illustrated.
+ * the story text itself is never illustrated: the mark sits over the title
+ * instead (JUG-166).
  *
  * Once the story is whole, it is the one Home offers again, and its end says
  * what comes next: Listo, and a series or its next episode (JUG-154).
@@ -149,6 +151,18 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
   if (!title && !looking && !failure) return <Navigate to="/cuentos" replace />
 
   const parts = story ? story.parts : groupByPart(paragraphs)
+  // What the story is about, most telling first: the title and teaser once
+  // they are known, then what the parent tapped or asked for.
+  const about = [
+    title,
+    story?.teaser ?? option?.teaser,
+    story?.keyword ?? keyword,
+    request?.theme,
+    request?.summary,
+    request?.setting,
+    writingSeries?.title,
+    writingSeries?.storyline,
+  ]
 
   return (
     <Screen tone="reading">
@@ -165,6 +179,7 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
         }
       />
       <Body className="reading">
+        <StoryMark texts={about} place="title" />
         {/* Which series this is an episode of, once the story is whole: while
             an episode is being written the series may still be getting its name. */}
         {inSeries && (
@@ -193,16 +208,7 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
             <Waiting
               variant="drawing"
               tool={waitingTool(playingAgeMonths(family))}
-              mark={interestMark(
-                keyword,
-                request?.theme,
-                request?.summary,
-                request?.setting,
-                option?.title,
-                option?.teaser,
-                writingSeries?.title,
-                writingSeries?.storyline,
-              )}
+              mark={interestMark(...about)}
               size="screen"
               tone="reading"
             />

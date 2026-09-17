@@ -35,6 +35,28 @@
   margin-top: 0;
 }
 
+/* The mark of what a toy is (JUG-166), landing in the card's corner like a
+   story's. Only the words make room for it. */
+.toy-marked {
+  position: relative;
+}
+
+.toy-marked > :is(.card-title, .card-meta) {
+  padding-right: 38px;
+}
+
+.toy-mark {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--primary);
+  animation: mark-in 520ms var(--ease-play) 120ms backwards;
+}
+
+.toy-mark--header {
+  position: static;
+}
+
 .toy-form__remove {
   display: flex;
   flex-direction: column;

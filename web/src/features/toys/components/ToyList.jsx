@@ -1,5 +1,5 @@
-import { toyLine } from '../model'
-import { Card, Skeleton, StatusLine } from '../../../shared/ui'
+import { toyLine, toyMark } from '../model'
+import { Card, MarkIcon, Skeleton, StatusLine } from '../../../shared/ui'
 import '../toys.css'
 
 /** @typedef {import('../types').ToyBox} ToyBox */
@@ -7,7 +7,8 @@ import '../toys.css'
 
 /**
  * The toys by their family names, each with the rest of what the box knows in
- * one line. Placeholders while this device doesn't have the box yet.
+ * one line, and the mark of what it is in the corner when there is one
+ * (JUG-166). Placeholders while this device doesn't have the box yet.
  * @param {{ box: ToyBox | null, kids: Kid[], onOpen: (id: string) => void }} props
  */
 export function ToyList({ box, kids, onOpen }) {
@@ -25,9 +26,11 @@ export function ToyList({ box, kids, onOpen }) {
     <ul className="toy-list">
       {box.toys.map((toy) => {
         const line = toyLine(toy, box, kids)
+        const mark = toyMark(toy)
         return (
           <li key={toy.id}>
-            <Card onClick={() => onOpen(toy.id)}>
+            <Card className={mark ? 'toy-marked' : ''} onClick={() => onOpen(toy.id)}>
+              {mark && <MarkIcon mark={mark} size={26} className="toy-mark" />}
               <span className="card-title">{toy.name}</span>
               {line && <span className="card-meta">{line}</span>}
             </Card>

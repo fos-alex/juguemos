@@ -3,14 +3,14 @@ import { useParams } from '@tanstack/react-router'
 import { addToy, editToy, linkToy, loadToyBox, removeToy, understandToys } from '../api'
 import { RemoveToy } from '../components/RemoveToy'
 import { ToyForm } from '../components/ToyForm'
-import { EMPTY, joining, NEW, owner, sameName, sameSet, toForm } from '../model'
+import { EMPTY, joining, NEW, owner, sameName, sameSet, toForm, toyMark } from '../model'
 import { VoiceLine, VoiceUnderstanding } from '../../voice'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useOnline } from '../../../shared/hooks/useOnline'
 import { useRequest } from '../../../shared/hooks/useRequest'
 import { useStored } from '../../../shared/store'
-import { Body, Footer, Header, PrimaryButton, Screen, Skeleton, StatusLine } from '../../../shared/ui'
+import { Body, Footer, Header, MarkIcon, PrimaryButton, Screen, Skeleton, StatusLine } from '../../../shared/ui'
 import '../toys.css'
 
 /** @typedef {import('../types').ToyChanges} ToyChanges */
@@ -30,6 +30,9 @@ const ONLY_THE_FIRST = 'Escuché más de uno. Anoté el primero; los otros los p
  * the form for the parent to check. Nothing is saved until "Guardar", so the
  * words replace what those two fields hold. A note about several toys fills
  * the form with the first and says where the others go.
+ *
+ * The mark of what the toy is sits in the header (JUG-166), and follows the
+ * name and what it is as the parent types them.
  */
 export function ToyScreen() {
   const { id } = useParams({ from: '/juguetes/$id' })
@@ -141,6 +144,7 @@ export function ToyScreen() {
     )
   }
 
+  const mark = toyMark(form)
   const saveButton = (
     <PrimaryButton
       className={isNew ? 'grow' : ''}
@@ -155,7 +159,11 @@ export function ToyScreen() {
 
   return (
     <Screen>
-      <Header onBack={goBack} title={isNew ? 'Nuevo juguete' : 'Juguete'} />
+      <Header
+        onBack={goBack}
+        title={isNew ? 'Nuevo juguete' : 'Juguete'}
+        trailing={mark && <MarkIcon key={mark} mark={mark} size={30} className="toy-mark toy-mark--header" />}
+      />
       <form className="screen-form" onSubmit={save} noValidate>
         <Body className="form-body toy-form">
           <ToyForm
