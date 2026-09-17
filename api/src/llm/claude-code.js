@@ -2,8 +2,8 @@
  * Claude Code as the story model (JUG-168). Each call runs the `claude` CLI
  * once in print mode and streams the text of its answer. `client.js` has
  * already wrapped the prompts in the guardrails; this file only runs them.
- * The API's Docker image doesn't carry the CLI: where it isn't installed,
- * every call fails with an `UpstreamError`, which the API logs.
+ * The API's Docker image installs the CLI; where it isn't installed, every
+ * call fails with an `UpstreamError`, which the API logs.
  *
  * The CLI runs as a plain model: no tools, MCP servers, settings files,
  * CLAUDE.md, skills, or saved sessions, in an empty folder of its own that is

@@ -114,7 +114,7 @@ The tables themselves, and what each domain owns, are in [api/AGENTS.md](../api/
 
 | Service | Used for | Notes |
 |---|---|---|
-| LLM provider | Stories, activity tailoring, reading a family from the parent's words | OpenCode Go, OpenRouter, or Claude Code, chosen by environment variable (JUG-115, JUG-168); which to keep is still open. OpenRouter requests refuse upstream providers that store or train on prompts. Claude Code runs the `claude` CLI with a Claude subscription's OAuth token; the API's Docker image doesn't include the CLI, so calls fail with a logged error where it isn't installed. Server-side only. |
+| LLM provider | Stories, activity tailoring, reading a family from the parent's words | OpenCode Go, OpenRouter, or Claude Code, chosen by environment variable (JUG-115, JUG-168); which to keep is still open. OpenRouter requests refuse upstream providers that store or train on prompts. Claude Code runs the `claude` CLI with a Claude subscription's OAuth token; the API's Docker image installs the CLI. Server-side only. |
 | Speech-to-text | Voice notes | Must handle Rioplatense Spanish, children's names, and background noise. Whisper on the droplet by default, so audio never leaves the server; the API speaks the OpenAI transcriptions API, so a hosted service is a change of environment variables (JUG-88). |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas and kid-friendly places | Maps data is enough for v1; no curated event listings. |
