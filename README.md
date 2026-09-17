@@ -160,7 +160,7 @@ The Whisper model downloads again on the first start (about 1.6 GB). The nightly
 
 ### Admin
 
-`/admin` manages the activity templates: add, edit, switch off, and delete. `/admin/usuarios` lists the accounts and invites an email, which is the only way to create one: the email gets a link to `/invitacion` on `BETTER_AUTH_URL`, where it signs up with a password or Google. With no SMTP settings nothing is sent and the page hands you the link instead. The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
+`/admin` manages the activity templates: add, edit, switch off, and delete. `/admin/usuarios` lists the accounts, removes one with *Borrar*, and invites an email, which is the only way to create one: the email gets a link to `/invitacion` on `BETTER_AUTH_URL`, where it signs up with a password or Google. With no SMTP settings nothing is sent and the page hands you the link instead. *Borrar* removes an account with its family and everything under it, so the same email can be invited and sign up again, which is how sign-up is tested (JUG-175). The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
 
 ### Emails
 

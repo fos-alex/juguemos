@@ -80,7 +80,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/serie/$id/episodio` | The same reading screen, writing the series' next episode. Once saved, the URL is replaced with the story's own |
 | `/admin` | The catalog admin: every activity template, with a switch that takes it out of *¡Juguemos!* |
 | `/admin/$id` | Edits one template. `/admin/nuevo` adds one |
-| `/admin/usuarios` | Usuarios: invite an email, with *Reenviar* for the invitations still open, and the accounts (JUG-34) |
+| `/admin/usuarios` | Usuarios: invite an email, with *Reenviar* for the invitations still open, and the accounts, each with *Borrar* (JUG-34, JUG-175) |
 
 The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), so the guard lets it through without an account and the API serves it only when `ADMIN_ENABLED` is true. That includes inviting people: no outside testers until the guardrails are complete. It is wider than the app (720 px) but still uses the tokens and the primitives.
 

@@ -1,7 +1,8 @@
 import { DrizzleQueryError } from 'drizzle-orm'
 import Fastify from 'fastify'
 import { createAccountsController } from './accounts/accounts.controller.js'
-import { accountsRoutes } from './accounts/accounts.routes.js'
+import { accountsRoutes, adminAccountsRoutes } from './accounts/accounts.routes.js'
+import { createAccountsService } from './accounts/accounts.service.js'
 import { createActivitiesController } from './activities/activities.controller.js'
 import { activitiesRoutes } from './activities/activities.routes.js'
 import { createActivitiesService } from './activities/activities.service.js'
@@ -63,6 +64,7 @@ import { createVoiceService } from './voice/voice.service.js'
  */
 export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber, mailer }) {
   const app = Fastify({ logger })
+  const accounts = createAccountsService({ db })
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
   const materials = createMaterialsService({ db })
@@ -117,7 +119,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
   app.register(invitationsRoutes, { controller: createInvitationsController({ invitations }) })
-  app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
+  app.register(accountsRoutes, { controller: createAccountsController({ accounts, families, understanding }) })
   app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
   app.register(toysRoutes, { controller: createToysController({ toys, toysUnderstanding }) })
   app.register(materialsRoutes, { controller: createMaterialsController({ materials }) })
@@ -129,6 +131,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   if (config.admin.enabled) {
     app.register(catalogRoutes, { controller: createCatalogController({ catalog }) })
     app.register(adminUsersRoutes, { controller: createInvitationsController({ invitations }) })
+    app.register(adminAccountsRoutes, { controller: createAccountsController({ accounts, families, understanding }) })
   }
 
   return app

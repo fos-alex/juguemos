@@ -3,7 +3,7 @@ import { after, before, beforeEach, test } from 'node:test'
 import { buildApp } from '../src/app.js'
 import { UpstreamError } from '../src/errors.js'
 import { INVITATION_DAYS, createInvitationsService } from '../src/invitations/invitations.service.js'
-import { cookiesFrom, ORIGIN, signUpAs, startApi, testConfig } from './helpers.js'
+import { cookiesFrom, EXAMPLE_PROFILE, ORIGIN, putFamily, signUpAs, startApi, testConfig } from './helpers.js'
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -213,6 +213,7 @@ test('the admin routes do not exist while the admin is off', async () => {
   try {
     assert.equal((await app.inject({ method: 'GET', url: '/admin/users' })).statusCode, 404)
     assert.equal((await app.inject({ method: 'POST', url: '/admin/invitations', payload: { email: 'x@example.com' } })).statusCode, 404)
+    assert.equal((await app.inject({ method: 'DELETE', url: '/admin/users/whoever' })).statusCode, 404)
   } finally {
     await app.close()
   }
@@ -323,4 +324,54 @@ test('the admin sees every account and every invitation, and no token', async ()
   const ursula = users.find((/** @type {{ email: string }} */ user) => user.email === 'ursula@example.com')
   assert.deepEqual(Object.keys(ursula).sort(), ['createdAt', 'email', 'id', 'name'])
   assert.doesNotMatch(response.body, /token/i)
+})
+
+test('removing an account takes its family and everything under it, and frees the email (JUG-175)', async () => {
+  const link = await linkFor('ximena@example.com')
+  const signedUp = await signUp('ximena@example.com', link.token)
+  const cookie = cookiesFrom(signedUp)
+  const saved = await putFamily(api, cookie, { ...EXAMPLE_PROFILE, name: 'Los Ximena' })
+  assert.equal(saved.statusCode, 200)
+  const { id: userId } = (await me(cookie)).json().user
+  const familyId = saved.json().id
+  const rowsOf = async (/** @type {string} */ table, /** @type {string} */ column, /** @type {string} */ value) =>
+    (await api.pool.query(`select 1 from ${table} where ${column} = $1`, [value])).rowCount
+  assert.ok((await rowsOf('kids', 'family_id', familyId)) > 0)
+  assert.ok((await rowsOf('toys', 'family_id', familyId)) > 0)
+
+  const response = await api.app.inject({ method: 'DELETE', url: `/admin/users/${userId}` })
+  assert.equal(response.statusCode, 204)
+
+  assert.equal(await userCount('ximena@example.com'), 0)
+  assert.equal(await rowsOf('families', 'id', familyId), 0)
+  assert.equal(await rowsOf('kids', 'family_id', familyId), 0)
+  assert.equal(await rowsOf('toys', 'family_id', familyId), 0)
+  assert.equal(await rowsOf('pets', 'family_id', familyId), 0)
+  assert.equal(await rowsOf('sessions', 'user_id', userId), 0)
+  assert.equal(await rowsOf('accounts', 'user_id', userId), 0)
+  // The session it had is over, so its devices sign out.
+  assert.equal((await me(cookie)).statusCode, 401)
+
+  // The email can be invited again and sign up from scratch.
+  const again = await linkFor('ximena@example.com')
+  const back = await signUp('ximena@example.com', again.token)
+  assert.equal(back.statusCode, 200)
+  assert.equal((await me(cookiesFrom(back))).json().family, null)
+})
+
+test('removing an account that is already gone is a 404', async () => {
+  const link = await linkFor('yamila@example.com')
+  const { id } = (await me(cookiesFrom(await signUp('yamila@example.com', link.token)))).json().user
+  assert.equal((await api.app.inject({ method: 'DELETE', url: `/admin/users/${id}` })).statusCode, 204)
+
+  const response = await api.app.inject({ method: 'DELETE', url: `/admin/users/${id}` })
+  assert.equal(response.statusCode, 404)
+  assert.equal(response.json().code, 'ACCOUNT_NOT_FOUND')
+})
+
+test('an account with no family is removed on its own', async () => {
+  const link = await linkFor('zoe@example.com')
+  const { id } = (await me(cookiesFrom(await signUp('zoe@example.com', link.token)))).json().user
+  assert.equal((await api.app.inject({ method: 'DELETE', url: `/admin/users/${id}` })).statusCode, 204)
+  assert.equal(await userCount('zoe@example.com'), 0)
 })

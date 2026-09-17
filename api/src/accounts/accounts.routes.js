@@ -38,3 +38,25 @@ const meResponse = {
 export async function accountsRoutes(app, { controller }) {
   app.get('/me', { schema: { response: { 200: meResponse, 401: errorBody, 500: errorBody } } }, controller.me)
 }
+
+/**
+ * Removing an account from the admin's Usuarios page (JUG-175). The admin has
+ * no login yet, so this is public, and app.js registers it only when
+ * ADMIN_ENABLED turns the admin on.
+ * @param {import('fastify').FastifyInstance} app
+ * @param {{ controller: AccountsController }} options
+ */
+export async function adminAccountsRoutes(app, { controller }) {
+  app.delete(
+    '/admin/users/:id',
+    {
+      config: { access: 'public' },
+      schema: {
+        params: { type: 'object', required: ['id'], properties: { id: { type: 'string', maxLength: 64 } } },
+        // 404 for an account that is already gone.
+        response: { 404: errorBody, 500: errorBody },
+      },
+    },
+    controller.remove,
+  )
+}
