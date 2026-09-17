@@ -106,3 +106,11 @@ p {
     transform: translateX(40px) rotate(1.5deg);
   }
 }
+
+/* An interest mark landing beside a story or a toy (JUG-160, JUG-166). */
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: rotate(-25deg) scale(0.3);
+  }
+}

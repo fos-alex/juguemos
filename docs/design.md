@@ -44,7 +44,7 @@ From the five commitments in [constitution.md](constitution.md):
 
 Each of these is a way the design gets dismantled one reasonable-looking commit at a time.
 
-1. **No mascot, character, or cartoon.** Not in empty states, loading, or errors. The wordmark's dots never get eyes and never grow past splash size. The waiting animations are *la ronda* and a crayon, pencil, or pen drawing, never a creature (JUG-132, JUG-133, JUG-160). The interest marks are what a thing leaves behind or wears — a footprint, a paw print, a bow — not the dinosaur, the dog, or the doll. The `FamilyIcon`'s two figures are a pictogram with no faces, and they stay that way.
+1. **No mascot, character, or cartoon.** Not in empty states, loading, or errors. The wordmark's dots never get eyes and never grow past splash size. The waiting animations are *la ronda* and a crayon, pencil, or pen drawing, never a creature (JUG-132, JUG-133, JUG-160). The interest marks draw the animal or the toy as a line pictogram (JUG-166): a dot for an eye at most, never a mouth or an expression, and never a character with a name. The `FamilyIcon`'s two figures are a pictogram with no faces, and they stay that way.
 2. **No sound, ever,** including when the activity timer ends. A parent should never have to mute this app in a restaurant, and a chime pulls the toddler back to the phone. The one exception is the voice note's short vibration ticks, which Alex added (JUG-135).
 3. **Motion plays but never holds anyone up.** Things are allowed to bounce a little, pop, and land. Nothing waits for an animation to finish, nothing is unskippable, and nothing celebrates an achievement: no confetti, no fanfare. Every animation is off with `prefers-reduced-motion`. See [Motion](#motion).
 4. **Flat.** No gradients, gloss, 3D, or drop-shadow buttons. Chubby type plus saturated colour plus glossy buttons is the register of a game, not of a calm tool.
@@ -52,7 +52,7 @@ Each of these is a way the design gets dismantled one reasonable-looking commit 
 6. **Never sell certainty or fear.** No "the best start", no "don't fall behind". Never correct the parent, mention bad outcomes, or imply a deficit.
 7. **One juego, never a list or a feed.** The wait for a juego happens on Home. Home's last-juego card is capped at one.
 8. **Colour is never the only signal.** Flagged rows get a tint, a bar, and words. A chosen chip gets a check as well as a fill. The current drawer item is a filled row, not a coloured one.
-9. **Nothing inside the story text.** The child should watch the parent, not the phone, so nothing moves or sits in the paragraphs a parent is reading. Beside a story is fine: its interest mark sits in the corner of its card on the options, the shelves, and Home (JUG-160). Before the story, the drawing wait holds its place and gives way to the first words (JUG-132); after the last paragraph, *Fin* draws itself once (JUG-159). The wake lock holds from the moment a story starts being written until the parent leaves it.
+9. **Nothing inside the story text.** The child should watch the parent, not the phone, so nothing moves or sits in the paragraphs a parent is reading. Beside a story is fine: its interest mark sits in the corner of its card on the options, the shelves, and Home (JUG-160), and over its title on the reading screen (JUG-166). Before the story, the drawing wait holds its place and gives way to the first words (JUG-132); after the last paragraph, *Fin* draws itself once (JUG-159). The wake lock holds from the moment a story starts being written until the parent leaves it.
 10. **The family's words stay exactly as typed.** Toy names are never normalised, capitalised, or autocorrected.
 11. **Local, not postcard.** Plaza, jacarandá, *rayuela*, *la ronda*, cardboard. Never tango, mate, the Obelisco, or the flag. The references are Isol, Limonero, Pakapaka, Canticuénticos.
 12. **Any handmade texture has to be real.** If grain or hand-drawn marks arrive, they come from a named illustrator. Imitation wobble reads cheap.
@@ -88,7 +88,7 @@ Motion is where most of the fun lives, so it gets the same care as colour. The v
 | The timer reaches zero | Jacarandá petals fall once over the screen and the clock nods. Still no sound |
 | The end of a story | *Fin* is drawn with a line under it; at night, a moon and two stars |
 | Night mode is tapped | The sun comes up turning, or the moon swings in |
-| A story card appears | Its interest mark lands in the corner with a small turn |
+| A story card, a story's title, or a toy appears | Its interest mark lands with a small turn (`mark-in`) |
 
 **Limits that don't move.** No sound. Nothing that counts, scores, or rewards: a moment marks that something happened, never that the family did well. Nothing loops except a wait. Nothing moves inside the story text. And with reduced motion, all of it is off: anything that starts hidden shows at its final state, and the petals don't appear.
 
@@ -165,22 +165,43 @@ One set, in `web/src/shared/ui/Icons.jsx`, exported through `shared/ui/index.js`
 
 **What the set covers.** Back, home, close, check, plus, menu, arrow-up; mic and lock for the voice note; sun and moon for night mode; and one per drawer section — ronda (¡Juguemos!), book (Hora del cuento), family, toy box, scissors (Materiales), and sliders for Ajustes. Sliders rather than a gear, which reads mechanical.
 
-**Interest marks** (JUG-160) are the one group that isn't a control. `MarkIcon` draws the mark of something kids commonly love, on the same grid and line as the rest:
+**Interest marks** (JUG-160, JUG-166) are the one group that isn't a control. `MarkIcon` draws something kids commonly love, on the same grid and line as the rest: the animal or the toy itself, as a line pictogram.
 
 | Mark | For |
 |---|---|
+| `dinosaur` | dinosaurios, T-rex, triceratops |
+| `dragon` | dragones |
+| `unicorn` | unicornios |
+| `dog` | perros, cachorros |
+| `cat` | gatos |
+| `horse` | caballos, ponis |
+| `rabbit` | conejos |
+| `butterfly` | mariposas, bichos, vaquitas de San Antonio |
+| `cow` | vacas, toros, la granja |
+| `lion` | leones |
+| `bear` | osos, ositos, peluches |
+| `elephant` | elefantes |
+| `bird` | pájaros, pollitos, patos, loros, búhos, pingüinos |
+| `whale` | ballenas, delfines, orcas |
+| `fish` | peces, tiburones, pescar |
+| `truck` | camiones, volquetes, bomberos |
+| `tractor` | tractores, excavadoras, topadoras, grúas |
 | `car` | autos, coches, carreras |
-| `footprint` | dinosaurios |
-| `tractor` | tractores, camiones, excavadoras, grúas |
 | `train` | trenes |
+| `plane` | aviones |
 | `rocket` | cohetes, astronautas, el espacio |
-| `waves` | el mar, la playa, el agua, barcos, piratas, sirenas |
+| `boat` | barcos, piratas, veleros |
+| `robot` | robots |
+| `blocks` | bloques, Lego, Rasti |
+| `waves` | el mar, la playa, la pileta, el agua, sirenas |
 | `bow` | muñecas, princesas, hadas |
 | `notes` | música, canciones, bailar, instrumentos |
 | `ball` | fútbol, pelotas |
-| `paw` | perros, gatos, caballos, animales, la granja |
+| `paw` | animales, mascotas, el zoológico |
 
-`interestMark()` in the family feature picks one from the family's own words, or a story's, without accents or case, and most words get none. A mark is decoration, never a category or a filter: it shows beside an interest chip and on a story's card, and the story wait draws it. It is still the words beside it that say what something is. A new mark is drawn as a trace or an object, not as the animal or person, and added to both the set and the word list.
+`interestMark()` in the family feature picks one from the family's own words, a story's, or a toy's, without accents or case, and many words get none. The list is tried in order, so the specific thing wins over the general one: a *camión de bomberos* is a truck, a *unicornio* is not a horse, and only an animal nothing else matches gets the paw. A mark is decoration, never a category or a filter: it shows beside an interest chip, on a story's card, over a story's title on the reading screen, and on a toy's card in the baúl and its own screen, and the story wait draws it. It is still the words beside it that say what something is.
+
+**Drawing a new mark.** Line only, on the 24 px grid, no fill. An animal gets at most a dot for an eye and never a mouth, a smile, or an expression, so it stays a pictogram and never becomes a character. No path longer than 100 units, since the story wait draws each one with a 100-unit dash. Add it to the set, to the word list, and to the table above.
 
 ## The app icon
 

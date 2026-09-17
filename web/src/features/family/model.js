@@ -337,23 +337,44 @@ export function toFamily(form) {
 }
 
 /**
- * The words that give an interest its mark (JUG-160), in the order they are
- * tried, so "camión de bomberos" is a tractor before anything else. Matched
- * without accents or case, at the start of a word, against the family's own
- * words, a story's title and teaser, or a series' storyline.
+ * The words that give an interest its mark (JUG-160, JUG-166), in the order
+ * they are tried, so "camión de bomberos" is a truck before a car and
+ * "unicornio" is a unicorn before a horse, and the specific animals come
+ * before the paw print any animal gets. Matched without accents or case, at
+ * the start of a word, against the family's own words, a story's title and
+ * teaser, a series' storyline, or a toy's names and what it is.
  * @type {[import('../../shared/ui/Icons').Mark, RegExp][]}
  */
 const MARK_WORDS = [
-  ['footprint', /\b(dino|dinosaurio|tiranosaurio|t-?rex|velociraptor)/],
-  ['tractor', /\b(tractor|camion|excavadora|topadora|grua|volquete|maquinas de obra)/],
-  ['car', /\b(autos?\b|autito|coche|carrito|carro\b|carros\b|camioneta|carrera|formula 1)/],
+  ['dinosaur', /\b(dino|tiranosaurio|t-?rex|velociraptor|triceratops|brontosaurio|braquiosaurio)/],
+  ['dragon', /\bdragon/],
+  ['unicorn', /\bunicornio/],
+  ['truck', /\b(camion|volquete|bomberos)/],
+  ['tractor', /\b(tractor|excavadora|topadora|grua|maquinas de obra)/],
+  ['car', /\b(autos?\b|autito|coche|carrito|carros?\b|camioneta|carrera|formula 1)/],
   ['train', /\b(tren\b|trenes|trencito|locomotora)/],
+  ['plane', /\b(avion|aeropuerto)/],
   ['rocket', /\b(cohete|astronauta|espacio\b|planeta|nave espacial)/],
-  ['waves', /\b(pirata|barco|mar\b|playa|pileta|nadar|peces|pez\b|sirena|olas?\b|agua\b)/],
+  ['boat', /\b(barco|pirata|velero|botes?\b|lancha)/],
+  ['robot', /\brobot/],
+  ['blocks', /\b(bloques|lego|rasti|encastre)/],
+  ['whale', /\b(ballena|delfin|orca\b|orcas)/],
+  ['fish', /\b(pez\b|peces|pecera|pescar|tiburon)/],
+  ['waves', /\b(mar\b|playa|pileta|nadar|sirena|olas?\b|agua\b)/],
   ['bow', /\b(muneca|munequita|barbie|princesa|hada)/],
   ['notes', /\b(musica|cancion|canciones|cantar|bailar|baile|instrumento|guitarra|tambor|piano)/],
   ['ball', /\b(futbol|pelota|gol\b|goles|basquet)/],
-  ['paw', /\b(perr|gat[oai]|animal|mascota|caball|conej|vaca|oveja|granja|zoologico|leon|osito|osos?\b)/],
+  ['dog', /\b(perr|cachorr)/],
+  ['cat', /\bgat(o|a|i)/],
+  ['horse', /\b(caball|pony|poni\b|ponis)/],
+  ['rabbit', /\bconej/],
+  ['butterfly', /\b(mariposa|bicho|insecto|vaquitas? de san antonio)/],
+  ['cow', /\b(vacas?\b|vaquita\b|toros?\b|granja)/],
+  ['lion', /\b(leon\b|leonas?\b|leones|leoncit)/],
+  ['bear', /\b(osos?\b|osito|osita|peluche)/],
+  ['elephant', /\belefant/],
+  ['bird', /\b(pajar|ave\b|aves\b|pollit|gallina|pato\b|patos|patito|loro|buho|lechuza|pinguino)/],
+  ['paw', /\b(animal|mascota|zoologico)/],
 ]
 
 /**

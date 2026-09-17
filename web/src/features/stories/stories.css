@@ -70,14 +70,15 @@
   top: 16px;
   right: 16px;
   color: var(--primary);
-  animation: story-mark-in 520ms var(--ease-play) 120ms backwards;
+  animation: mark-in 520ms var(--ease-play) 120ms backwards;
 }
 
-@keyframes story-mark-in {
-  from {
-    opacity: 0;
-    transform: rotate(-25deg) scale(0.3);
-  }
+/* Over the title on the reading screen (JUG-166), in the flow rather than a
+   corner, so the title keeps the whole measure. */
+.story-mark--title {
+  position: static;
+  display: block;
+  margin-bottom: -8px;
 }
 
 .story-keyword {

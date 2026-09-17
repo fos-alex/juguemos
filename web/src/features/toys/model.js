@@ -3,6 +3,8 @@
  * a toy, noticing two toys with the same name, and a toy's line in the list.
  */
 
+import { interestMark } from '../family'
+
 /** @typedef {import('./types').Toy} Toy */
 /** @typedef {import('./types').ToyBox} ToyBox */
 /** @typedef {import('../family').Kid} Kid */
@@ -73,6 +75,15 @@ export const joining = (linked, toy, self) => [...new Set([...linked, toy.id, ..
 
 /** @param {string[]} a @param {string[]} b */
 export const sameSet = (a, b) => a.length === b.length && a.every((each) => b.includes(each))
+
+/**
+ * The mark of what a toy is (JUG-166), a train for "el tren de Tomás", from
+ * its family name, its other names, and what it is. Null for most toys.
+ * @param {{ name: string, aliases: string[], description: string | null }} toy a toy, or the form's state
+ */
+export function toyMark(toy) {
+  return interestMark(toy.name, ...toy.aliases, toy.description)
+}
 
 /**
  * The rest of what the box knows about a toy, in words: whose it is, whether
