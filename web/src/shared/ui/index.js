@@ -11,6 +11,7 @@ export {
   FamilyIcon,
   HomeIcon,
   LockIcon,
+  MarkIcon,
   MaterialsIcon,
   MenuIcon,
   MicIcon,

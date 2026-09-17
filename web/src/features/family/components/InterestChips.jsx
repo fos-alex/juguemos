@@ -1,10 +1,11 @@
-import { ChipInput, Chips, FieldGroup } from '../../../shared/ui'
+import { interestMark } from '../model'
+import { ChipInput, Chips, FieldGroup, MarkIcon } from '../../../shared/ui'
 
 /**
  * What one kid loves, as chips (JUG-144), on that kid's card: a tap removes
  * one, and the + chip adds one as typed. `field` is where a flagged row of
  * the card opens the form. `name` is the kid's, for the screen reader, since
- * every card says "Le encanta".
+ * every card says "Le encanta". An interest with a mark shows it (JUG-160).
  * @param {{
  *   name: string,
  *   field: string,
@@ -18,7 +19,7 @@ import { ChipInput, Chips, FieldGroup } from '../../../shared/ui'
 export function InterestChips({ name, field, interests, draft, onDraft, onCommit, onRemove }) {
   return (
     <FieldGroup label="Le encanta" className="kid-card__interests">
-      <Chips items={interests} onRemove={onRemove}>
+      <Chips items={interests} onRemove={onRemove} lead={chipMark}>
         <ChipInput
           value={draft}
           onChange={onDraft}
@@ -30,4 +31,10 @@ export function InterestChips({ name, field, interests, draft, onDraft, onCommit
       </Chips>
     </FieldGroup>
   )
+}
+
+/** @param {string} interest */
+function chipMark(interest) {
+  const mark = interestMark(interest)
+  return mark && <MarkIcon mark={mark} size={17} className="chip__mark" />
 }

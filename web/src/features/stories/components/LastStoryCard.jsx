@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useStoryNext } from '../hooks/useStoryNext'
 import { useStored } from '../../../shared/store'
+import { StoryMark } from './StoryMark'
 import { MetaLabel, StatusLine, TertiaryButton } from '../../../shared/ui'
 import '../stories.css'
 
@@ -18,7 +19,8 @@ export function LastStoryCard() {
   if (!key || !story) return null
 
   return (
-    <div className="card story-shelf__row last-story">
+    <div className="card story-shelf__row last-story story-marked">
+      <StoryMark texts={[story.keyword, story.title, story.teaser]} />
       <button
         type="button"
         className="story-shelf__open"

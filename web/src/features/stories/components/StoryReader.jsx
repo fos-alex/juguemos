@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from '@tanstack/react-router'
-import { playingAgeMonths } from '../../family'
+import { interestMark, playingAgeMonths } from '../../family'
 import { rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeRequestedStory, writeStory } from '../api'
 import { StoryEnd } from './StoryEnd'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
 import { StoryText } from './StoryText'
-import { groupByPart, waitingVariant } from '../model'
+import { groupByPart, waitingTool } from '../model'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
@@ -43,8 +43,9 @@ import '../stories.css'
  * A story can take a couple of minutes to start, so until its first paragraph
  * arrives the waiting animation takes the dots' place in the footer (JUG-132),
  * held back so it doesn't brighten a dim room, and one line says what is
- * happening once the wait is long. It goes the moment there are words, and
- * the story itself is never illustrated.
+ * happening once the wait is long. It draws the mark of what the story is
+ * about when there is one (JUG-160). It goes the moment there are words, and
+ * the story text itself is never illustrated.
  *
  * Once the story is whole, it is the one Home offers again, and its end says
  * what comes next: Listo, and a series or its next episode (JUG-154).
@@ -61,6 +62,7 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
   const story = useStored('stories')?.[id ?? '']
   const option = useStored('storyOptions')?.find((candidate) => candidate.id === id)
   const family = useStored('family')
+  const writingSeries = useStored('series')?.find((each) => each.id === seriesId)
   const inSeries = story?.series ?? null
   // Back from an episode is the series it belongs to, when there is nowhere to go back to.
   const goBack = useGoBack(inSeries ? '/serie/$id' : '/cuentos', inSeries ? { id: inSeries.id } : undefined)
@@ -182,7 +184,22 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
           {failure ? (
             <TertiaryButton onClick={() => setAttempt((count) => count + 1)}>Probar de nuevo</TertiaryButton>
           ) : writing ? (
-            <Waiting variant={waitingVariant(playingAgeMonths(family))} size="screen" tone="reading" />
+            <Waiting
+              variant="drawing"
+              tool={waitingTool(playingAgeMonths(family))}
+              mark={interestMark(
+                keyword,
+                request?.theme,
+                request?.summary,
+                request?.setting,
+                option?.title,
+                option?.teaser,
+                writingSeries?.title,
+                writingSeries?.storyline,
+              )}
+              size="screen"
+              tone="reading"
+            />
           ) : (
             <Dots tone="page" />
           )}

@@ -52,6 +52,34 @@
   gap: 12px;
 }
 
+/*
+ * A story's mark (JUG-160) in the top corner of its card, with room kept for
+ * it so a long title never runs under it. It lands with a small turn.
+ */
+.story-marked {
+  position: relative;
+}
+
+/* Only the words make room, so the buttons in the card keep its full width. */
+.story-marked:has(> .story-mark) :is(.story-option__title, .story-option__teaser, .card-title, .meta) {
+  padding-right: 38px;
+}
+
+.story-mark {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--primary);
+  animation: story-mark-in 520ms var(--ease-play) 120ms backwards;
+}
+
+@keyframes story-mark-in {
+  from {
+    opacity: 0;
+    transform: rotate(-25deg) scale(0.3);
+  }
+}
+
 .story-keyword {
   font-weight: 700;
   color: var(--ink-body);

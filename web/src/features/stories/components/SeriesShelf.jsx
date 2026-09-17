@@ -1,4 +1,5 @@
 import { episodesLine } from '../model'
+import { StoryMark } from './StoryMark'
 import { MetaLabel, SecondaryButton, StatusLine } from '../../../shared/ui'
 import '../stories.css'
 
@@ -17,7 +18,8 @@ export function SeriesShelf({ series, onOpen, onContinue }) {
       {/* Voice pass pending: "Series de cuentos". */}
       <h2 className="story-shelf__heading">Series de cuentos</h2>
       {series.map((each) => (
-        <div key={each.id} className="card story-option story-shelf__row">
+        <div key={each.id} className="card story-option story-shelf__row story-marked">
+          <StoryMark texts={[each.title, each.storyline]} />
           <button type="button" className="story-shelf__open" onClick={() => onOpen(each)}>
             <span className="story-option__title">{each.title}</span>
             <MetaLabel as="span" className="story-option__time">

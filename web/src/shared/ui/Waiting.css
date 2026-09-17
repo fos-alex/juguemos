@@ -90,122 +90,148 @@
 }
 
 /*
- * Jacarandá, coming down. Each petal has its own place and its own head start,
- * so they don't fall in a line, and they are already falling when it appears.
+ * Drawing (JUG-160): the story's wait. A crayon, a pencil, or a pen, by the
+ * age of the kids, draws the mark of what the story is about, or a scribble,
+ * a house, or a line of handwriting when there is none. The drawing and the
+ * tool share one 4.8 s loop: draw, hold, fade, and start again, so it never
+ * reads as progress.
  */
 
-.waiting--petals .waiting__piece {
+.waiting--drawing {
+  --ink-line: var(--primary);
+  --line: 2.2;
+  --tool-body: var(--primary);
+  --tool-tip: var(--ink);
+}
+
+.waiting--crayon {
+  --ink-line: var(--grass);
+  --line: 3.2;
+  --tool-body: var(--grass);
+  --tool-tip: var(--grass-ink);
+}
+
+.waiting--pencil {
+  --ink-line: var(--ink-body);
+  --line: 1.8;
+  --tool-body: var(--dot-sun);
+  --tool-tip: var(--ink-muted);
+}
+
+.waiting__drawing {
   position: absolute;
-  top: 0;
-  width: calc(var(--waiting-size) / 6);
-  height: calc(var(--waiting-size) / 9);
-  border-radius: 60% 40% 55% 45% / 70% 65% 35% 30%;
-  background: var(--dot-jacaranda);
-  opacity: 0;
-  animation: waiting-fall 9s ease-in-out infinite;
+  inset: 12%;
+  width: 76%;
+  height: 76%;
+  overflow: visible;
 }
 
-.waiting--petals .waiting__piece:nth-child(even) {
-  background: var(--dots-2);
+.waiting__drawing :is(path, circle) {
+  stroke: var(--ink-line);
+  stroke-width: var(--line);
+  stroke-dasharray: 100;
+  animation: waiting-draw 4.8s ease-in-out infinite;
 }
 
-.waiting--petals .waiting__piece:nth-child(1) {
-  left: 4%;
-  animation-delay: -0.6s;
-}
-
-.waiting--petals .waiting__piece:nth-child(2) {
-  left: 32%;
-  animation-delay: -5.1s;
-}
-
-.waiting--petals .waiting__piece:nth-child(3) {
-  left: 18%;
-  animation-delay: -2.9s;
-}
-
-.waiting--petals .waiting__piece:nth-child(4) {
-  left: 62%;
-  animation-delay: -7.4s;
-}
-
-.waiting--petals .waiting__piece:nth-child(5) {
-  left: 78%;
-  animation-delay: -4.2s;
-}
-
-/* La rayuela, with the light hopping from square to square and round again. */
-
-.waiting--rayuela .waiting__piece {
-  --cell: calc(var(--waiting-size) / 4);
+.waiting__tool {
+  --tool-width: calc(var(--waiting-size) / 9);
+  --tool-length: calc(var(--waiting-size) / 2.1);
 
   position: absolute;
-  top: 0;
-  left: calc(50% - var(--cell) / 2);
-  width: var(--cell);
-  height: var(--cell);
-  border: 1.5px solid var(--dashed);
-  border-radius: 3px;
+  top: calc(var(--tool-length) * -1);
+  left: calc(var(--tool-width) / -2);
+  width: var(--tool-width);
+  height: var(--tool-length);
+  overflow: hidden;
+  border-radius: 3px 3px 0 0;
+  background: var(--tool-body);
+  clip-path: polygon(0 0, 100% 0, 100% 74%, 50% 100%, 0 74%);
+  transform-origin: 50% 100%;
+  animation: waiting-write 4.8s ease-in-out infinite;
 }
 
-.waiting--rayuela .waiting__piece:nth-child(2) {
-  top: var(--cell);
-}
-
-.waiting--rayuela .waiting__piece:nth-child(3) {
-  top: calc(var(--cell) * 2);
-  left: calc(50% - var(--cell));
-}
-
-.waiting--rayuela .waiting__piece:nth-child(4) {
-  top: calc(var(--cell) * 2);
-  left: 50%;
-}
-
-.waiting--rayuela .waiting__piece:nth-child(5) {
-  top: calc(var(--cell) * 3);
-}
-
-.waiting--rayuela .waiting__piece::after {
+/* The point: lead, ink, or the crayon's own darker wax. */
+.waiting__tool::after {
   content: '';
   position: absolute;
-  inset: 2px;
-  border-radius: 2px;
-  background: var(--dots-2);
-  opacity: 0;
-  animation: waiting-hop 6s ease-in-out infinite;
-  animation-delay: calc(var(--piece) * 1.2s);
+  inset: 88% 0 0;
+  background: var(--tool-tip);
 }
 
-@keyframes waiting-fall {
+/* A crayon is short and stubby, and wears a paper wrap. */
+.waiting--crayon .waiting__tool {
+  --tool-width: calc(var(--waiting-size) / 6.5);
+  --tool-length: calc(var(--waiting-size) / 2.6);
+
+  border-radius: 2px 2px 0 0;
+}
+
+.waiting--crayon .waiting__tool::before {
+  content: '';
+  position: absolute;
+  inset: 22% 0 40%;
+  background: var(--dot-sun);
+}
+
+/* A pen is slim. */
+.waiting--pen .waiting__tool {
+  --tool-width: calc(var(--waiting-size) / 11);
+}
+
+@keyframes waiting-draw {
   0% {
-    opacity: 0;
-    transform: translateY(0) rotate(-14deg);
-  }
-
-  18%,
-  76% {
-    opacity: 0.85;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateY(calc(var(--waiting-size) - var(--waiting-size) / 9)) rotate(18deg);
-  }
-}
-
-@keyframes waiting-hop {
-  0%,
-  100% {
-    opacity: 0;
-  }
-
-  6%,
-  14% {
+    stroke-dashoffset: 100;
     opacity: 1;
   }
 
-  24% {
+  60%,
+  84% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
     opacity: 0;
+  }
+}
+
+/* The point wanders over the page as the lines appear, lifts, and goes back. */
+@keyframes waiting-write {
+  0% {
+    transform: translate(calc(var(--waiting-size) * 0.2), calc(var(--waiting-size) * 0.72)) rotate(32deg);
+  }
+
+  10% {
+    transform: translate(calc(var(--waiting-size) * 0.32), calc(var(--waiting-size) * 0.36)) rotate(28deg);
+  }
+
+  20% {
+    transform: translate(calc(var(--waiting-size) * 0.44), calc(var(--waiting-size) * 0.7)) rotate(34deg);
+  }
+
+  30% {
+    transform: translate(calc(var(--waiting-size) * 0.52), calc(var(--waiting-size) * 0.3)) rotate(26deg);
+  }
+
+  40% {
+    transform: translate(calc(var(--waiting-size) * 0.64), calc(var(--waiting-size) * 0.68)) rotate(34deg);
+  }
+
+  50% {
+    transform: translate(calc(var(--waiting-size) * 0.74), calc(var(--waiting-size) * 0.34)) rotate(27deg);
+  }
+
+  60% {
+    transform: translate(calc(var(--waiting-size) * 0.8), calc(var(--waiting-size) * 0.6)) rotate(32deg);
+  }
+
+  72%,
+  84% {
+    transform: translate(calc(var(--waiting-size) * 0.9), calc(var(--waiting-size) * 0.4)) rotate(48deg);
+  }
+
+  100% {
+    transform: translate(calc(var(--waiting-size) * 0.2), calc(var(--waiting-size) * 0.72)) rotate(32deg);
   }
 }

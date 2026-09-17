@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { playingAgeMonths, playingInterests } from '../../family'
+import { interestMark, playingAgeMonths, playingInterests } from '../../family'
 import { askForStory, familySeries, makeSeries, savedStories, savedStory, storyOptions, understandStoryRequest } from '../api'
 import { KeywordChips } from '../components/KeywordChips'
 import { OptionSkeleton } from '../components/OptionSkeleton'
+import { StoryMark } from '../components/StoryMark'
 import { SeriesShelf } from '../components/SeriesShelf'
 import { StoryAsk } from '../components/StoryAsk'
 import { StoryRequestReview } from '../components/StoryRequestReview'
 import { StoryShelf } from '../components/StoryShelf'
-import { waitingVariant } from '../model'
+import { waitingTool } from '../model'
 import { failureText } from '../../../shared/format'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
@@ -205,7 +206,8 @@ export function StoryOptionsScreen() {
       <Body className="story-options">
         {/* A device that stored a screen of three before JUG-157 shows the first two. */}
         {options?.slice(0, OPTIONS).map((option) => (
-          <Card key={option.id} className="story-option" onClick={() => pick(option.id)}>
+          <Card key={option.id} className="story-option story-marked" onClick={() => pick(option.id)}>
+            <StoryMark texts={[option.title, option.teaser]} />
             <span className="story-option__title">{option.title}</span>
             <span className="story-option__teaser">{option.teaser}</span>
             <MetaLabel as="span" className="story-option__time">
@@ -215,7 +217,13 @@ export function StoryOptionsScreen() {
         ))}
         {writing ? (
           <div className="story-writing">
-            <Waiting variant={waitingVariant(playingAgeMonths(family))} size="screen" />
+            {/* It draws one of the things the kids playing love, when one has a mark. */}
+            <Waiting
+              variant="drawing"
+              tool={waitingTool(playingAgeMonths(family))}
+              mark={interestMark(...interests)}
+              size="screen"
+            />
             {/* Voice pass pending. */}
             {slow && <StatusLine role="status">Sigo escribiendo. Ya casi están.</StatusLine>}
           </div>
