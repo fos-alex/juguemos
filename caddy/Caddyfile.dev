@@ -1,5 +1,9 @@
 # Development only (compose.dev.yml): the web app comes from Vite's dev server,
 # with hot reload, and /api goes to the API as in production.
+{
+	default_sni {$CADDY_DEFAULT_SNI:ludi.local}
+}
+
 (app) {
 	handle_path /api/* {
 		reverse_proxy api:3000
@@ -28,7 +32,7 @@ self.addEventListener('activate', (event) => {
 	}
 }
 
-ludi.local {
+{$CADDY_LOCAL_HOSTS:ludi.local} {
 	tls internal
 	import app
 }

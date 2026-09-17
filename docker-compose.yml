@@ -15,6 +15,8 @@ services:
       - "${HTTP_PORT:-127.0.0.1:3001}:80"
     environment:
       CADDY_SITES: ${CADDY_SITES:-local}
+      CADDY_LOCAL_HOSTS: ${CADDY_LOCAL_HOSTS:-ludi.local}
+      CADDY_DEFAULT_SNI: ${CADDY_DEFAULT_SNI:-ludi.local}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

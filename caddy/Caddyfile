@@ -1,3 +1,7 @@
+{
+	default_sni {$CADDY_DEFAULT_SNI:ludi.local}
+}
+
 (app) {
 	encode zstd gzip
 
@@ -20,7 +24,7 @@
 # Tailscale Serve, which terminates TLS in front so a phone on the tailnet can
 # reach the stack.
 (local) {
-	ludi.local {
+	{$CADDY_LOCAL_HOSTS:ludi.local} {
 		tls internal
 		import app
 	}
