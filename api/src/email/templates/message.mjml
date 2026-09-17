@@ -1,0 +1,32 @@
+<!--
+  The one email Ludi sends, whatever it is about (JUG-34): the wordmark, a
+  heading, a few paragraphs, one button, and a quiet line under it. The
+  {{placeholders}} are filled by src/email/message.js, which builds the
+  plain-text body from the same words.
+
+  Edit this file, then run `npm run email:build -w api`, which writes
+  message.html beside it. That HTML is what the API sends, so commit both.
+-->
+<mjml lang="es" dir="ltr">
+  <mj-include path="./partials/head.mjml" />
+  <mj-body background-color="#FFF9F0" width="600px">
+    <mj-include path="./partials/wordmark.mjml" />
+
+    <!-- The wrapper's padding keeps the card off the edge of a phone screen. -->
+    <mj-wrapper padding="0 18px">
+      <mj-section background-color="#FFFFFF" border="1px solid #EADFF3" border-radius="18px" padding="28px 26px">
+        <mj-column>
+          <mj-text mj-class="heading" padding-bottom="16px">{{heading}}</mj-text>
+          <mj-text css-class="ludi-body">{{body}}</mj-text>
+          <mj-button href="{{actionUrl}}" padding="24px 0 0">{{actionLabel}}</mj-button>
+          <mj-text mj-class="quiet" font-size="13px" padding-top="20px">
+            Si el botón no funciona, copiá y pegá este enlace: <a href="{{actionUrl}}">{{actionUrl}}</a>
+          </mj-text>
+          <mj-text mj-class="quiet" padding-top="20px">{{closing}}</mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <mj-include path="./partials/footer.mjml" />
+  </mj-body>
+</mjml>

@@ -1,0 +1,6 @@
+<!-- The same closing on every email: what Ludi is, and nothing to unsubscribe from, since Ludi only writes when it has something to say. -->
+<mj-section padding="24px 24px 36px">
+  <mj-column>
+    <mj-text mj-class="footnote">Ludi · El coach de juego que conoce a tu familia</mj-text>
+  </mj-column>
+</mj-section>

@@ -32,6 +32,8 @@ From the five commitments in [constitution.md](constitution.md):
 
 **Night mode** is dark from 19:00 to 07:00, unless a one-tap choice overrides it until the next switch. The dark set is wired from day one so nothing depends on a light background. It is currently a cool purple-black; warming it toward amber is the expected 0.3 move, not a redesign.
 
+**The brand travels to the inbox.** Ludi's emails are the same short palette and type as the app: the wordmark with its ronda, a white card on sand, one jacarandá button. They carry no images and no web fonts, so nothing is fetched when one is opened and nothing can track it, and they ask clients not to invert their colours, so the brand reads as it was drawn. [api/AGENTS.md](../api/AGENTS.md) says how one is built.
+
 **No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, an icon from the set, or one of the small drawings in `shared/ui`. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS; *Fin* and the moon at the end of a story, and the wordmark Bienvenida writes, are SVG lines in the tokens.
 
 **The wordmark** is "Ludi" in Fredoka 600 with three dots in grass, sun, and jacarandá. The dots are a *ronda*, not a face. It is a working wordmark: the domain is `ludi.ar`, and the trademark check is pending.
@@ -97,7 +99,7 @@ Motion is where most of the fun lives, so it gets the same care as colour. The v
 
 ## Colour
 
-The whole palette is `web/src/styles/tokens.css`, in a light set and a dark set. **Never write a hex value in a component or a screen.** A colour that isn't a token doesn't exist; if a screen needs one, add it to `tokens.css` in both sets.
+The whole palette is `web/src/styles/tokens.css`, in a light set and a dark set. **Never write a hex value in a component or a screen.** A colour that isn't a token doesn't exist; if a screen needs one, add it to `tokens.css` in both sets. The two places hex is written out are the app icon and the email templates (`api/src/email/templates/partials/head.mjml`), because neither can read `tokens.css`; both change when a brand colour changes.
 
 | Group | Tokens | What it is for |
 |---|---|---|

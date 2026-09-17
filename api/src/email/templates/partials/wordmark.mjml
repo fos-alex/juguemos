@@ -1,0 +1,13 @@
+<!--
+  The wordmark: "Ludi" and the ronda of three dots, in grass, sun, and
+  jacarandá. The dots are a ronda, never a face, and never grow. An email
+  client that can't round a corner shows three small squares, which is as far
+  as this degrades.
+-->
+<mj-section padding="32px 24px 22px">
+  <mj-column>
+    <mj-text align="center" font-family="'Fredoka', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="30px" font-weight="600" color="#6B4EA8" line-height="1">
+      Ludi<span style="display: inline-block; width: 7px; height: 7px; margin-left: 9px; border-radius: 50%; background: #3F7D4F;"></span><span style="display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: #E8C98A;"></span><span style="display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: #6B4EA8;"></span>
+    </mj-text>
+  </mj-column>
+</mj-section>
