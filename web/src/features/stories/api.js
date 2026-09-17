@@ -21,6 +21,7 @@ import { ApiError, endSession, OfflineError, request, WordedError } from '../../
 /** @typedef {import('./types').SavedStorySummary} SavedStorySummary */
 /** @typedef {import('./types').Series} Series */
 /** @typedef {import('./types').StoryRequest} StoryRequest */
+/** @typedef {import('./types').Sound} Sound */
 
 /** Series copy still needs a voice pass. */
 const SERIES_MESSAGES = {
@@ -112,18 +113,30 @@ async function askForOptions(exclude, signal) {
 }
 
 /**
+ * What the reading screen hears while a story arrives: its title when it has
+ * no option behind it, its sounds before the first paragraph (JUG-170), and
+ * each paragraph as it lands.
+ * @typedef {{
+ *   signal?: AbortSignal,
+ *   onTitle?: (title: string) => void,
+ *   onSounds?: (sounds: Sound[]) => void,
+ *   onParagraph?: (paragraph: { part: number, text: string }) => void,
+ * }} StoryHandlers
+ */
+
+/**
  * The story behind an option, coming out of the API paragraph by paragraph.
  * `onParagraph` is called as each one lands, so the reading screen fills
  * while the model still talks; the whole saved story comes back once and is
  * cached for offline.
  * @param {string} id the option's id
- * @param {{ signal?: AbortSignal, onParagraph?: (paragraph: { part: number, text: string }) => void }} [options]
+ * @param {Omit<StoryHandlers, 'onTitle'>} [handlers]
  * @returns {Promise<Story>}
  */
-export async function writeStory(id, { signal, onParagraph } = {}) {
+export async function writeStory(id, handlers = {}) {
   const cached = read('stories')?.[id]
   if (cached) return cached
-  return await readStory('/api/stories/write', { id }, { key: id, signal, onParagraph })
+  return await readStory('/api/stories/write', { id }, { ...handlers, key: id })
 }
 
 /**
@@ -132,15 +145,11 @@ export async function writeStory(id, { signal, onParagraph } = {}) {
  * own event before the first paragraph, and it is kept under the id the API
  * saved it with, which is where the reading screen sends the URL.
  * @param {string} keyword the interest, exactly as the family typed it
- * @param {{
- *   signal?: AbortSignal,
- *   onTitle?: (title: string) => void,
- *   onParagraph?: (paragraph: { part: number, text: string }) => void,
- * }} [options]
+ * @param {StoryHandlers} [handlers]
  * @returns {Promise<Story>}
  */
-export async function writeKeywordStory(keyword, { signal, onTitle, onParagraph } = {}) {
-  return await readStory('/api/stories/write', { keyword }, { signal, onTitle, onParagraph })
+export async function writeKeywordStory(keyword, handlers = {}) {
+  return await readStory('/api/stories/write', { keyword }, handlers)
 }
 
 /**
@@ -177,17 +186,13 @@ export function askForStory(asked) {
  * keyword story does: its own title first, then the paragraphs. Once it is
  * saved the request is forgotten, since the story now has an id of its own.
  * @param {StoryRequest} asked
- * @param {{
- *   signal?: AbortSignal,
- *   onTitle?: (title: string) => void,
- *   onParagraph?: (paragraph: { part: number, text: string }) => void,
- * }} [options]
+ * @param {StoryHandlers} [handlers]
  * @returns {Promise<Story>}
  */
-export async function writeRequestedStory(asked, { signal, onTitle, onParagraph } = {}) {
+export async function writeRequestedStory(asked, handlers = {}) {
   let story
   try {
-    story = await readStory('/api/stories/write', { request: asked }, { signal, onTitle, onParagraph })
+    story = await readStory('/api/stories/write', { request: asked }, handlers)
   } catch (error) {
     if (error instanceof ApiError && error.code === 'LLM_OFF') throw new StoryRequestOffError()
     throw error
@@ -203,17 +208,13 @@ export async function writeRequestedStory(asked, { signal, onTitle, onParagraph 
  * and the series it belongs to is refreshed, since the second episode is what
  * gives a series its name.
  * @param {string} seriesId
- * @param {{
- *   signal?: AbortSignal,
- *   onTitle?: (title: string) => void,
- *   onParagraph?: (paragraph: { part: number, text: string }) => void,
- * }} [options]
+ * @param {StoryHandlers} [handlers]
  * @returns {Promise<Story>}
  */
-export async function writeEpisode(seriesId, { signal, onTitle, onParagraph } = {}) {
+export async function writeEpisode(seriesId, handlers = {}) {
   let episode
   try {
-    episode = await readStory(`/api/series/${seriesId}/episodes`, null, { signal, onTitle, onParagraph })
+    episode = await readStory(`/api/series/${seriesId}/episodes`, null, handlers)
   } catch (error) {
     throw seriesFailure(error)
   }
@@ -228,16 +229,11 @@ export async function writeEpisode(seriesId, { signal, onTitle, onParagraph } = 
  * for offline once it is whole.
  * @param {string} url the stream to open
  * @param {{ id: string } | { keyword: string } | { request: StoryRequest } | null} asked what to write, when the URL doesn't say it
- * @param {{
- *   key?: string,
- *   signal?: AbortSignal,
- *   onTitle?: (title: string) => void,
- *   onParagraph?: (paragraph: { part: number, text: string }) => void,
- * }} handlers `key` is where to keep the story; without one it is kept under
- *   the id the API saved it with.
+ * @param {StoryHandlers & { key?: string }} handlers `key` is where to keep the
+ *   story; without one it is kept under the id the API saved it with.
  * @returns {Promise<Story>}
  */
-async function readStory(url, asked, { key, signal, onTitle, onParagraph }) {
+async function readStory(url, asked, { key, signal, onTitle, onSounds, onParagraph }) {
   const body = await openStream(url, {
     method: 'POST',
     headers: asked ? { 'Content-Type': 'application/json' } : undefined,
@@ -250,6 +246,7 @@ async function readStory(url, asked, { key, signal, onTitle, onParagraph }) {
   await readEvents(body, (event) => {
     if (event.type === 'error') throw new ApiError('La historia no terminó', 0)
     if (event.type === 'title') onTitle?.(event.title ?? '')
+    if (event.type === 'sounds') onSounds?.(event.sounds ?? [])
     if (event.type === 'paragraph') onParagraph?.({ part: event.part ?? 1, text: event.text ?? '' })
     if (event.type === 'story') {
       story = /** @type {Story} */ (event.story)
@@ -337,8 +334,8 @@ export async function savedStories() {
 export async function savedStory(id) {
   const cached = read('stories')?.[id]
   if (cached) return cached
-  const { title, teaser, minutes, parts, keyword, series: inSeries } = await request('GET', `/stories/${id}`)
-  const story = { id, title, teaser, minutes, parts, keyword, series: inSeries }
+  const { title, teaser, minutes, parts, sounds, keyword, series: inSeries } = await request('GET', `/stories/${id}`)
+  const story = { id, title, teaser, minutes, parts, sounds, keyword, series: inSeries }
   write('stories', { ...read('stories'), [id]: story })
   return story
 }

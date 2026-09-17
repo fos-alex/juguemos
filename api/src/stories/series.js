@@ -339,6 +339,7 @@ export function createStorySeries({ db, llm, families, audit, model = '', maxEpi
             teaser: `Un episodio de «${title.replace(/\.$/, '')}».`,
             minutes,
             parts,
+            sounds: kept.sounds,
             casting,
             seriesId: id,
             episode: settled,

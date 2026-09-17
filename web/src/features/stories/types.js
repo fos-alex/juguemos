@@ -4,9 +4,17 @@
 
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption */
 /**
- * @typedef {StoryOption & { parts: string[][], keyword?: string | null, series?: StoryInSeries | null }} Story
- * `keyword` is the interest the parent tapped to get it (JUG-140); null on
- * every other story. `series` is the series it is an episode of (JUG-59).
+ * @typedef {StoryOption & { parts: string[][], sounds?: Sound[], keyword?: string | null, series?: StoryInSeries | null }} Story
+ * `sounds` are the sounds the parent acts out (JUG-170), which the parts mark
+ * between brackets; a story cached before them has none. `keyword` is the
+ * interest the parent tapped to get it (JUG-140); null on every other story.
+ * `series` is the series it is an episode of (JUG-59).
+ */
+/**
+ * @typedef {object} Sound a sound the parent acts out, as the legend over the story shows it (JUG-170)
+ * @property {string} sound the sound, as the story text marks it
+ * @property {string} who who makes it, in the story's words
+ * @property {string} how a few words on how, or empty
  */
 /** @typedef {{ id: string, title: string, episode: number }} StoryInSeries where a story sits in its series */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStorySummary */

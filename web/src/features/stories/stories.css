@@ -195,6 +195,52 @@
   text-wrap: pretty;
 }
 
+/* The sounds the parent acts out (JUG-170): the legend under the title, and
+   each sound in bold wherever the text marks it. Weight and colour together,
+   so colour is never the only signal. */
+.story-sound {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.story-sounds {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0 16px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.story-sounds__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.story-sounds__row {
+  display: grid;
+  grid-template-columns: 24px auto 1fr;
+  align-items: center;
+  column-gap: 10px;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.story-sounds--unmarked .story-sounds__row {
+  grid-template-columns: auto 1fr;
+}
+
+.story-sounds__mark {
+  color: var(--primary);
+}
+
+.story-sounds__how {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
 .story-skeleton__paragraph {
   display: flex;
   flex-direction: column;

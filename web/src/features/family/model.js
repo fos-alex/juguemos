@@ -393,3 +393,22 @@ export function interestMark(...texts) {
   }
   return null
 }
+
+/**
+ * The mark of someone in a story, by the words the story calls them (JUG-170):
+ * the family's pet by its animal, so Inca gets the dog, and anyone else by
+ * what their words name, so "el tren grandote" gets the train. Null for most.
+ * @param {string} who
+ * @param {Family | null | undefined} family
+ * @returns {import('../../shared/ui/Icons').Mark | null}
+ */
+export function characterMark(who, family) {
+  const plain = (/** @type {string} */ text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('es').trim()
+  const pet = family?.pet ? plain(family.pet) : ''
+  if (pet && plain(who).includes(pet)) {
+    const animal = PET_KINDS.find((each) => each.key === family?.petKind && each.key !== 'otro')
+    const mark = animal ? interestMark(animal.label) : null
+    if (mark) return mark
+  }
+  return interestMark(who)
+}

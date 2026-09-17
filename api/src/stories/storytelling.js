@@ -160,10 +160,10 @@ const uniqueBy = (members) => [...new Map(members.flatMap((member) => (member ? 
  */
 export function toPlot(option, band) {
   const plot = {
-    title: String(option?.title ?? '').trim(),
-    teaser: String(option?.teaser ?? '').trim(),
+    title: unmarked(String(option?.title ?? '')),
+    teaser: unmarked(String(option?.teaser ?? '')),
     minutes: clampMinutes(option?.minutes, band),
-    premise: String(option?.premise ?? '').trim(),
+    premise: unmarked(String(option?.premise ?? '')),
   }
   return plot.title && plot.teaser && plot.premise ? plot : null
 }
@@ -249,21 +249,22 @@ export class OptionsParser {
 
 /**
  * The lines an answer can carry outside the story text, by the word that opens
- * them: the title a story with no plot of its own is named by (JUG-140), and
- * the bookkeeping a series episode is asked for (JUG-59). None of it is ever
- * read aloud: the parser keeps these lines out of the story and hands them
- * back on their own.
+ * them: the title a story with no plot of its own is named by (JUG-140), the
+ * bookkeeping a series episode is asked for (JUG-59), and the sounds the
+ * parent acts out (JUG-170). None of it is ever read aloud: the parser keeps
+ * these lines out of the story and hands them back on their own.
  *
  * The ones that name the story are read only before its first part, so
- * «Título: eso lo dice un personaje» inside a story stays a paragraph. The two
- * that close it are read wherever they land, since they come after the last
- * part and nothing else follows them.
+ * «Título: eso lo dice un personaje» inside a story stays a paragraph. The
+ * others are read wherever they land: the two that close the story come after
+ * its last part, and a sounds line the model wrote in the wrong place still
+ * has to stay out of the text.
  * @type {Record<string, string>}
  */
 const OPENING_FIELDS = { titulo: 'title', serie: 'series', lugar: 'setting', antes: 'before' }
 
 /** @type {Record<string, string>} */
-const CLOSING_FIELDS = { resumen: 'summary', personajes: 'characters' }
+const ANYWHERE_FIELDS = { sonidos: 'sounds', resumen: 'summary', personajes: 'characters' }
 
 /** A line that opens with one word and a colon, which may be one of the fields. */
 const FIELD_LINE = /^(\p{L}+)\s*:\s*(.*)$/u
@@ -287,8 +288,12 @@ const keyOf = (word) =>
  *
  * The exceptions are the field lines in `FIELDS`. A field runs to the next
  * blank line, field, or part header, and `takeTitle` hands the title back as
- * soon as it lands, since the story is announced by it; the rest wait for
+ * soon as it lands, since the story is announced by it. `takeSounds` hands
+ * back the sounds before the first paragraph, and the rest wait for
  * `takeFields` at the end.
+ *
+ * A paragraph's sound marks are tidied as it finishes (`tidyMarks`), so no
+ * bracket reaches the family unless it marks a sound.
  */
 export class StoryParser {
   constructor() {
@@ -306,14 +311,25 @@ export class StoryParser {
    * single time, before its first paragraph. Empty when there was none.
    */
   takeTitle() {
-    const title = this.fields.title ?? ''
+    const title = unmarked(this.fields.title ?? '')
     delete this.fields.title
     return title
   }
 
+  /**
+   * The sounds the model said the story marks, once (JUG-170). Empty when it
+   * listed none.
+   * @returns {Sound[]}
+   */
+  takeSounds() {
+    const sounds = soundsIn(this.fields.sounds ?? '')
+    delete this.fields.sounds
+    return sounds
+  }
+
   /** Everything else the answer carried outside the story text. */
   takeFields() {
-    const fields = this.fields
+    const fields = Object.fromEntries(Object.entries(this.fields).map(([name, value]) => [name, unmarked(value)]))
     this.fields = {}
     return fields
   }
@@ -353,7 +369,7 @@ export class StoryParser {
     }
     const opened = FIELD_LINE.exec(line)
     const named = opened && keyOf(opened[1])
-    const field = named ? CLOSING_FIELDS[named] ?? (this.part === 0 ? OPENING_FIELDS[named] : undefined) : undefined
+    const field = named ? ANYWHERE_FIELDS[named] ?? (this.part === 0 ? OPENING_FIELDS[named] : undefined) : undefined
     if (field) {
       this.flush(done)
       this.field = field
@@ -366,7 +382,9 @@ export class StoryParser {
       return
     }
     if (this.field) {
-      this.fields[this.field] = `${this.fields[this.field]} ${line}`.trim()
+      // A sound on a line of its own is a sound of its own.
+      const joint = this.field === 'sounds' ? ';' : ' '
+      this.fields[this.field] = `${this.fields[this.field]}${joint}${line}`.trim()
       return
     }
     if (this.part === 0) return
@@ -375,9 +393,77 @@ export class StoryParser {
 
   /** @param {{ part: number, text: string }[]} done */
   flush(done) {
-    if (this.paragraph && this.part > 0) done.push({ part: this.part, text: this.paragraph })
+    const text = tidyMarks(this.paragraph)
+    if (text && this.part > 0) done.push({ part: this.part, text })
     this.paragraph = ''
   }
+}
+
+/**
+ * A sound the parent acts out (JUG-170): the sound as the story marks it, who
+ * makes it, and a few words on how. The legend over the story is made of
+ * these.
+ * @typedef {{ sound: string, who: string, how: string }} Sound
+ */
+
+/** How many sounds a story's legend holds, so it stays small. */
+const SOUNDS = 3
+
+/** The longest a sound may be. Who makes it and how may be as long as a character's name. */
+const SOUND_MAX = 40
+
+/**
+ * The sounds a `SONIDOS:` line lists: `¡Guau, guau! | Inca | contenta`, one
+ * after another, separated by semicolons. A sound needs no one to make it and
+ * no how, and anything after the first three is left out.
+ * @param {string} line
+ * @returns {Sound[]}
+ */
+export function soundsIn(line) {
+  return line
+    .split(';')
+    .map((entry) => {
+      const [sound = '', who = '', ...how] = entry.split('|')
+      return {
+        sound: sound.replace(/[[\]]/g, '').trim().slice(0, SOUND_MAX),
+        who: who.trim().slice(0, NAME_MAX),
+        how: how.join(' ').trim().slice(0, NAME_MAX),
+      }
+    })
+    .filter((each) => each.sound !== '')
+    .slice(0, SOUNDS)
+}
+
+/**
+ * A paragraph with its sound marks tidied (JUG-170). A sound between brackets
+ * stays marked, trimmed; a bracket with no partner, an empty pair, and a pair
+ * around a marked sound are taken out, so the parent never sees a bracket.
+ * @param {string} paragraph
+ */
+export function tidyMarks(paragraph) {
+  return paragraph
+    .split(/(\[[^[\]]*\])/)
+    .map((piece) => {
+      const pair = /^\[([^[\]]*)\]$/.exec(piece)
+      if (!pair) return piece.replace(/[[\]]/g, '')
+      const sound = pair[1].trim()
+      return sound ? `[${sound}]` : ''
+    })
+    .join('')
+    .replace(/ {2,}/g, ' ')
+    .trim()
+}
+
+/**
+ * Words with no sound marks, for everything outside the story text: a title, a
+ * teaser, a series' name. Only the story text marks sounds (JUG-170).
+ * @param {string} text
+ */
+export const unmarked = (text) => text.replace(/[[\]]/g, '').trim()
+
+/** How many sounds a story marks in its text, for the audit. @param {string[][]} parts */
+export function marksIn(parts) {
+  return parts.flat().reduce((total, paragraph) => total + (paragraph.match(/\[[^[\]]+\]/g)?.length ?? 0), 0)
 }
 
 /**

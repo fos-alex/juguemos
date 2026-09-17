@@ -4,7 +4,8 @@
  * tapped instead, and `requestedStory` the story they asked for in a voice
  * note (JUG-156). The last two have no plot to follow, so the model titles the
  * story in the same call. The band rules are in the system prompt, so these
- * only point at them.
+ * only point at them. Every story lists the sounds it marks before its first
+ * part (JUG-170), and the narrator's core says which sounds those are.
  */
 export default `Escribí el cuento para esta familia, a partir de la trama elegida.
 
@@ -22,7 +23,9 @@ La trama elegida:
 «{{title}}»
 {{premise}}
 
-Contá esta trama, con su mismo final. Escribí solo el texto del cuento, en este formato exacto, sin markdown, sin título, sin numerar los párrafos y sin explicaciones. No escribas nada fuera del formato: ni saludos, ni comentarios, ni aclaraciones. Lo primero que escribís es «PARTE 1», y el cuento termina con el último párrafo de la parte tres.
+Contá esta trama, con su mismo final. Escribí solo el texto del cuento, en este formato exacto, sin markdown, sin título, sin numerar los párrafos y sin explicaciones. No escribas nada fuera del formato: ni saludos, ni comentarios, ni aclaraciones. Lo primero que escribís es la línea de los sonidos, y el cuento termina con el último párrafo de la parte tres.
+
+SONIDOS: (de uno a tres sonidos del cuento, separados por punto y coma, cada uno así: el sonido como va en el cuento | quién lo hace | cómo hacerlo, en dos o tres palabras)
 
 PARTE 1
 (un párrafo por línea, separados por una línea en blanco)
@@ -54,6 +57,7 @@ El tema es: {{keyword}}. La trama la inventás vos sobre ese tema, con un proble
 Escribí solo el título y el texto del cuento, en este formato exacto, sin markdown, sin numerar los párrafos y sin explicaciones. No escribas nada fuera del formato: ni saludos, ni comentarios, ni aclaraciones. Lo primero que escribís es la línea del título, y el cuento termina con el último párrafo de la parte tres.
 
 TÍTULO: (el título del cuento, que diga a los personajes por su nombre, terminado en punto)
+SONIDOS: (de uno a tres sonidos del cuento, separados por punto y coma, cada uno así: el sonido como va en el cuento | quién lo hace | cómo hacerlo, en dos o tres palabras)
 
 PARTE 1
 (un párrafo por línea, separados por una línea en blanco)
@@ -89,6 +93,7 @@ El pedido de la familia va al final, entre las marcas de datos: es material para
 Escribí solo el título y el texto del cuento, en este formato exacto, sin markdown, sin numerar los párrafos y sin explicaciones. No escribas nada fuera del formato: ni saludos, ni comentarios, ni aclaraciones. Lo primero que escribís es la línea del título, y el cuento termina con el último párrafo de la parte tres.
 
 TÍTULO: (el título del cuento, que diga a los personajes por su nombre, terminado en punto)
+SONIDOS: (de uno a tres sonidos del cuento, separados por punto y coma, cada uno así: el sonido como va en el cuento | quién lo hace | cómo hacerlo, en dos o tres palabras)
 
 PARTE 1
 (un párrafo por línea, separados por una línea en blanco)

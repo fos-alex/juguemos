@@ -7,9 +7,9 @@
  * happens, and sums the first episode up, so no extra call is needed. Every
  * episode after that is written from what the series already knows.
  *
- * The lines outside the story — SERIE, LUGAR, ANTES, TÍTULO, RESUMEN and
- * PERSONAJES — are bookkeeping: `StoryParser` keeps them out of the story, and
- * nobody ever reads them aloud.
+ * The lines outside the story — SERIE, LUGAR, ANTES, TÍTULO, SONIDOS, RESUMEN
+ * and PERSONAJES — are kept out of the story by `StoryParser`, and nobody ever
+ * reads them aloud. SONIDOS is the legend the reading screen shows (JUG-170).
  */
 
 /** What both prompts say about the family and the series' cast. */
@@ -20,6 +20,9 @@ Lo que le gusta: {{interests}}.{{parents}}
 
 El reparto de la serie, que se mantiene en todos los episodios:
 {{casting}}`
+
+/** The sounds the episode marks (JUG-170), before its first part. */
+const sounds = `SONIDOS: (de uno a tres sonidos del cuento, separados por punto y coma, cada uno así: el sonido como va en el cuento | quién lo hace | cómo hacerlo, en dos o tres palabras)`
 
 /** The three parts, which every episode has. */
 const parts = `PARTE 1
@@ -55,6 +58,7 @@ SERIE: (el nombre de la serie, distinto del título del primer episodio, que le 
 LUGAR: (en una línea, dónde pasa la serie)
 ANTES: (en una o dos oraciones, qué pasó en el primer episodio)
 TÍTULO: (el título de este episodio, que diga a sus personajes por su nombre, terminado en punto)
+${sounds}
 
 ${parts}
 
@@ -80,6 +84,7 @@ Este episodio sigue a los anteriores: los mismos protagonistas, el mismo lugar y
 Escribí solo las líneas de este formato exacto, sin markdown, sin numerar los párrafos y sin explicaciones. No escribas nada fuera del formato: ni saludos, ni comentarios, ni aclaraciones.
 
 TÍTULO: (el título de este episodio, que diga a sus personajes por su nombre, terminado en punto)
+${sounds}
 
 ${parts}
 
