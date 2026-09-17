@@ -13,6 +13,8 @@ Lo que le gusta: {{interests}}.
 El reparto de cada trama, ya decidido, que tenés que respetar tal cual:
 {{castings}}
 
+Cada trama usa solo a los de su reparto. Si un reparto dice «sin mascota», «sin juguetes» o «sin los chicos de la familia», esa trama no los nombra, aunque aparezcan en la lista de arriba por otra trama.
+
 Proponé {{count}} tramas, una por cada reparto y en ese mismo orden, de alrededor de {{minutes}} minutos de lectura cada una: aplicá las reglas de la banda con precisión, en el largo y en la lengua. Que cada título diga a sus personajes por su nombre, y que las tramas sean bien distintas entre sí: distintos escenarios, distintos tipos de acontecer.
 {{avoid}}
 Contestá solo con un objeto JSON, sin markdown ni explicaciones, con una sola clave «tramas», cuyo valor es un array de {{count}} objetos, en el orden de los repartos, con estas claves:

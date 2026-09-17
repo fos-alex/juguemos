@@ -2,12 +2,13 @@
  * The casting draw (JUG-139). Before the model is asked for anything, code
  * decides who a story is about. A screen has two options, each with its own
  * role: the classic one, where the anchor kid leads and a family interest may
- * be the theme, and a new one, led by someone else from the family when there
- * is anyone, that asks the model for a place, a character, or a situation the
- * family hasn't heard yet. In both, whether the pet and a toy are in is one
- * random number compared to one weight, and both the numbers and the weights
- * are kept on the casting, so an audit row is enough to replay a draw and to
- * tell whether the weights need moving.
+ * be the theme, and a new one that asks the model for a place, a character, or
+ * a situation the family hasn't heard yet. In the new one, whether the kids
+ * are in and whether a kid leads are drawn too, so the kid doesn't star in
+ * every story (JUG-161). In both, whether the pet and a toy are in is drawn.
+ * Every decision is one random number compared to one weight, and both the
+ * numbers and the weights are kept on the casting, so an audit row is enough
+ * to replay a draw and to tell whether the weights need moving.
  *
  * Pure: it takes the random function it uses, so a test with a seeded one
  * gets the same screen every time.
@@ -21,6 +22,8 @@ import { anchorOf } from './storytelling.js'
  * @property {number} petIn how often the pet is in, when the family has one
  * @property {number} toyIn how often a toy is in, when the family has any
  * @property {number} themeIn how often a family interest is the theme of the classic option
+ * @property {number} kidsIn how often the kids playing are in the new option
+ * @property {number} kidLeads how often one of them leads the new option, when they are in
  * @property {number} recentPenalty what a toy or a theme used lately weighs
  */
 /**
@@ -29,7 +32,9 @@ import { anchorOf } from './storytelling.js'
  * @property {number | null} petIn
  * @property {number | null} toyIn
  * @property {number | null} themeIn
- * @property {number | null} lead which of the family leads the new option
+ * @property {number | null} kidsIn
+ * @property {number | null} kidLeads
+ * @property {number | null} lead which of those who can lead the new option does
  */
 /**
  * @typedef {object} Casting who one story is about
@@ -53,6 +58,8 @@ export const DEFAULT_WEIGHTS = {
   petIn: 0.5,
   toyIn: 0.6,
   themeIn: 0.7,
+  kidsIn: 0.6,
+  kidLeads: 0.35,
   recentPenalty: 0.3,
 }
 
@@ -60,11 +67,11 @@ export const DEFAULT_WEIGHTS = {
 const NEW_CHARACTER = 'un personaje nuevo'
 
 /** No decision drawn yet. @returns {Draws} */
-const noDraws = () => ({ petIn: null, toyIn: null, themeIn: null, lead: null })
+const noDraws = () => ({ petIn: null, toyIn: null, themeIn: null, kidsIn: null, kidLeads: null, lead: null })
 
 /**
  * The two castings of a screen, in the order they are shown: the classic
- * option, then the new one. Every kid playing is in both. The two never get
+ * option, then the new one. The two never get
  * the same toy while the family has more than one, and a toy or a theme from
  * the family's last stories weighs less.
  * @param {Profile} profile the kids playing, with the pets, toys and interests
@@ -213,37 +220,45 @@ function castClassic(profile, screen) {
 }
 
 /**
- * The new option: the pet and a toy are in when their draws say so, and it is
- * led by someone from the family other than the anchor kid — another kid, or
- * the pet or the toy that came in — drawn evenly, or by the anchor when there
- * is nobody else. It has no family theme: the model invents something the
- * family hasn't heard.
+ * The new option. The pet and a toy are in when their draws say so, and so
+ * are the kids playing. When the kids are in, one of them leads when that
+ * draw says so; otherwise the lead is drawn evenly from the pet and the toy
+ * that came in and a character the model invents. It has no family theme:
+ * the model invents something the family hasn't heard. Drawn in a fixed
+ * order, so a seeded random gives a fixed answer.
  * @param {Profile} profile
  * @param {Screen} screen
  * @returns {Casting}
  */
 function castNew(profile, screen) {
   const { weights, random } = screen
-  const { anchor } = anchorOf(profile)
   const draws = noDraws()
   const pet = drawPet(profile, screen, draws)
   const toy = drawToy(profile, screen, draws)
 
-  /** @type {Lead[]} */
-  const pool = [
-    ...profile.kids.filter((kid) => kid.id !== anchor?.id).map((kid) => /** @type {Lead} */ ({ type: 'kid', id: kid.id, name: kid.name })),
-    ...(pet ? [/** @type {Lead} */ ({ type: 'pet', id: pet.id, name: pet.name })] : []),
-    ...(toy ? [/** @type {Lead} */ ({ type: 'toy', id: toy.id, name: toy.name })] : []),
-  ]
-  /** @type {Lead} */
-  let lead
-  if (pool.length > 0) {
-    draws.lead = random()
-    lead = pool[Math.min(pool.length - 1, Math.floor(draws.lead * pool.length))]
-  } else {
-    lead = anchor ? { type: 'kid', id: anchor.id, name: anchor.name } : { type: 'new', id: null, name: NEW_CHARACTER }
+  let kidsIn = false
+  if (profile.kids.length > 0) {
+    draws.kidsIn = random()
+    kidsIn = draws.kidsIn < weights.kidsIn
   }
-  return { kind: 'wildcard', anchorIn: anchor != null, lead, kids: profile.kids.map((kid) => kid.id), pet, toy, theme: null, draws, weights }
+  let kidLeads = false
+  if (kidsIn) {
+    draws.kidLeads = random()
+    kidLeads = draws.kidLeads < weights.kidLeads
+  }
+
+  /** @type {Lead[]} */
+  const pool = kidLeads
+    ? profile.kids.map((kid) => /** @type {Lead} */ ({ type: 'kid', id: kid.id, name: kid.name }))
+    : [
+        ...(pet ? [/** @type {Lead} */ ({ type: 'pet', id: pet.id, name: pet.name })] : []),
+        ...(toy ? [/** @type {Lead} */ ({ type: 'toy', id: toy.id, name: toy.name })] : []),
+        { type: 'new', id: null, name: NEW_CHARACTER },
+      ]
+  draws.lead = random()
+  const lead = pool[Math.min(pool.length - 1, Math.floor(draws.lead * pool.length))]
+  const kids = kidsIn ? profile.kids.map((kid) => kid.id) : []
+  return { kind: 'wildcard', anchorIn: kids.length > 0, lead, kids, pet, toy, theme: null, draws, weights }
 }
 
 /** The family's pet, when its draw says so. @param {Profile} profile @param {Screen} screen @param {Draws} draws */
@@ -318,6 +333,7 @@ export function castingLines(casting, profile) {
   if (casting.theme) sentences.push(`Tema: ${casting.theme}.`)
 
   const missing = []
+  if (casting.kids.length === 0 && casting.lead.type !== 'kid') missing.push('sin los chicos de la familia')
   if (!casting.pet) missing.push('sin mascota')
   if (!casting.toy) missing.push('sin juguetes')
   if (!casting.theme) missing.push(casting.kind === 'wildcard' ? 'sin tema de la familia' : 'sin tema fijo')
