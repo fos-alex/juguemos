@@ -1,13 +1,14 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useStoryNext } from '../hooks/useStoryNext'
-import { PrimaryButton, SecondaryButton, StatusLine } from '../../../shared/ui'
+import { FinMark, PrimaryButton, SecondaryButton, StatusLine } from '../../../shared/ui'
 import '../stories.css'
 
 /** @typedef {import('../types').Story} Story */
 
 /**
- * Under the last paragraph (JUG-154): Listo goes back to Home, and the story
- * can become a series, or an episode leads to the next one.
+ * Under the last paragraph (JUG-154): *Fin*, drawn as the parent reaches it
+ * (JUG-159), then Listo goes back to Home, and the story can become a series,
+ * or an episode leads to the next one.
  * @param {{ story: Story }} props
  */
 export function StoryEnd({ story }) {
@@ -16,6 +17,7 @@ export function StoryEnd({ story }) {
 
   return (
     <div className="story-end">
+      <FinMark />
       {/* Voice pass pending: "Listo", "Hacer una serie", and "Leer otro episodio". */}
       <PrimaryButton size="md" onClick={() => void navigate({ to: '/' })}>
         Listo

@@ -8,6 +8,7 @@
 
 .chip {
   position: relative;
+  animation: pop-in var(--motion-moment) var(--ease-play) backwards;
   min-height: 40px;
   padding: 8px 14px;
   border: 1px solid var(--hairline-strong);
@@ -70,10 +71,28 @@
   border-color: var(--primary);
   background: var(--primary);
   color: var(--on-primary);
+  animation: chip-press var(--motion-moment) var(--ease-play);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .chip--toggle {
-    transition: none;
+/* The check lands with a little turn as the chip fills. */
+.chip--toggle[aria-pressed='true'] .icon {
+  animation: chip-check 360ms var(--ease-play) backwards;
+}
+
+/* A chip that holds an input doesn't pop while it is being typed in. */
+.chip--input {
+  animation: none;
+}
+
+@keyframes chip-press {
+  40% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes chip-check {
+  from {
+    opacity: 0;
+    transform: rotate(-45deg) scale(0.2);
   }
 }

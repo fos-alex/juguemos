@@ -26,7 +26,8 @@ import '../activities.css'
 /**
  * 2m, with 2p as its swap state. "Otro juego" turns the blocks into
  * placeholders in place and pushes the next juego, so back returns to the
- * previous one. No counter of juegos seen, no shuffle animation.
+ * previous one. No counter of juegos seen. The juego that arrives slides in
+ * from the side, like a card dealt onto the table (JUG-159).
  *
  * A juego reached through Otro juego says so on its back button, *Juego
  * anterior*, and has the way straight to Home in the top bar (JUG-155). The
@@ -45,6 +46,8 @@ export function ActivityScreen() {
   const remaining = useCountdown(running?.endsAt)
   const [swap, setSwap] = useState(/** @type {'idle' | 'loading' | 'offline' | 'error'} */ ('idle'))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
+  // The juego Otro juego just brought, so only that arrival slides, not a return to it.
+  const [dealt, setDealt] = useState(/** @type {string | null} */ (null))
 
   useDocumentTitle(activity && `${activity.title} · Ludi`)
 
@@ -64,6 +67,7 @@ export function ActivityScreen() {
     setSwap('loading')
     try {
       const next = await suggestActivity({ after: id })
+      setDealt(next.id)
       await navigate({ to: '/idea/$id', params: { id: next.id }, state: { swapped: true } })
       setSwap('idle')
     } catch (error) {
@@ -112,7 +116,7 @@ export function ActivityScreen() {
           <ActivitySkeleton />
         ) : (
           <>
-            <ActivityView activity={activity} />
+            <ActivityView activity={activity} className={dealt === id ? 'activity--dealt' : ''} />
             <ReactionRow activity={activity} className="activity__reaction" />
           </>
         )}

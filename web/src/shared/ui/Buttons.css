@@ -16,12 +16,14 @@
   touch-action: manipulation;
   user-select: none;
   transition:
-    transform 120ms ease-out,
-    background-color 120ms ease-out;
+    transform var(--motion-quick) var(--ease-play),
+    background-color var(--motion-quick) var(--ease-out);
 }
 
+/* A press squashes a little and springs back when the finger lifts. */
 .btn:active:not(.is-busy, .is-unavailable, :disabled) {
-  transform: scale(0.98);
+  transform: scale(0.95);
+  transition-timing-function: var(--ease-out);
 }
 
 .btn--primary {
@@ -176,7 +178,7 @@
   font-size: 12px;
 }
 
-/* Waiting dots: a slow ~1.2 s pulse, still when motion is reduced. */
+/* Waiting dots: they hop in turn, like a ronda, and stand still when motion is reduced. */
 
 .dots {
   display: inline-flex;
@@ -190,7 +192,7 @@
   height: 9px;
   border-radius: 50%;
   background: currentColor;
-  animation: dots-pulse 1.2s ease-in-out infinite;
+  animation: dots-hop 1.2s ease-in-out infinite;
 }
 
 .dots span:nth-child(1) {
@@ -237,14 +239,15 @@
   background: var(--primary);
 }
 
-@keyframes dots-pulse {
+@keyframes dots-hop {
   0%,
+  60%,
   100% {
-    opacity: 0.4;
+    transform: translateY(0);
   }
 
-  50% {
-    opacity: 1;
+  30% {
+    transform: translateY(-7px);
   }
 }
 

@@ -19,11 +19,11 @@
 }
 
 .drawer[open] {
-  animation: drawer-in 180ms ease-out;
+  animation: drawer-in 320ms var(--ease-play);
 }
 
 .drawer[open]::backdrop {
-  animation: fade-in 180ms ease-out;
+  animation: fade-in 200ms var(--ease-out);
 }
 
 @keyframes drawer-in {

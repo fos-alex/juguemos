@@ -2,3 +2,19 @@
   width: 22px;
   height: 22px;
 }
+
+/* The sun comes up turning and the moon swings in the other way. */
+.theme-toggle__icon {
+  animation: theme-turn-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+.theme-toggle__icon--moon {
+  --turn: 70deg;
+}
+
+@keyframes theme-turn-in {
+  from {
+    opacity: 0;
+    transform: rotate(var(--turn, -120deg)) scale(0.4);
+  }
+}

@@ -20,11 +20,12 @@
   font: inherit;
   text-align: left;
   touch-action: manipulation;
-  transition: transform 120ms ease-out;
+  transition: transform var(--motion-quick) var(--ease-play);
 }
 
 .card--button:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition-timing-function: var(--ease-out);
 }
 
 .card-title {

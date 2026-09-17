@@ -13,6 +13,14 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+  animation-delay: calc(180ms + var(--order, 0) * var(--motion-stagger));
+}
+
+/* Each number lands just after its step, with a small bounce. */
+.steps__number {
+  animation: pop-in var(--motion-moment) var(--ease-play) backwards;
+  animation-delay: calc(260ms + var(--order, 0) * var(--motion-stagger));
 }
 
 .steps__number {

@@ -80,6 +80,7 @@ The goal is to find out quickly whether the concept is worth pursuing. Only Alex
 - **Ask for a story by voice.** On *¿Cuál leemos hoy?*, under the two plots, *Contame qué cuento querés escuchar* opens the mic, and the parent says the story they want: who is in it, where it happens, its theme, or what happens. Ludi shows what it heard, and once the parent says yes it writes that story for the youngest kid playing, at the right time of day, with the same storytelling rules and guardrails as every story. What doesn't fit a story for a small child is softened or left out.
 - **Sign in with Google.** Parents can sign in with their Google account, which shares only their name and email. Until the guardrails are complete, only the family's own accounts get in.
 - **An animation while a story is written** (nice to have). A story from the LLM can take up to two minutes before there's anything to read, so an animation shows that it's being written, and it varies with the kids' ages. It gives way to the text as soon as the first words arrive.
+- **A livelier app.** Motion that plays: buttons that give, juegos that arrive step by step, and small one-off moments like petals when the timer ends and *Fin* drawn at the end of a story. Marks for common interests (cars, dinosaurs, tractors, dolls, music) beside stories and on the kids' interests, and a story wait that draws with a crayon, a pencil, or a pen depending on the kids' ages.
 - **An animation while a voice note is read** (nice to have). The same for onboarding, while a voice note becomes words and while Ludi reads the family from them. One animation for everyone here: during onboarding Ludi doesn't know the kids yet.
 
 ### 0.4 — *Jugar para crecer*
@@ -208,3 +209,4 @@ Changes from the first draft of this plan, and suggestions that were considered 
 | 0.14 draft | September 2026 | Settled the waiting animations: shapes from the plaza rather than a character, varying with the age of the kids playing, and allowed on the reading screen until the story's first words. |
 | 0.15 draft | September 2026 | Renamed the product from Juguemos to Ludi, at `ludi.ar`. Home's button still says *¡Juguemos!*, and the 1.0 release keeps the name *Juguemos*. |
 | 0.16 draft | September 2026 | Added asking for a story by voice to 0.3. Hora del cuento now offers two plots, a classic and a new one, with asking by voice as the third way in. |
+| 0.17 draft | September 2026 | Added a livelier app to 0.3: playful motion, one-off moments, and marks for common interests. |

@@ -55,3 +55,33 @@
   width: 8px;
   height: 8px;
 }
+
+/* Hello: the three dots hop once, one after another. */
+
+.wordmark--greet .wordmark__dots span {
+  animation: wordmark-hop 560ms var(--ease-out) backwards;
+  animation-delay: calc(240ms + var(--dot, 0) * 110ms);
+}
+
+.wordmark--greet .wordmark__dots span:nth-child(2) {
+  --dot: 1;
+}
+
+.wordmark--greet .wordmark__dots span:nth-child(3) {
+  --dot: 2;
+}
+
+@keyframes wordmark-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-9px) scale(1.15);
+  }
+
+  70% {
+    transform: translateY(0) scale(1.1, 0.85);
+  }
+}

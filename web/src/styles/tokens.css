@@ -66,6 +66,16 @@
   --dot-jacaranda: #6B4EA8;
 
   --focus: #2A2140;
+
+  /*
+   * Motion (JUG-159). Guidance is quick and settles; a moment lands with a
+   * little overshoot, like something set down on a table.
+   */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-play: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-quick: 160ms;
+  --motion-moment: 420ms;
+  --motion-stagger: 70ms;
 }
 
 [data-theme='dark'] {
