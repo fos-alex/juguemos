@@ -59,7 +59,7 @@ ${STORY}`
 let api
 let llm
 /** Each family in this file signs up with its own email. */
-const emails = Array.from({ length: 20 }, (_, i) => `llm-${i}@example.com`)
+const emails = Array.from({ length: 22 }, (_, i) => `llm-${i}@example.com`)
 let emailCount = 0
 const signUp = () => signUpAs(api, emails[emailCount++])
 before(async () => {
@@ -146,6 +146,18 @@ test('the options ask for a bedtime story at night, and its history reaches the 
   assert.match(user, /Cada trama usa solo a los de su reparto/)
   assert.match(user, /Trama 2: /)
   assert.doesNotMatch(user, /Trama 3: /)
+})
+
+test('the parents reach the model by what the kids call them, and a family with none sends nothing about them (JUG-21)', async () => {
+  const { cookie } = await signUp()
+  await putFamily(api, cookie, { ...EXAMPLE_PROFILE, parents: [{ name: 'Caro', calledAs: 'Mamá' }] })
+  await options(cookie)
+  assert.match(llm.prompts.at(-1).user, /Los padres: Caro, a quien le dicen Mamá\./)
+
+  const other = await signUp()
+  await putFamily(api, other.cookie, EXAMPLE_PROFILE)
+  await options(other.cookie)
+  assert.doesNotMatch(llm.prompts.at(-1).user, /padres/i)
 })
 
 test('the system prompt carries one band and one moment, and nothing else', async () => {

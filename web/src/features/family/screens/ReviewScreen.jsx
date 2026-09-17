@@ -40,7 +40,7 @@ export function ReviewScreen() {
         <h1 className="page-title">¿Está bien así?</h1>
       </div>
       <Body className="review">
-        <FamilyCard family={parse.family} flagged={parse.flagged} onFix={correct} />
+        <FamilyCard family={parse.family} toys flagged={parse.flagged} onFix={correct} />
         {parse.note && <p className="review__note">{parse.note}</p>}
         <StatusLine role="alert">{request.failure}</StatusLine>
       </Body>

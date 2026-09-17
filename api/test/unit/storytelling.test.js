@@ -21,8 +21,10 @@ import {
 const profileOf = (kids) => ({
   id: 'fam',
   name: null,
+  home: null,
+  parents: [],
   kids: kids.map((kid, index) => ({ id: `k${index}`, playing: true, ...kid })),
-  pets: [{ id: 'p', name: 'Inca' }],
+  pets: [{ id: 'p', name: 'Inca', kind: 'perro' }],
   interests: ['los dinosaurios'],
   toys: [{ id: 't', name: 'el tren grandote' }],
 })
@@ -86,6 +88,7 @@ test('the family lines name only what the castings hold, each name once', () => 
   assert.equal(one.pet, 'no aparece en este cuento')
   assert.equal(one.toys, 'el tren grandote')
   assert.equal(one.interests, 'sin tema fijo')
+  assert.equal(one.parents, '')
 
   // The three castings of a screen share one prompt, so the lines are their union.
   const screen = familyLines(profile, [
@@ -94,9 +97,23 @@ test('the family lines name only what the castings hold, each name once', () => 
     /** @type {any} */ ({ kids: ['k1'], pet: null, toy: null, theme: 'los caballos' }),
   ])
   assert.equal(screen.kids, 'Milán, de 2 años y 2 meses y Sofi, de 4 años y 4 meses')
-  assert.equal(screen.pet, 'Inca')
+  assert.equal(screen.pet, 'Inca (perro)')
   assert.equal(screen.toys, 'el tren grandote')
   assert.equal(screen.interests, 'los dinosaurios, los caballos')
+})
+
+test('the parents are a line of their own, by what the kids call them, and a pet of another animal goes by its name', () => {
+  const profile = {
+    ...profileOf([{ name: 'Milán', ageMonths: 26 }]),
+    parents: [
+      { id: 'a', name: 'Caro', calledAs: 'Mamá' },
+      { id: 'b', name: 'Alex', calledAs: 'Papi' },
+    ],
+    pets: [{ id: 'p', name: 'Toto', kind: 'otro' }],
+  }
+  const lines = familyLines(profile, [/** @type {any} */ ({ kids: ['k0'], pet: { id: 'p', name: 'Toto' }, toy: null, theme: null })])
+  assert.equal(lines.pet, 'Toto')
+  assert.match(lines.parents, /^\nLos padres: Caro, a quien le dicen Mamá; Alex, a quien le dicen Papi\./)
 })
 
 /** Feeds a text to a parser in small pieces, as the model writes it. @param {string} text @param {number} [size] */

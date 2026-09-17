@@ -13,6 +13,8 @@ import { toys } from '../toys/toys.schema.js'
 export const families = pgTable('families', {
   id: uuid().primaryKey().defaultRandom(),
   name: text(),
+  // A key from HOMES in kinds.js, or null until the family says (JUG-21).
+  home: text(),
   createdAt: createdAt(),
 })
 
@@ -66,9 +68,30 @@ export const pets = pgTable(
     familyId: familyId(),
     position: smallint().notNull(),
     name: text().notNull(),
+    // A key from PET_KINDS in kinds.js (JUG-21).
+    kind: text().notNull().default('perro'),
     createdAt: createdAt(),
   },
   (table) => [index('pets_family_id_idx').on(table.familyId), check('pets_name_check', sql`${table.name} <> ''`)],
+)
+
+// The parents, as the kids know them (JUG-21): a name, and what the kids call
+// them, so a story can bring them in. None of them needs an account.
+export const parents = pgTable(
+  'parents',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    familyId: familyId(),
+    position: smallint().notNull(),
+    name: text().notNull(),
+    calledAs: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index('parents_family_id_idx').on(table.familyId),
+    check('parents_name_check', sql`${table.name} <> ''`),
+    check('parents_called_as_check', sql`${table.calledAs} <> ''`),
+  ],
 )
 
 // What each kid loves (JUG-144), in the parent's order and words. Kids like
@@ -109,18 +132,20 @@ export const kidsSittingOut = pgTable(
 
 export const familiesRelations = relations(families, ({ many }) => ({
   members: many(familyMembers),
+  parents: many(parents),
   kids: many(kids),
   pets: many(pets),
   toys: many(toys),
   householdMaterials: many(householdMaterials),
 }))
 
-/** @param {typeof familyMembers | typeof pets} table */
+/** @param {typeof familyMembers | typeof pets | typeof parents} table */
 const belongsToFamily = (table) =>
   relations(table, ({ one }) => ({ family: one(families, { fields: [table.familyId], references: [families.id] }) }))
 
 export const familyMembersRelations = belongsToFamily(familyMembers)
 export const petsRelations = belongsToFamily(pets)
+export const parentsRelations = belongsToFamily(parents)
 
 export const kidsRelations = relations(kids, ({ one, many }) => ({
   family: one(families, { fields: [kids.familyId], references: [families.id] }),

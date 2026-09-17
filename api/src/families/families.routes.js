@@ -1,4 +1,5 @@
 import { errorBody, text, uuid as id } from '../http/schemas.js'
+import { HOMES, PET_KINDS } from './kinds.js'
 
 /** @typedef {ReturnType<typeof import('./families.controller.js').createFamiliesController>} FamiliesController */
 
@@ -13,12 +14,25 @@ const named = {
 
 const words = { type: 'array', items: { type: 'string' } }
 
+// What animal a pet is, and the kind of home, as keys (JUG-21).
+const petKind = { type: 'string', enum: Object.keys(PET_KINDS) }
+const home = { type: ['string', 'null'], enum: [...HOMES, null] }
+
 const profile = {
   type: 'object',
-  required: ['id', 'name', 'kids', 'pets', 'toys'],
+  required: ['id', 'name', 'home', 'parents', 'kids', 'pets', 'toys'],
   properties: {
     id: { type: 'string' },
     name: { type: ['string', 'null'] },
+    home,
+    parents: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'name', 'calledAs'],
+        properties: { id: { type: 'string' }, name: { type: 'string' }, calledAs: { type: 'string' } },
+      },
+    },
     kids: {
       type: 'array',
       items: {
@@ -35,19 +49,40 @@ const profile = {
         },
       },
     },
-    pets: { type: 'array', items: named },
+    pets: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'name', 'kind'],
+        properties: { id: { type: 'string' }, name: { type: 'string' }, kind: { type: 'string' } },
+      },
+    },
     toys: { type: 'array', items: named },
   },
 }
 
 // The whole profile, as the parent last saw it. Items that carry the id of an
-// existing row update it; the rest are new.
+// existing row update it; the rest are new. The home, the parents, and the
+// toys stay as they are when left out: the family form no longer shows the
+// toys, which live in the toy box (JUG-21).
 const profileInput = {
   type: 'object',
   additionalProperties: false,
-  required: ['kids', 'pets', 'toys'],
+  required: ['kids', 'pets'],
   properties: {
     name: { type: ['string', 'null'], maxLength: 80 },
+    home,
+    parents: {
+      type: 'array',
+      maxItems: 6,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['name'],
+        // What the kids call them is "Mamá" when left out.
+        properties: { id, name: text(80), calledAs: text(40) },
+      },
+    },
     kids: {
       type: 'array',
       maxItems: 12,
@@ -68,7 +103,7 @@ const profileInput = {
     pets: {
       type: 'array',
       maxItems: 10,
-      items: { type: 'object', additionalProperties: false, required: ['name'], properties: { id, name: text(80) } },
+      items: { type: 'object', additionalProperties: false, required: ['name'], properties: { id, name: text(80), kind: petKind } },
     },
     toys: {
       type: 'array',
@@ -101,8 +136,16 @@ const understanding = {
   properties: {
     family: {
       type: 'object',
-      required: ['kids', 'pets', 'toys'],
+      required: ['parents', 'kids', 'pets', 'toys'],
       properties: {
+        parents: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['name', 'calledAs'],
+            properties: { name: { type: 'string' }, calledAs: { type: ['string', 'null'] } },
+          },
+        },
         kids: {
           type: 'array',
           items: {
@@ -111,7 +154,10 @@ const understanding = {
             properties: { name: { type: 'string' }, ageMonths: { type: ['integer', 'null'] }, interests: words },
           },
         },
-        pets: { type: 'array', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } } },
+        pets: {
+          type: 'array',
+          items: { type: 'object', required: ['name', 'kind'], properties: { name: { type: 'string' }, kind: { type: ['string', 'null'] } } },
+        },
         toys: { type: 'array', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } } },
       },
     },

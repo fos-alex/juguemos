@@ -1,10 +1,11 @@
 /**
  * Families: the adults who belong to them, and the profile everything is
- * tailored to (kids and what each one loves, pets, and toys). Each adult has
- * one family for now; the second parent joins in 0.6.
+ * tailored to (the parents, kids and what each one loves, pets, toys, and the
+ * home). Each adult has one family for now; the second parent joins in 0.6.
  */
 import { and, eq, inArray, notInArray, sql } from 'drizzle-orm'
-import { families, familyMembers, kidInterests, kids, kidsSittingOut, pets } from './families.schema.js'
+import { families, familyMembers, kidInterests, kids, kidsSittingOut, parents, pets } from './families.schema.js'
+import { DEFAULT_CALLED_AS, DEFAULT_PET_KIND } from './kinds.js'
 import { toys } from '../toys/toys.schema.js'
 import { NotFoundError, ValidationError } from '../errors.js'
 
@@ -15,20 +16,28 @@ import { NotFoundError, ValidationError } from '../errors.js'
  * adult asking (JUG-107); with no adult named, every kid plays. `interests` are
  * this kid's own (JUG-144), as the parent typed them.
  */
-/** @typedef {{ id: string, name: string }} Named */
+/** @typedef {{ id: string, name: string, kind: string }} Pet `kind` is a key from PET_KINDS (JUG-21). */
+/** @typedef {{ id: string, name: string, calledAs: string }} Parent A parent's name, and what the kids call them (JUG-21). */
 /** @typedef {{ id: string, name: string, favorite: boolean }} ProfileToy A toy by its family name, and whether it is a favorite (JUG-104). */
 /**
- * @typedef {{ id: string, name: string | null, kids: Kid[], pets: Named[], interests: string[], toys: ProfileToy[] }} Profile
+ * @typedef {{
+ *   id: string, name: string | null, home: string | null, parents: Parent[], kids: Kid[], pets: Pet[],
+ *   interests: string[], toys: ProfileToy[],
+ * }} Profile
  * `interests` are those of the kids in the profile, each once: the whole
  * family's in `profileOf`, and only the kids playing in `playingProfile`.
+ * `home` is a key from HOMES, or null until the family says.
  */
 /**
  * @typedef {object} ProfileInput The whole profile, in order. Items that carry
- *   the id of one of the family's rows update it; the rest are new.
+ *   the id of one of the family's rows update it; the rest are new. What is
+ *   left out (the name, the home, the parents, the toys) stays as it was.
  * @property {string | null} [name]
+ * @property {string | null} [home]
+ * @property {{ id?: string, name: string, calledAs?: string }[]} [parents] a parent sent without `calledAs` is "Mamá"
  * @property {{ id?: string, name: string, ageMonths: number | null, interests?: string[] }[]} kids
- * @property {{ id?: string, name: string }[]} pets
- * @property {{ id?: string, name: string }[]} toys
+ * @property {{ id?: string, name: string, kind?: string }[]} pets a new pet sent without `kind` is a dog
+ * @property {{ id?: string, name: string }[]} [toys] the toy box's own screens edit them too (JUG-21)
  */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../db/client.js').Tx} Tx */
@@ -93,16 +102,17 @@ export function createFamiliesService({ db }) {
    */
   async function profileOf(familyId, userId = null) {
     const family = await db.query.families.findFirst({
-      columns: { id: true, name: true },
+      columns: { id: true, name: true, home: true },
       where: eq(families.id, familyId),
       with: {
+        parents: { columns: { id: true, name: true, calledAs: true }, orderBy: byPosition },
         kids: {
           columns: { id: true, name: true },
           extras: (kid) => ({ ageMonths: currentAge(kid).mapWith(Number).as('age_months') }),
           orderBy: byPosition,
           with: { interests: { columns: { label: true }, orderBy: byPosition } },
         },
-        pets: { columns: { id: true, name: true }, orderBy: byPosition },
+        pets: { columns: { id: true, name: true, kind: true }, orderBy: byPosition },
         toys: { columns: { id: true, name: true, favorite: true }, orderBy: byPosition },
       },
     })
@@ -204,6 +214,14 @@ export function createFamiliesService({ db }) {
         let familyId = await familyIdOf(tx, userId)
         if (!familyId) familyId = (await insertFamily(tx, userId, input.name ?? null)).id
         else if (input.name !== undefined) await tx.update(families).set({ name: input.name }).where(eq(families.id, familyId))
+        if (input.home !== undefined) await tx.update(families).set({ home: input.home }).where(eq(families.id, familyId))
+
+        if (input.parents) {
+          await syncRows(tx, parents, familyId, input.parents, {
+            insert: ({ name, calledAs = DEFAULT_CALLED_AS }, position) => ({ name, calledAs, position }),
+            update: ({ name, calledAs = DEFAULT_CALLED_AS }, position) => ({ name, calledAs, position }),
+          })
+        }
 
         const kidIds = await syncRows(tx, kids, familyId, input.kids, {
           insert: (kid, position) => ({
@@ -229,8 +247,12 @@ export function createFamiliesService({ db }) {
           (kid.interests ?? []).map((label, position) => ({ kidId: kidIds[index], position, label })),
         )
         if (rows.length > 0) await tx.insert(kidInterests).values(rows)
-        await syncRows(tx, pets, familyId, input.pets, nameOnly)
-        await syncRows(tx, toys, familyId, input.toys, nameOnly)
+        await syncRows(tx, pets, familyId, input.pets, {
+          insert: ({ name, kind = DEFAULT_PET_KIND }, position) => ({ name, kind, position }),
+          // A pet sent without its kind keeps the one it has.
+          update: ({ name, kind }, position) => (kind ? { name, kind, position } : { name, position }),
+        })
+        if (input.toys) await syncRows(tx, toys, familyId, input.toys, nameOnly)
         return familyId
       })
       return profileOf(familyId, userId)
@@ -255,8 +277,8 @@ async function insertFamily(tx, userId, name) {
 }
 
 /**
- * The profile knows pets and toys only by name, in order. Updating a toy
- * leaves the rest of what the toy box knows about it alone.
+ * The profile knows toys only by name, in order. Updating a toy leaves the
+ * rest of what the toy box knows about it alone.
  */
 const nameOnly = {
   /** @param {{ name: string }} item @param {number} position */
@@ -271,7 +293,7 @@ const nameOnly = {
  * inserted, and the family's other rows are deleted.
  * @template {{ id?: string }} Item
  * @param {Tx} tx
- * @param {typeof kids | typeof pets | typeof toys} table
+ * @param {typeof kids | typeof pets | typeof parents | typeof toys} table
  * @param {string} familyId
  * @param {Item[]} items
  * @param {{ insert: (item: Item, position: number) => object, update: (item: Item, position: number) => object }} values

@@ -109,7 +109,9 @@ test('each demo account signs in and finds its own family, exactly as seeded', a
         family?.kids,
         email,
       )
-      assert.deepEqual(profile.pets.map(({ name }) => ({ name })), family?.pets, email)
+      assert.deepEqual(profile.pets.map(({ name, kind }) => ({ name, kind })), family?.pets, email)
+      assert.deepEqual(profile.parents.map(({ name, calledAs }) => ({ name, calledAs })), family?.parents ?? [], email)
+      assert.equal(profile.home, family?.home ?? null, email)
       assert.deepEqual(profile.toys.map(({ name }) => ({ name })), family?.toys, email)
     }
   } finally {

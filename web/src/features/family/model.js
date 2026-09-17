@@ -4,16 +4,51 @@
  */
 
 /** @typedef {import('./types').Family} Family */
+/** @typedef {import('./types').FamilyInput} FamilyInput */
 /** @typedef {import('./types').FamilyToy} FamilyToy */
+/** @typedef {import('./types').Home} Home */
 /** @typedef {import('./types').Kid} Kid */
+/** @typedef {import('./types').Parent} Parent */
+/** @typedef {import('./types').PetKind} PetKind */
 /**
  * @typedef {{
+ *   parents: Parent[],
  *   kids: { id?: string, name: string, years: string, months: string, interests: string[] }[],
- *   pet: string, toys: FamilyToy[],
+ *   pet: string, petKind: PetKind, home: Home | null, toys: FamilyToy[] | null,
  * }} FormState
  * The family form (2h) as typed: the years and the months of each age stay
- * text until saved (JUG-145).
+ * text until saved (JUG-145). `toys` is null when the form doesn't show them,
+ * which is everywhere but onboarding: the toy box is where toys live (JUG-21).
  */
+/**
+ * @typedef {Omit<Family, 'petKind' | 'parents'> & { petKind: PetKind | null, parents: { name: string, calledAs: string | null }[] }} HeardFamily
+ * What the API read in a note about what changed: an animal, or what the kids
+ * call a parent, is null when the note didn't say.
+ */
+
+/** A pet is a dog until the family says otherwise (JUG-21). */
+export const DEFAULT_PET_KIND = /** @type {PetKind} */ ('perro')
+
+/** What the kids call a parent until the family says otherwise (JUG-21). */
+export const DEFAULT_CALLED_AS = 'Mamá'
+
+/** The animals a pet can be, in the order the form offers them. Voice pass pending. */
+export const PET_KINDS = /** @type {{ key: PetKind, label: string }[]} */ ([
+  { key: 'perro', label: 'Perro' },
+  { key: 'gato', label: 'Gato' },
+  { key: 'pajaro', label: 'Pájaro' },
+  { key: 'pez', label: 'Pez' },
+  { key: 'conejo', label: 'Conejo' },
+  { key: 'tortuga', label: 'Tortuga' },
+  { key: 'otro', label: 'Otro' },
+])
+
+/** The kinds of home, in the order the form offers them. Voice pass pending. */
+export const HOMES = /** @type {{ key: Home, label: string }[]} */ ([
+  { key: 'departamento', label: 'Departamento' },
+  { key: 'casa', label: 'Casa' },
+  { key: 'casa_con_parque', label: 'Casa con parque' },
+])
 /**
  * @typedef {{ field: string, label: string, value: string, aside?: string, flag?: string }} FamilyRow
  * `field` is where the form opens for this row; `flag` is the key the review
@@ -99,24 +134,38 @@ function interestsLine(interests) {
 }
 
 /**
- * The family card's rows in a fixed order: each kid, the pet, what they love,
- * the toys. Names are joined exactly as typed; only the interests lines are
- * capitalised, because they read as sentences.
+ * The family card's rows in a fixed order: each parent, each kid, the pet,
+ * what they love, the home, and the toys when `toys` asks for them. Names are
+ * joined exactly as typed; only the interests lines are capitalised, because
+ * they read as sentences.
  *
  * What they love goes kid by kid (JUG-144). When every kid loves the same
  * things, as when the parent's text didn't say whose each one was, it is one
  * row for all of them.
+ *
+ * Mi familia leaves the toys out, since the toy box is where they live
+ * (JUG-21). Onboarding's card shows them, because confirming it saves them.
  * @param {Family} family
+ * @param {{ toys?: boolean }} [options]
  * @returns {FamilyRow[]}
  */
-export function familyRows(family) {
+export function familyRows(family, { toys = false } = {}) {
   /** @type {FamilyRow[]} */
-  const rows = family.kids.map((kid, index) =>
-    kid.ageMonths == null
-      ? { field: `kids.${index}`, label: 'Chicos', value: kid.name, aside: '· sin edad' }
-      : { field: `kids.${index}`, label: 'Chicos', value: `${kid.name} · ${ageText(kid.ageMonths, { alwaysMonths: true })}` },
+  const rows = family.parents.map((parent, index) => ({
+    field: `parents.${index}`,
+    flag: 'parents',
+    // Voice pass pending.
+    label: 'Padres',
+    value: `${parent.name} · le dicen ${parent.calledAs}`,
+  }))
+  family.kids.forEach((kid, index) =>
+    rows.push(
+      kid.ageMonths == null
+        ? { field: `kids.${index}`, label: 'Chicos', value: kid.name, aside: '· sin edad' }
+        : { field: `kids.${index}`, label: 'Chicos', value: `${kid.name} · ${ageText(kid.ageMonths, { alwaysMonths: true })}` },
+    ),
   )
-  if (family.pet) rows.push({ field: 'pet', label: 'Mascota', value: family.pet })
+  if (family.pet) rows.push({ field: 'pet', label: 'Mascota', value: petText(family.pet, family.petKind) })
 
   const [first, ...others] = family.kids
   const shared = first && first.interests.length > 0 && others.every((kid) => sameInterests(kid.interests, first.interests))
@@ -129,12 +178,27 @@ export function familyRows(family) {
     })
   }
 
-  if (family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.map((toy) => toy.name).join(' · ') })
+  const home = HOMES.find((each) => each.key === family.home)
+  // Voice pass pending.
+  if (home) rows.push({ field: 'home', label: 'Mi casa', value: home.label })
+
+  if (toys && family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.map((toy) => toy.name).join(' · ') })
   return rows
 }
 
-/** @param {Family | null | undefined} family @returns {FormState} */
-export function toForm(family) {
+/** The pet and its animal, "Inca · perro", or the name alone for another animal. @param {string} name @param {PetKind} kind */
+function petText(name, kind) {
+  const label = kind === 'otro' ? null : PET_KINDS.find((each) => each.key === kind)?.label
+  return label ? `${name} · ${label.toLocaleLowerCase('es')}` : name
+}
+
+/**
+ * @param {Family | null | undefined} family
+ * @param {{ toys?: boolean }} [options] whether the form shows the toys, which only onboarding does
+ * @returns {FormState}
+ */
+export function toForm(family, { toys = false } = {}) {
+  const parents = family?.parents.map((parent) => ({ ...parent })) ?? []
   const kids =
     family?.kids.map((kid) => ({
       id: kid.id,
@@ -144,11 +208,17 @@ export function toForm(family) {
       interests: [...(kid.interests ?? [])],
     })) ?? []
   return {
+    parents: parents.length > 0 ? parents : [blankParent()],
     kids: kids.length > 0 ? kids : [{ name: '', years: '', months: '', interests: [] }],
     pet: family?.pet ?? '',
-    toys: family?.toys.length ? family.toys : [{ name: '' }],
+    petKind: family?.petKind ?? DEFAULT_PET_KIND,
+    home: family?.home ?? null,
+    toys: toys ? (family?.toys.length ? family.toys : [{ name: '' }]) : null,
   }
 }
+
+/** A parent card with nothing written in it yet, which says "Mamá" until changed. @returns {Parent} */
+export const blankParent = () => ({ name: '', calledAs: DEFAULT_CALLED_AS })
 
 /**
  * A name as it sounds, only to tell whether the parent is talking about
@@ -174,19 +244,27 @@ const blankKid = (/** @type {FormState['kids'][number]} */ kid) =>
  * taken away by being left out of it: a kid already on the form keeps their
  * place, their id, and the spelling the family gave them, and takes the age
  * and whatever new they love; a name the form doesn't have yet is added at
- * the end, and so are toys it doesn't have. The pet changes only when the
- * note names one.
+ * the end, and so are toys it doesn't have, when the form shows toys. A
+ * parent already on the form takes what the kids call them only when the
+ * note says it, and a new one is added. The pet changes only when the note
+ * names one, and its animal when the note says it or the pet is a new one.
  *
  * Names are matched as they sound, so "milan" is the Milán already there.
  * Nothing is saved here either: the form is what the parent checks, and
  * "Guardar" is what saves it.
  * @param {FormState} form
- * @param {Family} said what the API read in the parent's words
+ * @param {HeardFamily} said what the API read in the parent's words
  * @returns {FormState}
  */
 export function withChanges(form, said) {
+  const parents = form.parents.filter((parent) => parent.name.trim())
   const kids = form.kids.filter((kid) => !blankKid(kid))
-  const toys = form.toys.filter((toy) => toy.name.trim())
+
+  for (const parent of said.parents) {
+    const at = parents.findIndex((each) => heard(each.name) === heard(parent.name))
+    if (at < 0) parents.push({ name: parent.name, calledAs: parent.calledAs ?? DEFAULT_CALLED_AS })
+    else if (parent.calledAs) parents[at] = { ...parents[at], calledAs: parent.calledAs }
+  }
 
   for (const kid of said.kids) {
     const years = kid.ageMonths == null ? null : String(Math.floor(kid.ageMonths / 12))
@@ -208,25 +286,40 @@ export function withChanges(form, said) {
     }
   }
 
-  for (const toy of said.toys) {
-    if (!toys.some((each) => heard(each.name) === heard(toy.name))) toys.push({ name: toy.name })
+  let toys = form.toys
+  if (toys) {
+    toys = toys.filter((toy) => toy.name.trim())
+    for (const toy of said.toys) {
+      if (!toys.some((each) => heard(each.name) === heard(toy.name))) toys.push({ name: toy.name })
+    }
+    if (toys.length === 0) toys = [{ name: '' }]
   }
 
+  const samePet = !said.pet || heard(said.pet) === heard(form.pet)
   return {
+    parents: parents.length > 0 ? parents : [blankParent()],
     kids: kids.length > 0 ? kids : toForm(null).kids,
     pet: said.pet || form.pet,
-    toys: toys.length > 0 ? toys : toForm(null).toys,
+    petKind: said.petKind ?? (samePet ? form.petKind : DEFAULT_PET_KIND),
+    home: form.home,
+    toys,
   }
 }
 
 /**
  * Drops what was left empty; never touches how a name is spelled. An age with
  * only the years is that many years and no months; one left blank is unknown.
+ * A parent with no name is left out, and one whose "le dicen" was cleared is
+ * "Mamá" again. Toys the form doesn't show are left out too, so saving keeps
+ * the ones the toy box has.
  * @param {FormState} form
- * @returns {Family}
+ * @returns {FamilyInput}
  */
 export function toFamily(form) {
   return {
+    parents: form.parents
+      .filter((parent) => parent.name.trim())
+      .map((parent) => ({ id: parent.id, name: parent.name.trim(), calledAs: parent.calledAs.trim() || DEFAULT_CALLED_AS })),
     kids: form.kids
       .filter((kid) => kid.name.trim())
       .map((kid) => ({
@@ -236,8 +329,10 @@ export function toFamily(form) {
         interests: kid.interests.map((interest) => interest.trim()).filter(Boolean),
       })),
     pet: form.pet.trim(),
+    petKind: form.petKind,
+    home: form.home,
     // Each toy keeps its id, so the toy box keeps what it knows about it.
-    toys: form.toys.map((toy) => ({ id: toy.id, name: toy.name.trim() })).filter((toy) => toy.name),
+    ...(form.toys && { toys: form.toys.map((toy) => ({ id: toy.id, name: toy.name.trim() })).filter((toy) => toy.name) }),
   }
 }
 

@@ -43,12 +43,12 @@ export function createVoiceService({ transcriber, families, audit }) {
 
 /**
  * The family's own names, as a list the service reads as context: kids, pets,
- * and toys, exactly as the family writes them.
+ * toys, and parents, exactly as the family writes them.
  * @param {import('../families/families.service.js').Profile} profile
  * @returns {string | undefined}
  */
 export function hintsOf(profile) {
-  const names = [...profile.kids, ...profile.pets, ...profile.toys].map((item) => item.name)
+  const names = [...profile.kids, ...profile.pets, ...profile.toys, ...profile.parents].map((item) => item.name)
   if (names.length === 0) return undefined
   let hints = ''
   for (const name of names) {

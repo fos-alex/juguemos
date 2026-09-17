@@ -16,7 +16,7 @@
 const family = `Los chicos: {{kids}}.
 La mascota: {{pet}}.
 Los juguetes: {{toys}}.
-Lo que le gusta: {{interests}}.
+Lo que le gusta: {{interests}}.{{parents}}
 
 El reparto de la serie, que se mantiene en todos los episodios:
 {{casting}}`
@@ -59,7 +59,7 @@ TÍTULO: (el título de este episodio, que diga a sus personajes por su nombre, 
 ${parts}
 
 RESUMEN: (en una o dos oraciones, qué pasó en este episodio)
-PERSONAJES: (los personajes que inventaste y quedan en la serie, separados por punto y coma, cada uno con su nombre, dos puntos y tres o cuatro palabras que digan quién es; los chicos, la mascota y los juguetes de la familia no van acá)
+PERSONAJES: (los personajes que inventaste y quedan en la serie, separados por punto y coma, cada uno con su nombre, dos puntos y tres o cuatro palabras que digan quién es; los padres, los chicos, la mascota y los juguetes de la familia no van acá)
 
 ${closing}`
 
@@ -84,6 +84,6 @@ TÍTULO: (el título de este episodio, que diga a sus personajes por su nombre, 
 ${parts}
 
 RESUMEN: (en una o dos oraciones, qué pasó en este episodio)
-PERSONAJES: (los personajes que inventaste y quedan en la serie, los de antes y los nuevos, separados por punto y coma, cada uno con su nombre, dos puntos y tres o cuatro palabras que digan quién es; los chicos, la mascota y los juguetes de la familia no van acá)
+PERSONAJES: (los personajes que inventaste y quedan en la serie, los de antes y los nuevos, separados por punto y coma, cada uno con su nombre, dos puntos y tres o cuatro palabras que digan quién es; los padres, los chicos, la mascota y los juguetes de la familia no van acá)
 
 ${closing}`

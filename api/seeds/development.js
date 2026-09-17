@@ -32,8 +32,13 @@ export const accounts = [
     password: PASSWORD,
     family: {
       name: 'Familia de prueba',
+      home: 'departamento',
+      parents: [
+        { name: 'Alex', calledAs: 'Papá' },
+        { name: 'Caro', calledAs: 'Mamá' },
+      ],
       kids: [{ name: 'Milán', ageMonths: 26, interests: ['los dinosaurios', 'los caballos'] }],
-      pets: [{ name: 'Inca' }],
+      pets: [{ name: 'Inca', kind: 'perro' }],
       toys: [
         { name: 'el dinosaurio chiquito' },
         { name: 'el tren grandote' },
@@ -77,7 +82,8 @@ export const accounts = [
         { name: 'Tomás', ageMonths: 98, interests: ['el fútbol', 'los piratas'] },
         { name: 'Emma', ageMonths: 52, interests: ['dibujar', 'los piratas'] },
       ],
-      pets: [{ name: 'Michi' }],
+      home: 'casa_con_parque',
+      pets: [{ name: 'Michi', kind: 'gato' }],
       toys: [
         { name: 'la pelota de fútbol' },
         { name: 'los bloques de madera' },

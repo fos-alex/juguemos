@@ -7,13 +7,14 @@ import '../family.css'
 /**
  * What the app understood about the family, in the family's own words, one
  * row per fact. Flagged rows are tinted, barred, and say "tocá para corregir"
- * (three signals, never colour alone), and only they can be tapped.
- * @param {{ family: Family, flagged?: string[], onFix?: (field: string) => void }} props
+ * (three signals, never colour alone), and only they can be tapped. `toys`
+ * adds the toys, which only onboarding's card shows (JUG-21).
+ * @param {{ family: Family, toys?: boolean, flagged?: string[], onFix?: (field: string) => void }} props
  */
-export function FamilyCard({ family, flagged = [], onFix }) {
+export function FamilyCard({ family, toys = false, flagged = [], onFix }) {
   return (
     <div className="card family-card">
-      {familyRows(family).map((row) => {
+      {familyRows(family, { toys }).map((row) => {
         const isFlagged = flagged.includes(row.flag ?? row.field)
         const content = (
           <>
