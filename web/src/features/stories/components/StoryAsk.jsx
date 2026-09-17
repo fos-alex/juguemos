@@ -18,7 +18,7 @@ export function StoryAsk({ read }) {
       <VoiceUnderstanding read={read} onMessage={setMessage}>
         {(record) => (
           <button type="button" className="card story-ask__button" onClick={record}>
-            Contame qué cuento querés escuchar
+            Qué otro cuento querés? Contame!
           </button>
         )}
       </VoiceUnderstanding>

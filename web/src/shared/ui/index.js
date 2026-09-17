@@ -20,6 +20,8 @@ export {
   RondaIcon,
   SettingsIcon,
   SunIcon,
+  ThumbDownIcon,
+  ThumbUpIcon,
   ToyBoxIcon,
 } from './Icons'
 export { BackButton, Body, Footer, Header, HomeButton, Screen } from './Screen'

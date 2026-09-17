@@ -39,14 +39,15 @@ export function Chips({ items = [], onRemove, lead, className = '', children }) 
 
 /**
  * A chip that stays pressed: filled with a check when on and outlined when
- * off, so colour is never the only difference. Other button attributes pass
- * through, like `aria-disabled` for the last kid playing.
- * @param {{ pressed: boolean, onClick: () => void, children: React.ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>} props
+ * off, so colour is never the only difference. An `icon` leads the words
+ * while it is off, and the check takes its place when on. Other button
+ * attributes pass through, like `aria-disabled` for the last kid playing.
+ * @param {{ pressed: boolean, onClick: () => void, icon?: React.ReactNode, children: React.ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>} props
  */
-export function ChipToggle({ pressed, onClick, children, ...rest }) {
+export function ChipToggle({ pressed, onClick, icon, children, ...rest }) {
   return (
     <button type="button" className="chip chip--toggle" aria-pressed={pressed} onClick={onClick} {...rest}>
-      {pressed && <CheckIcon size={18} />}
+      {pressed ? <CheckIcon size={18} /> : icon}
       {children}
     </button>
   )

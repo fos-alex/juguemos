@@ -86,6 +86,26 @@ export function PlusIcon(props) {
   )
 }
 
+/** It went well, on the feedback tap (JUG-23). @param {IconProps} props */
+export function ThumbUpIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M7.5 10.5v10" />
+      <path d="M7.5 10.5 11 4a2.2 2.2 0 0 1 3.2 2.3l-.7 4.2h5a2 2 0 0 1 1.95 2.45l-1.6 6a2 2 0 0 1-1.95 1.55H4.5a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z" />
+    </Icon>
+  )
+}
+
+/** It wasn't for us, on the feedback tap (JUG-23). The thumb up turned over. @param {IconProps} props */
+export function ThumbDownIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M16.5 13.5v-10" />
+      <path d="M16.5 13.5 13 20a2.2 2.2 0 0 1-3.2-2.3l.7-4.2h-5a2 2 0 0 1-1.95-2.45l1.6-6a2 2 0 0 1 1.95-1.55h12.4a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1z" />
+    </Icon>
+  )
+}
+
 /** Open the menu. @param {IconProps} props */
 export function MenuIcon(props) {
   return (

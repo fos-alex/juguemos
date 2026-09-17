@@ -30,14 +30,13 @@ export function StoryShelf({ stories, startingId, onOpen, onStartSeries }) {
               {saved.minutes} min
             </MetaLabel>
           </button>
-          {/* Voice pass pending: "Hacer una serie". */}
           <TertiaryButton
             size="inline"
             busy={startingId === saved.id}
             busyLabel="Armando la serie"
             onClick={() => onStartSeries(saved)}
           >
-            Hacer una serie
+            Transformar cuento en una serie
           </TertiaryButton>
         </div>
       ))}

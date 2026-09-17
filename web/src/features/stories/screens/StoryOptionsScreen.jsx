@@ -242,9 +242,8 @@ export function StoryOptionsScreen() {
         <StoryShelf stories={shelf ?? []} startingId={starting} onOpen={openStory} onStartSeries={startSeries} />
       </Body>
       <Footer>
-        {/* Voice pass pending: "Otras opciones". */}
         <TertiaryButton size="lg" disabled={loading} onClick={() => void load(options?.map((option) => option.id) ?? [])}>
-          {arrived > 0 ? 'Otras opciones' : 'Probar de nuevo'}
+          {arrived > 0 ? 'Más opciones' : 'Probar de nuevo'}
         </TertiaryButton>
       </Footer>
     </Screen>

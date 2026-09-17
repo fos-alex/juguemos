@@ -10,7 +10,6 @@ import { useRequest } from '../../../shared/hooks/useRequest'
 import { useSerialSaves } from '../../../shared/hooks/useSerialSaves'
 import { read, useStored } from '../../../shared/store'
 import {
-  Card,
   Footer,
   MenuIcon,
   MetaLabel,
@@ -38,8 +37,8 @@ const SLOW_AFTER_MS = 6000
  * played, its card shows the time left and lets the parent end it (JUG-134).
  * The story options are asked for here, quietly, so Hora del cuento opens
  * with them already on screen (JUG-140). The last story read sits under the
- * juego, with the way to make it a series (JUG-154). Under the last juego,
- * the feedback tap asks once how it went (JUG-23): it is there while the
+ * juego, with the way to make it a series (JUG-154). Inside the last juego's
+ * card, the feedback tap asks once how it went (JUG-23): it is there while the
  * juego has no reaction, stays through the tap, and isn't asked again.
  */
 export function HomeScreen() {
@@ -146,18 +145,24 @@ export function HomeScreen() {
             <PlayingCard activity={running} timer={timer} />
           ) : (
             last && (
-              <Card onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}>
-                <MetaLabel as="span" wide>
-                  El último juego
-                </MetaLabel>
-                <span className="card-title">{last.title}</span>
-                <span className="card-meta">
-                  {last.minutes} min · {placeText(last.place)}
-                </span>
-              </Card>
+              <div className="card last-juego">
+                <button
+                  type="button"
+                  className="last-juego__open"
+                  onClick={() => void navigate({ to: '/idea/$id', params: { id: last.id } })}
+                >
+                  <MetaLabel as="span" wide>
+                    El último juego
+                  </MetaLabel>
+                  <span className="card-title">{last.title}</span>
+                  <span className="card-meta">
+                    {last.minutes} min · {placeText(last.place)}
+                  </span>
+                </button>
+                {reactedTo === last.id && <ReactionRow activity={last} className="last-juego__reaction" />}
+              </div>
             )
           )}
-          {!running && last && reactedTo === last.id && <ReactionRow activity={last} />}
           <LastStoryCard />
         </div>
       )}

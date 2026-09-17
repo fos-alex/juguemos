@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { reactToActivity } from '../api'
 import { failureText } from '../../../shared/format'
 import { useOnline } from '../../../shared/hooks/useOnline'
-import { ChipToggle, StatusLine } from '../../../shared/ui'
+import { ChipToggle, StatusLine, ThumbDownIcon, ThumbUpIcon } from '../../../shared/ui'
 import '../activities.css'
 
 /** @typedef {import('../types').Activity} Activity */
@@ -10,8 +10,9 @@ import '../activities.css'
 /**
  * The feedback tap (JUG-23): two chips, one reaction per juego, which the
  * parent can change or take back by tapping it again. Optional, silent, no
- * counts and no celebration. Offline the chips look flat and a tap does
- * nothing, since the reaction is the API's. Copy needs a voice pass.
+ * counts and no celebration. The two chips share one line, each led by its
+ * thumb. Offline the chips look flat and a tap does nothing, since the
+ * reaction is the API's. Copy needs a voice pass.
  * @param {{ activity: Activity, className?: string }} props
  */
 export function ReactionRow({ activity, className = '' }) {
@@ -32,11 +33,21 @@ export function ReactionRow({ activity, className = '' }) {
   return (
     <div className={`reaction ${className}`.trim()}>
       <p className="reaction__ask">¿Cómo les fue?</p>
-      <div className="chips">
-        <ChipToggle pressed={activity.reaction === 'up'} aria-disabled={!online || undefined} onClick={() => void choose('up')}>
+      <div className="chips reaction__chips">
+        <ChipToggle
+          pressed={activity.reaction === 'up'}
+          icon={<ThumbUpIcon size={18} />}
+          aria-disabled={!online || undefined}
+          onClick={() => void choose('up')}
+        >
           ¡Lo hicimos!
         </ChipToggle>
-        <ChipToggle pressed={activity.reaction === 'down'} aria-disabled={!online || undefined} onClick={() => void choose('down')}>
+        <ChipToggle
+          pressed={activity.reaction === 'down'}
+          icon={<ThumbDownIcon size={18} />}
+          aria-disabled={!online || undefined}
+          onClick={() => void choose('down')}
+        >
           No era para nosotros
         </ChipToggle>
       </div>

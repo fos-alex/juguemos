@@ -13,8 +13,7 @@ export function KeywordChips({ interests, unavailable, onPick }) {
   if (interests.length === 0) return null
   return (
     <section className="story-keywords">
-      {/* Voice pass pending: "Un cuento de…". */}
-      <h2 className="story-shelf__heading">Un cuento de…</h2>
+      <h2 className="story-shelf__heading">Quizás un cuento de…</h2>
       <Chips>
         {interests.map((interest) => (
           <button

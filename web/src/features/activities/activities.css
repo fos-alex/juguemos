@@ -194,7 +194,7 @@
 .reaction {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .activity__reaction {
@@ -204,9 +204,35 @@
 }
 
 .reaction__ask {
-  font-size: 16px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--ink-muted);
+}
+
+/* Both chips on one line, down to the narrowest phone, so they are smaller than a toggle chip. */
+.reaction__chips {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.reaction__chips .chip--toggle {
+  flex: none;
+  gap: 4px;
+  min-height: 40px;
+  padding: 6px 9px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.reaction__chips .icon {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 370px) {
+  .reaction__chips .chip--toggle {
+    font-size: 12px;
+  }
 }
 
 /* 2o El reloj */
