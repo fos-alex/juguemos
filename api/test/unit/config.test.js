@@ -73,6 +73,21 @@ test('TRUSTED_ORIGINS adds origins for Better Auth, keeping only the origin of e
   )
 })
 
+test('Sign in with Google needs both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, and is off without them', () => {
+  const googleOf = (env) => loadConfig({ ...REQUIRED, ...env }).auth.google
+  assert.equal(googleOf({}), null)
+  assert.deepEqual(googleOf({ GOOGLE_CLIENT_ID: ' id.apps.googleusercontent.com ', GOOGLE_CLIENT_SECRET: 'secret' }), {
+    clientId: 'id.apps.googleusercontent.com',
+    clientSecret: 'secret',
+  })
+  for (const env of [{ GOOGLE_CLIENT_ID: 'id' }, { GOOGLE_CLIENT_SECRET: 'secret' }]) {
+    assert.throws(
+      () => googleOf(env),
+      (error) => error instanceof ConfigError && /GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET/.test(error.message),
+    )
+  }
+})
+
 test('an unknown provider stops the API at startup', () => {
   assert.throws(
     () => llmOf({ LLM_PROVIDER: 'openai' }),

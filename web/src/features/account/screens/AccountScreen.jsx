@@ -1,21 +1,22 @@
 import { useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { createAccount, signIn } from '../api'
+import { useGoogleSignIn } from '../hooks/useGoogleSignIn'
 import { checkAccount, offerToSave } from '../model'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useRequest } from '../../../shared/hooks/useRequest'
 import { read } from '../../../shared/store'
-import { Body, Field, Footer, Header, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
+import { Body, Field, Footer, GoogleButton, Header, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
 
 /**
  * 2b. Three fields and that's the whole account. "Ya tengo cuenta" reuses the
- * same screen in sign-in mode (`?modo=entrar`), with no name field. The
- * Google button comes back with Sign in with Google (0.3).
+ * same screen in sign-in mode (`?modo=entrar`), with no name field. Google,
+ * under the form, is the same in both modes.
  * Account copy still needs a voice pass.
  */
 export function AccountScreen() {
-  const { modo, campo } = useSearch({ from: '/cuenta' })
+  const { modo, campo, error } = useSearch({ from: '/cuenta' })
   const signingIn = modo === 'entrar'
   const navigate = useNavigate()
   const goBack = useGoBack('/entrada')
@@ -28,13 +29,14 @@ export function AccountScreen() {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}))
   const request = useRequest()
+  const google = useGoogleSignIn({ returnTo: signingIn ? '/cuenta?modo=entrar' : '/cuenta', error })
 
   useDocumentTitle(`${signingIn ? 'Entrá a tu cuenta' : 'Creá tu cuenta'} · Ludi`)
 
   /** @param {React.FormEvent<HTMLFormElement>} event */
   const submit = (event) => {
     event.preventDefault()
-    if (request.busy) return
+    if (request.busy || google.busy) return
     const found = checkAccount({ signingIn, name, email, password })
     setErrors(found)
     const first = Object.keys(found)[0]
@@ -120,12 +122,13 @@ export function AccountScreen() {
               </button>
             }
           />
-          <StatusLine role="alert">{request.failure}</StatusLine>
+          <StatusLine role="alert">{request.failure ?? google.failure}</StatusLine>
         </Body>
         <Footer>
           <PrimaryButton type="submit" busy={request.busy} busyLabel="Un momento">
             {signingIn ? 'Entrar' : 'Crear cuenta'}
           </PrimaryButton>
+          <GoogleButton size="sm" busy={google.busy} onClick={() => !request.busy && google.start()} />
         </Footer>
       </form>
     </Screen>

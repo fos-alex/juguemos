@@ -18,6 +18,18 @@ export function createAuth({ config, db }) {
     // Its tables are ours, in auth.schema.js, with plural names like every other table.
     database: drizzleAdapter(db, { provider: 'pg', schema: { users, sessions, accounts, verifications }, usePlural: true }),
     emailAndPassword: { enabled: true },
+    socialProviders: config.google ? { google: googleProvider(config.google) } : {},
+    account: {
+      accountLinking: {
+        // Google links to the account with the same email only when Google
+        // says the email is verified. Ludi doesn't verify emails yet, so the
+        // account it links to can't be required to have a verified one.
+        requireLocalEmailVerified: false,
+      },
+    },
+    // Where Google sends the parent back when a sign-in fails before Ludi
+    // knows which screen it started from, such as one left open too long.
+    onAPIError: { errorURL: '/entrada' },
     // A parent who opens the app once a month stays signed in: the session
     // lasts 30 days and starts over on the first use of each day.
     session: { expiresIn: 30 * DAY_SECONDS, updateAge: DAY_SECONDS },
@@ -38,4 +50,20 @@ export function createAuth({ config, db }) {
       },
     },
   })
+}
+
+/**
+ * Sign in with Google. It asks only for what signing in needs, which is
+ * Better Auth's default: the `openid`, `email`, and `profile` scopes, with no
+ * offline access. The profile's picture isn't kept.
+ * @param {import('../config.js').GoogleConfig} google
+ */
+function googleProvider({ clientId, clientSecret }) {
+  return {
+    clientId,
+    clientSecret,
+    // A shared phone often has more than one Google account on it.
+    prompt: /** @type {const} */ ('select_account'),
+    mapProfileToUser: () => ({ image: null }),
+  }
 }

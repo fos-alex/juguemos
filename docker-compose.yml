@@ -50,6 +50,9 @@ services:
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
+      # Sign in with Google, off unless both are set.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       # Which LLM writes the stories (opencode, openrouter, or claude-code), its
       # model, and the providers' keys. Without the chosen provider's key,
       # stories come from templates. OPENCODE_MODEL is the old name for LLM_MODEL.

@@ -24,6 +24,13 @@ const LLM_PROVIDERS = {
  * @property {string[]} trustedOrigins other origins the app is also opened from, such as Tailscale's for a phone
  * @property {string} secret signs sessions; at least 32 characters
  * @property {Set<string>} signupEmails who may create an account, lowercased: emails, or `@domain` for every email there; empty means nobody
+ * @property {GoogleConfig | null} google the OAuth client for Sign in with Google; without it Google sign-in is off
+ */
+
+/**
+ * @typedef {object} GoogleConfig
+ * @property {string} clientId
+ * @property {string} clientSecret
  */
 
 /**
@@ -105,7 +112,13 @@ export function loadConfig(env = process.env) {
   return {
     port,
     databaseUrl: loadDatabaseUrl(env),
-    auth: { url, trustedOrigins: originList(env.TRUSTED_ORIGINS), secret, signupEmails: emailSet(env.SIGNUP_EMAILS) },
+    auth: {
+      url,
+      trustedOrigins: originList(env.TRUSTED_ORIGINS),
+      secret,
+      signupEmails: emailSet(env.SIGNUP_EMAILS),
+      google: loadGoogle(env),
+    },
     llm: loadLlm(env, url),
     stories: { episodesPerSeries: whole(env, 'STORY_SERIES_EPISODES', DEFAULT_SERIES_EPISODES, 2) },
     stt: loadStt(env),
@@ -114,6 +127,22 @@ export function loadConfig(env = process.env) {
     // Off unless set: the texts hold the family's names.
     audit: { transcripts: flag(env, 'AUDIT_TRANSCRIPTS') },
   }
+}
+
+/**
+ * The OAuth client for Sign in with Google, from Google Cloud's console. Both
+ * settings or neither: one without the other is a mistake worth stopping for.
+ * @param {NodeJS.ProcessEnv} env
+ * @returns {GoogleConfig | null}
+ */
+function loadGoogle(env) {
+  const clientId = env.GOOGLE_CLIENT_ID?.trim()
+  const clientSecret = env.GOOGLE_CLIENT_SECRET?.trim()
+  if (!clientId && !clientSecret) return null
+  if (!clientId || !clientSecret) {
+    throw new ConfigError('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET go together: set both for Sign in with Google, or neither')
+  }
+  return { clientId, clientSecret }
 }
 
 /**

@@ -1,7 +1,7 @@
 /**
  * The account, against the real API (Better Auth under /api/auth). The session
  * lives in an httpOnly cookie; the store keeps only what the screens show.
- * Email verification is still mocked in ./mock, and Google arrives in 0.3.
+ * Email verification is still mocked in ./mock.
  */
 import { clearAll, read, write } from '../../shared/store'
 import { loadFamily } from '../family'
@@ -21,6 +21,9 @@ const MESSAGES = {
   PASSWORD_TOO_SHORT: 'Tiene que tener al menos 8 caracteres.',
   PASSWORD_TOO_LONG: 'Esa contraseña es demasiado larga.',
   SIGNUP_NOT_ALLOWED: 'Por ahora Ludi es solo por invitación.',
+  PROVIDER_NOT_FOUND: 'Entrar con Google todavía no está disponible.',
+  // Google says the email isn't verified, so it can't join the account that has it.
+  account_not_linked: 'Ya hay una cuenta con ese email. Entrá con tu contraseña.',
 }
 
 /** How long a session check stands before the next navigation asks again. */
@@ -47,7 +50,7 @@ async function post(path, body) {
  */
 function remember(user, familyFromText = read('account')?.familyFromText) {
   /** @type {Account} */
-  const account = { name: user.name, email: user.email, provider: 'email', emailVerified: user.emailVerified, familyFromText }
+  const account = { name: user.name, email: user.email, emailVerified: user.emailVerified, familyFromText }
   write('account', account)
   write('sessionEnded', null)
   lastCheck = { at: Date.now(), account: Promise.resolve(account) }
@@ -70,6 +73,29 @@ export async function signIn(input) {
   const account = remember(user)
   lastCheck = null
   return account
+}
+
+/**
+ * Leaves the app for Google's sign-in page. Google sends the parent back
+ * through the API, which starts the session and opens Home, where the guard
+ * confirms it as on any first load. When it fails, the parent comes back to
+ * `returnTo` with the failure's code in `?error=`, for `googleFailure()`.
+ * Signing in and creating an account are the same trip.
+ * @param {string} returnTo the path of the screen the parent tapped it on
+ */
+export async function signInWithGoogle(returnTo) {
+  const { url } = await post('/sign-in/social', { provider: 'google', callbackURL: '/', errorCallbackURL: returnTo })
+  window.location.assign(url)
+}
+
+/**
+ * The words for the code a failed Google sign-in came back with, or null when
+ * there is nothing to say: no code, or the parent chose not to go on at Google.
+ * @param {string | undefined} code
+ */
+export function googleFailure(code) {
+  if (!code || code === 'access_denied') return null
+  return MESSAGES[code] ?? 'No pudimos entrar con Google. Probá de nuevo.'
 }
 
 /**

@@ -111,3 +111,14 @@ test('/me needs a session', async () => {
   const response = await api.app.inject({ method: 'GET', url: '/me' })
   assert.equal(response.statusCode, 401)
 })
+
+test('without a Google client, signing in with Google says the provider is missing', async () => {
+  const response = await api.app.inject({
+    method: 'POST',
+    url: '/auth/sign-in/social',
+    headers: { origin: ORIGIN },
+    payload: { provider: 'google', callbackURL: '/' },
+  })
+  assert.equal(response.statusCode, 404)
+  assert.equal(response.json().code, 'PROVIDER_NOT_FOUND')
+})

@@ -38,6 +38,9 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: 'index.html',
+        // Google sends the browser to /api/auth/callback/google, which has to
+        // reach the API instead of being answered with the app.
+        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],

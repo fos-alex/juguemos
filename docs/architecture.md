@@ -1,6 +1,6 @@
 # Ludi — Architecture
 
-**Version:** 0.15 · September 2026 · Owner: Alex Otero
+**Version:** 0.16 · September 2026 · Owner: Alex Otero
 
 *A living document. It holds the technical decisions and the reasons behind them, so a decision can be revisited on purpose rather than drifted away from. How the code is actually laid out is in [web/AGENTS.md](../web/AGENTS.md) and [api/AGENTS.md](../api/AGENTS.md); what the product is, in [product-concept.md](product-concept.md); the principles, in [constitution.md](constitution.md).*
 
@@ -21,7 +21,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | TLS and proxy | Caddy: automatic certificates in production, its internal CA locally |
 | Language | JavaScript with JSDoc on both sides. Not typechecked, and that is deliberate (JUG-70): TypeScript was tried and dropped when the shared contract package proved only theoretical |
 | Repo layout | One repo, npm workspaces (`api`, `web`): one install, separate codebases, no shared package |
-| Authentication | Better Auth in the API: email and password, sessions in PostgreSQL behind an httpOnly cookie. Sign-up is limited to an email allowlist until invitations (0.5); Google sign-in (0.3) is a plugin on the same library |
+| Authentication | Better Auth in the API: email and password, and Sign in with Google, with sessions in PostgreSQL behind an httpOnly cookie. Sign-up is limited to an email allowlist until invitations (0.5), whatever the sign-in method |
 | Native apps | Not in v1. After 1.0: native Android/iOS or React Native, decided then |
 
 ## Why the droplet
@@ -116,6 +116,7 @@ The tables themselves, and what each domain owns, are in [api/AGENTS.md](../api/
 |---|---|---|
 | LLM provider | Stories, activity tailoring, reading a family from the parent's words | OpenCode Go, OpenRouter, or Claude Code, chosen by environment variable (JUG-115, JUG-168); which to keep is still open. OpenRouter requests refuse upstream providers that store or train on prompts. Claude Code runs the `claude` CLI with a Claude subscription's OAuth token; the API's Docker image installs the CLI. Server-side only. |
 | Speech-to-text | Voice notes | Must handle Rioplatense Spanish, children's names, and background noise. Whisper on the droplet by default, so audio never leaves the server; the API speaks the OpenAI transcriptions API, so a hosted service is a change of environment variables (JUG-88). |
+| Google | Sign in with Google | Asked only for the `openid`, `email`, and `profile` scopes; Ludi keeps the name and email. Better Auth's Google provider, set by environment variable (JUG-63). |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas and kid-friendly places | Maps data is enough for v1; no curated event listings. |
 | Email | Nothing yet; email verification and invitations when they come | Resend's free plan over SMTP, 3,000 emails a month and 100 a day. Any SMTP service is a change of environment variables (JUG-169). DigitalOcean blocks SMTP's usual ports on droplets, so it uses 2465. Only the address and the message leave the server. |
@@ -167,3 +168,4 @@ Version 1 runs a single environment. Staging is worth adding once families outsi
 | 0.13 | A kid's age is kept in months and counted by the month; story bands are six months wide under four years. |
 | 0.14 | Renamed to Ludi: `ludi.ar` in production and `ludi.local` locally, with Caddy's sites chosen by `CADDY_SITES`. |
 | 0.15 | Email through an SMTP service, Resend to start. |
+| 0.16 | Sign in with Google, behind the same allowlist as email sign-ups. |
