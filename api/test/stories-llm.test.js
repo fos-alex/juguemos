@@ -89,7 +89,6 @@ before(async () => {
   // After 19:00 in Buenos Aires the stories are bedtime ones: TRANQUI. The
   // seeded random makes the casting draw the same on every run.
   api = await startApi({
-    signupEmails: emails,
     now: () => new Date('2026-09-14T21:00:00-03:00'),
     random: seededRandom('cuentos'),
     llm,
@@ -225,7 +224,6 @@ test('an answer with no readable plot is asked once more', async () => {
   const noPremise = JSON.stringify({ tramas: [{ title: 'Sin premisa', teaser: 'Nada más.', minutes: 3 }] })
   const retryLlm = fakeLlm(({ call }) => (call === 1 ? 'eso no es json' : call === 2 ? noPremise : PLOTS()))
   const api2 = await startApi({
-    signupEmails: ['carla@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('carla'),
     llm: retryLlm,
@@ -248,7 +246,6 @@ test('an answer with no readable plot is asked once more', async () => {
 test('an answer that lands on the second try is offered as it streams', async () => {
   const secondTry = fakeLlm(({ call }) => (call === 1 ? 'eso no es json' : PLOTS()))
   const api2 = await startApi({
-    signupEmails: ['nico@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('nico'),
     llm: secondTry,
@@ -267,7 +264,6 @@ test('the options that did arrive are kept when the answer stops early', async (
   const cut = `{"tramas": [${JSON.stringify(plot(1))}, {"title": "La segunda`
   const cutLlm = fakeLlm(() => cut)
   const api2 = await startApi({
-    signupEmails: ['pia@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('pia'),
     llm: cutLlm,
@@ -291,7 +287,6 @@ test('the moment is Buenos Aires time, whatever the server clock says', async ()
   const dayLlm = fakeLlm(() => PLOTS())
   // 20:00 UTC is 17:00 in Buenos Aires: still daytime.
   const api2 = await startApi({
-    signupEmails: ['eli@example.com'],
     now: () => new Date('2026-09-14T20:00:00Z'),
     random: seededRandom('eli'),
     llm: dayLlm,
@@ -330,7 +325,6 @@ test('a reader who leaves mid-story stops the story, and nothing is saved', { ti
     },
   }
   const api2 = await startApi({
-    signupEmails: ['gabi@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('gabi'),
     llm: slowLlm,
@@ -383,7 +377,6 @@ test('a reader who leaves before the first option stops the model, and nothing i
     },
   }
   const api2 = await startApi({
-    signupEmails: ['hugo@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('hugo'),
     llm: waitingLlm,
@@ -409,7 +402,6 @@ test('a reader who leaves before the first option stops the model, and nothing i
 test('when the model will not answer, the family hears about it, not a template', async () => {
   const deadLlm = fakeLlm(() => '')
   const api2 = await startApi({
-    signupEmails: ['dani@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('dani'),
     llm: deadLlm,
@@ -577,7 +569,6 @@ test('the library lists the family stories, newest first, and opens one', async 
 test('plots are for the kids playing, and their story stars and records those kids', async () => {
   const kidsLlm = fakeLlm(({ user }) => (user.includes('Contestá solo con un objeto JSON') ? PLOTS() : STORY))
   const api2 = await startApi({
-    signupEmails: ['hana@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('hana'),
     llm: kidsLlm,
@@ -616,7 +607,6 @@ test('plots are for the kids playing, and their story stars and records those ki
 test('a story sends its sounds before the first paragraph, saves them, and replays them (JUG-170)', async () => {
   const soundsLlm = fakeLlm(({ user }) => (user.includes('Contestá solo con un objeto JSON') ? PLOTS() : SOUNDED_STORY))
   const api2 = await startApi({
-    signupEmails: ['sonidos@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('sonidos'),
     llm: soundsLlm,
@@ -747,7 +737,6 @@ test('the audit records the interest that was tapped and the story it wrote', as
 test('a model that writes no title line gets one from the keyword', async () => {
   const untitled = fakeLlm(() => STORY)
   const api2 = await startApi({
-    signupEmails: ['pili@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('pili'),
     llm: untitled,
@@ -804,7 +793,6 @@ test('a story comes from an id or from a keyword, never both and never neither',
 
 test('without an LLM, a keyword story says the feature is off', async () => {
   const api2 = await startApi({
-    signupEmails: ['vera@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('vera'),
   })
@@ -829,7 +817,6 @@ test('a reader who leaves while a keyword story is written saves nothing', { tim
     },
   }
   const api2 = await startApi({
-    signupEmails: ['bruno@example.com'],
     now: () => new Date('2026-09-14T10:00:00-03:00'),
     random: seededRandom('bruno'),
     llm: slowLlm,

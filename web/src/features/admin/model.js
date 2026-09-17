@@ -10,6 +10,7 @@ import { ApiError } from '../../shared/http'
 /** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
 /** @typedef {import('./types').AdminAccount} AdminAccount */
 /** @typedef {import('./types').Invitation} Invitation */
+/** @typedef {import('./types').SentInvitation} SentInvitation */
 /**
  * @typedef {{
  *   slug: string, title: string, active: boolean, minutes: string, place: string,
@@ -231,8 +232,16 @@ export const accountLine = ({ email, createdAt }) => `${email} · desde el ${day
 /** What the admin says when an invitation isn't sent. @param {unknown} error */
 export function inviteFailure(error) {
   if (error instanceof ApiError && error.code === 'ALREADY_REGISTERED') return 'Ese email ya tiene cuenta.'
-  if (error instanceof ApiError && error.code === 'EMAIL_OFF') {
-    return 'El email está apagado: configurá SMTP_HOST en .env y reiniciá la API.'
-  }
   return adminFailure(error)
 }
+
+/**
+ * What the admin says after inviting: that the email went out, or, with email
+ * off, that the link has to be passed on by hand.
+ * @param {SentInvitation} invitation
+ * @returns {{ text: string, link: string | null }}
+ */
+export const inviteNews = ({ email, link }) =>
+  link
+    ? { text: `El email está apagado, así que mandale este link a ${email}:`, link }
+    : { text: `Le mandamos la invitación a ${email}.`, link: null }

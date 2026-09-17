@@ -27,9 +27,7 @@ const TEMPLATES = [
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com', 'eli@example.com'],
-  })
+  api = await startApi()
   const catalog = createCatalogService({ db: api.db })
   for (const each of TEMPLATES) await catalog.addStoryTemplate(each)
 })

@@ -55,7 +55,7 @@ const signUp = () => signUpAs(api, emails[emailCount++])
 before(async () => {
   llm = fakeLlm()
   // After 19:00 in Buenos Aires the stories are bedtime ones.
-  api = await startApi({ signupEmails: emails, now: () => new Date('2026-09-14T21:00:00-03:00'), random: seededRandom('pedido'), llm })
+  api = await startApi({ now: () => new Date('2026-09-14T21:00:00-03:00'), random: seededRandom('pedido'), llm })
 })
 after(() => api.close())
 
@@ -184,7 +184,7 @@ test('a request that names no kid is for the kids playing', async () => {
 
 test('words that ask for no story come back empty, and an empty request writes nothing', async () => {
   const quiet = fakeLlm(() => JSON.stringify({ summary: '', family: [], characters: [], setting: null, theme: null, plot: null }))
-  const api2 = await startApi({ signupEmails: ['nada@example.com'], llm: quiet })
+  const api2 = await startApi({ llm: quiet })
   const { cookie } = await signUpAs(api2, 'nada@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
@@ -200,7 +200,7 @@ test('words that ask for no story come back empty, and an empty request writes n
 
 test('a model that answers with no JSON is a failure, never the parent’s words', async () => {
   const chatty = fakeLlm(() => `No entendí: ${NOTE}`)
-  const api2 = await startApi({ signupEmails: ['charla@example.com'], llm: chatty })
+  const api2 = await startApi({ llm: chatty })
   const { cookie } = await signUpAs(api2, 'charla@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 
@@ -211,7 +211,7 @@ test('a model that answers with no JSON is a failure, never the parent’s words
 })
 
 test('without an LLM, reading and writing a request say the feature is off', async () => {
-  const api2 = await startApi({ signupEmails: ['sin@example.com'] })
+  const api2 = await startApi({ })
   const { cookie } = await signUpAs(api2, 'sin@example.com')
   await putFamily(api2, cookie, EXAMPLE_PROFILE)
 

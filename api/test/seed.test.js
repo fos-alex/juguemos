@@ -29,7 +29,7 @@ const accounts = [
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({ signupEmails: accounts.map(({ email }) => email) })
+  api = await startApi()
 })
 after(() => api.close())
 
@@ -39,6 +39,7 @@ const invitationsFor = (target) => createInvitationsService({ db: target.db, mai
 const runSeed = () =>
   seedAccounts({
     auth: createAuth({ config: api.config.auth, db: api.db, invitations: invitationsFor(api) }),
+    invitations: invitationsFor(api),
     families: createFamiliesService({ db: api.db }),
     toys: createToysService({ db: api.db }),
     materials: createMaterialsService({ db: api.db }),
@@ -80,10 +81,11 @@ test('a seeded account signs in and finds its family', async () => {
 })
 
 test('each demo account signs in and finds its own family, exactly as seeded', async () => {
-  const demo = await startApi({ signupEmails: demoAccounts.map(({ email }) => email) })
+  const demo = await startApi()
   try {
     await seedAccounts({
       auth: createAuth({ config: demo.config.auth, db: demo.db, invitations: invitationsFor(demo) }),
+      invitations: invitationsFor(demo),
       families: createFamiliesService({ db: demo.db }),
       toys: createToysService({ db: demo.db }),
       materials: createMaterialsService({ db: demo.db }),

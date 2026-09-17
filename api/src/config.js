@@ -23,7 +23,6 @@ const LLM_PROVIDERS = {
  * @property {string} url the public origin the app is served from
  * @property {string[]} trustedOrigins other origins the app is also opened from, such as Tailscale's for a phone
  * @property {string} secret signs sessions; at least 32 characters
- * @property {Set<string>} signupEmails who may create an account, lowercased: emails, or `@domain` for every email there; empty means nobody
  * @property {GoogleConfig | null} google the OAuth client for Sign in with Google; without it Google sign-in is off
  */
 
@@ -116,7 +115,6 @@ export function loadConfig(env = process.env) {
       url,
       trustedOrigins: originList(env.TRUSTED_ORIGINS),
       secret,
-      signupEmails: emailSet(env.SIGNUP_EMAILS),
       google: loadGoogle(env),
     },
     llm: loadLlm(env, url),
@@ -245,12 +243,3 @@ function originList(list = '') {
     })
 }
 
-/** @param {string} [list] comma-separated */
-function emailSet(list = '') {
-  return new Set(
-    list
-      .split(',')
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean),
-  )
-}

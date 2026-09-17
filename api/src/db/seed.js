@@ -7,6 +7,7 @@
 
 /** @typedef {import('../auth/auth.js').Auth} Auth */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
+/** @typedef {import('../invitations/invitations.service.js').InvitationsService} InvitationsService */
 /** @typedef {import('../families/families.service.js').Profile} Profile */
 /** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
 /** @typedef {import('../toys/toys.service.js').ToysService} ToysService */
@@ -17,15 +18,17 @@
  * Creates the given accounts and their families, with their toy boxes and
  * materials.
  * @param {{
- *   auth: Auth, families: FamiliesService, toys: ToysService, materials: MaterialsService, accounts: SeedAccount[],
+ *   auth: Auth, invitations: InvitationsService, families: FamiliesService, toys: ToysService,
+ *   materials: MaterialsService, accounts: SeedAccount[],
  *   log?: (message: string) => void,
- * }} options
+ * }} options `invitations` is how a demo account gets in: an invitation is the
+ *   only way to create one, so the seed opens its own instead of sending email
  */
-export async function seedAccounts({ auth, families, toys, materials, accounts, log = () => {} }) {
+export async function seedAccounts({ auth, invitations, families, toys, materials, accounts, log = () => {} }) {
   const { internalAdapter } = await auth.$context
   for (const { name, email, password, family, toyBox, materials: answers = {} } of accounts) {
     const existing = await internalAdapter.findUserByEmail(email.toLowerCase())
-    const user = existing?.user ?? (await auth.api.signUpEmail({ body: { name, email, password } })).user
+    const user = existing?.user ?? (await signUp(auth, invitations, { name, email, password })).user
     log(`${email}: ${existing ? 'already there' : 'created'}`)
 
     if (family && !(await families.idOf(user.id))) {
@@ -35,6 +38,18 @@ export async function seedAccounts({ auth, families, toys, materials, accounts, 
       log(`${email}: family created`)
     }
   }
+}
+
+/**
+ * Creates one account through its own invitation, which is what the sign-up
+ * hook asks for (JUG-34). Nothing is emailed.
+ * @param {Auth} auth
+ * @param {InvitationsService} invitations
+ * @param {{ name: string, email: string, password: string }} account
+ */
+async function signUp(auth, invitations, { name, email, password }) {
+  const { token } = await invitations.open(email)
+  return auth.api.signUpEmail({ body: { name, email, password, invitation: token } })
 }
 
 /**

@@ -28,4 +28,10 @@
  * An invitation to sign up (JUG-34). `accepted` once the email has an account.
  */
 
+/**
+ * @typedef {Invitation & { link: string | null }} SentInvitation
+ * An invitation just sent. `link` is only there when email is off and nothing
+ * was sent, so the link can be passed on by hand.
+ */
+
 export {}

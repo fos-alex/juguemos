@@ -11,6 +11,7 @@ import { request } from '../../shared/http'
 /** @typedef {import('./types').Theme} Theme */
 /** @typedef {import('./types').AdminAccount} AdminAccount */
 /** @typedef {import('./types').Invitation} Invitation */
+/** @typedef {import('./types').SentInvitation} SentInvitation */
 
 const TEMPLATES = '/admin/activity-templates'
 
@@ -61,9 +62,10 @@ export function listUsers() {
 
 /**
  * Invites an email to Ludi: the API sends it a link to sign up. Inviting it
- * again sends a new link, and the one before stops working (JUG-34).
+ * again sends a new link, and the one before stops working (JUG-34). With
+ * email off, the answer carries the link instead of sending it.
  * @param {string} email
- * @returns {Promise<Invitation>}
+ * @returns {Promise<SentInvitation>}
  */
 export function invite(email) {
   return request('POST', '/admin/invitations', { email })

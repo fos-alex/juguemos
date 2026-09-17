@@ -1,23 +1,23 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { startApi } from './helpers.js'
+import { inviteEmail, startApi } from './helpers.js'
 
 const TAILSCALE = 'https://omarchy.tailnet.ts.net:8443'
 
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({ signupEmails: ['uno@example.com', 'dos@example.com'], trustedOrigins: [TAILSCALE] })
+  api = await startApi({ trustedOrigins: [TAILSCALE] })
 })
 after(() => api.close())
 
-/** @param {string} email @param {string} origin */
-const signUpFrom = (email, origin) =>
+/** An invited email signing up from an origin, which is what Better Auth checks. @param {string} email @param {string} origin */
+const signUpFrom = async (email, origin) =>
   api.app.inject({
     method: 'POST',
     url: '/auth/sign-up/email',
     headers: { origin },
-    payload: { name: 'Alex', email, password: 'una-clave-larga' },
+    payload: { name: 'Alex', email, password: 'una-clave-larga', invitation: await inviteEmail(api, email) },
   })
 
 test('a listed origin, such as the phone over Tailscale, can sign up', async () => {

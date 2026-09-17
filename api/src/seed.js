@@ -33,16 +33,12 @@ try {
 
   if (target === 'development') {
     const config = loadConfig()
-    // The seeded emails may sign up in this process only; the API's allowlist
-    // is unchanged.
-    const signupEmails = new Set([...config.auth.signupEmails, ...accounts.map(({ email }) => email.toLowerCase())])
+    // No mailer: the seed opens each demo account's invitation itself and
+    // sends nothing.
+    const invitations = createInvitationsService({ db, mailer: null, appUrl: config.auth.url })
     await seedAccounts({
-      // No mailer: seeding never invites anyone.
-      auth: createAuth({
-        config: { ...config.auth, signupEmails },
-        db,
-        invitations: createInvitationsService({ db, mailer: null, appUrl: config.auth.url }),
-      }),
+      auth: createAuth({ config: config.auth, db, invitations }),
+      invitations,
       families,
       toys: createToysService({ db }),
       materials: createMaterialsService({ db }),

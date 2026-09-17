@@ -1,7 +1,7 @@
 /**
  * Invitations to join Ludi (JUG-34). Alex invites an email from the admin, and
- * the email gets a link with a token. With that token the email can sign up,
- * by password or with Google, whether or not SIGNUP_EMAILS lists it.
+ * the email gets a link with a token. That token is the only way to create an
+ * account, by password or with Google: no invitation, no sign-up.
  *
  * An invitation holds an address, and its token lets someone create an
  * account, so neither is logged or put in an error message.
@@ -9,7 +9,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { and, desc, eq, isNull } from 'drizzle-orm'
 import { users } from '../auth/auth.schema.js'
-import { ConflictError, NotFoundError, UnavailableError } from '../errors.js'
+import { ConflictError, NotFoundError } from '../errors.js'
 import { invitationEmail } from './invitation-email.js'
 import { invitations } from './invitations.schema.js'
 
@@ -58,9 +58,9 @@ const normalized = (email) => email.trim().toLowerCase()
  *   `appUrl` is the public origin the link points to; without a mailer nobody can be invited
  */
 export function createInvitationsService({ db, mailer, appUrl, now = () => new Date() }) {
-  /** @param {string} email */
-  async function registered(email) {
-    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
+  /** @param {string} email @param {Db | import('../db/client.js').Tx} [runner] the transaction, when inside one */
+  async function registered(email, runner = db) {
+    const [user] = await runner.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
     return Boolean(user)
   }
 
@@ -84,6 +84,27 @@ export function createInvitationsService({ db, mailer, appUrl, now = () => new D
     return url.href
   }
 
+  /**
+   * Writes the invitation and returns its link. An email that already has an
+   * account is never invited again.
+   * @param {import('../db/client.js').Tx} tx
+   * @param {string} address
+   */
+  async function write(tx, address) {
+    const email = normalized(address)
+    if (await registered(email, tx)) throw new ConflictError('That email already has an account', 'ALREADY_REGISTERED')
+    const token = randomBytes(32).toString('base64url')
+    const sentAt = now()
+    const expiresAt = new Date(sentAt.getTime() + INVITATION_DAYS * DAY_MS)
+    const values = { tokenHash: hashOf(token), sentAt, expiresAt, acceptedAt: null }
+    const [row] = await tx
+      .insert(invitations)
+      .values({ email, ...values })
+      .onConflictDoUpdate({ target: invitations.email, set: values })
+      .returning()
+    return { invitation: summary(row), link: linkFor(token, email), token }
+  }
+
   return {
     /** Every invitation, the latest sent first. @returns {Promise<Invitation[]>} */
     async list() {
@@ -100,30 +121,31 @@ export function createInvitationsService({ db, mailer, appUrl, now = () => new D
     },
 
     /**
-     * Invites an email and sends it the link. Inviting it again gives it a new
-     * token, so the link sent before stops working.
+     * Creates or renews an invitation and hands back its link, without sending
+     * anything. Inviting an email again gives it a new token, so the link sent
+     * before stops working. The seed uses this to let a demo account sign up
+     * the way a parent does.
      * @param {string} address
-     * @returns {Promise<Invitation>}
+     * @returns {Promise<{ invitation: Invitation, link: string, token: string }>}
+     */
+    async open(address) {
+      return db.transaction((tx) => write(tx, address))
+    },
+
+    /**
+     * Invites an email: the link goes out by email, or comes back here when
+     * email is off, which is how the first account on a new machine gets in.
+     * @param {string} address
+     * @returns {Promise<Invitation & { link: string | null }>} `link` only when nothing was sent
      */
     async invite(address) {
-      if (!mailer) throw new UnavailableError('Email is off, so nobody can be invited: set SMTP_HOST', 'EMAIL_OFF')
-      const email = normalized(address)
-      if (await registered(email)) throw new ConflictError('That email already has an account', 'ALREADY_REGISTERED')
-
-      const token = randomBytes(32).toString('base64url')
-      const sentAt = now()
-      const expiresAt = new Date(sentAt.getTime() + INVITATION_DAYS * DAY_MS)
-      const values = { tokenHash: hashOf(token), sentAt, expiresAt, acceptedAt: null }
       return db.transaction(async (tx) => {
-        const [row] = await tx
-          .insert(invitations)
-          .values({ email, ...values })
-          .onConflictDoUpdate({ target: invitations.email, set: values })
-          .returning()
+        const { invitation, link } = await write(tx, address)
+        if (!mailer) return { ...invitation, link }
         // Sent before the transaction commits: when the email fails, the
         // invitation stays as it was, and the link sent before still works.
-        await mailer.send(invitationEmail({ to: email, link: linkFor(token, email), expiresAt }))
-        return summary(row)
+        await mailer.send(invitationEmail({ to: invitation.email, link, expiresAt: invitation.expiresAt }))
+        return { ...invitation, link: null }
       })
     },
 

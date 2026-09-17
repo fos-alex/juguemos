@@ -39,7 +39,7 @@ let api
 /** @type {ReturnType<typeof fakeLlm>} */
 let llm = fakeLlm(answer())
 before(async () => {
-  api = await startApi({ signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com'], llm })
+  api = await startApi({ llm })
 })
 after(() => api.close())
 
@@ -71,7 +71,7 @@ test('the endpoint needs a session and some text', async () => {
 })
 
 test('an answer with no family is a failure that keeps the text out of the reply', async () => {
-  const other = await startApi({ signupEmails: ['dani@example.com'], llm: fakeLlm(`No sé. ${TEXT}`) })
+  const other = await startApi({ llm: fakeLlm(`No sé. ${TEXT}`) })
   try {
     const { cookie } = await signUpAs(other, 'dani@example.com')
     const response = await other.app.inject({ method: 'POST', url: '/family/understanding', headers: { cookie }, payload: { text: TEXT } })

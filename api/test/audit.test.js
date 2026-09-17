@@ -22,7 +22,6 @@ const transcriber = {
 let api
 before(async () => {
   api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com'],
     llm,
     transcriber,
     auditTranscripts: true,

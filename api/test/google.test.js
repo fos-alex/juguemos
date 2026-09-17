@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { cookiesFrom, ORIGIN, signUpAs, startApi } from './helpers.js'
+import { cookiesFrom, inviteEmail, ORIGIN, signUpAs, startApi } from './helpers.js'
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 
@@ -26,7 +26,6 @@ before(async () => {
     return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
   }
   api = await startApi({
-    signupEmails: ['ana@gmail.com', 'beto@gmail.com', 'carla@gmail.com', 'dani@gmail.com', 'eli@gmail.com'],
     google: { clientId: 'client-id', clientSecret: 'client-secret' },
   })
 })
@@ -45,24 +44,35 @@ function unsignedJwt(payload) {
 
 /**
  * Starts the trip as the web does: Home when it's done, Bienvenida for an
- * account Google has just created, and back to the screen on a failure.
- * @param {string} [errorCallbackURL]
+ * account Google has just created, and back to the screen on a failure. An
+ * invitation's token rides along in `additionalData`, which is what lets a new
+ * account be created at all (JUG-34).
+ * @param {{ errorCallbackURL?: string, invitation?: string }} [options]
  */
-const startGoogle = (errorCallbackURL = '/entrada') =>
+const startGoogle = ({ errorCallbackURL = '/entrada', invitation } = {}) =>
   api.app.inject({
     method: 'POST',
     url: '/auth/sign-in/social',
     headers: { origin: ORIGIN },
-    payload: { provider: 'google', callbackURL: '/', newUserCallbackURL: '/bienvenida', errorCallbackURL },
+    payload: {
+      provider: 'google',
+      callbackURL: '/',
+      newUserCallbackURL: '/bienvenida',
+      errorCallbackURL,
+      ...(invitation ? { additionalData: { invitation } } : {}),
+    },
   })
 
 /**
  * The whole trip: the web asks for Google's page, the parent signs in there as
- * `person`, and Google sends the browser back to the API's callback.
+ * `person`, and Google sends the browser back to the API's callback. A person
+ * with no account yet needs `invitation`, the token of the one sent to their
+ * email.
  * @param {NonNullable<typeof signedInAtGoogle>} person
+ * @param {string} [invitation]
  */
-async function signInWithGoogle(person) {
-  const started = await startGoogle()
+async function signInWithGoogle(person, invitation) {
+  const started = await startGoogle({ invitation })
   assert.equal(started.statusCode, 200)
   const state = new URL(started.json().url).searchParams.get('state')
   signedInAtGoogle = person
@@ -93,14 +103,17 @@ test('Google is asked only for name and email', async () => {
   assert.equal(url.searchParams.get('redirect_uri'), `${ORIGIN}/api/auth/callback/google`)
 })
 
-test('a listed Google account signs up with its verified email, and opens Bienvenida', async () => {
-  const response = await signInWithGoogle({
-    sub: 'google-ana',
-    email: 'Ana@gmail.com',
-    email_verified: true,
-    name: 'Ana',
-    picture: 'https://lh3.googleusercontent.com/ana',
-  })
+test('an invited Google account signs up with its verified email, and opens Bienvenida', async () => {
+  const response = await signInWithGoogle(
+    {
+      sub: 'google-ana',
+      email: 'Ana@gmail.com',
+      email_verified: true,
+      name: 'Ana',
+      picture: 'https://lh3.googleusercontent.com/ana',
+    },
+    await inviteEmail(api, 'ana@gmail.com'),
+  )
   assert.equal(response.statusCode, 302)
   assert.equal(response.headers.location, '/bienvenida')
 
@@ -118,7 +131,7 @@ test('a listed Google account signs up with its verified email, and opens Bienve
   assert.deepEqual(await providersOf('ana@gmail.com'), ['google'])
 })
 
-test('a Google account outside the allowlist is sent back to the screen it came from, with nothing saved', async () => {
+test('a Google account with no invitation is sent back to the screen it came from, with nothing saved', async () => {
   const response = await signInWithGoogle({ sub: 'google-stranger', email: 'stranger@gmail.com', email_verified: true, name: 'X' })
   assert.equal(response.statusCode, 302)
   assert.equal(new URL(response.headers.location ?? '', ORIGIN).pathname, '/entrada')
@@ -159,7 +172,7 @@ test('a Google email that Google has not verified does not link to an existing a
 
 test('signing in with Google again comes back to the same account', async () => {
   const person = { sub: 'google-dani', email: 'dani@gmail.com', email_verified: true, name: 'Dani' }
-  const first = (await me(cookiesFrom(await signInWithGoogle(person)))).json().user
+  const first = (await me(cookiesFrom(await signInWithGoogle(person, await inviteEmail(api, 'dani@gmail.com'))))).json().user
   const again = (await me(cookiesFrom(await signInWithGoogle(person)))).json().user
   assert.equal(again.id, first.id)
 
@@ -169,7 +182,7 @@ test('signing in with Google again comes back to the same account', async () => 
 
 test('only a new Google account opens Bienvenida: signing in again opens Home', async () => {
   const person = { sub: 'google-eli', email: 'eli@gmail.com', email_verified: true, name: 'Eli' }
-  const created = await signInWithGoogle(person)
+  const created = await signInWithGoogle(person, await inviteEmail(api, 'eli@gmail.com'))
   assert.equal(created.statusCode, 302)
   assert.equal(created.headers.location, '/bienvenida')
 

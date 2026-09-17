@@ -37,17 +37,15 @@ export function createAuth({ config, db, invitations }) {
     databaseHooks: {
       user: {
         create: {
-          // No outside testers until the guardrails are complete: only an
-          // invited email, a listed email, or an email at a listed @domain can
-          // sign up, whatever the sign-in method (JUG-34).
+          // No outside testers until the guardrails are complete: an account
+          // is created only for an email holding an open invitation, and only
+          // with that invitation's token, whatever the sign-in method (JUG-34).
           before: async (user, context) => {
             const email = user.email.toLowerCase()
             const token = await invitationTokenOf(context)
             const invited = token ? await invitations.admits(token, email) : null
             // The link came to this email, so following it verifies the email.
             if (invited === 'admitted') return { data: { ...user, emailVerified: true } }
-            const domain = email.slice(email.lastIndexOf('@'))
-            if (config.signupEmails.has(email) || config.signupEmails.has(domain)) return
             if (invited === 'other-email') {
               throw new APIError('FORBIDDEN', { code: 'INVITATION_OTHER_EMAIL', message: 'The invitation is for another email' })
             }

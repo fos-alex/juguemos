@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { invite, listUsers } from '../api'
 import { AdminNav } from '../components/AdminNav'
-import { accountLine, adminFailure, invitationLine, inviteFailure, looksLikeEmail } from '../model'
+import { accountLine, adminFailure, invitationLine, inviteFailure, inviteNews, looksLikeEmail } from '../model'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { Body, Dots, Field, Header, MetaLabel, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
 import '../admin.css'
@@ -21,7 +21,7 @@ export function UsersScreen() {
   const [emailError, setEmailError] = useState(/** @type {string | null} */ (null))
   // What is being sent: `form`, or the email of the row whose Reenviar was tapped.
   const [sending, setSending] = useState(/** @type {string | null} */ (null))
-  const [news, setNews] = useState(/** @type {string | null} */ (null))
+  const [news, setNews] = useState(/** @type {{ text: string, link: string | null } | null} */ (null))
 
   useDocumentTitle('Usuarios · Admin · Ludi')
 
@@ -37,8 +37,7 @@ export function UsersScreen() {
     setFailure(null)
     setNews(null)
     try {
-      const sent = await invite(address)
-      setNews(`Le mandamos la invitación a ${sent.email}.`)
+      setNews(inviteNews(await invite(address)))
       if (fromForm) setEmail('')
       await load()
     } catch (error) {
@@ -65,7 +64,7 @@ export function UsersScreen() {
         <form className="admin-invite" onSubmit={submit} noValidate>
           <Field
             label="Invitar a Ludi"
-            help="Le llega un email con el link para crear su cuenta. Nadie de afuera de la familia hasta que los guardrails estén completos."
+            help="Le llega un email con el link, que es la única forma de crear una cuenta. Nadie de afuera de la familia hasta que los guardrails estén completos."
             type="email"
             inputMode="email"
             autoComplete="off"
@@ -82,7 +81,8 @@ export function UsersScreen() {
             Invitar
           </PrimaryButton>
         </form>
-        <StatusLine role="status">{news}</StatusLine>
+        <StatusLine role="status">{news?.text}</StatusLine>
+        {news?.link && <p className="admin-invite__link">{news.link}</p>}
         <StatusLine role="alert">{failure}</StatusLine>
         {!users && !failure && <Dots tone="page" />}
 

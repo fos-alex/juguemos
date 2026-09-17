@@ -9,20 +9,7 @@ let api
 /** @type {import('../src/families/families.service.js').FamiliesService} */
 let families
 before(async () => {
-  api = await startApi({
-    signupEmails: [
-      'ana@example.com',
-      'beto@example.com',
-      'carla@example.com',
-      'dani@example.com',
-      'eva@example.com',
-      'fede@example.com',
-      'gabi@example.com',
-      'hugo@example.com',
-      'ines@example.com',
-      'juan@example.com',
-    ],
-  })
+  api = await startApi()
   families = createFamiliesService({ db: api.db })
 })
 after(() => api.close())

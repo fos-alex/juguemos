@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { after, before, beforeEach, test } from 'node:test'
 import { buildApp } from '../src/app.js'
-import { UnavailableError, UpstreamError } from '../src/errors.js'
+import { UpstreamError } from '../src/errors.js'
 import { INVITATION_DAYS, createInvitationsService } from '../src/invitations/invitations.service.js'
 import { cookiesFrom, ORIGIN, signUpAs, startApi, testConfig } from './helpers.js'
 
@@ -40,7 +40,6 @@ before(async () => {
   }
   api = await startApi({
     admin: true,
-    signupEmails: ['listed@example.com'],
     google: { clientId: 'client-id', clientSecret: 'client-secret' },
     now: () => clock,
     mailer: {
@@ -135,7 +134,9 @@ test('inviting an email sends it a link to the landing screen with a token and t
   const response = await invite('Ines@Example.com')
   assert.equal(response.statusCode, 201)
   const invitation = response.json()
-  assert.deepEqual(Object.keys(invitation).sort(), ['email', 'expiresAt', 'id', 'sentAt', 'status'])
+  assert.deepEqual(Object.keys(invitation).sort(), ['email', 'expiresAt', 'id', 'link', 'sentAt', 'status'])
+  // The link went out by email, so it doesn't come back here.
+  assert.equal(invitation.link, null)
   assert.equal(invitation.email, 'ines@example.com')
   assert.equal(invitation.status, 'pending')
   assert.equal(new Date(invitation.expiresAt).getTime() - START.getTime(), INVITATION_DAYS * DAY_MS)
@@ -148,7 +149,10 @@ test('inviting an email sends it a link to the landing screen with a token and t
   assert.equal(url.pathname, '/invitacion')
   assert.equal(url.searchParams.get('email'), 'ines@example.com')
   assert.ok(token.length >= 40)
+  // The branded template, with the link in its button (JUG-34).
   assert.ok(email.html?.includes(url.href.replaceAll('&', '&amp;')))
+  assert.match(String(email.html), /Crear mi cuenta/)
+  assert.match(String(email.html), /Ludi<span/)
 
   // Only the token's hash is kept.
   const row = await invitationRow('ines@example.com')
@@ -176,8 +180,8 @@ test('when the email fails, nothing changes and the link sent before still works
 })
 
 test('an email that already has an account is not invited', async () => {
-  await signUpAs(api, 'listed@example.com')
-  const response = await invite('Listed@example.com')
+  await signUpAs(api, 'yatiene@example.com')
+  const response = await invite('YaTiene@example.com')
   assert.equal(response.statusCode, 409)
   assert.equal(response.json().code, 'ALREADY_REGISTERED')
   assert.equal(sent.length, 0)
@@ -189,10 +193,18 @@ test('an invitation needs a valid email', async () => {
   assert.equal(sent.length, 0)
 })
 
-test('without email nobody can be invited', async () => {
+test('with email off the invitation comes back with its link, so the first account can still get in', async () => {
   const invitations = createInvitationsService({ db: api.db, mailer: null, appUrl: ORIGIN })
-  await assert.rejects(invitations.invite('luz@example.com'), (error) => error instanceof UnavailableError && error.code === 'EMAIL_OFF')
-  assert.equal(await invitationRow('luz@example.com'), undefined)
+  const invitation = await invitations.invite('luz@example.com')
+  assert.equal(invitation.email, 'luz@example.com')
+  const link = new URL(/** @type {string} */ (invitation.link))
+  assert.equal(link.pathname, '/invitacion')
+  assert.equal(link.searchParams.get('email'), 'luz@example.com')
+
+  // That link works, and sending one keeps the link out of the answer.
+  const token = /** @type {string} */ (link.searchParams.get('token'))
+  assert.equal((await check({ token, email: 'luz@example.com' })).statusCode, 200)
+  assert.equal((await invite('mia@example.com')).json().link, null)
 })
 
 test('the admin routes do not exist while the admin is off', async () => {

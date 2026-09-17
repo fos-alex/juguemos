@@ -95,8 +95,8 @@ let api
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let adminApi
 before(async () => {
-  api = await startApi({ signupEmails: [developer.email] })
-  adminApi = await startApi({ signupEmails: ['ana@example.com'], admin: true })
+  api = await startApi({ })
+  adminApi = await startApi({ admin: true })
 })
 after(async () => {
   await api.close()
