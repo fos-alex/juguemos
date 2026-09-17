@@ -9,37 +9,35 @@ Rules for any agent working in this repo. Claude Code reads this through `CLAUDE
 
 ## The project
 
-Ludi is a play coach for families in Buenos Aires. Start with these documents:
+Ludi is a play coach for families in Buenos Aires. **A task's Linear issue is its spec,** so start there. Read these documents only when the task needs them:
 
-| Document | Read it for |
+| Document | Read it when |
 |---|---|
-| [docs/product-concept.md](docs/product-concept.md) | What the product is and why |
-| [docs/constitution.md](docs/constitution.md) | The commitments and guardrails every decision follows |
-| [docs/architecture.md](docs/architecture.md) | The technical decisions and why they were made |
-| [docs/design.md](docs/design.md) | How the app looks, and the rules behind it: colour, type, iconography, the app icon |
-| [docs/brand-brief.md](docs/brand-brief.md) | The brand as Alex judges it, and the brand decisions still open |
-| [docs/releases.md](docs/releases.md) | What goes in each release, from 0.1 to 1.0 |
+| [docs/constitution.md](docs/constitution.md) | A change affects what Ludi says to a family, what it asks of them, or what it does with their data. It holds the commitments and guardrails every decision follows |
+| [docs/design.md](docs/design.md) | A change touches the UI: colour, type, iconography, motion, or the app icon |
+| [docs/architecture.md](docs/architecture.md) | A change adds a service or a dependency, or changes how the pieces run and connect |
+| [docs/product-concept.md](docs/product-concept.md) | You need the reason behind a feature, or you are writing a feature spec |
+| [docs/brand-brief.md](docs/brand-brief.md) | The work touches the brand: the name, the voice, or the look |
+| [docs/releases.md](docs/releases.md) | You are planning future releases or prioritizing features. A task doesn't need it |
 
 ## Product rules
 
 **No outside testers until the guardrails are complete.**
 
-**Start simple.** Build a solid core loop first. Don't add features from the product concept that `docs/releases.md` hasn't scheduled, and don't pull parked features forward without asking.
+**Start simple.** Build what the issue asks for and nothing more. Don't pull in features from the product concept or parked ideas without asking. A new task goes in Linear as an issue, not in `docs/releases.md`.
 
 ## The repo
 
-An npm workspace with two projects, run locally by Docker Compose behind Caddy:
+An npm workspace with two projects, run locally by Docker Compose behind Caddy. The [README](README.md) says how to run the stack and reach it from a computer, a phone, or the droplet.
 
 | Path | What it is |
 |---|---|
 | `web/` | The React SPA |
 | `api/` | The Fastify API and its PostgreSQL migrations |
-| `caddy/` | Caddy's image, which builds the web app (`Dockerfile`), and its `Caddyfile`, which serves it and proxies `/api` to the API, at `https://ludi.local:3000` and on `127.0.0.1:3001` for phones over Tailscale, or at `https://ludi.ar` on the droplet |
-| `docker-compose.yml` | Postgres, the one-shot migrations, the API, and Caddy |
-| `scripts/` | Repo tooling, run by timers rather than by agents. See [Nightly cleanup](#nightly-cleanup) |
-| `docs/` | Product, architecture, design, and releases |
-
-Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, and activities and stories from templates in the database. Only Google sign-in (0.3) and email verification are still missing, since they need services Ludi doesn't have yet.
+| `caddy/` | Caddy's image, which builds the web app, and the Caddyfiles, which serve it and proxy `/api` to the API |
+| `docker-compose.yml` | Postgres, the one-shot migrations, speech-to-text, the API, and Caddy. `compose.dev.yml` adds hot reload |
+| `scripts/` | The nightly cleanup, run by a timer. See [the README](README.md#nightly-cleanup) |
+| `docs/` | Product, architecture, design, brand, and releases |
 
 **JSDoc guides, nothing enforces it.** Both projects are plain JavaScript. JSDoc types are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or a `tsconfig` or `jsconfig`.
 
@@ -58,7 +56,7 @@ Linear must always show what is being built and what has finished.
 
 Agents reach Linear through its MCP server. Use its tools to find, create, update, and comment on issues directly; don't ask Alex to do in Linear what the MCP can do.
 
-**Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). It then moves the issue as the PR progresses, including to **Done** when the PR is merged. Let the integration do that work instead of repeating it by hand, and check that it did.
+**Linear and GitHub are integrated.** Linear links a branch, PR, or commit to an issue when its name, title, or message contains the issue ID (`JUG-12`). A few seconds after a PR is opened, the integration moves its issue to **In Progress**, and when the PR is merged, to **Done**. It never moves an issue to **In Review**; that is your job.
 
 **Be succinct in Linear.** Linear is for status and for seeing which tasks need Alex's input. It isn't a work log: nobody reads long reports, and writing them wastes tokens. Keep comments to a sentence or two, and task descriptions to a few lines. Write a fuller comment only when another agent will pick the task up later and needs the context to continue.
 
@@ -68,18 +66,21 @@ Every task has a Linear issue:
 
 1. **Starting a task.** Find its issue. If there isn't one, create it in the right release project with a clear title and a short description. Move it to **In Progress** and assign it to Alex.
 2. **While working.** Comment only for a question for Alex, a blocker, or a decision Alex should know about. Say plainly what you need from them.
-3. **Ready for review.** Move it to **In Review**. Comment only if something needs Alex: a decision, something to try, or the commit message for uncommitted changes. For a PR, check that the integration linked it.
-4. **Finished.** Merged PRs move to **Done** through the integration. Uncommitted changes move to **Done** once Alex has committed them.
+3. **Ready for review.** Every finished task ends in **In Review**. Your work isn't finished until the issue says so.
+   - **A PR:** open the PR first. Read the issue until the PR appears in its attachments, then move it to **In Review**. Read it again to check that the status stayed, and set it again if it went back. If you set In Review before the PR is open, or in the seconds after, the integration moves it back to In Progress and it stays there until the merge.
+   - **Uncommitted changes:** move the issue to **In Review** and comment with the commit message you suggest.
+   - Comment otherwise only if something needs Alex: a decision, or something to try.
+4. **Finished.** Merging a PR moves its issue to **Done**. Uncommitted changes move to **Done** once Alex has committed them, through the nightly cleanup, which finds the issue ID in the commit message.
 
-Don't cancel issues, move them between releases, or change a release's scope without asking Alex. When scope changes, update `docs/releases.md` and Linear together so they stay in sync.
+Don't cancel issues, move them between releases, or change a release's scope without asking Alex. When Alex changes a release's scope, update `docs/releases.md` and Linear together so they stay in sync.
 
 ## Git
 
 We work on `main`, and every PR targets `main`.
 
-**No `Co-Authored-By` trailers.** Don't add `Co-Authored-By` lines, or any other agent attribution, to commit messages.
+**No `Co-Authored-By` trailers.** Don't add `Co-Authored-By` lines, or any other agent attribution, to commit messages, including the ones you suggest to Alex.
 
-**Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it.
+**Small changes stay uncommitted.** If the change is small, leave it uncommitted in the main checkout. Alex reviews and commits it. Suggest a commit message that includes the issue ID, so Linear links the commit and the issue can be closed.
 
 **Big changes get a worktree and a PR.** Use a worktree and a pull request when a change is big, is a separate feature, or is a distinct workstream.
 
@@ -89,13 +90,8 @@ We work on `main`, and every PR targets `main`.
   git fetch origin
   git worktree add ../juegar-worktrees/jug-12-family-onboarding -b fosalex/jug-12-family-onboarding origin/main
   ```
-- Push the branch and open the PR with `gh pr create --base main`.
+- Push the branch and open the PR with `gh pr create --base main`, with the issue ID in its title. Then move the issue to **In Review** as step 3 above says.
 
 **Alex merges PRs.** Never merge a PR unless Alex has explicitly authorized that specific merge.
 
-## Nightly cleanup
-- **Removes worktrees whose PR has been merged or closed,** with their local and remote branches. It never touches a worktree with uncommitted changes or unpushed commits, and never one whose PR is still open or that has no PR yet.
-- **Moves Linear issues whose work has landed to Done.** An issue id in a merged PR's branch name is that PR's own issue and gets closed; an id that appears only in the title is a mention, and is reported rather than changed.
-
-It writes to `~/.local/state/ludi/nightly.log` and interrupts nobody.
-`~/.local/state/ludi/nightly-settled.txt` is the list of issues it has already dealt with, so it never asks about the same one twice. Delete a line to have it look at that issue again.
+**Don't clean up after merged work.** A nightly job removes worktrees whose PR was merged or closed, and moves issues whose work landed to Done ([README](README.md#nightly-cleanup)). Don't do either by hand.

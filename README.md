@@ -125,6 +125,8 @@ The Whisper model downloads again on the first start (about 1.6 GB). The nightly
 
 `scripts/nightly-cleanup.sh` runs at 03:00 through the `ludi-nightly` systemd user timer. It removes worktrees whose PR has been merged or closed, along with their branches, and moves Linear issues whose work has landed to Done. It leaves alone anything with uncommitted or unpushed work, and reports it instead.
 
+It closes an issue only when the work was its own: an issue ID in a merged PR's branch name, or the one ID in a commit pushed to `main`. An ID that appears only in a PR title, or beside other IDs in a commit, is a mention, and is reported rather than changed. It looks back three days, and `~/.local/state/ludi/nightly-settled.txt` lists the issues it has already dealt with, so it never asks about the same one twice. Delete a line to have it look at that issue again.
+
 ```bash
 cat ~/.local/state/ludi/nightly.log          # what it did; LEFT FOR ALEX marks what needs you
 ./scripts/nightly-cleanup.sh --dry-run --stdout  # what it would do right now

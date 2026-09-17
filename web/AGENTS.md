@@ -2,7 +2,7 @@
 
 Rules for `web/`, on top of the repo-wide rules in the root [`AGENTS.md`](../AGENTS.md). Read both before changing anything here.
 
-`web/` is the React SPA: Vite 7, React 19, TanStack Router file routes, plain JavaScript with JSDoc. Every 0.1 screen is built and runs on the API, and using the app needs a valid session. Before changing any UI, read [`docs/design.md`](../docs/design.md).
+`web/` is the React SPA: Vite 7, React 19, TanStack Router file routes, plain JavaScript with JSDoc. Using the app needs a valid session. Before changing any UI, read [`docs/design.md`](../docs/design.md).
 
 ## Commands
 
@@ -156,6 +156,5 @@ Write the function in its feature's `api.js`, calling `request` from `shared/htt
 - **Nothing that counts or compares:** no streaks, points, badges, percentages, or days since the family last played. The only progress bar marks position in a story.
 - **Thumb zone:** primary actions in the lower half, tap targets at least 48 px, design width 390 px capped with `max-width`.
 - **Copy is Rioplatense Spanish with *vos*.** What Ludi suggests is a *juego*, never an *idea*, and Home's button says "¡Juguemos!" (JUG-69). Copy still waiting on a voice pass is marked `Voice pass pending` in the code.
-- **Out of scope for 0.1, so don't build it:** goals, categories and filters, weather, the journal, tips, recaps, holidays, the partner invite, post-activity feedback, and an English interface.
 
 **Google sign-in** is hidden on the account screens until it arrives in 0.3; `GoogleButton` waits for it.
