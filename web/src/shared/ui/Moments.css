@@ -1,0 +1,146 @@
+/* The one-off moments (JUG-159). Each plays once and leaves nothing behind. */
+
+/* Petals over the whole screen, falling once. */
+
+.petal-fall {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Hidden at rest, so with reduced motion there is nothing to see. */
+.petal-fall__petal {
+  position: absolute;
+  top: -24px;
+  width: 16px;
+  height: 11px;
+  border-radius: 60% 40% 55% 45% / 70% 65% 35% 30%;
+  background: var(--dot-jacaranda);
+  opacity: 0;
+  animation: petal-fall 3.4s ease-in both;
+}
+
+.petal-fall__petal:nth-child(3n) {
+  background: var(--dots-2);
+}
+
+.petal-fall__petal:nth-child(4n) {
+  background: var(--dot-sun);
+}
+
+@keyframes petal-fall {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  10% {
+    opacity: 0.95;
+  }
+
+  35% {
+    transform: translate(calc(var(--sway) * 22px), 34vh) rotate(calc(var(--sway) * 70deg));
+  }
+
+  65% {
+    transform: translate(calc(var(--sway) * -14px), 68vh) rotate(calc(var(--sway) * 160deg));
+  }
+
+  85% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--sway) * 10px), 104vh) rotate(calc(var(--sway) * 250deg));
+  }
+}
+
+/* Fin, drawn by hand. At rest the drawing is whole; until it is seen it waits blank. */
+
+.fin-mark {
+  display: block;
+  width: 132px;
+  height: auto;
+  margin: 4px auto 0;
+}
+
+.fin-mark path {
+  stroke-width: 3;
+  stroke-dasharray: 1;
+}
+
+.fin-mark__line {
+  stroke: var(--primary);
+}
+
+.fin-mark__swash {
+  stroke: var(--grass);
+}
+
+.fin-mark__star {
+  stroke: var(--dot-sun);
+}
+
+[data-theme='dark'] .fin-mark__line {
+  stroke: var(--dot-sun);
+}
+
+[data-theme='dark'] .fin-mark__star {
+  stroke: var(--primary);
+}
+
+.fin-mark__dot {
+  fill: var(--primary);
+}
+
+.fin-mark:not(.is-drawn) path {
+  stroke-dashoffset: 1;
+}
+
+.fin-mark:not(.is-drawn) .fin-mark__dot {
+  opacity: 0;
+}
+
+.fin-mark.is-drawn path {
+  animation: fin-draw 520ms ease-in-out backwards;
+}
+
+.fin-mark.is-drawn .fin-mark__line--i {
+  animation-delay: 460ms;
+  animation-duration: 180ms;
+}
+
+.fin-mark.is-drawn .fin-mark__dot {
+  animation: pop-in 320ms var(--ease-play) 640ms backwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.fin-mark.is-drawn .fin-mark__line--n {
+  animation-delay: 700ms;
+  animation-duration: 420ms;
+}
+
+.fin-mark.is-drawn .fin-mark__swash {
+  animation-delay: 1100ms;
+  animation-duration: 460ms;
+}
+
+.fin-mark.is-drawn .fin-mark__star {
+  animation: pop-in 380ms var(--ease-play) 620ms backwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.fin-mark.is-drawn .fin-mark__star--late {
+  animation-delay: 820ms;
+}
+
+@keyframes fin-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}

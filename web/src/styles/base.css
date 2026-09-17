@@ -64,7 +64,11 @@ p {
   animation-timing-function: ease-out;
 }
 
-/* Motion guides, never demands: 120–200 ms ease-out, and nothing when reduced. */
+/*
+ * Motion plays but never holds anyone up (docs/design.md): nothing waits for an
+ * animation, and nothing moves when the phone asks for less motion. Anything
+ * that starts hidden in a keyframe shows at its end state here.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -77,5 +81,28 @@ p {
 @keyframes fade-in {
   from {
     opacity: 0;
+  }
+}
+
+/* The shared arrivals (docs/design.md, Motion). */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(40px) rotate(1.5deg);
   }
 }

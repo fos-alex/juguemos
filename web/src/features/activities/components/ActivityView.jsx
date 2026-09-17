@@ -6,17 +6,22 @@ import '../activities.css'
 /**
  * One idea, in either of the two layouts still open (docs/design.md):
  * `porque` (2m) earns trust before the steps, and is the one the app shows;
- * `pasos` (2n) is playable in the first screenful.
- * @param {{ activity: Activity, layout?: 'porque' | 'pasos' }} props
+ * `pasos` (2n) is playable in the first screenful. Its blocks come in one
+ * after another as it opens (JUG-159).
+ * @param {{ activity: Activity, layout?: 'porque' | 'pasos', className?: string }} props
  */
-export function ActivityView({ activity, layout = 'porque' }) {
-  return layout === 'pasos' ? <StepsFirst activity={activity} /> : <WhyFirst activity={activity} />
+export function ActivityView({ activity, layout = 'porque', className = '' }) {
+  return layout === 'pasos' ? (
+    <StepsFirst activity={activity} className={className} />
+  ) : (
+    <WhyFirst activity={activity} className={className} />
+  )
 }
 
-/** @param {{ activity: Activity }} props */
-function WhyFirst({ activity }) {
+/** @param {{ activity: Activity, className?: string }} props */
+function WhyFirst({ activity, className }) {
   return (
-    <article className="activity activity--porque">
+    <article className={`activity activity--porque ${className}`.trim()}>
       <h1 className="activity__title">{activity.title}</h1>
       <Card tone="accent">
         <Label tone="primary">Por qué ahora</Label>
@@ -45,10 +50,10 @@ function WhyFirst({ activity }) {
   )
 }
 
-/** @param {{ activity: Activity }} props */
-function StepsFirst({ activity }) {
+/** @param {{ activity: Activity, className?: string }} props */
+function StepsFirst({ activity, className }) {
   return (
-    <article className="activity activity--pasos">
+    <article className={`activity activity--pasos ${className}`.trim()}>
       <h1 className="activity__title">{activity.title}</h1>
       <p className="activity__needs-line">Necesitás: {activity.needs}</p>
       <hr className="hairline" />

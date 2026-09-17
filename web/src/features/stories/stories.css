@@ -5,9 +5,13 @@
   padding-top: 16px;
 }
 
-/* Tight enough that both plots and the button under them fit above the fold on an iPhone SE in Safari. */
+/*
+ * Tight enough that both plots and the button under them fit above the fold on
+ * an iPhone SE in Safari. Each plot lands as it is written (JUG-159).
+ */
 .story-option {
   padding: 16px 18px;
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
 }
 
 .story-option__title {
@@ -36,6 +40,7 @@
   gap: 12px;
   /* About a card with a two-line title and a two-line teaser, so the button under them doesn't jump. */
   min-height: 154px;
+  animation: none;
 }
 
 /* The family's own interests, under the options: one tap writes a

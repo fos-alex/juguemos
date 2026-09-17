@@ -7,13 +7,14 @@ import { useCountdown } from '../../../shared/hooks/useCountdown'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useStored } from '../../../shared/store'
-import { Body, Footer, Header, MetaLabel, Screen, SecondaryButton, TertiaryButton } from '../../../shared/ui'
+import { Body, Footer, Header, MetaLabel, PetalFall, Screen, SecondaryButton, TertiaryButton } from '../../../shared/ui'
 import '../activities.css'
 
 /**
  * 2o. The timer exists to get the phone out of the parent's hand. It counts
  * down from the activity's own estimate as a hint, not a target, and is
- * silent at zero. The app never logs or reports how long they played.
+ * silent at zero: jacarandá petals come down once, and that is all
+ * (JUG-159). The app never logs or reports how long they played.
  * Copy on this screen needs a voice pass.
  */
 export function TimerScreen() {
@@ -48,7 +49,12 @@ export function TimerScreen() {
       />
       <Body className="timer">
         <p className="timer__title">{activity.title}</p>
-        <p className="timer__clock" role="timer" aria-label={`Quedan ${clockText(remaining)}`}>
+        {remaining === 0 && <PetalFall />}
+        <p
+          className={`timer__clock${remaining === 0 ? ' timer__clock--done' : ''}`}
+          role="timer"
+          aria-label={`Quedan ${clockText(remaining)}`}
+        >
           {clockText(remaining)}
         </p>
         <p className="timer__hint">

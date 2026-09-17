@@ -16,6 +16,8 @@
   display: flex;
   flex-direction: column;
   padding: 0 26px;
+  /* A screen settles in as it opens, quickly enough not to read as a wait. */
+  animation: rise-in 260ms var(--ease-out) backwards;
 }
 
 .screen__footer {

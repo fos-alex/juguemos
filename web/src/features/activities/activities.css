@@ -15,6 +15,40 @@
   gap: 15px;
 }
 
+/*
+ * A juego opens block by block: the title, why now, what it needs, then the
+ * steps (which stagger themselves in StepList.css), then the variations.
+ */
+.activity:not(.activity--skeleton) > * {
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+  animation-delay: calc(var(--motion-stagger) * 3);
+}
+
+.activity:not(.activity--skeleton) > :nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.activity:not(.activity--skeleton) > :nth-child(2) {
+  animation-delay: var(--motion-stagger);
+}
+
+.activity:not(.activity--skeleton) > :nth-child(3) {
+  animation-delay: calc(var(--motion-stagger) * 2);
+}
+
+.activity:not(.activity--skeleton) > .steps {
+  animation: none;
+}
+
+.activity:not(.activity--skeleton) > .activity__variations {
+  animation-delay: 520ms;
+}
+
+/* The juego Otro juego brought is dealt in from the side. */
+.activity--dealt {
+  animation: slide-in 460ms var(--ease-play) backwards;
+}
+
 .activity--pasos {
   gap: 17px;
 }
@@ -201,6 +235,21 @@
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+}
+
+/* Time's up: the clock gives one small nod as the petals start to fall. */
+.timer__clock--done {
+  animation: timer-nod 700ms var(--ease-play);
+}
+
+@keyframes timer-nod {
+  30% {
+    transform: scale(1.08) rotate(-3deg);
+  }
+
+  60% {
+    transform: scale(0.98) rotate(2deg);
+  }
 }
 
 .timer__hint {

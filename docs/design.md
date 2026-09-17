@@ -10,7 +10,7 @@ A parent, never a child. At 6pm on a rainy Tuesday, out of ideas, one hand on th
 
 Children don't look at the screen. Stories have no illustrations, so the child watches the parent read.
 
-**Ludi is a tool for grown-ups, about play.** The playfulness comes from the words and the colour, not from styling the app like a kids' app. Kid styling tells a child the phone is for them, which works against *screens off, play on*.
+**Ludi is a tool for grown-ups, about play, and it should be fun to use.** A calm app can still be a dull one, and a parent who smiles opening it is more likely to play. The playfulness comes from the words, the colour, and the way things move: buttons that give under a thumb, a juego that arrives step by step, petals when the time is up, *Fin* drawn at the end of a story. What it doesn't come from is dressing the app up as a kids' app, with cartoon characters and game rewards, because that tells a child the phone is for them and works against *screens off, play on*.
 
 ## What the design has to do
 
@@ -32,7 +32,7 @@ From the five commitments in [constitution.md](constitution.md):
 
 **Night mode** is dark from 19:00 to 07:00, unless a one-tap choice overrides it until the next switch. The dark set is wired from day one so nothing depends on a light background. It is currently a cool purple-black; warming it toward amber is the expected 0.3 move, not a redesign.
 
-**No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, or an icon from the set. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS.
+**No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, an icon from the set, or one of the small drawings in `shared/ui`. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS; *Fin* and the moon at the end of a story are SVG lines in the tokens.
 
 **The wordmark** is "Ludi" in Fredoka 600 with three dots in grass, sun, and jacarandá. The dots are a *ronda*, not a face. It is a working wordmark: the domain is `ludi.ar`, and the trademark check is pending.
 
@@ -46,17 +46,52 @@ Each of these is a way the design gets dismantled one reasonable-looking commit 
 
 1. **No mascot, character, or cartoon.** Not in empty states, loading, or errors. The wordmark's dots never get eyes and never grow past splash size. The waiting animations are shapes from the plaza — *la ronda*, jacarandá petals, *la rayuela* — and never a creature (JUG-132, JUG-133). The `FamilyIcon`'s two figures are a pictogram with no faces, and they stay that way.
 2. **No sound, ever,** including when the activity timer ends. A parent should never have to mute this app in a restaurant, and a chime pulls the toddler back to the phone. The one exception is the voice note's short vibration ticks, which Alex added (JUG-135).
-3. **Motion guides and never demands.** 120–200 ms ease-out. No bounce, spring, confetti, or anything unskippable, and respect `prefers-reduced-motion`. The waiting animations are the one long loop: slow and quiet, and always back where they began, so nothing in them counts. When motion is reduced they are the three dots again.
+3. **Motion plays but never holds anyone up.** Things are allowed to bounce a little, pop, and land. Nothing waits for an animation to finish, nothing is unskippable, and nothing celebrates an achievement: no confetti, no fanfare. Every animation is off with `prefers-reduced-motion`. See [Motion](#motion).
 4. **Flat.** No gradients, gloss, 3D, or drop-shadow buttons. Chubby type plus saturated colour plus glossy buttons is the register of a game, not of a calm tool.
 5. **Never clinical and never a scoreboard.** No progress rings, streaks, points, badges, counts, percentages, milestones, development-area colour coding, "on track", "you stopped early", or days since the family last played. The only progress bar in the app marks position in a story. The timer never logs or compares sessions.
 6. **Never sell certainty or fear.** No "the best start", no "don't fall behind". Never correct the parent, mention bad outcomes, or imply a deficit.
 7. **One juego, never a list or a feed.** The wait for a juego happens on Home. Home's last-juego card is capped at one.
 8. **Colour is never the only signal.** Flagged rows get a tint, a bar, and words. A chosen chip gets a check as well as a fill. The current drawer item is a filled row, not a coloured one.
-9. **No art beside a story,** even once illustration arrives: no cover art on the options, and nothing in or around the text a parent is reading. The child should watch the parent, not the phone. The only thing that shows before a story does is the waiting animation while it is written, and it gives way to the first words (JUG-132). The wake lock holds from the moment a story starts being written until the parent leaves it.
+9. **Nothing inside the story text.** The child should watch the parent, not the phone, so nothing moves or sits in the paragraphs a parent is reading. Before the story, the waiting animation holds its place and gives way to the first words (JUG-132); after the last paragraph, *Fin* draws itself once (JUG-159). The wake lock holds from the moment a story starts being written until the parent leaves it.
 10. **The family's words stay exactly as typed.** Toy names are never normalised, capitalised, or autocorrected.
 11. **Local, not postcard.** Plaza, jacarandá, *rayuela*, *la ronda*, cardboard. Never tango, mate, the Obelisco, or the flag. The references are Isol, Limonero, Pakapaka, Canticuénticos.
 12. **Any handmade texture has to be real.** If grain or hand-drawn marks arrive, they come from a named illustrator. Imitation wobble reads cheap.
 13. **An icon never carries a meaning on its own.** Every icon is decorative, and the button around it holds the label. See [Iconography](#iconography).
+
+## Motion
+
+Motion is where most of the fun lives, so it gets the same care as colour. The values are tokens in `tokens.css`, and the shared keyframes (`rise-in`, `pop-in`, `slide-in`) are in `base.css`.
+
+| Token | Value | For |
+|---|---|---|
+| `--motion-quick` | 160 ms | Guidance: a press, a border, a colour change |
+| `--motion-moment` | 420 ms | Something arriving: a card, a step, a chip |
+| `--motion-stagger` | 70 ms | The gap between things that arrive one after another |
+| `--ease-out` | settles, no overshoot | Anything that follows the finger |
+| `--ease-play` | a small overshoot | Anything that lands |
+
+**The kinds of motion.**
+
+- **A press gives.** Buttons squash to 95% and cards to 97%, and spring back when the finger lifts.
+- **Things arrive, one after another.** A screen settles up as it opens. A juego's blocks and then its steps rise in turn, with each number popping in after its step. Home's cards, the toys in the baúl, the story options as they are written, and the menu's rows do the same.
+- **A few moments get a small drawing or a gesture, once.** They are listed below. Each plays once and needs nothing from the parent.
+- **Waits loop, slowly.** The waiting animations are the only loops (JUG-132, JUG-133): shapes from the plaza, always back where they began, so nothing in them counts. The waiting dots hop in turn like a ronda.
+
+**The moments.**
+
+| When | What happens |
+|---|---|
+| Home opens | The wordmark's three dots hop once, one after another |
+| ¡Juguemos! is thinking | The ronda turns inside the button |
+| Otro juego | The next juego is dealt in from the side |
+| A chip is added or chosen | It pops in; a chosen one swells and its check turns in |
+| The timer reaches zero | Jacarandá petals fall once over the screen and the clock nods. Still no sound |
+| The end of a story | *Fin* is drawn with a line under it; at night, a moon and two stars |
+| Night mode is tapped | The sun comes up turning, or the moon swings in |
+
+**Limits that don't move.** No sound. Nothing that counts, scores, or rewards: a moment marks that something happened, never that the family did well. Nothing loops except a wait. Nothing moves inside the story text. And with reduced motion, all of it is off: anything that starts hidden shows at its final state, and the petals don't appear.
+
+**Adding a moment.** Use the tokens and the shared keyframes, keep it under about half a second unless it is a wait or the petals, and check it with reduced motion on. A drawing goes in `shared/ui/Moments.jsx`, never as an `<svg>` in a screen. Add it to the table above.
 
 ## Colour
 

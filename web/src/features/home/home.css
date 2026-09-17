@@ -37,6 +37,23 @@
   padding: 22px 26px 0;
 }
 
+/* What is kept from last time settles in one card after another. */
+.home__memory > * {
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+.home__memory > :nth-child(2) {
+  animation-delay: var(--motion-stagger);
+}
+
+.home__memory > :nth-child(3) {
+  animation-delay: calc(var(--motion-stagger) * 2);
+}
+
+.home__memory > :nth-child(n + 4) {
+  animation-delay: calc(var(--motion-stagger) * 3);
+}
+
 .home__offline {
   font-size: 19px;
   line-height: 1.45;
@@ -83,4 +100,9 @@
 .home__actions {
   gap: 14px;
   padding-top: 0;
+}
+
+/* ¡Juguemos! thinking: the ronda turns in the button, bigger than a strip. */
+.home__thinking {
+  --waiting-size: 64px;
 }

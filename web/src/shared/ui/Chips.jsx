@@ -18,7 +18,9 @@ export function Chips({ items = [], onRemove, className = '', children }) {
     <div className={`chips ${className}`.trim()}>
       {items.map((item, index) => (
         <button
-          key={`${item}-${index}`}
+          // Keyed by the item and how many times it came before, so removing
+          // one doesn't make the chips after it pop in again.
+          key={`${item}-${items.slice(0, index).filter((each) => each === item).length}`}
           type="button"
           className="chip"
           aria-label={`Quitar ${item}`}

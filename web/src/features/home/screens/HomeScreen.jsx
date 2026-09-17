@@ -19,6 +19,7 @@ import {
   Screen,
   SecondaryButton,
   StatusLine,
+  Waiting,
   Wordmark,
 } from '../../../shared/ui'
 import { PlayingCard } from '../components/PlayingCard'
@@ -130,7 +131,7 @@ export function HomeScreen() {
           >
             <MenuIcon />
           </button>
-          <Wordmark />
+          <Wordmark greet />
         </div>
         {/* With the picker below, the kids are named there instead. */}
         {family && !picking && <p className="home__family">{familyLine(family)}</p>}
@@ -165,7 +166,14 @@ export function HomeScreen() {
 
       <Footer className="home__actions">
         {picking && family && <WhoPlays kids={family.kids} onToggle={toggle} />}
-        <PrimaryButton size="home" busy={request.busy} busyLabel="Pensando un juego" unavailable={!online} onClick={suggest}>
+        <PrimaryButton
+          size="home"
+          busy={request.busy}
+          busyLabel="Pensando un juego"
+          busyMark={<Waiting tone="on-primary" className="home__thinking" />}
+          unavailable={!online}
+          onClick={suggest}
+        >
           ¡Juguemos!
         </PrimaryButton>
         {/* Voice pass pending: the line shown after ~6 s of thinking. */}
