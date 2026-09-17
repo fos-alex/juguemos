@@ -70,3 +70,12 @@ export function listUsers() {
 export function invite(email) {
   return request('POST', '/admin/invitations', { email })
 }
+
+/**
+ * Removes an account and everything it owns: its family, the kids, the toys,
+ * the materials, the juegos, and the cuentos (JUG-175). Its devices sign out.
+ * @param {string} id
+ */
+export async function deleteAccount(id) {
+  await request('DELETE', `/admin/users/${id}`)
+}
