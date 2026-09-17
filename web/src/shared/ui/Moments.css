@@ -144,3 +144,57 @@
     stroke-dashoffset: 1;
   }
 }
+
+/*
+ * The wordmark writing itself, on Bienvenida (JUG-173). It wears the splash
+ * wordmark's classes, so the word's size, its colour, and the dots are the
+ * wordmark's own and can't grow past it. At rest every stroke and dot is there.
+ */
+
+/* The box the text "Ludi" takes at this font size, kerning and letter-spacing included. */
+.drawn-wordmark__word {
+  width: 1.852em;
+  height: 1.21em;
+  overflow: visible;
+}
+
+.drawn-wordmark__word path {
+  stroke-dasharray: 1;
+  animation: drawn-wordmark-stroke var(--for) ease-in-out var(--at) backwards;
+}
+
+.drawn-wordmark__dot {
+  fill: currentColor;
+  stroke: none;
+  animation: pop-in 280ms var(--ease-play) var(--written) backwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* The ronda arrives the way it greets on Home: each dot hops in, one after another. */
+.drawn-wordmark .wordmark__dots span {
+  animation:
+    fade-in var(--motion-quick) ease-out var(--hop-at) backwards,
+    wordmark-hop var(--motion-moment) var(--ease-out) var(--hop-at) backwards;
+  --hop-at: calc(var(--written) + 40ms + var(--dot, 0) * var(--motion-stagger));
+}
+
+.drawn-wordmark .wordmark__dots span:nth-child(2) {
+  --dot: 1;
+}
+
+.drawn-wordmark .wordmark__dots span:nth-child(3) {
+  --dot: 2;
+}
+
+/* Drawn like Fin. Hidden until its turn, so no round cap shows as a dot before the pen gets there. */
+@keyframes drawn-wordmark-stroke {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+  }
+
+  1% {
+    opacity: 1;
+  }
+}

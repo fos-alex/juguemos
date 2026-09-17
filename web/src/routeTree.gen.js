@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AjustesRouteImport } from './routes/ajustes'
+import { Route as BienvenidaRouteImport } from './routes/bienvenida'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as CuentosRouteImport } from './routes/cuentos'
 import { Route as EntradaRouteImport } from './routes/entrada'
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
 const AjustesRoute = AjustesRouteImport.update({
   id: '/ajustes',
   path: '/ajustes',
+  getParentRoute: () => rootRouteImport,
+})
+const BienvenidaRoute = BienvenidaRouteImport.update({
+  id: '/bienvenida',
+  path: '/bienvenida',
   getParentRoute: () => rootRouteImport,
 })
 const CuentaRoute = CuentaRouteImport.update({
@@ -146,6 +152,7 @@ const SerieIdEpisodioRoute = SerieIdEpisodioRouteImport.update({
 const rootRouteChildren = {
   IndexRoute: IndexRoute,
   AjustesRoute: AjustesRoute,
+  BienvenidaRoute: BienvenidaRoute,
   CuentaRoute: CuentaRoute,
   CuentosRoute: CuentosRoute,
   EntradaRoute: EntradaRoute,

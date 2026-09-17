@@ -19,6 +19,28 @@
   color: var(--ink-muted);
 }
 
+/* Bienvenida (JUG-173): laid out like Entrada, with the wordmark writing itself. */
+
+.welcome__mark {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome__actions {
+  gap: 24px;
+}
+
+.welcome__words {
+  text-align: center;
+}
+
+.welcome__words .page-title,
+.welcome__words .page-lede {
+  text-wrap: balance;
+}
+
 /* 2c Verificar */
 
 .verify {

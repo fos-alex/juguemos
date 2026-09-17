@@ -26,7 +26,7 @@ before(async () => {
     return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
   }
   api = await startApi({
-    signupEmails: ['ana@gmail.com', 'beto@gmail.com', 'carla@gmail.com', 'dani@gmail.com'],
+    signupEmails: ['ana@gmail.com', 'beto@gmail.com', 'carla@gmail.com', 'dani@gmail.com', 'eli@gmail.com'],
     google: { clientId: 'client-id', clientSecret: 'client-secret' },
   })
 })
@@ -43,13 +43,17 @@ function unsignedJwt(payload) {
   return `${part({ alg: 'RS256', typ: 'JWT' })}.${part(payload)}.signature`
 }
 
-/** @param {string} [errorCallbackURL] */
+/**
+ * Starts the trip as the web does: Home when it's done, Bienvenida for an
+ * account Google has just created, and back to the screen on a failure.
+ * @param {string} [errorCallbackURL]
+ */
 const startGoogle = (errorCallbackURL = '/entrada') =>
   api.app.inject({
     method: 'POST',
     url: '/auth/sign-in/social',
     headers: { origin: ORIGIN },
-    payload: { provider: 'google', callbackURL: '/', errorCallbackURL },
+    payload: { provider: 'google', callbackURL: '/', newUserCallbackURL: '/bienvenida', errorCallbackURL },
   })
 
 /**
@@ -89,7 +93,7 @@ test('Google is asked only for name and email', async () => {
   assert.equal(url.searchParams.get('redirect_uri'), `${ORIGIN}/api/auth/callback/google`)
 })
 
-test('a listed Google account signs up with its verified email, and opens Home', async () => {
+test('a listed Google account signs up with its verified email, and opens Bienvenida', async () => {
   const response = await signInWithGoogle({
     sub: 'google-ana',
     email: 'Ana@gmail.com',
@@ -98,7 +102,7 @@ test('a listed Google account signs up with its verified email, and opens Home',
     picture: 'https://lh3.googleusercontent.com/ana',
   })
   assert.equal(response.statusCode, 302)
-  assert.equal(response.headers.location, '/')
+  assert.equal(response.headers.location, '/bienvenida')
 
   const account = await me(cookiesFrom(response))
   assert.equal(account.statusCode, 200)
@@ -161,6 +165,17 @@ test('signing in with Google again comes back to the same account', async () => 
 
   const { rowCount } = await api.pool.query('select 1 from users where email = $1', ['dani@gmail.com'])
   assert.equal(rowCount, 1)
+})
+
+test('only a new Google account opens Bienvenida: signing in again opens Home', async () => {
+  const person = { sub: 'google-eli', email: 'eli@gmail.com', email_verified: true, name: 'Eli' }
+  const created = await signInWithGoogle(person)
+  assert.equal(created.statusCode, 302)
+  assert.equal(created.headers.location, '/bienvenida')
+
+  const returning = await signInWithGoogle(person)
+  assert.equal(returning.statusCode, 302)
+  assert.equal(returning.headers.location, '/')
 })
 
 test('a callback without a state goes to the entry, not to an error page', async () => {

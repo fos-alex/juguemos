@@ -32,7 +32,7 @@ From the five commitments in [constitution.md](constitution.md):
 
 **Night mode** is dark from 19:00 to 07:00, unless a one-tap choice overrides it until the next switch. The dark set is wired from day one so nothing depends on a light background. It is currently a cool purple-black; warming it toward amber is the expected 0.3 move, not a redesign.
 
-**No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, an icon from the set, or one of the small drawings in `shared/ui`. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS; *Fin* and the moon at the end of a story are SVG lines in the tokens.
+**No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, an icon from the set, or one of the small drawings in `shared/ui`. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS; *Fin* and the moon at the end of a story, and the wordmark Bienvenida writes, are SVG lines in the tokens.
 
 **The wordmark** is "Ludi" in Fredoka 600 with three dots in grass, sun, and jacarandá. The dots are a *ronda*, not a face. It is a working wordmark: the domain is `ludi.ar`, and the trademark check is pending.
 
@@ -81,6 +81,7 @@ Motion is where most of the fun lives, so it gets the same care as colour. The v
 
 | When | What happens |
 |---|---|
+| A new account arrives on Bienvenida | The wordmark writes itself: *Ludi* stroke by stroke, then the i's dot, then the ronda hops in, one dot after another (JUG-173) |
 | Home opens | The wordmark's three dots hop once, one after another |
 | ¡Juguemos! is thinking | The ronda turns inside the button |
 | Otro juego | The next juego is dealt in from the side |
@@ -92,7 +93,7 @@ Motion is where most of the fun lives, so it gets the same care as colour. The v
 
 **Limits that don't move.** No sound. Nothing that counts, scores, or rewards: a moment marks that something happened, never that the family did well. Nothing loops except a wait. Nothing moves inside the story text. And with reduced motion, all of it is off: anything that starts hidden shows at its final state, and the petals don't appear.
 
-**Adding a moment.** Use the tokens and the shared keyframes, keep it under about half a second unless it is a wait or the petals, and check it with reduced motion on. A drawing goes in `shared/ui/Moments.jsx`, never as an `<svg>` in a screen. Add it to the table above.
+**Adding a moment.** Use the tokens and the shared keyframes, keep it under about half a second unless it is a wait, the petals, or a drawing like *Fin* (about a second and a half at most), and check it with reduced motion on. A drawing goes in `shared/ui/Moments.jsx`, never as an `<svg>` in a screen. Add it to the table above.
 
 ## Colour
 

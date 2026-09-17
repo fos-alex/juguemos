@@ -49,12 +49,14 @@ export function AccountScreen() {
       if (signingIn) {
         const account = await signIn({ email: email.trim(), password })
         offerToSave({ email: email.trim(), password, name: account.name })
+        // The first-run guard knows where the account goes next.
+        void navigate({ to: '/', replace: true })
       } else {
         await createAccount({ name: name.trim(), email: email.trim(), password })
         offerToSave({ email: email.trim(), password, name: name.trim() })
+        // A new account starts at Bienvenida, the onboarding's first screen (JUG-173).
+        void navigate({ to: '/bienvenida', replace: true })
       }
-      // The first-run guard knows where a new account goes next.
-      void navigate({ to: '/', replace: true })
     })
   }
 
