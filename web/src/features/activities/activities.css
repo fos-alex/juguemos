@@ -284,3 +284,21 @@
   line-height: 1.45;
   color: var(--ink-body);
 }
+
+/* Antes de dormir (JUG-26): the moment the next juego is for, and the way to
+   change it. It sits above ¡Juguemos! with who's playing, aligned like it. */
+.mood-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mood-row__label {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+.mood-row .chips {
+  justify-content: flex-end;
+}

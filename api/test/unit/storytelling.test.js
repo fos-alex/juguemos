@@ -10,7 +10,6 @@ import {
   familyLines,
   marksIn,
   mergeCharacters,
-  moodAt,
   OptionsParser,
   seriesLines,
   soundsIn,
@@ -198,11 +197,6 @@ test('an age reads aloud in years and months', () => {
   assert.equal(ageLine(13), '1 año y 1 mes')
   assert.equal(ageLine(22), '1 año y 10 meses')
   assert.equal(ageLine(52), '4 años y 4 meses')
-})
-
-test('the moment follows the Buenos Aires clock', () => {
-  assert.equal(moodAt(new Date('2026-09-14T21:00:00-03:00')), 'calm')
-  assert.equal(moodAt(new Date('2026-09-14T20:00:00Z')), 'lively')
 })
 
 test('a TÍTULO line before the first part is read, and handed back once', () => {

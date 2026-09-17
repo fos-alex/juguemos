@@ -8,12 +8,14 @@
 import { and, count, desc, eq, isNotNull, ne, sql } from 'drizzle-orm'
 import { fillFor, render } from '../catalog/slots.js'
 import { themesOf } from '../catalog/themes.js'
+import { moodAt } from '../clock.js'
 import { activities } from './activities.schema.js'
 import { rank } from './ranking.js'
 import { NotFoundError } from '../errors.js'
 import { kidIdsOf } from '../families/families.service.js'
 
 /** @typedef {'up' | 'down'} Reaction */
+/** @typedef {import('../clock.js').Mood} Mood */
 /**
  * @typedef {{
  *   id: string, title: string, minutes: number, place: 'indoor' | 'outdoor',
@@ -47,15 +49,19 @@ export function createActivitiesService({ db, catalog, families, materials, rand
      * Picks a template that is switched on, whose age range covers every kid
      * playing, whose slots the family can fill, and that needs no material the
      * family doesn't have (JUG-153); ranks what fits by fit, feedback,
-     * freshness, and difference from the juego being left (ranking.js); fills
-     * the winner's slots; and saves the result with the kids who played and
-     * why it won.
+     * freshness, difference from the juego being left, and the moment
+     * (ranking.js); fills the winner's slots; and saves the result with the
+     * kids who played and why it won.
      * @param {string} familyId
-     * @param {{ after?: string | null, userId?: string | null }} [options] the activity to move on
-     *   from, and the adult asking, whose kids sitting out are left out (everyone plays without one)
+     * @param {{ after?: string | null, userId?: string | null, mood?: Mood | null }} [options] the
+     *   activity to move on from; the adult asking, whose kids sitting out are left out (everyone
+     *   plays without one); and the moment the juego is for (JUG-26). A caller that leaves `mood`
+     *   out gets the clock's, calm in the evening, so a juego is calm before bed even when the
+     *   client says nothing; `null` asks for no preference.
      * @returns {Promise<Activity>}
      */
-    async suggest(familyId, { after = null, userId = null } = {}) {
+    async suggest(familyId, { after = null, userId = null, mood } = {}) {
+      const at = now()
       const isAfter = sql`${activities.id} = ${after}`
       const [profile, templates, missing, history, others] = await Promise.all([
         families.playingProfile(familyId, userId),
@@ -108,7 +114,8 @@ export function createActivitiesService({ db, catalog, families, materials, rand
         others: counts,
         catalog: templates,
         after: templates.find((each) => each.id === afterTemplateId) ?? null,
-        now: now(),
+        mood: mood === undefined ? moodAt(at) : mood,
+        now: at,
         random,
       })
 

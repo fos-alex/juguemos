@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { AppMenu } from '../../../app/AppMenu'
-import { placeText, ReactionRow, suggestActivity } from '../../activities'
+import { MoodRow, placeText, ReactionRow, suggestActivity } from '../../activities'
 import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
 import { forgetOptions, LastStoryCard, storyOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
@@ -39,7 +39,9 @@ const SLOW_AFTER_MS = 6000
  * with them already on screen (JUG-140). The last story read sits under the
  * juego, with the way to make it a series (JUG-154). Inside the last juego's
  * card, the feedback tap asks once how it went (JUG-23): it is there while the
- * juego has no reaction, stays through the tap, and isn't asked again.
+ * juego has no reaction, stays through the tap, and isn't asked again. Before
+ * bed, the mood row above the button says the next juego will be tranqui, and
+ * lets the parent ask for one con pilas instead (JUG-26).
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -171,6 +173,7 @@ export function HomeScreen() {
 
       <Footer className="home__actions">
         {picking && family && <WhoPlays kids={family.kids} onToggle={toggle} />}
+        <MoodRow />
         <PrimaryButton
           size="home"
           busy={request.busy}

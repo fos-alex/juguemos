@@ -195,12 +195,46 @@ test('a reaction to a similar template counts by the similarity, so a thumbs dow
   assert.equal(/** @type {any} */ (gone.find((each) => each.template.slug === 'alike')).pick.feedback.beta, DEFAULT_WEIGHTS.prior)
 })
 
+test('a calm moment keeps the quiet juegos whole and takes most of the energetic ones away', () => {
+  const quiet = candidate(template({ slug: 'quiet', energy: 'low' }))
+  const middling = candidate(template({ slug: 'middling', energy: 'medium' }))
+  const loud = candidate(template({ slug: 'loud', energy: 'high' }))
+  const calm = rank([quiet, middling, loud], context({ mood: 'calm' }))
+  const pick = (/** @type {ReturnType<typeof rank>} */ ranked, /** @type {string} */ slug) =>
+    /** @type {any} */ (ranked.find((each) => each.template.slug === slug)).pick
+  assert.equal(pick(calm, 'quiet').moment, 1)
+  assert.equal(pick(calm, 'middling').moment, DEFAULT_WEIGHTS.moment.calm.medium)
+  assert.equal(pick(calm, 'loud').moment, DEFAULT_WEIGHTS.moment.calm.high)
+  assert.equal(pick(calm, 'quiet').mood, 'calm')
+  assert.ok(winRate([quiet, loud], { mood: 'calm' }, 'quiet') > 0.95)
+
+  // A lively moment is the other way round.
+  const lively = rank([quiet, middling, loud], context({ mood: 'lively' }))
+  assert.equal(pick(lively, 'loud').moment, 1)
+  assert.equal(pick(lively, 'quiet').moment, DEFAULT_WEIGHTS.moment.lively.low)
+  assert.ok(winRate([quiet, loud], { mood: 'lively' }, 'loud') > 0.95)
+
+  // No mood at all leaves every template where it is.
+  const anytime = rank([quiet, middling, loud], context())
+  assert.ok(anytime.every((each) => each.pick.moment === 1))
+  assert.equal(pick(anytime, 'quiet').mood, null)
+})
+
+test('an energetic juego is still offered before bed when it is the only one that fits', () => {
+  const [only] = rank([candidate(template({ slug: 'loud', energy: 'high' }))], context({ mood: 'calm' }))
+  assert.equal(only.template.slug, 'loud')
+  assert.ok(only.pick.score > 0)
+})
+
 test('the pick keeps every part of the score and the weights', () => {
   const [first] = rank([candidate(template({ slug: 'a' }))], context())
   assert.deepEqual(Object.keys(first.pick).sort(), [
-    'difference', 'favorite', 'feedback', 'fit', 'freshness', 'named', 'score', 'themes', 'weights',
+    'difference', 'favorite', 'feedback', 'fit', 'freshness', 'moment', 'mood', 'named', 'score', 'themes', 'weights',
   ])
-  assert.equal(first.pick.score, first.pick.fit * 2 * first.pick.feedback.sample * first.pick.freshness * first.pick.difference)
+  assert.equal(
+    first.pick.score,
+    first.pick.fit * 2 * first.pick.feedback.sample * first.pick.freshness * first.pick.difference * first.pick.moment,
+  )
   assert.deepEqual(first.pick.weights, DEFAULT_WEIGHTS)
 })
 

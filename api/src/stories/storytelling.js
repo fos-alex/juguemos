@@ -1,6 +1,6 @@
 /**
  * The storytelling logic around the harness: which age band anchors a story,
- * the moment-of-day mood, the family lines a casting leaves in the prompt,
+ * how the moment reads in a prompt, the family lines a casting leaves in it,
  * and the two ways the model's answer is read — the option JSON and the
  * streaming story format. Everything here is pure, so the prompts in
  * `prompts/` can change without any of this moving.
@@ -56,26 +56,7 @@ export function anchorOf(profile) {
   return { anchor: anchor ?? profile.kids[0] ?? null, anchorMonths, band }
 }
 
-// The families are in Buenos Aires; the server's clock may be anywhere (UTC in Docker).
-const hourInBuenosAires = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/Argentina/Buenos_Aires',
-  hour: 'numeric',
-  hourCycle: 'h23',
-})
-
-/**
- * The story follows the moment: calm in the night-mode window (19:00 to
- * 07:00 in Buenos Aires), lively the rest of the day. The child's own
- * routine arrives with the fuller data model and replaces the clock.
- * @param {Date} now
- * @returns {'calm' | 'lively'}
- */
-export function moodAt(now) {
-  const hour = Number(hourInBuenosAires.format(now))
-  return hour >= 19 || hour < 7 ? 'calm' : 'lively'
-}
-
-/** The moment as the harness names it. @param {'calm' | 'lively'} mood */
+/** The moment as the harness names it. @param {import('../clock.js').Mood} mood */
 export function momentOf(mood) {
   return mood === 'calm' ? 'TRANQUI, antes de dormir' : 'CON PILAS, de día'
 }

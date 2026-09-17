@@ -18,7 +18,11 @@ import { useSyncExternalStore } from 'react'
 /** @typedef {'voiceIntroSeen'} VoiceKey Whether this device has seen the mic spotlighted on 2d. */
 /** @typedef {'toyBox'} ToysKey */
 /** @typedef {'materials'} MaterialsKey The categories of household materials, as the API last sent them. */
-/** @typedef {'activities' | 'lastActivityId' | 'timer'} ActivitiesKey */
+/**
+ * @typedef {'activities' | 'lastActivityId' | 'timer' | 'activityMood'} ActivitiesKey
+ * `activityMood` is the parent's tap on Tranqui or Con pilas, which holds until the next
+ * 19:00 or 07:00 (JUG-26); without one the clock decides.
+ */
 /**
  * @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series' | 'lastStoryId' | 'storyRequest'} StoriesKey
  * `storyRequest` is the story the parent asked for and said yes to, until it is written (JUG-156).
