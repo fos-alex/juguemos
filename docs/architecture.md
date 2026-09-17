@@ -1,6 +1,6 @@
 # Ludi — Architecture
 
-**Version:** 0.14 · September 2026 · Owner: Alex Otero
+**Version:** 0.15 · September 2026 · Owner: Alex Otero
 
 *A living document. It holds the technical decisions and the reasons behind them, so a decision can be revisited on purpose rather than drifted away from. How the code is actually laid out is in [web/AGENTS.md](../web/AGENTS.md) and [api/AGENTS.md](../api/AGENTS.md); what the product is, in [product-concept.md](product-concept.md); the principles, in [constitution.md](constitution.md).*
 
@@ -118,6 +118,7 @@ The tables themselves, and what each domain owns, are in [api/AGENTS.md](../api/
 | Speech-to-text | Voice notes | Must handle Rioplatense Spanish, children's names, and background noise. Whisper on the droplet by default, so audio never leaves the server; the API speaks the OpenAI transcriptions API, so a hosted service is a change of environment variables (JUG-88). |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas and kid-friendly places | Maps data is enough for v1; no curated event listings. |
+| Email | Nothing yet; email verification and invitations when they come | Resend's free plan over SMTP, 3,000 emails a month and 100 a day. Any SMTP service is a change of environment variables (JUG-169). DigitalOcean blocks SMTP's usual ports on droplets, so it uses 2465. Only the address and the message leave the server. |
 
 Each sits behind a thin internal interface, so a provider can be swapped without touching product code.
 
@@ -165,3 +166,4 @@ Version 1 runs a single environment. Staging is worth adding once families outsi
 | 0.12 | Interests moved from the family to each kid. |
 | 0.13 | A kid's age is kept in months and counted by the month; story bands are six months wide under four years. |
 | 0.14 | Renamed to Ludi: `ludi.ar` in production and `ludi.local` locally, with Caddy's sites chosen by `CADDY_SITES`. |
+| 0.15 | Email through an SMTP service, Resend to start. |

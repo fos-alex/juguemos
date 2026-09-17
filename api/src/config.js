@@ -49,6 +49,15 @@ const LLM_PROVIDERS = {
  */
 
 /**
+ * @typedef {object} EmailConfig
+ * @property {string | null} host the SMTP service; without it email is off
+ * @property {number} port 465 and 2465 use TLS from the start; any other port must upgrade with STARTTLS
+ * @property {string | null} user
+ * @property {string | null} password for Resend, an API key
+ * @property {string} from the sender, such as `Ludi <hola@ludi.ar>`
+ */
+
+/**
  * @typedef {object} Config
  * @property {number} port
  * @property {string} databaseUrl
@@ -56,6 +65,7 @@ const LLM_PROVIDERS = {
  * @property {LlmConfig} llm
  * @property {StoriesConfig} stories
  * @property {SttConfig} stt speech to text, for voice notes
+ * @property {EmailConfig} email the SMTP service email is sent through (JUG-169)
  * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
  * @property {{ transcripts: boolean }} audit whether parents' own words are kept in audit_transcripts (JUG-116)
  */
@@ -65,6 +75,12 @@ export const DEFAULT_SERIES_EPISODES = 10
 
 /** Whisper large-v3-turbo, as the self-hosted speaches server names it. */
 export const DEFAULT_STT_MODEL = 'deepdml/faster-whisper-large-v3-turbo-ct2'
+
+/**
+ * Resend's port for SMTP over TLS. DigitalOcean blocks 25, 465, and 587 on
+ * droplets, and leaves this one open.
+ */
+export const DEFAULT_SMTP_PORT = 2465
 
 export class ConfigError extends Error {}
 
@@ -93,6 +109,7 @@ export function loadConfig(env = process.env) {
     llm: loadLlm(env, url),
     stories: { episodesPerSeries: whole(env, 'STORY_SERIES_EPISODES', DEFAULT_SERIES_EPISODES, 2) },
     stt: loadStt(env),
+    email: loadEmail(env),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
     // Off unless set: the texts hold the family's names.
     audit: { transcripts: flag(env, 'AUDIT_TRANSCRIPTS') },
@@ -109,6 +126,23 @@ function loadStt(env) {
   const url = env.STT_URL?.trim() || null
   if (url && !URL.canParse(url)) throw new ConfigError(`STT_URL must be a URL, not "${env.STT_URL}"`)
   return { url, model: env.STT_MODEL?.trim() || DEFAULT_STT_MODEL, apiKey: env.STT_API_KEY?.trim() || null }
+}
+
+/**
+ * The SMTP service email is sent through. Without SMTP_HOST email is off; with
+ * it, EMAIL_FROM says who it comes from.
+ * @param {NodeJS.ProcessEnv} env
+ * @returns {EmailConfig}
+ */
+function loadEmail(env) {
+  const host = env.SMTP_HOST?.trim() || null
+  const port = whole(env, 'SMTP_PORT', DEFAULT_SMTP_PORT, 1)
+  const user = env.SMTP_USER?.trim() || null
+  const password = env.SMTP_PASSWORD?.trim() || null
+  const from = env.EMAIL_FROM?.trim() || ''
+  if (host && !from) throw new ConfigError('EMAIL_FROM is not set, and SMTP_HOST needs it: the sender, such as "Ludi <hola@ludi.ar>"')
+  if (Boolean(user) !== Boolean(password)) throw new ConfigError('SMTP_USER and SMTP_PASSWORD must be set together')
+  return { host, port, user, password, from }
 }
 
 /**

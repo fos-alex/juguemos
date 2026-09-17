@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import { buildApp } from '../src/app.js'
-import { DEFAULT_SERIES_EPISODES } from '../src/config.js'
+import { DEFAULT_SERIES_EPISODES, DEFAULT_SMTP_PORT } from '../src/config.js'
 import { createDb } from '../src/db/client.js'
 import { migrate } from '../src/db/migrate.js'
 
@@ -13,8 +13,8 @@ export const ORIGIN = 'http://localhost:3000'
 /** @typedef {import('../src/config.js').Config} Config */
 
 /**
- * The config the API is built on in tests: no LLM, no speech-to-text, the
- * admin off, and a secret that only tests use. Each part can be overridden
+ * The config the API is built on in tests: no LLM, no speech-to-text, no
+ * email, the admin off, and a secret that only tests use. Each part can be overridden
  * on its own; what isn't given keeps these defaults.
  * @param {{
  *   port?: number,
@@ -23,12 +23,13 @@ export const ORIGIN = 'http://localhost:3000'
  *   llm?: Partial<Config['llm']>,
  *   stories?: Partial<Config['stories']>,
  *   stt?: Partial<Config['stt']>,
+ *   email?: Partial<Config['email']>,
  *   admin?: Partial<Config['admin']>,
  *   audit?: Partial<Config['audit']>,
  * }} [overrides]
  * @returns {Config}
  */
-export function testConfig({ auth, llm, stories, stt, admin, audit, ...rest } = {}) {
+export function testConfig({ auth, llm, stories, stt, email, admin, audit, ...rest } = {}) {
   return {
     port: 0,
     databaseUrl: '',
@@ -38,6 +39,7 @@ export function testConfig({ auth, llm, stories, stt, admin, audit, ...rest } = 
     stories: { episodesPerSeries: DEFAULT_SERIES_EPISODES, ...stories },
     // No service: voice notes are off, unless a test passes its own `transcriber`.
     stt: { url: null, model: '', apiKey: null, ...stt },
+    email: { host: null, port: DEFAULT_SMTP_PORT, user: null, password: null, from: '', ...email },
     admin: { enabled: false, ...admin },
     audit: { transcripts: false, ...audit },
     ...rest,

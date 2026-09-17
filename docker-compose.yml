@@ -68,6 +68,13 @@ services:
       STT_URL: ${STT_URL:-http://stt:8000/v1}
       STT_MODEL: ${STT_MODEL:-}
       STT_API_KEY: ${STT_API_KEY:-}
+      # The SMTP service email is sent through (JUG-169). Without SMTP_HOST,
+      # email is off.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
