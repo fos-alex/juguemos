@@ -143,6 +143,7 @@ test('the options ask for a bedtime story at night, and its history reaches the 
   assert.match(user, /La familia va a leer un cuento a TRANQUI, antes de dormir/)
   assert.match(user, /Milán, de 2 años y 2 meses/)
   assert.match(user, /El reparto de cada trama/)
+  assert.match(user, /Cada trama usa solo a los de su reparto/)
   assert.match(user, /Trama 2: /)
   assert.doesNotMatch(user, /Trama 3: /)
 })
