@@ -17,10 +17,14 @@ import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
 import { createUnderstanding } from './families/understanding.js'
+import { createMailer } from './email/mailer.js'
 import { AppError, UnavailableError } from './errors.js'
 import { createLlm } from './llm/client.js'
 import { createHealthController } from './health/health.controller.js'
 import { healthRoutes } from './health/health.routes.js'
+import { createInvitationsController } from './invitations/invitations.controller.js'
+import { adminUsersRoutes, invitationsRoutes } from './invitations/invitations.routes.js'
+import { createInvitationsService } from './invitations/invitations.service.js'
 import { createMaterialsController } from './materials/materials.controller.js'
 import { materialsRoutes } from './materials/materials.routes.js'
 import { createMaterialsService } from './materials/materials.service.js'
@@ -49,13 +53,15 @@ import { createVoiceService } from './voice/voice.service.js'
  *   now?: () => Date,
  *   llm?: ReturnType<typeof createLlm> | null,
  *   transcriber?: ReturnType<typeof createTranscriber> | null,
+ *   mailer?: import('./email/mailer.js').Mailer | null,
  * }} options `random` drives which template comes next; tests can pin it.
- * `now` picks the moment a story is written for; `llm` and `transcriber`
- * override the wire, so tests can speak for the model and the speech-to-text
- * service. Without a key, stories come from templates; without STT_URL, voice
- * notes are off.
+ * `now` picks the moment a story is written for, and when an invitation
+ * expires; `llm`, `transcriber`, and `mailer` override the wire, so tests can
+ * speak for the model and the speech-to-text service, and see the email sent.
+ * Without a key, stories come from templates; without STT_URL, voice notes are
+ * off; without SMTP_HOST, nobody can be invited.
  */
-export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber }) {
+export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber, mailer }) {
   const app = Fastify({ logger })
   const families = createFamiliesService({ db })
   const toys = createToysService({ db })
@@ -82,7 +88,10 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   const understanding = createUnderstanding({ llm: llmClient, audit })
   const toysUnderstanding = createToysUnderstanding({ llm: llmClient })
   const voice = createVoiceService({ transcriber: transcriber ?? createTranscriber({ config: config.stt }), families, audit })
-  const auth = createAuth({ config: config.auth, db })
+  // Null without SMTP_HOST.
+  const mailerClient = mailer === undefined ? createMailer({ config: config.email }) : mailer
+  const invitations = createInvitationsService({ db, mailer: mailerClient, appUrl: config.auth.url, now })
+  const auth = createAuth({ config: config.auth, db, invitations })
   const requireSession = createRequireSession(auth)
   const requireFamily = createRequireFamily(families)
 
@@ -107,6 +116,7 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
 
   app.register(healthRoutes, { controller: createHealthController({ db }) })
   app.register(authRoutes, { auth, baseURL: config.auth.url })
+  app.register(invitationsRoutes, { controller: createInvitationsController({ invitations }) })
   app.register(accountsRoutes, { controller: createAccountsController({ families, understanding }) })
   app.register(familiesRoutes, { controller: createFamiliesController({ families, understanding }) })
   app.register(toysRoutes, { controller: createToysController({ toys, toysUnderstanding }) })
@@ -116,7 +126,10 @@ export function buildApp({ config, db, logger = true, random = Math.random, now 
   // Session access, not family: onboarding records a note before the family exists.
   app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
-  if (config.admin.enabled) app.register(catalogRoutes, { controller: createCatalogController({ catalog }) })
+  if (config.admin.enabled) {
+    app.register(catalogRoutes, { controller: createCatalogController({ catalog }) })
+    app.register(adminUsersRoutes, { controller: createInvitationsController({ invitations }) })
+  }
 
   return app
 }

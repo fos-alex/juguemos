@@ -87,7 +87,7 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
+ * @param {{ signupEmails?: string[], trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, mailer?: import('../src/email/mailer.js').Mailer, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
  */
 export async function startApi({
   signupEmails = [],
@@ -97,6 +97,7 @@ export async function startApi({
   now,
   llm,
   transcriber,
+  mailer,
   admin = false,
   auditTranscripts = false,
   maxEpisodes = DEFAULT_SERIES_EPISODES,
@@ -112,7 +113,7 @@ export async function startApi({
     admin: { enabled: admin },
     audit: { transcripts: auditTranscripts },
   })
-  const app = buildApp({ config, db, logger: false, random, now, llm, transcriber })
+  const app = buildApp({ config, db, logger: false, random, now, llm, transcriber, mailer })
   await app.ready()
 
   return {

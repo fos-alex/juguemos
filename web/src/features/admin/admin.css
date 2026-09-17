@@ -4,6 +4,43 @@
   max-width: 720px;
 }
 
+/* Juegos and Usuarios. The page open is filled, not only coloured. */
+.admin-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.admin-nav__link[aria-current='page'] {
+  border-color: var(--primary);
+  background: var(--surface-accent);
+  color: var(--ink);
+}
+
+.admin-invite {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .admin-list {
   display: flex;
   flex-direction: column;

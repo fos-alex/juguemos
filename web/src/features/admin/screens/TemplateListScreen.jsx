@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { listTemplates, saveTemplate } from '../api'
+import { AdminNav } from '../components/AdminNav'
 import { adminFailure, categoryNames, fieldsOf, NEW, templateLine } from '../model'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { Body, Dots, Header, Screen, StatusLine } from '../../../shared/ui'
@@ -49,6 +50,7 @@ export function TemplateListScreen() {
         }
       />
       <Body className="page-body">
+        <AdminNav />
         {templates && (
           <StatusLine>
             {inUse} en uso de {templates.length}. Los apagados no salen en ¡Juguemos!

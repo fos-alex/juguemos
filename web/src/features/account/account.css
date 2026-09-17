@@ -41,6 +41,17 @@
   text-wrap: balance;
 }
 
+/* Invitación (JUG-34) */
+
+.invitation__body {
+  justify-content: center;
+  gap: 18px;
+}
+
+.form-body > .invitation__lede {
+  margin-top: 0;
+}
+
 /* 2c Verificar */
 
 .verify {
