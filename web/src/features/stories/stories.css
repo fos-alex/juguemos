@@ -123,6 +123,13 @@
   border: 0;
 }
 
+/* The last story on Home: its two links share one line. */
+.last-story__links {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 /* The series and the episode a reading screen belongs to. */
 
 .series {

@@ -166,21 +166,26 @@ test('the system prompt carries one band and one moment, and nothing else', asyn
   assert.match(user, /Trama 2: Propuesta nueva: /)
 })
 
-test('asking for other options retires the older plots and keeps the ones on screen', async () => {
+test('asking for other options keeps the older plots pickable for a week', async () => {
   const { cookie } = await signUp()
   const family = (await putFamily(api, cookie, EXAMPLE_PROFILE)).json()
 
   const first = await options(cookie)
-  const second = await options(cookie, first.map((option) => option.id))
-  const third = await options(cookie, second.map((option) => option.id))
-  assert.equal(second.length, 2)
-  assert.equal(third.length, 2)
+  // Another device asks for its own options while the first ones are still on this screen.
+  await options(cookie)
+  const opened = await stream(cookie, first[0].id)
+  assert.equal(opened.statusCode, 200, 'an option another device replaced can still be read')
 
+  await api.pool.query(
+    `update story_plots set created_at = now() - interval '8 days' where id = any($1)`,
+    [first.map((option) => option.id)],
+  )
+  const third = await options(cookie)
   const { rows } = await api.pool.query('select id from story_plots where family_id = $1', [family.id])
   const alive = new Set(rows.map((row) => row.id))
-  assert.equal(rows.length, 4, 'the screen being chosen from, plus two fresh ones')
-  assert.ok(second.every((option) => alive.has(option.id)), 'the plots on screen stay pickable')
-  assert.ok(!first.some((option) => alive.has(option.id)), 'the screen nobody can see any more is gone')
+  assert.equal(rows.length, 4, 'the second and third screens')
+  assert.ok(third.every((option) => alive.has(option.id)))
+  assert.ok(!first.some((option) => alive.has(option.id)), 'plots older than a week are gone')
 })
 
 test('an answer with no readable plot is asked once more', async () => {

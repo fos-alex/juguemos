@@ -116,7 +116,7 @@ export function createStoriesService({
      * they are plot options the model wrote for the castings code drew, and
      * they arrive one at a time while it is still writing the next; without
      * it they are catalog templates with their slots filled, and both
-     * land at once. The ones in `exclude` (already on screen) come last, only
+     * land at once, with the ones in `exclude` (already on screen) last, only
      * if they still fit.
      * @param {string} familyId
      * @param {{ exclude?: string[], userId?: string | null, signal?: AbortSignal }} [options] `userId` is
@@ -126,7 +126,7 @@ export function createStoriesService({
     async optionsStream(familyId, { exclude = [], userId = null, signal } = {}) {
       const profile = await families.playingProfile(familyId, userId)
       if (!llm) return oneByOne(await templates.options(profile, exclude))
-      return generated.options(profile, familyId, exclude, { signal })
+      return generated.options(profile, familyId, { signal })
     },
 
     /**

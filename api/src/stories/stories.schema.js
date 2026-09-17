@@ -8,8 +8,8 @@ import { storyTemplates } from '../catalog/catalog.schema.js'
 import { createdAt, timestamptz } from '../db/columns.js'
 import { families } from '../families/families.schema.js'
 
-// The plots the model proposes for a family to choose from. They live only
-// until the choice is made: a new screen of options retires the unseen ones.
+// The plots the model proposes for a family to choose from. They are kept for
+// a week, since options stay on each device's screen until it asks for more.
 export const storyPlots = pgTable(
   'story_plots',
   {

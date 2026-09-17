@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import { interestMark, playingAgeMonths } from '../../family'
-import { rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeRequestedStory, writeStory } from '../api'
+import { forgetOptions, rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeRequestedStory, writeStory } from '../api'
 import { StoryEnd } from './StoryEnd'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
@@ -117,10 +117,16 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
       // An id that is not an option is a saved story opened by its own id.
       if (error.status === 404) {
         void savedStory(/** @type {string} */ (picked)).catch((savedError) => {
-          if (savedError.name !== 'AbortError') {
-            setFailure(failureText(savedError))
-            setLooking(false)
+          if (savedError.name === 'AbortError') return
+          // An option this device kept after its plot expired: the options
+          // screen asks for new ones instead of stopping on an error.
+          if (savedError.status === 404 && read('storyOptions')?.some((candidate) => candidate.id === picked)) {
+            forgetOptions()
+            void navigate({ to: '/cuentos', replace: true })
+            return
           }
+          setFailure(failureText(savedError))
+          setLooking(false)
         })
         return
       }

@@ -12,7 +12,7 @@
  * story audit.
  */
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, notInArray, sql } from 'drizzle-orm'
+import { and, desc, eq, lt, sql } from 'drizzle-orm'
 import { NotFoundError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { render } from '../llm/prompt.js'
@@ -49,6 +49,9 @@ const RECENT_CASTINGS = 5
 
 /** How many recent titles the model is asked not to write again. */
 const RECENT_TITLES = 3
+
+/** How long an offered plot can still be picked, on any of the family's devices. */
+const PLOT_LIFETIME = '7 days'
 
 /**
  * @param {{
@@ -91,13 +94,17 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
      * sent on as soon as the model closes its braces instead of when the
      * whole answer lands. An answer with no readable plot at all is asked
      * once more before the family hears that the model failed.
+     * Plots stay pickable for a week, so options still on another device's
+     * screen can be opened; older ones are deleted here.
      * @param {Profile} profile
      * @param {string} familyId
-     * @param {string[]} exclude the plots already on screen, which stay pickable
      * @param {{ signal?: AbortSignal }} [options]
      * @returns {AsyncGenerator<OptionEvent, void, void>}
      */
-    async *options(profile, familyId, exclude, { signal } = {}) {
+    async *options(profile, familyId, { signal } = {}) {
+      await db
+        .delete(storyPlots)
+        .where(and(eq(storyPlots.familyId, familyId), lt(storyPlots.createdAt, sql`now() - ${PLOT_LIFETIME}::interval`)))
       const mood = moodAt(now())
       const { band } = anchorOf(profile)
       const latest = await db
@@ -150,22 +157,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
             if (!plot) continue
             const casting = castings[sent]
             const id = randomUUID()
-            const row = { ...plot, id, familyId, mood, kidIds, casting }
-            if (sent === 0) {
-              // The plots on screen stay pickable; the rest retire, in the
-              // same transaction as the first new one, so a family is never
-              // left with no plots at all.
-              const stale =
-                exclude.length > 0
-                  ? and(eq(storyPlots.familyId, familyId), notInArray(storyPlots.id, exclude))
-                  : eq(storyPlots.familyId, familyId)
-              await db.transaction(async (tx) => {
-                await tx.delete(storyPlots).where(stale)
-                await tx.insert(storyPlots).values(row)
-              })
-            } else {
-              await db.insert(storyPlots).values(row)
-            }
+            await db.insert(storyPlots).values({ ...plot, id, familyId, mood, kidIds, casting })
             sent += 1
             await flush()
             pending = {
