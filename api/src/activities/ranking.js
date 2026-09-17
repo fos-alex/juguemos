@@ -4,7 +4,7 @@
  * This orders what is left, and it is pure, so a seeded random gives the same
  * order every time and each rule has its own unit test.
  *
- * A template's score is four factors multiplied:
+ * A template's score is five factors multiplied:
  *
  * - **Fit.** 1, plus a bonus when it is about something a kid playing loves
  *   (its themes against the kids' interests, read through catalog/themes.js),
@@ -28,6 +28,13 @@
  * - **Difference.** "Otro juego" is maximal marginal relevance (Carbonell
  *   and Goldstein, 1998) with one item: what is like the juego being left
  *   loses by its similarity to it.
+ * - **Moment.** What the family is up for now (JUG-26), from the clock or
+ *   from the parent's own tap: a calm moment keeps the low-energy templates
+ *   whole and takes most of the high-energy ones away, so an energetic game
+ *   doesn't come up just before bed, and a lively one does the reverse. No
+ *   mood leaves every template where it is. It only ever lowers a score, and
+ *   never to zero, so a family whose catalog is all high-energy games still
+ *   gets one at night.
  *
  * Two things are out before scoring: the juego being left, and any template
  * whose last reaction from this family was a thumbs down. Each is let back
@@ -40,6 +47,8 @@ import { placeholdersIn } from '../catalog/slots.js'
 
 /** @typedef {import('../catalog/catalog.service.js').FillableActivityTemplate} Template */
 /** @typedef {import('../catalog/slots.js').Fill} Fill */
+/** @typedef {import('../clock.js').Mood} Mood */
+/** @typedef {Template['energy']} Energy */
 /**
  * @typedef {object} Weights
  * @property {number} interest what a template about something a kid loves gains
@@ -53,6 +62,7 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {number} playedDays the same, for one the family said they played
  * @property {number} floor what a template seen a moment ago keeps
  * @property {number} different what a template loses for being like the one being left, times the similarity
+ * @property {Record<Mood, Record<Energy, number>>} moment what a template of each energy keeps in each moment
  */
 /**
  * @typedef {object} Seen one activity the family was offered
@@ -71,6 +81,8 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {{ alpha: number, beta: number, sample: number }} feedback
  * @property {number} freshness
  * @property {number} difference
+ * @property {Mood | null} mood the moment it was picked for
+ * @property {number} moment what that moment left it
  * @property {Weights} weights
  */
 /** @typedef {{ template: Template, fill: Fill }} Candidate */
@@ -87,6 +99,10 @@ export const DEFAULT_WEIGHTS = {
   playedDays: 10,
   floor: 0.05,
   different: 0.8,
+  moment: {
+    calm: { low: 1, medium: 0.5, high: 0.15 },
+    lively: { low: 0.25, medium: 0.6, high: 1 },
+  },
 }
 
 const DAY = 86_400_000
@@ -101,6 +117,7 @@ const DAY = 86_400_000
  *   others: Map<string, Counts>,
  *   catalog: Template[],
  *   after?: Template | null,
+ *   mood?: Mood | null,
  *   now: Date,
  *   random: () => number,
  *   weights?: Weights,
@@ -108,12 +125,13 @@ const DAY = 86_400_000
  *   `favoriteToys` the names of the favorites; `history` what this family was
  *   offered, newest first; `others` the reactions of every other family, by
  *   template; `catalog` every template a reaction could be about, fitting or
- *   not; `after` the template of the juego being left.
+ *   not; `after` the template of the juego being left; `mood` the moment the
+ *   juego is for, or null for no preference.
  * @returns {{ template: Template, fill: Fill, pick: Pick }[]}
  */
 export function rank(
   candidates,
-  { interestThemes, favoriteToys, history, others, catalog, after = null, now, random, weights = DEFAULT_WEIGHTS },
+  { interestThemes, favoriteToys, history, others, catalog, after = null, mood = null, now, random, weights = DEFAULT_WEIGHTS },
 ) {
   const seen = summarize(history)
   const byId = new Map(catalog.map((template) => [template.id, template]))
@@ -153,12 +171,15 @@ export function rank(
 
     const freshness = own ? freshnessOf(own, now, weights) : 1
     const difference = after ? 1 - weights.different * jaccard(tagsOf(template), tagsOf(after)) : 1
+    const moment = mood ? weights.moment[mood][template.energy] : 1
 
-    const score = fit * feedback * freshness * difference
+    const score = fit * feedback * freshness * difference * moment
     return {
       template,
       fill,
-      pick: { score, fit, themes, named, favorite, feedback: { alpha, beta, sample }, freshness, difference, weights },
+      pick: {
+        score, fit, themes, named, favorite, feedback: { alpha, beta, sample }, freshness, difference, mood, moment, weights,
+      },
     }
   })
 

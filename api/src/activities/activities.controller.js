@@ -8,8 +8,11 @@ export function createActivitiesController({ activities }) {
   return {
     /** @type {import('fastify').RouteHandlerMethod} */
     async suggest(request, reply) {
-      const { after = null } = /** @type {{ after?: string | null }} */ (request.body ?? {})
-      const activity = await activities.suggest(familyOf(request), { after, userId: userOf(request).id })
+      // `mood` left out is not the same as null: without it the clock decides.
+      const { after = null, mood } = /** @type {{ after?: string | null, mood?: 'calm' | 'lively' | null }} */ (
+        request.body ?? {}
+      )
+      const activity = await activities.suggest(familyOf(request), { after, mood, userId: userOf(request).id })
       return reply.code(201).send(activity)
     },
 

@@ -16,6 +16,7 @@
  * A series is written only by the model: a server with no LLM can't start one.
  */
 import { and, asc, desc, eq, inArray, isNull, max } from 'drizzle-orm'
+import { moodAt } from '../clock.js'
 import { ConflictError, NotFoundError, UnavailableError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { render } from '../llm/prompt.js'
@@ -30,7 +31,6 @@ import {
   episodeLines,
   familyLines,
   mergeCharacters,
-  moodAt,
   partsOf,
   seriesLines,
   seriesTitleFor,

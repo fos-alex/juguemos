@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
 import { DEFAULT_WEIGHTS } from '../src/activities/ranking.js'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
+import { seededRandom } from '../src/catalog/slots.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
 /** @param {Partial<import('../src/catalog/catalog.service.js').ActivityTemplateInput>} overrides */
@@ -292,4 +293,45 @@ test('a juego marked "No era para nosotros" stops showing up, and one about what
   const { rows } = await api.pool.query('select pick from activities where id = $1', [dinos.id])
   assert.deepEqual(rows[0].pick.themes, ['dinosaurios'])
   assert.equal(rows[0].pick.fit, 1 + DEFAULT_WEIGHTS.interest)
+})
+
+test('a juego before bed is calm, and the parent can ask for one con pilas (JUG-26)', async () => {
+  // Its own catalog and its own clock: 21:00 in Buenos Aires, whatever the server is set to.
+  const evening = await startApi({ now: () => new Date('2026-09-14T21:00:00-03:00'), random: seededRandom('noche') })
+  try {
+    const eveningCatalog = createCatalogService({ db: evening.db })
+    await eveningCatalog.addActivityTemplate(template({ slug: 'tranqui', title: 'Un juego tranqui', energy: 'low' }))
+    await eveningCatalog.addActivityTemplate(template({ slug: 'con-pilas', title: 'Un juego con pilas', energy: 'high' }))
+    /** @param {string} cookie @param {{ mood?: 'calm' | 'lively' | null }} [body] */
+    const ask = (cookie, body = {}) =>
+      evening.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: body })
+    /** @param {string} id */
+    const pickOf = async (id) => (await evening.pool.query('select pick from activities where id = $1', [id])).rows[0].pick
+
+    // Saying nothing leaves it to the clock, so an old client still gets a calm juego.
+    const { cookie } = await signUpAs(evening, 'noche@example.com')
+    await putFamily(evening, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [] })
+    const calm = (await ask(cookie)).json()
+    assert.equal(calm.title, 'Un juego tranqui')
+    assert.equal((await pickOf(calm.id)).mood, 'calm')
+
+    // The parent who says they have pilas gets the energetic one instead.
+    const { cookie: other } = await signUpAs(evening, 'pilas@example.com')
+    await putFamily(evening, other, { ...EXAMPLE_PROFILE, pets: [], toys: [] })
+    const lively = (await ask(other, { mood: 'lively' })).json()
+    assert.equal(lively.title, 'Un juego con pilas')
+    assert.equal((await pickOf(lively.id)).mood, 'lively')
+
+    // No preference leaves every template where it was.
+    const { cookie: either } = await signUpAs(evening, 'igual@example.com')
+    await putFamily(evening, either, { ...EXAMPLE_PROFILE, pets: [], toys: [] })
+    const anytime = (await ask(either, { mood: null })).json()
+    const pick = await pickOf(anytime.id)
+    assert.equal(pick.mood, null)
+    assert.equal(pick.moment, 1)
+
+    assert.equal((await ask(cookie, /** @type {any} */ ({ mood: 'dormido' }))).statusCode, 400)
+  } finally {
+    await evening.close()
+  }
 })

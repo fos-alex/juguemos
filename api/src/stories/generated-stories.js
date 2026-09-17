@@ -13,6 +13,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, lt, sql } from 'drizzle-orm'
+import { moodAt } from '../clock.js'
 import { NotFoundError, UpstreamError } from '../errors.js'
 import { kidIdsOf, withKids } from '../families/families.service.js'
 import { render } from '../llm/prompt.js'
@@ -23,7 +24,7 @@ import storyOptionsPrompt from './prompts/story-options.js'
 import storyPrompt, { keywordStory, requestedStory } from './prompts/story.js'
 import { requestLines } from './requests.js'
 import { systemPrompt } from './prompts/compose.js'
-import { anchorOf, familyLines, moodAt, momentOf, OptionsParser, partsOf, toPlot } from './storytelling.js'
+import { anchorOf, familyLines, momentOf, OptionsParser, partsOf, toPlot } from './storytelling.js'
 import { nothingKept, tellStory, tokensFor, writtenDetails } from './tell.js'
 
 /** @typedef {import('../db/client.js').Db} Db */

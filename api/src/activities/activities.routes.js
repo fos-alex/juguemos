@@ -27,6 +27,10 @@ const suggestion = {
   properties: {
     // The activity on screen, when the parent asks for another one.
     after: { type: ['string', 'null'], format: 'uuid' },
+    // The moment the juego is for (JUG-26): calm winds the kids down, lively
+    // gets them moving, null asks for no preference. Left out, the server's
+    // clock decides, so an old client still gets a calm juego before bed.
+    mood: { type: ['string', 'null'], enum: ['calm', 'lively', null] },
   },
 }
 

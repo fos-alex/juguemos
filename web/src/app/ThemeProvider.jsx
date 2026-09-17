@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo } from 'react'
+import { useSwitchClock } from '../shared/hooks/useSwitchClock'
 import { syncThemeColor, ThemeContext } from '../shared/hooks/useTheme'
 import { read, useStored, write } from '../shared/store'
-import { chooseTheme, nextSwitch, resolveTheme } from '../shared/theme'
+import { chooseTheme, resolveTheme } from '../shared/theme'
 
 /**
  * Night mode. Resolves the theme from the clock and the parent's one-tap
@@ -38,25 +39,6 @@ export function applyInitialTheme() {
   const tema = new URLSearchParams(location.search).get('tema')
   if (tema) write('theme', chooseTheme(tema === 'oscuro' ? 'dark' : 'light', now))
   document.documentElement.dataset.theme = resolveTheme({ now, choice: read('theme') })
-}
-
-/** The time, refreshed at each switch and on return to the foreground (phones pause timers in the background). */
-function useSwitchClock() {
-  const [now, setNow] = useState(() => new Date())
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setNow(new Date()), nextSwitch(now) - now.getTime() + 500)
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') setNow(new Date())
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      window.clearTimeout(timer)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [now])
-
-  return now
 }
 
 /** A change cross-fades in 200 ms (base.css), and is instant with reduced motion. @param {'light' | 'dark'} theme */
