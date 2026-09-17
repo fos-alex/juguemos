@@ -1,7 +1,5 @@
 # Ludi — Brand Brief
 
-**Version:** 0.2 · September 2026 · Owner: Alex Otero · Issue: JUG-17
-
 0.1 gave Ludi a name, a wordmark, a palette, and a type scale. This is what 0.2 adds — iconography, the app icon, and a direction for illustration — written for you to judge rather than for an agent to build from. The rules an agent follows are in [design.md](design.md); where the two disagree, design.md is the one in force.
 
 **Three things need your decision.** They are listed at the end. Everything else here is built and in the branch.

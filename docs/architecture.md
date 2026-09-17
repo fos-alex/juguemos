@@ -1,7 +1,5 @@
 # Ludi — Architecture
 
-**Version:** 0.16 · September 2026 · Owner: Alex Otero
-
 *A living document. It holds the technical decisions and the reasons behind them, so a decision can be revisited on purpose rather than drifted away from. How the code is actually laid out is in [web/AGENTS.md](../web/AGENTS.md) and [api/AGENTS.md](../api/AGENTS.md); what the product is, in [product-concept.md](product-concept.md); the principles, in [constitution.md](constitution.md).*
 
 Version 1 targets Argentina, ages 1–5, on responsive web.
@@ -148,24 +146,3 @@ Version 1 runs a single environment. Staging is worth adding once families outsi
 - Whether the content pipeline eventually splits into a separate worker, or a CMS with its own database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
 - How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
 - How the holiday calendar is versioned and deployed.
-
-## Change log
-
-| Version | Change |
-|---|---|
-| 0.1 | React, Node, Postgres, and the droplet, with the reasoning for rejecting Vercel Hobby. |
-| 0.2 | SPA confirmed: Vite, TanStack Router, and why not Next.js. Device targets, service worker and offline rules, `ludi.local`, Fastify, PostgreSQL. |
-| 0.3 | The SPA built from the Plaza prototype in JavaScript with JSDoc, TypeScript tried and dropped. |
-| 0.4 | Better Auth with sessions in PostgreSQL and an email allowlist. API layered by domain, validated config, migrations run before the API starts, integration tests against a real database. |
-| 0.5 | The web runs on the API with no hardcoded data: family profile, the catalog in the database with code-filled slots, and every suggestion and story saved per family. |
-| 0.6 | Database access moved to Drizzle; the schema became code. |
-| 0.7 | The catalog admin at `/admin`, with deletes kept as rows so seeds never bring them back. |
-| 0.8 | Caddy's image builds the web app, and the service worker updates itself without interrupting. |
-| 0.9 | Stories can use OpenCode Go or OpenRouter, switched by environment variable. |
-| 0.10 | Voice notes, with a self-hosted Whisper server in Compose. Audio is kept in memory only. |
-| 0.11 | `audit_transcripts` keeps parents' own words while auditing the playtest. |
-| 0.12 | Interests moved from the family to each kid. |
-| 0.13 | A kid's age is kept in months and counted by the month; story bands are six months wide under four years. |
-| 0.14 | Renamed to Ludi: `ludi.ar` in production and `ludi.local` locally, with Caddy's sites chosen by `CADDY_SITES`. |
-| 0.15 | Email through an SMTP service, Resend to start. |
-| 0.16 | Sign in with Google, behind the same allowlist as email sign-ups. |

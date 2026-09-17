@@ -1,7 +1,5 @@
 # Ludi — Similar Apps
 
-**Version:** 0.1 · September 2026 · Owner: Alex Otero
-
 *Research on how similar apps look and feel, done for the basic branding in 0.1 (JUG-10). It covers design and styling. The rules it produced are in [design.md](design.md), which is the one to read before changing the UI; this is the evidence behind them. For what each app does and where Ludi is different, see section 5 of [product-concept.md](product-concept.md).*
 
 ---

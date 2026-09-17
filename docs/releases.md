@@ -1,7 +1,5 @@
 # Ludi — Releases
 
-**Version:** 0.15 draft · September 2026 · Owner: Alex Otero
-
 *A living document. It plans the path from a first concept test to the public alpha. Each release answers one question and has a clear bar for moving on.*
 
 ---
@@ -188,25 +186,3 @@ Changes from the first draft of this plan, and suggestions that were considered 
 - **Timing.** How long should each release take?
 - **Catalog size.** Are 30–40 activities enough for a couple of weeks of 0.1 without repeats feeling obvious?
 - **Multi-language.** Decided in 0.7.
-
-## 7. Change log
-
-| Version | Date | Change |
-|---|---|---|
-| 0.1 draft | September 2026 | First draft, based on Alex's initial release plan. |
-| 0.2 draft | September 2026 | Simplified to a solid core loop first. Guardrails gate outside testers, friends join by invitation after 0.5, tips move after 1.0, and several concept features are parked. |
-| 0.3 draft | September 2026 | Added Story series to 0.3, and moved the story library out of Parked into 0.3 with it. |
-| 0.4 draft | September 2026 | Added sound guessing games to 0.8 as a nice-to-have. |
-| 0.5 draft | September 2026 | Added Sign in with Google to 0.3. |
-| 0.6 draft | September 2026 | Added night mode to 0.1. |
-| 0.7 draft | September 2026 | Synced 0.1 with decisions made while building: the catalog lives in the database, sign-in uses Better Auth, the LLM is deferred, and Home says *¡Juguemos!* and *Otro juego*. |
-| 0.8 draft | September 2026 | Added who's playing to 0.1, and a colour for each kid to 0.4. |
-| 0.9 draft | September 2026 | Added an admin for the activity templates to 0.1. |
-| 0.10 draft | September 2026 | Added discovery games to 0.4, and folded the sound guessing games from 0.8 into them. |
-| 0.11 draft | September 2026 | Added waiting animations for stories and voice notes to 0.3, as nice-to-haves. |
-| 0.12 draft | September 2026 | Added printable activities to 0.9. |
-| 0.13 draft | September 2026 | Added the casting draw, interest keywords, and the story audit to 0.1's Tell a story. |
-| 0.14 draft | September 2026 | Settled the waiting animations: shapes from the plaza rather than a character, varying with the age of the kids playing, and allowed on the reading screen until the story's first words. |
-| 0.15 draft | September 2026 | Renamed the product from Juguemos to Ludi, at `ludi.ar`. Home's button still says *¡Juguemos!*, and the 1.0 release keeps the name *Juguemos*. |
-| 0.16 draft | September 2026 | Added asking for a story by voice to 0.3. Hora del cuento now offers two plots, a classic and a new one, with asking by voice as the third way in. |
-| 0.17 draft | September 2026 | Added a livelier app to 0.3: playful motion, one-off moments, and marks for common interests. |

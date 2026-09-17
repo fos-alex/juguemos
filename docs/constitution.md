@@ -1,7 +1,5 @@
 # The Ludi Constitution
 
-*Version 1.0 · September 2026*
-
 ## Why this exists
 
 Ludi will face hundreds of decisions: what to build, what to cut, how the AI should talk, what to measure, and when to say no. This document is what we come back to when the answer isn't obvious. It applies to features, content, design, the AI's behavior, and how we define success.

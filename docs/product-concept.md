@@ -8,8 +8,6 @@
 
 **Version 1:** Argentina only · ages 1–5 · responsive web
 
-**Version:** 0.7 · September 2026 · Owner: Alex Otero
-
 ---
 
 ## 1. Vision

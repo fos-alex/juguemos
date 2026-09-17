@@ -47,6 +47,8 @@ An npm workspace with two projects, run locally by Docker Compose behind Caddy. 
 
 **No mannered prose.** Code comments, docs, commit messages, PR descriptions, and Linear are written plainly: say what something does or why, in ordinary words. No literary turns, aphorisms, personification, or clever phrasing.
 
+**Docs carry no version.** Git is the history of every markdown file. Don't add a version, date, or owner line to a document, or a change log section, and don't bump one when you edit a doc. Every edit changed those lines, so agents working at the same time conflicted on them.
+
 ## Tracking work in Linear
 
 Linear must always show what is being built and what has finished.
