@@ -1,0 +1,43 @@
+<!--
+  The Ludi brand, for every email (docs/design.md). The colours are the Plaza
+  light tokens, written out because an email can't read tokens.css: when a
+  brand colour changes, web/src/styles/tokens.css and this file change
+  together. No web fonts, so nothing is fetched when an email is opened and
+  nothing about the family reaches another service; Fredoka and Nunito Sans
+  show where they are installed, and a plain sans elsewhere. No images, so
+  nothing is blocked and nothing can track an open.
+-->
+<mj-head>
+  <mj-raw>
+    <!-- The brand colours are meant to be read as they are: no client inverts them for its own dark mode. -->
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light only" />
+  </mj-raw>
+  <!-- The line an inbox shows beside the subject, and nowhere else. -->
+  <mj-preview>{{preheader}}</mj-preview>
+  <mj-attributes>
+    <mj-all font-family="'Nunito Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" />
+    <mj-text color="#4A4460" font-size="17px" line-height="1.5" padding="0" />
+    <mj-button
+      background-color="#6B4EA8"
+      color="#FFFFFF"
+      font-family="'Fredoka', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+      font-size="18px"
+      font-weight="600"
+      border-radius="20px"
+      inner-padding="17px 28px"
+      padding="0"
+    />
+    <mj-section background-color="#FFF9F0" padding="0" />
+    <mj-column padding="0" />
+    <mj-class name="heading" color="#2A2140" font-family="'Fredoka', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="27px" line-height="1.2" />
+    <mj-class name="quiet" color="#6E6480" font-size="15px" />
+    <mj-class name="footnote" color="#8A7FA3" font-size="13px" align="center" />
+  </mj-attributes>
+  <mj-style>
+    /* The paragraphs the body is filled with, and the links inside them. */
+    .ludi-body p { margin: 0 0 14px; }
+    .ludi-body p:last-child { margin-bottom: 0; }
+    a { color: #4A3480; }
+  </mj-style>
+</mj-head>

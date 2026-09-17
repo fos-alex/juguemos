@@ -1,10 +1,14 @@
 import { ConfigError, loadConfig } from './config.js'
+import { invitationEmail } from './email/invitation-email.js'
 import { createMailer } from './email/mailer.js'
 import { UpstreamError } from './errors.js'
 
-// Sends one email, to check the SMTP settings and the domain's DNS records:
+// Sends one email, to check the SMTP settings, the domain's DNS records, and
+// how the branded template looks in a real inbox:
 // `npm run email:test -w api -- you@example.com`, or on the droplet
 // `docker compose exec api node api/src/send-test-email.js you@example.com`.
+// It is the invitation email with a link that leads nowhere, so nobody is
+// invited by running it.
 const to = process.argv[2]
 if (!to) {
   console.error('Usage: node src/send-test-email.js you@example.com')
@@ -26,12 +30,16 @@ if (!mailer) {
   process.exit(1)
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 try {
-  await mailer.send({
-    to,
-    subject: 'Ludi: correo de prueba',
-    text: 'Si te llegó este correo, Ludi ya puede enviar correos.',
-  })
+  await mailer.send(
+    invitationEmail({
+      to,
+      link: new URL('/invitacion?token=correo-de-prueba&email=prueba', config.auth.url).href,
+      expiresAt: new Date(Date.now() + 14 * DAY_MS),
+    }),
+  )
 } catch (error) {
   if (!(error instanceof UpstreamError)) throw error
   // EAUTH is a wrong SMTP_USER or SMTP_PASSWORD; a refused sender is usually a

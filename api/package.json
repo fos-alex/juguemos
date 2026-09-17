@@ -14,6 +14,8 @@
     "seed": "node --env-file-if-exists=../.env src/seed.js development",
     "seed:catalog": "node --env-file-if-exists=../.env src/seed.js catalog",
     "email:test": "node --env-file-if-exists=../.env src/send-test-email.js",
+    "email:build": "node src/build-email-templates.js",
+    "email:preview": "node src/preview-email.js",
     "migration:generate": "drizzle-kit generate",
     "test": "node --test \"test/**/*.test.js\"",
     "test:unit": "node --test \"test/unit/**/*.test.js\""
@@ -27,6 +29,7 @@
     "pg": "^8.12.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.10"
+    "drizzle-kit": "^0.31.10",
+    "mjml": "^5.4.1"
   }
 }

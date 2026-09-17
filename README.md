@@ -157,6 +157,16 @@ The Whisper model downloads again on the first start (about 1.6 GB). The nightly
 
 `/admin` manages the activity templates: add, edit, switch off, and delete. `/admin/usuarios` lists the accounts and invites an email: it gets a link to `/invitacion` on `BETTER_AUTH_URL`, where it signs up with a password or Google, and that needs email set up. The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
 
+### Emails
+
+Every email Ludi sends is the same branded message: the wordmark, a heading, a few paragraphs, a button, and a quiet line. It is built from `api/src/email/templates/message.mjml` with [MJML](https://mjml.io), whose partials hold the brand.
+
+```bash
+npm run email:build -w api                      # compile the MJML to the HTML the API sends; commit both
+npm run email:preview -w api > /tmp/ludi.html   # look at an email in a browser
+npm run email:test -w api -- you@example.com    # send it to yourself, with a link that leads nowhere
+```
+
 ## Nightly cleanup
 
 `scripts/nightly-cleanup.sh` runs at 03:00 through the `ludi-nightly` systemd user timer. It removes worktrees whose PR has been merged or closed, along with their branches, and moves Linear issues whose work has landed to Done. It leaves alone anything with uncommitted or unpushed work, and reports it instead.
