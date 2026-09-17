@@ -70,8 +70,6 @@ export function AppMenu({ open, onClose, onStories }) {
           <MaterialsIcon size={22} />
           Materiales
         </button>
-        {/* Where el diario and recuerdos land. */}
-        <div className="drawer__upcoming">próximas funciones</div>
       </nav>
       <div className="drawer__footer">
         {/* Voice pass pending. Stays open, so the parent sees the switch happen. */}

@@ -22,8 +22,8 @@ export function WelcomeScreen() {
       <Footer className="welcome__actions">
         {/* Voice pass pending: the heading, the line, and "Empezar". */}
         <div className="welcome__words">
-          <h1 className="page-title">Te damos la bienvenida a Ludi</h1>
-          <p className="page-lede">Primero contale a Ludi de tu familia, así los juegos son para ustedes.</p>
+          <h1 className="page-title">Bienvenido a Ludi</h1>
+          <p className="page-lede">Primero contanos sobre tu familia, así adaptamos los juegos para ustedes.</p>
         </div>
         <PrimaryButton onClick={() => void navigate({ to: '/', replace: true })}>Empezar</PrimaryButton>
       </Footer>

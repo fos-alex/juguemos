@@ -168,6 +168,8 @@ One set, in `web/src/shared/ui/Icons.jsx`, exported through `shared/ui/index.js`
 
 **What the set covers.** Back, home, close, check, plus, menu, arrow-up; mic and lock for the voice note; sun and moon for night mode; and one per drawer section — ronda (¡Juguemos!), book (Hora del cuento), family, toy box, scissors (Materiales), and sliders for Ajustes. Sliders rather than a gear, which reads mechanical.
 
+**The pet's animal is the one place with emoji.** In the family form the Mascota row is one control: a picker with the animal's emoji, and the pet's name beside it. Emoji rather than the set, because seven animals would cost seven drawings; the emoji alone, with no word next to it, because the row reads at a glance. Each animal still carries its word as the option's accessible name, so a screen reader says "Perro". Nothing else in the app uses emoji.
+
 **Interest marks** (JUG-160, JUG-166) are the one group that isn't a control. `MarkIcon` draws something kids commonly love, on the same grid and line as the rest: the animal or the toy itself, as a line pictogram.
 
 | Mark | For |

@@ -32,15 +32,20 @@ export const DEFAULT_PET_KIND = /** @type {PetKind} */ ('perro')
 /** What the kids call a parent until the family says otherwise (JUG-21). */
 export const DEFAULT_CALLED_AS = 'Mamá'
 
-/** The animals a pet can be, in the order the form offers them. Voice pass pending. */
-export const PET_KINDS = /** @type {{ key: PetKind, label: string }[]} */ ([
-  { key: 'perro', label: 'Perro' },
-  { key: 'gato', label: 'Gato' },
-  { key: 'pajaro', label: 'Pájaro' },
-  { key: 'pez', label: 'Pez' },
-  { key: 'conejo', label: 'Conejo' },
-  { key: 'tortuga', label: 'Tortuga' },
-  { key: 'otro', label: 'Otro' },
+/**
+ * The animals a pet can be, in the order the form offers them, each with the
+ * emoji the picker shows beside its word. The emoji is the one place the app
+ * steps outside its own icon set: the animals read at a glance and the set
+ * doesn't have to grow a drawing per animal. Voice pass pending.
+ */
+export const PET_KINDS = /** @type {{ key: PetKind, label: string, emoji: string }[]} */ ([
+  { key: 'perro', label: 'Perro', emoji: '🐶' },
+  { key: 'gato', label: 'Gato', emoji: '🐱' },
+  { key: 'pajaro', label: 'Pájaro', emoji: '🐦' },
+  { key: 'pez', label: 'Pez', emoji: '🐠' },
+  { key: 'conejo', label: 'Conejo', emoji: '🐰' },
+  { key: 'tortuga', label: 'Tortuga', emoji: '🐢' },
+  { key: 'otro', label: 'Otro', emoji: '🐾' },
 ])
 
 /** The kinds of home, in the order the form offers them. Voice pass pending. */

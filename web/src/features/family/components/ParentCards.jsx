@@ -16,7 +16,7 @@ export function ParentCards({ parents, onChange }) {
 
   return (
     // Voice pass pending: "Padres", "Nombre", "Le dicen", "Quitar", and "+ agregar otro".
-    <FieldGroup label="Padres">
+    <FieldGroup label="Adultos">
       <div className="parent-cards">
         {parents.map((parent, index) => {
           const name = parent.name.trim()
@@ -31,7 +31,7 @@ export function ParentCards({ parents, onChange }) {
                 onChange={(event) => edit(index, { name: event.target.value })}
               />
               <Field
-                label="Le dicen"
+                label="Le decimos"
                 {...AS_TYPED}
                 autoCapitalize="words"
                 value={parent.calledAs}

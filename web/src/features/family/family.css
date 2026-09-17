@@ -136,10 +136,50 @@
   justify-self: start;
 }
 
-/* The pet's animal and the kind of home sit under their label like the kids'
-   interests do. */
-.pet-kinds {
-  margin-top: 10px;
+/* The pet is one control: the animal picker sits inside the field, against a
+   hairline, and the name takes the rest of the line. */
+.pet {
+  gap: 0;
+  padding: 0;
+}
+
+.pet__kind {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px 0 15px;
+  border-right: 1px solid var(--hairline);
+}
+
+/* The browser's own widget brings its own box and ignores the tokens, so the
+   picker is drawn here and given a chevron of our own. */
+.pet__kind-select {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 21px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.pet__kind::after {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--ink-muted);
+  border-bottom: 2px solid var(--ink-muted);
+  transform: translateY(-2px) rotate(45deg);
+  pointer-events: none;
+}
+
+.pet__name {
+  padding-left: 15px;
+  padding-right: 16px;
 }
 
 .kid-card__interests {
