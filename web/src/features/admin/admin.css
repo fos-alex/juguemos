@@ -35,6 +35,15 @@
   gap: 12px;
 }
 
+/* The link to pass on by hand, when email is off. Long, so it wraps anywhere. */
+.admin-invite__link {
+  margin: -6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--link);
+  overflow-wrap: anywhere;
+}
+
 .admin-section {
   display: flex;
   flex-direction: column;

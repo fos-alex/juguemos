@@ -15,7 +15,6 @@ const fakeLlm = (reply) => ({
 let api
 before(async () => {
   api = await startApi({
-    signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com'],
     llm: fakeLlm(JSON.stringify({ toys: [{ name: 'el dinosaurio chiquito', description: 'T-rex de plástico duro, unos 8 cm' }] })),
   })
 })

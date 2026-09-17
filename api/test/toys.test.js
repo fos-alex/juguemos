@@ -9,7 +9,7 @@ const EMAILS = ['ana', 'beto', 'carla', 'dani', 'eva', 'fede', 'gabi', 'hugo', '
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({ signupEmails: EMAILS })
+  api = await startApi({ })
 })
 after(() => api.close())
 

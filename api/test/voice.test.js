@@ -34,7 +34,7 @@ const signUp = () => signUpAs(api, emails[emailCount++])
 
 before(async () => {
   transcriber = fakeTranscriber()
-  api = await startApi({ signupEmails: [...emails, 'off@example.com', 'falla@example.com'], transcriber })
+  api = await startApi({ transcriber })
 })
 after(() => api.close())
 
@@ -115,7 +115,7 @@ test('when the service fails, the parent gets the plain failure and no details',
   const failing = fakeTranscriber(() => {
     throw new UpstreamError('The speech-to-text service answered HTTP 500: model not loaded')
   })
-  const api2 = await startApi({ signupEmails: ['falla@example.com'], transcriber: failing })
+  const api2 = await startApi({ transcriber: failing })
   const { cookie } = await signUpAs(api2, 'falla@example.com')
 
   const response = await send(cookie, { target: api2 })
@@ -125,7 +125,7 @@ test('when the service fails, the parent gets the plain failure and no details',
 })
 
 test('without a speech-to-text service, voice notes say they are off', async () => {
-  const api2 = await startApi({ signupEmails: ['off@example.com'] })
+  const api2 = await startApi({ })
   const { cookie } = await signUpAs(api2, 'off@example.com')
 
   const response = await send(cookie, { target: api2 })

@@ -40,11 +40,14 @@ echo '127.0.0.1 ludi.local' | sudo tee -a /etc/hosts
 # Arch/Omarchy shadow .local hosts entries behind mDNS; this puts /etc/hosts first
 sudo sed -i 's/^hosts:.*/hosts: files mymachines mdns_minimal [NOTFOUND=return] resolve myhostname dns/' /etc/nsswitch.conf
 
-# A session secret, and the emails allowed to sign up (comma-separated)
+# A session secret, and the admin, which is where you invite yourself in
 cp .env.example .env
-sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 32)|; s|^SIGNUP_EMAILS=.*|SIGNUP_EMAILS=you@example.com|" .env
+sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 32)|; s|^ADMIN_ENABLED=.*|ADMIN_ENABLED=true|" .env
 
 docker compose up --build
+
+# Then open https://ludi.local:3000/admin/usuarios and invite your email. With no
+# SMTP settings the page hands you the invitation's link: open it to sign up.
 
 # Trust Caddy's local certificate authority (Arch; Firefox imports it separately)
 docker compose exec caddy cat /data/caddy/pki/authorities/local/root.pem | sudo tee /etc/ca-certificates/trust-source/anchors/ludi-local.pem
@@ -76,7 +79,9 @@ BETTER_AUTH_URL=https://ludi.ar
 # COMPOSE_FILE left out: the production web app, no hot reload
 ```
 
-Its own `BETTER_AUTH_SECRET` and a real `POSTGRES_PASSWORD` too, and `SIGNUP_EMAILS` with the family's emails only, never a domain. For Google sign-in, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from [the Google client](#sign-in-with-google). Then `docker compose up -d --build`.
+Its own `BETTER_AUTH_SECRET` and a real `POSTGRES_PASSWORD` too. For Google sign-in, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from [the Google client](#sign-in-with-google). Then `docker compose up -d --build`.
+
+Nobody can sign up there without an invitation, and invitations come from the admin, which has no login yet, so `ADMIN_ENABLED` stays false on the droplet until it has one. Until then the accounts on it are the ones invited before it was turned off.
 
 ### Sign in with Google
 
@@ -86,13 +91,13 @@ The API needs an OAuth client from Google. In the [Google Cloud console](https:/
 2. **Clients → Create client → Web application**, with one authorized redirect URI: `https://ludi.ar/api/auth/callback/google`.
 3. Put its client ID and secret in the droplet's `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
-Ludi asks Google only for the name and email. A Google account still gets in only if its email is in `SIGNUP_EMAILS`, it comes through an invitation for that email, or it already has an account, which it joins.
+Ludi asks Google only for the name and email. A Google account gets in only if it comes through an invitation for that same email, or it already has an account, which it joins.
 
 **On this machine.** Google sends the browser back to `BETTER_AUTH_URL`, and it refuses `ludi.local` as a redirect URI, since `.local` isn't a public domain. It accepts `localhost` over plain HTTP, and Caddy already serves the stack there on port 3001:
 
 1. Create a second client, *Ludi local*, with the redirect URI `http://localhost:3001/api/auth/callback/google`, so the droplet's secret stays on the droplet.
 2. In `.env`, set its `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, set `BETTER_AUTH_URL=http://localhost:3001`, and add `https://ludi.local:3000` to `TRUSTED_ORIGINS`, so email sign-in keeps working there.
-3. `docker compose up -d`, open `http://localhost:3001`, and tap *Continuar con Google* with an account whose email is in `SIGNUP_EMAILS`.
+3. `docker compose up -d`, open `http://localhost:3001/admin/usuarios`, invite that Google account's email, and open the invitation's link. Tapping *Continuar con Google* there signs it up.
 
 After changing `BETTER_AUTH_URL`, a browser may have to sign in again. While it points at `localhost`, Google sign-in works only at `http://localhost:3001`, not at `ludi.local` or on the phone; put it back when you're done.
 
@@ -155,7 +160,7 @@ The Whisper model downloads again on the first start (about 1.6 GB). The nightly
 
 ### Admin
 
-`/admin` manages the activity templates: add, edit, switch off, and delete. `/admin/usuarios` lists the accounts and invites an email: it gets a link to `/invitacion` on `BETTER_AUTH_URL`, where it signs up with a password or Google, and that needs email set up. The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
+`/admin` manages the activity templates: add, edit, switch off, and delete. `/admin/usuarios` lists the accounts and invites an email, which is the only way to create one: the email gets a link to `/invitacion` on `BETTER_AUTH_URL`, where it signs up with a password or Google. With no SMTP settings nothing is sent and the page hands you the link instead. The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
 
 ### Emails
 

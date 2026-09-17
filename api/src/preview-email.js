@@ -1,4 +1,4 @@
-import { invitationEmail } from './email/invitation-email.js'
+import { invitationEmail } from './invitations/invitation-email.js'
 
 // Prints an email as it would go out, to look at it in a browser:
 // `npm run email:preview -w api > /tmp/ludi-email.html`. The plain-text body

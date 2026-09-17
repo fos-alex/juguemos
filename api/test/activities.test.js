@@ -45,24 +45,7 @@ let api
 /** @type {import('../src/catalog/catalog.service.js').CatalogService} */
 let catalog
 before(async () => {
-  api = await startApi({
-    signupEmails: [
-      'ana@example.com',
-      'beto@example.com',
-      'carla@example.com',
-      'dani@example.com',
-      'eva@example.com',
-      'fede@example.com',
-      'gabi@example.com',
-      'hugo@example.com',
-      'ines@example.com',
-      'juan@example.com',
-      'kari@example.com',
-      'lola@example.com',
-      'mati@example.com',
-      'nico@example.com',
-    ],
-  })
+  api = await startApi()
   catalog = createCatalogService({ db: api.db })
   for (const each of TEMPLATES) await catalog.addActivityTemplate(each)
 })

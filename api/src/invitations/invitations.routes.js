@@ -30,6 +30,15 @@ const invitation = {
   },
 }
 
+// What the admin gets back when it invites an email: the invitation, and the
+// link when email is off and nothing was sent, so the first account on a new
+// machine can still get in.
+const sentInvitation = {
+  type: 'object',
+  required: ['id', 'email', 'status', 'sentAt', 'expiresAt', 'link'],
+  properties: { ...invitation.properties, link: { type: ['string', 'null'] } },
+}
+
 const usersPage = {
   type: 'object',
   required: ['users', 'invitations'],
@@ -77,14 +86,14 @@ export async function invitationsRoutes(app, { controller }) {
 export async function adminUsersRoutes(app, { controller }) {
   const config = { access: 'public' }
   app.get('/admin/users', { config, schema: { response: { 200: usersPage, 500: errorBody } } }, controller.users)
-  // 409 for an email that already has an account, 503 when email is off.
+  // 409 for an email that already has an account.
   app.post(
     '/admin/invitations',
     {
       config,
       schema: {
         body: { type: 'object', additionalProperties: false, required: ['email'], properties: { email } },
-        response: { 201: invitation, 400: errorBody, 409: errorBody, 500: errorBody, 503: errorBody },
+        response: { 201: sentInvitation, 400: errorBody, 409: errorBody, 500: errorBody },
       },
     },
     controller.invite,

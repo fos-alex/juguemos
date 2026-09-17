@@ -6,7 +6,7 @@ import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 before(async () => {
-  api = await startApi({ signupEmails: ['ana@example.com', 'beto@example.com', 'carla@example.com', 'dani@example.com'] })
+  api = await startApi({ })
 })
 after(() => api.close())
 

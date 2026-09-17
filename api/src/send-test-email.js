@@ -1,5 +1,5 @@
 import { ConfigError, loadConfig } from './config.js'
-import { invitationEmail } from './email/invitation-email.js'
+import { invitationEmail } from './invitations/invitation-email.js'
 import { createMailer } from './email/mailer.js'
 import { UpstreamError } from './errors.js'
 

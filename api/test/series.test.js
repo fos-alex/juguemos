@@ -80,7 +80,6 @@ const signUp = () => signUpAs(api, emails[emailCount++])
 before(async () => {
   llm = fakeLlm(({ user }) => answerTo(user))
   api = await startApi({
-    signupEmails: emails,
     now: () => new Date('2026-09-14T21:00:00-03:00'),
     random: seededRandom('series'),
     llm,
@@ -287,7 +286,6 @@ test('a story that is already an episode cannot start another series', async () 
 
 test('a series holds as many episodes as it was configured for', async () => {
   const short = await startApi({
-    signupEmails: ['corta@example.com'],
     now: () => new Date('2026-09-14T21:00:00-03:00'),
     random: seededRandom('corta'),
     llm: fakeLlm(({ user }) => answerTo(user)),
@@ -329,7 +327,7 @@ test('an unknown story and an unknown series are 404s, and series need a session
 })
 
 test('without an LLM a story cannot become a series', async () => {
-  const plain = await startApi({ signupEmails: ['sin-llm@example.com'] })
+  const plain = await startApi({ })
   try {
     await createCatalogService({ db: plain.db }).addStoryTemplate({
       slug: 'para-la-serie',

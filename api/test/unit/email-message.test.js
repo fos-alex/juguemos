@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { invitationEmail } from '../../src/email/invitation-email.js'
+import { invitationEmail } from '../../src/invitations/invitation-email.js'
 import { compileTemplate, TEMPLATES_DIR, templateNames } from '../../src/email/build-templates.js'
 import { renderMessage } from '../../src/email/message.js'
 

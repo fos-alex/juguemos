@@ -19,7 +19,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | TLS and proxy | Caddy: automatic certificates in production, its internal CA locally |
 | Language | JavaScript with JSDoc on both sides. Not typechecked, and that is deliberate (JUG-70): TypeScript was tried and dropped when the shared contract package proved only theoretical |
 | Repo layout | One repo, npm workspaces (`api`, `web`): one install, separate codebases, no shared package |
-| Authentication | Better Auth in the API: email and password, and Sign in with Google, with sessions in PostgreSQL behind an httpOnly cookie. Sign-up is limited to an email allowlist and to emails invited from the admin, whatever the sign-in method |
+| Authentication | Better Auth in the API: email and password, and Sign in with Google, with sessions in PostgreSQL behind an httpOnly cookie. An account can only be created from an invitation sent from the admin, whatever the sign-in method (JUG-34) |
 | Native apps | Not in v1. After 1.0: native Android/iOS or React Native, decided then |
 
 ## Why the droplet

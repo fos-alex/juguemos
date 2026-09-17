@@ -49,7 +49,6 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://ludi.local:3000}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
-      SIGNUP_EMAILS: ${SIGNUP_EMAILS:-}
       # Sign in with Google, off unless both are set.
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}

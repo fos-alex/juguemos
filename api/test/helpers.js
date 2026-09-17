@@ -4,6 +4,7 @@ import { buildApp } from '../src/app.js'
 import { DEFAULT_SERIES_EPISODES, DEFAULT_SMTP_PORT } from '../src/config.js'
 import { createDb } from '../src/db/client.js'
 import { migrate } from '../src/db/migrate.js'
+import { createInvitationsService } from '../src/invitations/invitations.service.js'
 
 // A Postgres the tests can create databases in. `docker compose up db` is one.
 const SERVER_URL = process.env.TEST_DATABASE_URL ?? 'postgres://ludi:ludi@localhost:5432/postgres'
@@ -34,7 +35,7 @@ export function testConfig({ auth, llm, stories, stt, email, admin, audit, ...re
     port: 0,
     databaseUrl: '',
     // No Google client: Sign in with Google is off, unless a test passes its own `google` to startApi.
-    auth: { url: ORIGIN, trustedOrigins: [], secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(), google: null, ...auth },
+    auth: { url: ORIGIN, trustedOrigins: [], secret: 'test-secret-that-is-at-least-32-chars', google: null, ...auth },
     // No key: template stories, unless a test passes its own `llm` to startApi.
     llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN, ...llm },
     stories: { episodesPerSeries: DEFAULT_SERIES_EPISODES, ...stories },
@@ -87,10 +88,9 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, mailer?: import('../src/email/mailer.js').Mailer, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
+ * @param {{ trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, mailer?: import('../src/email/mailer.js').Mailer, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
  */
 export async function startApi({
-  signupEmails = [],
   trustedOrigins = [],
   google = null,
   random,
@@ -108,7 +108,7 @@ export async function startApi({
   const db = createDb(database.url)
   const config = testConfig({
     databaseUrl: database.url,
-    auth: { trustedOrigins, signupEmails: new Set(signupEmails), google },
+    auth: { trustedOrigins, google },
     stories: { episodesPerSeries: maxEpisodes },
     admin: { enabled: admin },
     audit: { transcripts: auditTranscripts },
@@ -132,15 +132,31 @@ export async function startApi({
 }
 
 /**
- * Signs up through the API and returns the user's id and session cookie.
+ * Opens an invitation for an email, the way the admin does, and returns its
+ * token. An invitation is the only way to create an account (JUG-34), so a
+ * test that signs up needs one; nothing is emailed.
+ * @param {Awaited<ReturnType<typeof startApi>>} api
+ * @param {string} email
+ * @returns {Promise<string>}
+ */
+export async function inviteEmail(api, email) {
+  const invitations = createInvitationsService({ db: api.db, mailer: null, appUrl: ORIGIN })
+  const { token } = await invitations.open(email)
+  return token
+}
+
+/**
+ * Invites an email, signs up through the API with that invitation, and returns
+ * the user's id and session cookie.
  * @param {Awaited<ReturnType<typeof startApi>>} api
  * @param {string} email
  */
 export async function signUpAs(api, email) {
+  const invitation = await inviteEmail(api, email)
   const response = await api.app.inject({
     method: 'POST',
     url: '/auth/sign-up/email',
-    payload: { name: 'Alex', email, password: 'una-clave-larga' },
+    payload: { name: 'Alex', email, password: 'una-clave-larga', invitation },
   })
   return { id: response.json().user.id, cookie: cookiesFrom(response) }
 }
