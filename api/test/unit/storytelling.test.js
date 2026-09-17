@@ -8,11 +8,14 @@ import {
   clampMinutes,
   episodeLines,
   familyLines,
+  marksIn,
   mergeCharacters,
   moodAt,
   OptionsParser,
   seriesLines,
+  soundsIn,
   StoryParser,
+  tidyMarks,
   toPlot,
   wordsIn,
 } from '../../src/stories/storytelling.js'
@@ -262,6 +265,66 @@ PERSONAJES: Caracola: un caracol lento
     summary: 'Milán conoció a Caracola.',
     characters: 'Caracola: un caracol lento',
   })
+})
+
+test('the sounds line is read before the first paragraph, each sound with who makes it and how (JUG-170)', () => {
+  const parser = new StoryParser()
+  const answer = `TÍTULO: Inca y el tren grandote.
+SONIDOS: ¡Guau, guau! | Inca | contenta; ¡Chu-chú! | el tren grandote | silbando
+
+PARTE 1
+—[¡Chu-chú!] —silbó el tren.
+
+`
+  /** @type {{ part: number, text: string }[]} */
+  const done = []
+  for (let at = 0; at < answer.length; at += 4) done.push(...parser.push(answer.slice(at, at + 4)))
+  assert.deepEqual(parser.takeSounds(), [
+    { sound: '¡Guau, guau!', who: 'Inca', how: 'contenta' },
+    { sound: '¡Chu-chú!', who: 'el tren grandote', how: 'silbando' },
+  ])
+  assert.deepEqual(parser.takeSounds(), [], 'the legend is sent once')
+  assert.equal(parser.takeTitle(), 'Inca y el tren grandote.')
+  assert.deepEqual(done, [{ part: 1, text: '—[¡Chu-chú!] —silbó el tren.' }])
+})
+
+test('sounds on lines of their own are sounds of their own, and a legend holds three at most', () => {
+  const parser = new StoryParser()
+  parser.push('SONIDOS:\n[¡Croac!] | la rana | fuerte\n¡Pum! | el tambor\n¡Hop!\n¡Shhh! | el viento | bajito\nPARTE 1\n')
+  assert.deepEqual(parser.takeSounds(), [
+    { sound: '¡Croac!', who: 'la rana', how: 'fuerte' },
+    { sound: '¡Pum!', who: 'el tambor', how: '' },
+    { sound: '¡Hop!', who: '', how: '' },
+  ])
+  assert.deepEqual(soundsIn('  ;  | nadie | nada'), [], 'a sound needs its sound')
+  assert.deepEqual(new StoryParser().takeSounds(), [], 'a story without the line has none')
+})
+
+test('a sounds line inside the story is kept out of the text', () => {
+  const parser = new StoryParser()
+  const done = parser.push('PARTE 1\nMilán se despertó.\n\nSonidos: ¡Pum! | el tambor\n\nSalieron a la plaza.\n\n')
+  done.push(...parser.end())
+  assert.deepEqual(done.map((paragraph) => paragraph.text), ['Milán se despertó.', 'Salieron a la plaza.'])
+})
+
+test('a paragraph keeps its sound marks and loses every other bracket', () => {
+  assert.equal(tidyMarks('—[¡Guau, guau!] —ladró Inca.'), '—[¡Guau, guau!] —ladró Inca.')
+  assert.equal(tidyMarks('[ ¡Pum! ] hizo el tambor.'), '[¡Pum!] hizo el tambor.')
+  assert.equal(tidyMarks('Y el tren hizo [¡Chu-chú!'), 'Y el tren hizo ¡Chu-chú!', 'a bracket with no partner goes')
+  assert.equal(tidyMarks('Todo se quedó [] quieto.]'), 'Todo se quedó quieto.', 'an empty pair goes')
+  assert.equal(tidyMarks('[[¡Hop!]] saltaron.'), '[¡Hop!] saltaron.', 'a pair around a mark goes')
+  assert.equal(marksIn([['[¡Hop!] y [¡Hop!]'], ['Fin.', '[¡Pum!]']]), 3)
+})
+
+test('titles, teasers and the bookkeeping never carry a mark', () => {
+  const parser = new StoryParser()
+  parser.push('TÍTULO: [¡Guau!] dijo Inca.\nPARTE 1\nHola.\n\nRESUMEN: Inca hizo [¡guau!].\n')
+  parser.end()
+  assert.equal(parser.takeTitle(), '¡Guau! dijo Inca.')
+  assert.deepEqual(parser.takeFields(), { summary: 'Inca hizo ¡guau!.' })
+  const plot = toPlot({ title: '[¡Pum!] en la plaza', teaser: 'Un [tambor].', premise: 'Suena.', minutes: 3 }, anchorOf(profileOf([])).band)
+  assert.equal(plot?.title, '¡Pum! en la plaza')
+  assert.equal(plot?.teaser, 'Un tambor.')
 })
 
 test('the characters of a series are read, and the ones it already had are kept', () => {

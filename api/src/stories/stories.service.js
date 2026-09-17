@@ -28,6 +28,7 @@ import { createTemplateStories } from './template-stories.js'
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number }} StoryOption the id is a plot's or a template's */
 /** @typedef {import('./requests.js').StoryRequest} StoryRequest */
 /** @typedef {import('./series.js').Series} Series */
+/** @typedef {import('./storytelling.js').Sound} Sound */
 /** @typedef {import('./series.js').Episode} Episode */
 /** @typedef {import('./generated-stories.js').OptionEvent} OptionEvent what an options screen sends, one at a time */
 /**
@@ -42,6 +43,7 @@ import { createTemplateStories } from './template-stories.js'
  * @property {string} teaser
  * @property {number} minutes
  * @property {string[][]} parts
+ * @property {Sound[]} sounds the sounds the parent acts out (JUG-170), which the parts mark
  */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStory */
 /**
@@ -56,11 +58,16 @@ import { createTemplateStories } from './template-stories.js'
  * @property {string} title
  */
 /**
+ * @typedef {object} StorySounds the legend, sent before the first paragraph when there is one (JUG-170)
+ * @property {'sounds'} type
+ * @property {Sound[]} sounds
+ */
+/**
  * @typedef {object} StoryDone
  * @property {'story'} type
  * @property {Story} story
  */
-/** @typedef {StoryTitle | StoryParagraph | StoryDone} StoryEvent what the reading screen draws, one at a time */
+/** @typedef {StoryTitle | StorySounds | StoryParagraph | StoryDone} StoryEvent what the reading screen draws, one at a time */
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */

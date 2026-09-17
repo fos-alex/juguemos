@@ -263,6 +263,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
           teaser: plot.teaser,
           minutes: plot.minutes,
           parts,
+          sounds: kept.sounds,
           casting,
         })
         .onConflictDoNothing({ target: [stories.familyId, stories.plotId], where: sql`${stories.plotId} is not null` })
@@ -343,6 +344,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
           teaser: `Un cuento sobre ${keyword}.`,
           minutes: band.minutes[1],
           parts,
+          sounds: kept.sounds,
           casting,
           keyword,
         })
@@ -423,6 +425,7 @@ export function createGeneratedStories({ db, llm, families, audit, model = '', r
           teaser: request.summary,
           minutes: band.minutes[1],
           parts,
+          sounds: kept.sounds,
           casting,
         })
         .returning(storyColumns)

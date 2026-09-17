@@ -12,6 +12,20 @@ export function groupByPart(paragraphs) {
 }
 
 /**
+ * A paragraph in pieces, with the sounds the parent acts out set apart
+ * (JUG-170). The text marks each one between brackets, and the brackets never
+ * reach the screen.
+ * @param {string} paragraph
+ * @returns {{ text: string, sound: boolean }[]}
+ */
+export function soundPieces(paragraph) {
+  return paragraph
+    .split(/(\[[^[\]]+\])/)
+    .filter(Boolean)
+    .map((piece) => (/^\[[^[\]]+\]$/.test(piece) ? { text: piece.slice(1, -1), sound: true } : { text: piece, sound: false }))
+}
+
+/**
  * What draws while a story is written (JUG-132, JUG-160). A story is written
  * for the youngest kid playing, so its wait follows that age too: a crayon for
  * the littlest, a pencil in the middle, and a pen once they are old enough to

@@ -96,6 +96,10 @@ export const stories = pgTable(
     teaser: text().notNull(),
     minutes: smallint().notNull(),
     parts: jsonb().notNull(),
+    // The sounds the parent acts out (JUG-170), as the legend over the story
+    // shows them: { sound, who, how }. The text marks each one between
+    // brackets. Empty on template stories and on stories written before.
+    sounds: jsonb().notNull().default(sql`'[]'::jsonb`),
     // The kids who played (JUG-107), sorted, for the recommendations and the
     // journal. No foreign key: the record outlives a kid removed from the profile.
     kidIds: uuid().array().notNull().default(sql`'{}'`),
@@ -118,6 +122,7 @@ export const stories = pgTable(
   (table) => [
     check('stories_source_check', sql`${table.source} in ('template', 'generated')`),
     check('stories_parts_check', sql`jsonb_typeof(${table.parts}) = 'array'`),
+    check('stories_sounds_check', sql`jsonb_typeof(${table.sounds}) = 'array'`),
     uniqueIndex('stories_family_id_template_id_kid_ids_key')
       .on(table.familyId, table.templateId, table.kidIds)
       .where(sql`${table.templateId} is not null`),

@@ -6,6 +6,7 @@ import { StoryEnd } from './StoryEnd'
 import { StoryMark } from './StoryMark'
 import { StoryProgress } from './StoryProgress'
 import { StorySkeleton } from './StorySkeleton'
+import { StorySounds } from './StorySounds'
 import { StoryText } from './StoryText'
 import { groupByPart, waitingTool } from '../model'
 import { failureText } from '../../../shared/format'
@@ -49,6 +50,10 @@ import '../stories.css'
  * the story text itself is never illustrated: the mark sits over the title
  * instead (JUG-166).
  *
+ * The sounds the parent acts out arrive just before the first paragraph, so
+ * their legend is under the title as reading starts and never pushes the text
+ * down while the parent reads (JUG-170).
+ *
  * Once the story is whole, it is the one Home offers again, and its end says
  * what comes next: Listo, and a series or its next episode (JUG-154).
  * @param {{ id?: string, keyword?: string, request?: import('../types').StoryRequest, seriesId?: string }} props
@@ -70,6 +75,7 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
   const goBack = useGoBack(inSeries ? '/serie/$id' : '/cuentos', inSeries ? { id: inSeries.id } : undefined)
   const [written, setWritten] = useState(/** @type {string | null} */ (null))
   const [paragraphs, setParagraphs] = useState(/** @type {{ part: number, text: string }[]} */ ([]))
+  const [sounds, setSounds] = useState(/** @type {import('../types').Sound[]} */ ([]))
   const [failure, setFailure] = useState(/** @type {string | null} */ (null))
   const [attempt, setAttempt] = useState(0)
   // An id that is neither an option nor an already-read story may still be a
@@ -84,11 +90,12 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
     if (picked && read('stories')?.[picked]) return
     const controller = new AbortController()
     setParagraphs([])
+    setSounds([])
     setFailure(null)
     setLooking(true)
     /** @param {{ part: number, text: string }} paragraph */
     const onParagraph = (paragraph) => setParagraphs((list) => [...list, paragraph])
-    const handlers = { signal: controller.signal, onTitle: setWritten, onParagraph }
+    const handlers = { signal: controller.signal, onTitle: setWritten, onSounds: setSounds, onParagraph }
 
     // A story nobody has written yet: it is named by the model, and gets an id
     // of its own once it is saved.
@@ -115,7 +122,7 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
       return () => controller.abort()
     }
 
-    writeStory(/** @type {string} */ (picked), { signal: controller.signal, onParagraph }).catch((error) => {
+    writeStory(/** @type {string} */ (picked), { signal: controller.signal, onSounds: setSounds, onParagraph }).catch((error) => {
       // An id that is not an option is a saved story opened by its own id.
       if (error.status === 404) {
         void savedStory(/** @type {string} */ (picked)).catch((savedError) => {
@@ -190,6 +197,7 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
         {/* A story written from an interest is named by the model, so until
             that lands the heading is a placeholder like the text under it. */}
         {title ? <h1 className="story-title">{title}</h1> : <Skeleton width="70%" height={23} />}
+        <StorySounds sounds={story ? (story.sounds ?? []) : sounds} family={family} />
         <StoryText parts={parts} done={Boolean(story)} />
         {story && <StoryEnd story={story} />}
         {!story && !failure && <StorySkeleton paragraphs={paragraphs.length === 0 ? 3 : 2} />}

@@ -20,6 +20,7 @@ export const storyColumns = {
   teaser: stories.teaser,
   minutes: stories.minutes,
   parts: stories.parts,
+  sounds: stories.sounds,
   keyword: stories.keyword,
 }
 
@@ -29,7 +30,12 @@ export const storyColumns = {
  * @param {import('./stories.service.js').Story['series']} [series] the series
  *   this story is an episode of (JUG-59); a story that stands on its own has none
  */
-export const toStory = (row, series = null) => ({ ...row, parts: /** @type {string[][]} */ (row.parts), series })
+export const toStory = (row, series = null) => ({
+  ...row,
+  parts: /** @type {string[][]} */ (row.parts),
+  sounds: /** @type {Story['sounds']} */ (row.sounds),
+  series,
+})
 
 /**
  * Yields to the event loop between paragraphs, and throws when the reader has
@@ -46,12 +52,14 @@ export const tick = async (signal) => {
 }
 
 /**
- * The paragraphs of a saved story, as reading events.
+ * The paragraphs of a saved story, as reading events, with its sounds before
+ * them when it has any (JUG-170).
  * @param {Story} story
  * @param {{ signal?: AbortSignal }} [options]
  * @returns {AsyncGenerator<StoryEvent, void, void>}
  */
 export async function* replayEvents(story, { signal } = {}) {
+  if (story.sounds.length > 0) yield { type: 'sounds', sounds: story.sounds }
   for (let part = 0; part < story.parts.length; part += 1) {
     for (const paragraph of story.parts[part]) {
       yield { type: 'paragraph', part: part + 1, text: paragraph }

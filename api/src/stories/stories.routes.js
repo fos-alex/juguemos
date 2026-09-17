@@ -22,9 +22,16 @@ const storySeries = {
   properties: { id: { type: 'string' }, title: { type: 'string' }, episode: { type: 'integer' } },
 }
 
+// A sound the parent acts out, as the legend over the story shows it (JUG-170).
+const sound = {
+  type: 'object',
+  required: ['sound', 'who', 'how'],
+  properties: { sound: { type: 'string' }, who: { type: 'string' }, how: { type: 'string' } },
+}
+
 const story = {
   type: 'object',
-  required: ['id', 'templateId', 'plotId', 'keyword', 'series', 'title', 'teaser', 'minutes', 'parts'],
+  required: ['id', 'templateId', 'plotId', 'keyword', 'series', 'title', 'teaser', 'minutes', 'parts', 'sounds'],
   properties: {
     id: { type: 'string' },
     templateId: { type: ['string', 'null'] },
@@ -35,6 +42,7 @@ const story = {
     teaser: { type: 'string' },
     minutes: { type: 'integer' },
     parts: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+    sounds: { type: 'array', items: sound },
   },
 }
 

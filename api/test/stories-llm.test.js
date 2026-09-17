@@ -51,6 +51,25 @@ El tren se durmió en el rincón.
 
 Inca se durmió al lado.`
 
+/** A story that lists its sounds and marks them in the text (JUG-170). */
+const SOUNDED_STORY = `SONIDOS: ¡Guau, guau! | Inca | contenta; ¡Chu-chú! | el tren grandote | silbando
+
+PARTE 1
+—[¡Chu-chú!] —silbó el tren grandote.
+
+Inca movió la cola. —[¡Guau, guau!] —ladró.
+
+PARTE 2
+El tren arrancó otra vez. [¡Chu-chú!]
+
+PARTE 3
+—[¡Guau, guau!] —dijo Inca, y se durmió.`
+
+const SOUNDS = [
+  { sound: '¡Guau, guau!', who: 'Inca', how: 'contenta' },
+  { sound: '¡Chu-chú!', who: 'el tren grandote', how: 'silbando' },
+]
+
 /** The keyword story the model answers with: its own title line, then the same parts. */
 const TITLED_STORY = `TÍTULO: Milán y los dinosaurios.
 ${STORY}`
@@ -520,6 +539,8 @@ test('a catalog story streams through the same route', async () => {
   const final = list.find((event) => event.type === 'story')
   assert.equal(final.story.templateId, templateId)
   assert.match(final.story.parts[0][0], /^Había una vez .+\.$/, 'the toy slot is filled')
+  assert.deepEqual(final.story.sounds, [], 'a template story has no sounds')
+  assert.equal(list.some((event) => event.type === 'sounds'), false)
   assert.doesNotMatch(JSON.stringify(final.story.parts), /\{[a-z]+\}/, 'no unfilled slots')
   assert.equal(final.story.parts[1][0], 'Fin.')
 })
@@ -589,6 +610,43 @@ test('plots are for the kids playing, and their story stars and records those ki
   assert.doesNotMatch(kidsLlm.prompts.at(-1).user, /Milán/, 'the story is for the kids the plot was drawn for')
   const { rows } = await api2.pool.query('select kid_ids::text[] as kids from stories where plot_id = $1', [option.id])
   assert.deepEqual(rows[0].kids, [sofi.id])
+  await api2.close()
+})
+
+test('a story sends its sounds before the first paragraph, saves them, and replays them (JUG-170)', async () => {
+  const soundsLlm = fakeLlm(({ user }) => (user.includes('Contestá solo con un objeto JSON') ? PLOTS() : SOUNDED_STORY))
+  const api2 = await startApi({
+    signupEmails: ['sonidos@example.com'],
+    now: () => new Date('2026-09-14T10:00:00-03:00'),
+    random: seededRandom('sonidos'),
+    llm: soundsLlm,
+  })
+  const { cookie } = await signUpAs(api2, 'sonidos@example.com')
+  const family = (await putFamily(api2, cookie, EXAMPLE_PROFILE)).json()
+  const [option] = await options(cookie, [], api2)
+  const write = () => api2.app.inject({ method: 'POST', url: '/stories/write', headers: { cookie }, payload: { id: option.id } })
+
+  const list = streamEvents((await write()).body.toString())
+  assert.match(soundsLlm.prompts.at(-1).user, /^SONIDOS: /m, 'the story prompt asks for the sounds')
+  assert.deepEqual(list.slice(0, 2).map((event) => event.type), ['sounds', 'paragraph'])
+  assert.deepEqual(list[0].sounds, SOUNDS)
+  assert.equal(list[1].text, '—[¡Chu-chú!] —silbó el tren grandote.')
+  const { story } = list.at(-1)
+  assert.deepEqual(story.sounds, SOUNDS)
+  assert.equal(story.parts[1][0], 'El tren arrancó otra vez. [¡Chu-chú!]')
+
+  const opened = await api2.app.inject({ method: 'GET', url: `/stories/${story.id}`, headers: { cookie } })
+  assert.deepEqual(opened.json().sounds, SOUNDS)
+
+  const calls = soundsLlm.prompts.length
+  const again = streamEvents((await write()).body.toString())
+  assert.equal(soundsLlm.prompts.length, calls, 'the model was not asked again')
+  assert.deepEqual(again.slice(0, 2).map((event) => event.type), ['sounds', 'paragraph'])
+  assert.deepEqual(again[0].sounds, SOUNDS)
+
+  const { rows } = await api2.pool.query(`select details from story_audit where family_id = $1 and event = 'written'`, [family.id])
+  assert.equal(rows[0].details.sounds, 2)
+  assert.equal(rows[0].details.marks, 4)
   await api2.close()
 })
 

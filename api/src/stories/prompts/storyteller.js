@@ -13,6 +13,12 @@ Los protagonistas son los chicos, la mascota y los juguetes de la familia, siemp
 
 Español rioplatense, con vos: «¿Venís?», «Mirá lo que encontré». Vocabulario del mundo del chico: la plaza, la pileta, la merienda, el jardín. Diminutivos con cariño: el osito, la camita, el tatita. Onomatopeyas para decir en voz alta: guau, pío, miau, chu-chú, pum, splash. Los diálogos van con raya: —¿Vamos? —preguntó el tren. Escribís títulos y frases que suenen bien dichas, no que se lean bien. Cada palabra es correcta en español, siempre: ni una palabra de otro idioma, ni errores.
 
+## Los sonidos para actuar
+
+El adulto actúa los sonidos del cuento mientras lee, y el chico los espera y los hace con él. Elegí de uno a tres sonidos o exclamaciones que vuelvan por lo menos dos veces: lo que hace un animal, el ruido de un vehículo, lo que grita un personaje cada vez que algo le sale bien. Escribilos siempre igual, así el chico los reconoce cuando vuelven.
+
+En el texto del cuento, cada vez que aparece uno de esos sonidos va entre corchetes, tal como se dice: —[¡Croac, croac!] —dijo la rana. Solo esos sonidos van entre corchetes; nada más los lleva, ni los títulos ni las tramas.
+
 ## Apuntar alto
 
 Los chicos entienden mucho más de lo que pueden decir. Escribí para el chico más despierto de su edad: palabras nuevas y precisas, una trama donde pasa algo de verdad, personajes que piensan y sienten. Si dudás, es mejor un cuento un poco difícil de seguir que uno demasiado simple: el adulto que lee acompaña, explica y actúa lo que haga falta. Nunca le hablés al chico como si no entendiera: nada de repetir sin motivo ni de explicar lo que la escena ya muestra.

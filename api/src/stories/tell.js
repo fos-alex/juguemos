@@ -10,12 +10,15 @@
  * Whatever the answer carries outside the story text — the title, and the
  * bookkeeping a series episode ends with — is left in `kept` instead of being
  * yielded, since the events go straight to the reader and none of that is read
- * aloud.
+ * aloud. The sounds the parent acts out (JUG-170) go to the reader as well,
+ * just before the first paragraph, so the legend is there when reading
+ * starts; a sounds line that comes later is left out.
  */
 import { tick } from './shared.js'
-import { StoryParser, wordsIn } from './storytelling.js'
+import { marksIn, StoryParser, wordsIn } from './storytelling.js'
 
 /** @typedef {import('./storytelling.js').Band} Band */
+/** @typedef {import('./storytelling.js').Sound} Sound */
 /** @typedef {import('./stories.service.js').StoryEvent} StoryEvent */
 /** @typedef {import('../llm/client.js').Llm} Llm */
 
@@ -23,6 +26,7 @@ import { StoryParser, wordsIn } from './storytelling.js'
  * @typedef {object} Kept what a story leaves behind as it streams, for the save and the audit
  * @property {string} title the title the model wrote, when it was asked for one
  * @property {{ part: number, text: string }[]} paragraphs
+ * @property {Sound[]} sounds the legend the reader was sent, empty when there was none
  * @property {Record<string, string>} fields the lines outside the story text, by name
  * @property {number} msFirstToken
  * @property {number} msTotal
@@ -35,7 +39,7 @@ const TOKENS_PER_WORD = 3
 export const tokensFor = (band) => band.words[1] * TOKENS_PER_WORD
 
 /** A story that hasn't been told yet. @returns {Kept} */
-export const nothingKept = () => ({ title: '', paragraphs: [], fields: {}, msFirstToken: 0, msTotal: 0 })
+export const nothingKept = () => ({ title: '', paragraphs: [], sounds: [], fields: {}, msFirstToken: 0, msTotal: 0 })
 
 /**
  * One story call, streamed.
@@ -67,6 +71,10 @@ export async function* tellStory({ llm, system, user, data, maxTokens, signal, f
         kept.title = fallbackTitle
         yield /** @type {StoryEvent} */ ({ type: 'title', title: kept.title })
       }
+      if (kept.paragraphs.length === 0) {
+        kept.sounds = parser.takeSounds()
+        if (kept.sounds.length > 0) yield /** @type {StoryEvent} */ ({ type: 'sounds', sounds: kept.sounds })
+      }
       kept.paragraphs.push(paragraph)
       yield /** @type {StoryEvent} */ ({ type: 'paragraph', ...paragraph })
       await tick(signal)
@@ -84,6 +92,8 @@ export async function* tellStory({ llm, system, user, data, maxTokens, signal, f
     yield* told(done)
   }
   yield* told(parser.end())
+  // A sounds line after the first paragraph came too late for the legend.
+  parser.takeSounds()
   kept.fields = parser.takeFields()
   kept.msTotal = Date.now() - started
   kept.msFirstToken = first ?? kept.msTotal
@@ -91,7 +101,8 @@ export async function* tellStory({ llm, system, user, data, maxTokens, signal, f
 
 /**
  * What the audit keeps about a story once it is written: the model, how long
- * it took to answer, and how its length compares with the band's budget.
+ * it took to answer, how its length compares with the band's budget, and how
+ * many sounds it listed and marked (JUG-170).
  * @param {{ model: string, band: Band, parts: string[][], kept: Kept }} story
  */
 export function writtenDetails({ model, band, parts, kept }) {
@@ -106,5 +117,7 @@ export function writtenDetails({ model, band, parts, kept }) {
     wordsMin: band.words[0],
     wordsMax: band.words[1],
     insideBand: words >= band.words[0] && words <= band.words[1],
+    sounds: kept.sounds.length,
+    marks: marksIn(parts),
   }
 }

@@ -11,7 +11,8 @@ export default {
 - Imágenes suaves y sensoriales: calentito, blandito, la luz bajita, la manta suave.
 - El ritmo baja hacia el final: las últimas partes van cada vez más lento y más quedo, las oraciones se acortan.
 - Termina con los personajes descansando o quedándose dormidos, en calma.
-- Preguntas al chico: casi ninguna, y solo al principio.`,
+- Preguntas al chico: casi ninguna, y solo al principio.
+- Los sonidos para actuar son suaves, para hacer bajito: el viento que sopla, un bostezo, «shhh».`,
 
   lively: `## El momento: CON PILAS, de día
 
