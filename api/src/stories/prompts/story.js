@@ -11,7 +11,7 @@ export default `Escribí el cuento para esta familia, a partir de la trama elegi
 Los chicos: {{kids}}.
 La mascota: {{pet}}.
 Los juguetes: {{toys}}.
-Lo que le gusta: {{interests}}.
+Lo que le gusta: {{interests}}.{{parents}}
 
 El reparto de este cuento:
 {{casting}}
@@ -42,7 +42,7 @@ export const keywordStory = `Escribí un cuento para esta familia sobre el tema 
 Los chicos: {{kids}}.
 La mascota: {{pet}}.
 Los juguetes: {{toys}}.
-Lo que le gusta: {{interests}}.
+Lo que le gusta: {{interests}}.{{parents}}
 
 El reparto de este cuento:
 {{casting}}
@@ -77,7 +77,7 @@ export const requestedStory = `Escribí el cuento que esta familia pidió.
 Los chicos: {{kids}}.
 La mascota: {{pet}}.
 Los juguetes: {{toys}}.
-Lo que le gusta: {{interests}}.
+Lo que le gusta: {{interests}}.{{parents}}
 
 El reparto de este cuento:
 {{casting}}

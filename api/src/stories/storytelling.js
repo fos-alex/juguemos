@@ -5,6 +5,7 @@
  * streaming story format. Everything here is pure, so the prompts in
  * `prompts/` can change without any of this moving.
  */
+import { PET_KINDS } from '../families/kinds.js'
 import { jsonIn } from '../llm/prompt.js'
 
 /** @typedef {import('../families/families.service.js').Profile} Profile */
@@ -98,6 +99,10 @@ export function ageLine(ageMonths) {
  * so the model isn't tempted to bring in the rest of the family. The options
  * prompt holds the two castings of a screen and the story prompt holds
  * one. Names stay exactly as the family typed them.
+ *
+ * The pet comes with its animal, and the parents aren't drawn: they are a
+ * line of their own that any story can call on, by what the kids call them
+ * (JUG-21). A family with no parents saved gets no line at all.
  * @param {Profile} profile
  * @param {Casting[]} castings
  */
@@ -105,7 +110,10 @@ export function familyLines(profile, castings) {
   const inStory = new Set(castings.flatMap((casting) => casting.kids))
   const cast = profile.kids.filter((kid) => inStory.has(kid.id))
   const kids = cast.map((kid) => `${kid.name}${kid.ageMonths != null ? `, de ${ageLine(kid.ageMonths)}` : ''}`)
-  const pets = unique(castings.map((casting) => casting.pet?.name))
+  const pets = uniqueBy(castings.map((casting) => casting.pet)).map((pet) => {
+    const kind = PET_KINDS[profile.pets.find((each) => each.id === pet.id)?.kind ?? 'otro']
+    return kind ? `${pet.name} (${kind})` : pet.name
+  })
   const toys = unique(castings.map((casting) => casting.toy?.name))
   const themes = unique(castings.map((casting) => casting.theme))
   return {
@@ -113,11 +121,31 @@ export function familyLines(profile, castings) {
     pet: pets.join(' y ') || 'no aparece en este cuento',
     toys: toys.join(', ') || 'ninguno en este cuento',
     interests: themes.join(', ') || 'sin tema fijo',
+    parents: parentsLine(profile.parents),
   }
+}
+
+/**
+ * The parents as the prompts get them, on a line of their own after the
+ * family's, or nothing when there are none.
+ * @param {Profile['parents']} parents
+ */
+function parentsLine(parents) {
+  if (parents.length === 0) return ''
+  const who = parents.map((parent) => `${parent.name}, a quien le dicen ${parent.calledAs}`).join('; ')
+  return `\nLos padres: ${who}. Pueden aparecer en cualquier cuento aunque no estén en el reparto, y el cuento los nombra como les dicen los chicos.`
 }
 
 /** The names that are there, each once, in the order they were drawn. @param {(string | null | undefined)[]} names */
 const unique = (names) => [...new Set(names.filter((name) => Boolean(name)))]
+
+/**
+ * The cast members that are there, each once by id, in the order they were drawn.
+ * @template {{ id: string }} Member
+ * @param {(Member | null | undefined)[]} members
+ * @returns {Member[]}
+ */
+const uniqueBy = (members) => [...new Map(members.flatMap((member) => (member ? [[member.id, member]] : []))).values()]
 
 /** A plot option the model proposed. @typedef {{ title: string, teaser: string, minutes: number, premise: string }} Plot */
 

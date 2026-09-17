@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { saveFamily, understandChanges } from '../api'
+import { HomeChoice } from '../components/HomeChoice'
 import { KidCards } from '../components/KidCards'
+import { ParentCards } from '../components/ParentCards'
+import { PetField } from '../components/PetField'
 import { ToyRows } from '../components/ToyRows'
 import { toFamily, toForm, withChanges } from '../model'
 import { VoiceLine, VoiceUnderstanding } from '../../voice'
@@ -9,7 +12,7 @@ import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useRequest } from '../../../shared/hooks/useRequest'
 import { read } from '../../../shared/store'
-import { Body, Field, Footer, Header, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
+import { Body, Footer, Header, PrimaryButton, Screen, StatusLine } from '../../../shared/ui'
 import '../family.css'
 
 /** @typedef {import('../model').FormState} FormState */
@@ -18,10 +21,16 @@ import '../family.css'
 const HEARD = 'Lo anoté acá arriba. Revisalo y tocá Guardar.'
 
 /**
- * 2h. The fallback, and it looks like a plain form: a card for each kid with
+ * 2h. The fallback, and it looks like a plain form: a card for each parent
+ * with their name and what the kids call them, a card for each kid with
  * their name, age, and what they love (JUG-144, JUG-152), then the pet and
- * the toys. Everything is optional. Reached from "Corregir", a flagged row
- * (focused on that field), the opt-out in 2d, and Mi familia.
+ * its animal, and the kind of home (JUG-21). Everything is optional. Reached
+ * from "Corregir", a flagged row (focused on that field), the opt-out in 2d,
+ * and Mi familia.
+ *
+ * The toys are here only in onboarding, where the card that led here saves
+ * them. Once there is a family they live in the toy box, and saving this
+ * form leaves them as they are.
  *
  * The mic beside "Guardar" is how the parent says what changed (JUG-103): the
  * note's words go to the API, which reads a family in them, and what it read
@@ -34,7 +43,7 @@ export function CorrectScreen() {
   const navigate = useNavigate()
   const [onboarding] = useState(() => !read('family'))
   const goBack = useGoBack(onboarding ? '/familia/contanos' : '/familia')
-  const [form, setForm] = useState(() => toForm(read('parseResult')?.family ?? read('family')))
+  const [form, setForm] = useState(() => toForm(read('parseResult')?.family ?? read('family'), { toys: onboarding }))
   // The interest being typed for each kid, by the kid's position.
   const [drafts, setDrafts] = useState(/** @type {Record<number, string | null>} */ ({}))
   const request = useRequest()
@@ -91,6 +100,8 @@ export function CorrectScreen() {
       <Header onBack={goBack} title="Editar" />
       <form className="screen-form" onSubmit={save} noValidate>
         <Body className="form-body correct">
+          <ParentCards parents={form.parents} onChange={(change) => update((f) => ({ ...f, parents: change(f.parents) }))} />
+
           <KidCards
             kids={form.kids}
             drafts={drafts}
@@ -99,16 +110,21 @@ export function CorrectScreen() {
             onRemove={removeKid}
           />
 
-          <Field
-            label="Mascota"
-            data-field="pet"
-            autoCapitalize="words"
-            autoCorrect="off"
-            value={form.pet}
-            onChange={(event) => update((f) => ({ ...f, pet: event.target.value }))}
+          <PetField
+            name={form.pet}
+            kind={form.petKind}
+            onName={(pet) => update((f) => ({ ...f, pet }))}
+            onKind={(petKind) => update((f) => ({ ...f, petKind }))}
           />
 
-          <ToyRows toys={form.toys} onChange={(change) => update((f) => ({ ...f, toys: change(f.toys) }))} />
+          <HomeChoice home={form.home} onChange={(home) => update((f) => ({ ...f, home }))} />
+
+          {form.toys && (
+            <ToyRows
+              toys={form.toys}
+              onChange={(change) => update((f) => ({ ...f, toys: f.toys && change(f.toys) }))}
+            />
+          )}
 
           <StatusLine role="alert">{request.failure}</StatusLine>
           <VoiceLine message={voiceMessage} />

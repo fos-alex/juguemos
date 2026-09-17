@@ -21,13 +21,44 @@ const answer = (overrides = {}) =>
 test('the example paragraph becomes the family, with nothing to check', () => {
   assert.deepEqual(readUnderstanding(answer(), TEXT), {
     family: {
+      parents: [],
       kids: [{ name: 'Milán', ageMonths: 26, interests: ['los dinosaurios', 'los caballos'] }],
-      pets: [{ name: 'Inca' }],
+      pets: [{ name: 'Inca', kind: null }],
       toys: [{ name: 'un tren de madera' }],
     },
     unsure: [],
     note: null,
   })
+})
+
+test('the parents come with what the kids call them, and the pet with its animal', () => {
+  const understood = readUnderstanding(
+    answer({
+      parents: [
+        { name: 'Alex', calledAs: 'Papá' },
+        { name: 'Caro', calledAs: null },
+      ],
+      pets: [{ name: 'Inca', kind: 'gato' }],
+    }),
+    TEXT,
+  )
+  assert.deepEqual(understood?.family.parents, [
+    { name: 'Alex', calledAs: 'Papá' },
+    // The text doesn't say what the kids call Caro.
+    { name: 'Caro', calledAs: null },
+  ])
+  assert.deepEqual(understood?.family.pets, [{ name: 'Inca', kind: 'gato' }])
+  assert.deepEqual(understood?.unsure, [])
+})
+
+test('a parent the text does not name is flagged, and an animal off the list is left unsaid', () => {
+  const understood = readUnderstanding(
+    answer({ parents: [{ name: 'Carolina', calledAs: 'Mamá' }], pets: [{ name: 'Inca', kind: 'dragón' }] }),
+    TEXT,
+  )
+  assert.deepEqual(understood?.family.parents, [{ name: 'Carolina', calledAs: 'Mamá' }])
+  assert.deepEqual(understood?.family.pets, [{ name: 'Inca', kind: null }])
+  assert.deepEqual(understood?.unsure, ['parents'])
 })
 
 test('each kid gets what the text says they love, and what it leaves unclear goes to every kid', () => {

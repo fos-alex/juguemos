@@ -6,8 +6,10 @@
  */
 import { read, write } from '../../shared/store'
 import { ApiError, request, WordedError } from '../../shared/http'
+import { DEFAULT_CALLED_AS, DEFAULT_PET_KIND } from './model'
 
 /** @typedef {import('./types').Family} Family */
+/** @typedef {import('./types').FamilyInput} FamilyInput */
 /** @typedef {import('./types').Kid} Kid */
 /**
  * @typedef {Omit<Kid, 'ageMonths' | 'interests'> & { ageMonths?: number | null, age?: number | null, interests?: string[] }} CachedKid
@@ -16,32 +18,42 @@ import { ApiError, request, WordedError } from '../../shared/http'
  */
 /**
  * @typedef {{
+ *   home?: import('./types').Home | null,
+ *   parents?: { id?: string, name: string, calledAs: string | null }[],
  *   kids: { id?: string, name: string, ageMonths: number | null, playing?: boolean, interests?: string[] }[],
- *   pets: { name: string }[], toys: { id?: string, name: string }[],
+ *   pets: { name: string, kind?: import('./types').PetKind | null }[], toys?: { id?: string, name: string }[],
  * }} Profile
+ * The understanding endpoint's family has no home, and says null for what
+ * the kids call a parent, or for a pet's animal, when the words didn't say.
  */
 
 /** @param {Profile} profile @returns {Family} */
 function toFamily(profile) {
   return {
+    parents: (profile.parents ?? []).map(({ id, name, calledAs }) => ({ id, name, calledAs: calledAs ?? DEFAULT_CALLED_AS })),
     kids: profile.kids.map(({ id, name, ageMonths, playing, interests = [] }) => ({ id, name, ageMonths, playing, interests })),
     pet: profile.pets[0]?.name ?? '',
-    toys: profile.toys.map(({ id, name }) => ({ id, name })),
+    petKind: profile.pets[0]?.kind ?? DEFAULT_PET_KIND,
+    home: profile.home ?? null,
+    toys: (profile.toys ?? []).map(({ id, name }) => ({ id, name })),
   }
 }
 
 /**
- * Kids and toys keep their ids, so the API updates them instead of adding new
- * ones: a kid keeps who's playing, and a toy keeps what the toy box knows.
- * @param {Family} family @returns {Profile}
+ * Parents, kids, and toys keep their ids, so the API updates them instead of
+ * adding new ones: a kid keeps who's playing, and a toy keeps what the toy box
+ * knows. A family without toys leaves the toys as they are.
+ * @param {FamilyInput} family @returns {Profile}
  */
 function toProfile(family) {
   return {
+    home: family.home,
+    parents: family.parents.map(({ id, name, calledAs }) => (id ? { id, name, calledAs } : { name, calledAs })),
     kids: family.kids.map(({ id, name, ageMonths, interests }) =>
       id ? { id, name, ageMonths, interests } : { name, ageMonths, interests },
     ),
-    pets: family.pet ? [{ name: family.pet }] : [],
-    toys: family.toys.map(({ id, name }) => (id ? { id, name } : { name })),
+    pets: family.pet ? [{ name: family.pet, kind: family.petKind }] : [],
+    ...(family.toys && { toys: family.toys.map(({ id, name }) => (id ? { id, name } : { name })) }),
   }
 }
 
@@ -49,16 +61,22 @@ function toProfile(family) {
  * Brings a family cached by an older version up to date until the next load
  * replaces it: toys cached as bare names become toys without ids, the family's
  * own interests, from before each kid had theirs (JUG-144), go to every kid, as
- * the API's migration did, and an age in whole years becomes months (JUG-145).
+ * the API's migration did, an age in whole years becomes months (JUG-145), and
+ * a family from before the parents, the pet's animal, and the home (JUG-21)
+ * gets none, a dog, and no home.
  */
 export function upgradeCachedFamily() {
   const family = read('family')
   if (!family) return
   const bareToys = family.toys.some((/** @type {unknown} */ toy) => typeof toy === 'string')
   const yearsOnly = family.kids.some((/** @type {CachedKid} */ kid) => kid.ageMonths === undefined)
-  if (!bareToys && !yearsOnly && !Array.isArray(family.interests)) return
+  const noDetails = !family.parents
+  if (!bareToys && !yearsOnly && !noDetails && !Array.isArray(family.interests)) return
   const { interests = [], ...rest } = family
   write('family', {
+    parents: [],
+    petKind: DEFAULT_PET_KIND,
+    home: null,
     ...rest,
     kids: family.kids.map((/** @type {CachedKid} */ kid) => {
       const { age, ...kept } = kid
@@ -122,7 +140,7 @@ export class NothingHeardError extends WordedError {
  * nothing: the form the parent is looking at is where the change waits, and
  * "Guardar" is what saves it.
  * @param {string} text
- * @returns {Promise<Family>}
+ * @returns {Promise<import('./model').HeardFamily>}
  */
 export async function understandChanges(text) {
   let heard
@@ -133,11 +151,13 @@ export async function understandChanges(text) {
     throw error
   }
   const family = toFamily(heard.family)
-  if (family.kids.length === 0 && !family.pet && family.toys.length === 0) throw new NothingHeardError()
-  return family
+  if (family.parents.length === 0 && family.kids.length === 0 && !family.pet && family.toys.length === 0) throw new NothingHeardError()
+  // What the words didn't say stays unsaid, so the form keeps what it has.
+  const { parents = [], pets } = /** @type {Profile} */ (heard.family)
+  return { ...family, parents, petKind: pets[0]?.kind ?? null }
 }
 
-/** @param {Family} family @returns {Promise<Family>} */
+/** @param {FamilyInput} family @returns {Promise<Family>} */
 export async function saveFamily(family) {
   const saved = toFamily(await request('PUT', '/family', toProfile(family)))
   write('family', saved)

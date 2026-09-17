@@ -19,6 +19,8 @@ before(async () => {
       'fede@example.com',
       'gabi@example.com',
       'hugo@example.com',
+      'ines@example.com',
+      'juan@example.com',
     ],
   })
   families = createFamiliesService({ db: api.db })
@@ -137,6 +139,68 @@ test('a malformed profile is refused', async () => {
     payload: { ...EXAMPLE_PROFILE, kids: [{ name: '', ageMonths: -1 }] },
   })
   assert.equal(bad.statusCode, 400)
+})
+
+test('the parents, the pet animal, and the home are kept, and what the form leaves out stays as it was (JUG-21)', async () => {
+  const { cookie } = await signUpAs(api, 'ines@example.com')
+  const first = await putFamily(api, cookie, {
+    ...EXAMPLE_PROFILE,
+    home: 'departamento',
+    // A parent sent without what the kids call them is "Mamá".
+    parents: [{ name: 'Caro' }, { name: 'Alex', calledAs: 'Papi' }],
+    pets: [{ name: 'Inca' }, { name: 'Michi', kind: 'gato' }],
+  })
+  assert.equal(first.statusCode, 200)
+  const profile = first.json()
+  assert.equal(profile.home, 'departamento')
+  assert.deepEqual(
+    profile.parents.map(({ name, calledAs }) => [name, calledAs]),
+    [
+      ['Caro', 'Mamá'],
+      ['Alex', 'Papi'],
+    ],
+  )
+  // A new pet sent without its animal is a dog.
+  assert.deepEqual(
+    profile.pets.map(({ name, kind }) => [name, kind]),
+    [
+      ['Inca', 'perro'],
+      ['Michi', 'gato'],
+    ],
+  )
+  assert.deepEqual((await getFamily(cookie)).json(), profile)
+
+  // The family form sends no toys, and the toys stay; nor does a pet sent without its animal lose it.
+  const [caro] = profile.parents
+  const [, michi] = profile.pets
+  const second = (
+    await putFamily(api, cookie, {
+      kids: profile.kids,
+      pets: [{ id: michi.id, name: 'Michi' }],
+      parents: [{ id: caro.id, name: 'Carolina', calledAs: 'Mamá' }],
+    })
+  ).json()
+  assert.deepEqual(second.toys, profile.toys)
+  assert.deepEqual(second.pets, [{ id: michi.id, name: 'Michi', kind: 'gato' }])
+  assert.deepEqual(second.parents, [{ id: caro.id, name: 'Carolina', calledAs: 'Mamá' }])
+  assert.equal(second.home, 'departamento', 'a home left out stays')
+
+  const third = (await putFamily(api, cookie, { kids: profile.kids, pets: [], parents: [], home: null })).json()
+  assert.deepEqual(third.parents, [])
+  assert.equal(third.home, null)
+})
+
+test('a pet animal, a home, or a parent off the rules is refused', async () => {
+  const { cookie } = await signUpAs(api, 'juan@example.com')
+  for (const profile of [
+    { ...EXAMPLE_PROFILE, pets: [{ name: 'Inca', kind: 'dragón' }] },
+    { ...EXAMPLE_PROFILE, home: 'castillo' },
+    { ...EXAMPLE_PROFILE, parents: [{ name: '' }] },
+    { ...EXAMPLE_PROFILE, parents: [{ name: 'Caro', calledAs: '' }] },
+  ]) {
+    assert.equal((await putFamily(api, cookie, profile)).statusCode, 400)
+  }
+  assert.equal((await getFamily(cookie)).statusCode, 404, 'nothing was saved')
 })
 
 test('the profile needs a session', async () => {

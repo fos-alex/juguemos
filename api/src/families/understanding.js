@@ -10,27 +10,35 @@
  */
 import { UnavailableError, UpstreamError } from '../errors.js'
 import { jsonIn } from '../llm/prompt.js'
+import { PET_KINDS } from './kinds.js'
 import familyPrompt, { readFamily } from './prompts/family.js'
 
 /** How long the model gets before the parent is asked to try again. */
 const TIMEOUT_MS = 60_000
 
 /** The limits PUT /family accepts, so a confirmed card always saves. */
-const LIMITS = { kids: 12, pets: 10, interests: 30, toys: 200, name: 80, toy: 120, note: 300 }
+const LIMITS = { parents: 6, kids: 12, pets: 10, interests: 30, toys: 200, name: 80, calledAs: 40, toy: 120, note: 300 }
 
 /** The fields the review card can flag. */
-const FIELD = /^(kids\.\d+|pet|interests|toys)$/
+const FIELD = /^(parents|kids\.\d+|pet|interests|toys)$/
 
 /** Shown when this module flags a field and the model gave no note. Voice pass pending. */
 const CHECK_NOTE = 'Revisá lo marcado: no lo encontré tal cual en lo que escribiste.'
 
 /**
  * @typedef {object} Understanding
- * @property {{ kids: { name: string, ageMonths: number | null, interests: string[] }[], pets: { name: string }[], toys: { name: string }[] }} family
+ * @property {{
+ *   parents: { name: string, calledAs: string | null }[],
+ *   kids: { name: string, ageMonths: number | null, interests: string[] }[],
+ *   pets: { name: string, kind: string | null }[],
+ *   toys: { name: string }[],
+ * }} family
  *   a profile for the parent to confirm, not saved. Each kid has their age in
  *   months (JUG-145) and what the text says they love, plus what it doesn't tie
- *   to one kid (JUG-144).
- * @property {string[]} unsure fields the parent should check: 'kids.0', 'pet', 'interests', 'toys'
+ *   to one kid (JUG-144). Each parent has what the kids call them, and each pet
+ *   its animal, or null when the text doesn't say (JUG-21): saving fills in the
+ *   defaults, and a note about what changed leaves what was there.
+ * @property {string[]} unsure fields the parent should check: 'parents', 'kids.0', 'pet', 'interests', 'toys'
  * @property {string | null} note one line saying what may be wrong
  */
 /** @typedef {ReturnType<typeof createUnderstanding>} UnderstandingService */
@@ -66,7 +74,7 @@ export function createUnderstanding({ llm, audit }) {
 
 /**
  * Reads the model's JSON and holds it to the rules: names spelled as the
- * parent wrote them, a flag on any kid or pet the text doesn't name, and the
+ * parent wrote them, a flag on any parent, kid, or pet the text doesn't name, and the
  * model's own doubts kept. Returns null when there is no JSON to read.
  * @param {string} answer the model's reply
  * @param {string} text the parent's words
@@ -80,6 +88,19 @@ export function readUnderstanding(answer, text) {
   /** @type {Set<string>} */
   const unsure = new Set([...doubts].filter((field) => !field.startsWith('kids.')))
   let flaggedHere = false
+
+  /** @type {Understanding['family']['parents']} */
+  const parents = []
+  for (const parent of listOf(parsed.parents)) {
+    const found = asWritten(parent?.name, text)
+    const name = (found ?? cleanText(parent?.name)).slice(0, LIMITS.name)
+    if (!name || parents.length === LIMITS.parents) continue
+    if (!found) {
+      flaggedHere = true
+      unsure.add('parents')
+    }
+    parents.push({ name, calledAs: cleanText(parent?.calledAs).slice(0, LIMITS.calledAs) || null })
+  }
 
   /** @type {Understanding['family']['kids']} */
   const kids = []
@@ -107,7 +128,8 @@ export function readUnderstanding(answer, text) {
       flaggedHere = true
       unsure.add('pet')
     }
-    pets.push({ name })
+    const kind = typeof pet?.kind === 'string' && Object.hasOwn(PET_KINDS, pet.kind) ? pet.kind : null
+    pets.push({ name, kind })
   }
   // The card shows one pet in 0.1, so a second one is flagged for the parent to check.
   if (pets.length > 1) unsure.add('pet')
@@ -118,7 +140,7 @@ export function readUnderstanding(answer, text) {
 
   const modelNote = cleanText(parsed.note).slice(0, LIMITS.note) || null
   const note = unsure.size === 0 ? null : (modelNote ?? (flaggedHere ? CHECK_NOTE : null))
-  return { family: { kids, pets, toys }, unsure: [...unsure], note }
+  return { family: { parents, kids, pets, toys }, unsure: [...unsure], note }
 }
 
 /**

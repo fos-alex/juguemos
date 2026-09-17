@@ -8,7 +8,7 @@ export default `La familia va a leer un cuento a {{moment}}.
 Los chicos: {{kids}}.
 La mascota: {{pet}}.
 Los juguetes: {{toys}}.
-Lo que le gusta: {{interests}}.
+Lo que le gusta: {{interests}}.{{parents}}
 
 El reparto de cada trama, ya decidido, que tenés que respetar tal cual:
 {{castings}}

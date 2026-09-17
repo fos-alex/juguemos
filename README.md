@@ -113,9 +113,9 @@ The Whisper model downloads again on the first start (about 1.6 GB). The nightly
 
 | Email | Family |
 |---|---|
-| `prueba@ludi.local` | A toddler and a pet: Milán, 2 years and 2 months, and the dog Inca. Likes dinosaurs and horses, with five named toys |
+| `prueba@ludi.local` | A toddler and a pet: Milán, 2 years and 2 months, and the dog Inca. Likes dinosaurs and horses, with five named toys. Parents Alex (Papá) and Caro (Mamá), in an apartment |
 | `bebe@ludi.local` | A baby and no pet: Olivia, 8 months. Likes songs and water, with two toys |
-| `hermanos@ludi.local` | Two kids far apart in age: Tomás, 8 years and 2 months, and Emma, 4 years and 4 months, and the cat Michi |
+| `hermanos@ludi.local` | Two kids far apart in age: Tomás, 8 years and 2 months, and Emma, 4 years and 4 months, and the cat Michi. A house with a garden, and no parents saved |
 
 ### Catalog admin
 
