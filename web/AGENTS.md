@@ -57,7 +57,8 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | Route | Screen |
 |---|---|
 | `/entrada` | Entrada, with *Continuar con Google* first. `?error=` is the code a failed Google sign-in came back with (JUG-63) |
-| `/cuenta` | Crear cuenta. `?modo=entrar` switches it to sign-in, `?campo=email` focuses a field, and `?error=` is as on Entrada |
+| `/cuenta` | Crear cuenta. `?modo=entrar` switches it to sign-in, `?campo=email` focuses a field, `?email=` fills the email, and `?error=` is as on Entrada |
+| `/invitacion` | The link in an invitation email, with `?token=` and `?email=` (JUG-34). It checks the link first: an email with an account goes to `/cuenta?modo=entrar`, and an expired or replaced link says so. Otherwise *Te invitamos a Ludi*: a name and a password under the invited email, which can't be changed, or Google. `?error=` is as on Entrada |
 | `/verificar` | Verificar el email. Redirects until the API sends email |
 | `/bienvenida` | Bienvenida, the onboarding's first screen, right after an account is created with email or Google: the wordmark writes itself, and *Empezar* goes on to the family. An account with a family is sent Home (JUG-173) |
 | `/familia/contanos` | Contame de tu familia, with the voice note on its mic |
@@ -79,8 +80,9 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/serie/$id/episodio` | The same reading screen, writing the series' next episode. Once saved, the URL is replaced with the story's own |
 | `/admin` | The catalog admin: every activity template, with a switch that takes it out of *¡Juguemos!* |
 | `/admin/$id` | Edits one template. `/admin/nuevo` adds one |
+| `/admin/usuarios` | Usuarios: invite an email, with *Reenviar* for the invitations still open, and the accounts (JUG-34) |
 
-The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), so the guard lets it through without an account and the API serves it only when `ADMIN_ENABLED` is true. It is wider than the app (720 px) but still uses the tokens and the primitives.
+The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), so the guard lets it through without an account and the API serves it only when `ADMIN_ENABLED` is true. That includes inviting people: no outside testers until the guardrails are complete. It is wider than the app (720 px) but still uses the tokens and the primitives.
 
 ## How it fits together
 
@@ -89,6 +91,7 @@ The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), 
   - A device whose session ended goes to `/cuenta?modo=entrar`; one that never had an account, or signed out, goes to `/entrada`. `signOut()` waits for the API, since only the server can end the httpOnly cookie; offline it says so and the parent stays signed in.
   - **First run holds its order,** in `firstRunTarget()`: no account goes to `/entrada`, and no family to `/familia/contanos`. When `/api/me` says `familyFromText` is false (no LLM), no family goes to the form at `/familia/corregir` instead. A new account lands on `/bienvenida` first (JUG-173): only an account without a family can open it, and its button goes to `/`, so the guard sends it on to the family. Signing in never shows it.
 - **Sign in with Google** (JUG-63) is `GoogleButton` on Entrada and under the form on `/cuenta`, in both modes, through `useGoogleSignIn()`. Signing in and creating an account are the same tap. It asks the API for Google's address and leaves the app; Google comes back through the API, which starts the session and opens `/`, or `/bienvenida` for an account it has just created (`newUserCallbackURL`), where the guard takes over as on any first load. A failure comes back to the screen it started on with `?error=`, and `googleFailure()` words it; a parent who cancels at Google sees no message. Without a Google client on the server, the tap says Google isn't available.
+  - **An invitation rides along** (JUG-34). On `/invitacion`, `signInWithGoogle` also sends the link's token as `additionalData.invitation`, which the API needs to let the email sign up, and the email as Google's `loginHint`. The email sign-up there sends the token as `invitation`. A Google account with another email comes back with `?error=INVITATION_OTHER_EMAIL`.
   - **The service worker leaves `/api/` navigations to the network** (`navigateFallbackDenylist` in `vite.config.js`). Without it, Google's return to `/api/auth/callback/google` would get the app instead of the API, and sign-in would never finish.
 - **Build screens from the primitives** in `shared/ui/`, exported by its `index.js`, rather than one-off layouts: `Screen` (with `Header`, `Body`, `Footer`, `BackButton`), the buttons, `Card`, `Field`, `Chips`, `StepList`, `Drawer`, `Dots`, `Waiting`, `DrawnWordmark`, `FinMark`, and `PetalFall` (the one-off moments), `Skeleton`, `StatusLine`, `OfflineNotice`, `MetaLabel`, `Label`, `Wordmark`, `ThemeToggle`, and the icons in `Icons.jsx`. `Screen`'s `tone` sets the page background.
 - **Screen patterns are hooks in `shared/hooks/`,** so no screen writes them again: `useRequest()` (`idle`, `loading`, `slow` after a delay, or `error` with the failure in words), `useOfflineNotice()` with `<OfflineNotice>`, `useSerialSaves()` for taps that save one after another, `useSlowWait()` for a wait that has gone on long enough to say something about, `useReducedMotion()`, and `useDocumentTitle()`.

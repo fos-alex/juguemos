@@ -8,6 +8,8 @@ import { loadFamily } from '../family'
 import { ApiError, endSession, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').Account} Account */
+/** @typedef {import('./types').Invitation} Invitation */
+/** @typedef {import('./types').InvitationLink} InvitationLink */
 
 /** A failure the parent can fix, with the words to tell them. */
 export class AccountError extends WordedError {}
@@ -21,6 +23,8 @@ const MESSAGES = {
   PASSWORD_TOO_SHORT: 'Tiene que tener al menos 8 caracteres.',
   PASSWORD_TOO_LONG: 'Esa contraseña es demasiado larga.',
   SIGNUP_NOT_ALLOWED: 'Por ahora Ludi es solo por invitación.',
+  // A Google account whose email isn't the invitation's (JUG-34).
+  INVITATION_OTHER_EMAIL: 'La invitación es para otro email. Elegí la cuenta de Google de ese email, o creá tu cuenta con contraseña.',
   PROVIDER_NOT_FOUND: 'Entrar con Google todavía no está disponible.',
   // Google says the email isn't verified, so it can't join the account that has it.
   account_not_linked: 'Ya hay una cuenta con ese email. Entrá con tu contraseña.',
@@ -57,7 +61,11 @@ function remember(user, familyFromText = read('account')?.familyFromText) {
   return account
 }
 
-/** @param {{ name: string, email: string, password: string }} input @returns {Promise<Account>} */
+/**
+ * @param {{ name: string, email: string, password: string, invitation?: string }} input `invitation` is the token
+ *   of the link the parent came from, which lets an invited email sign up (JUG-34)
+ * @returns {Promise<Account>}
+ */
 export async function createAccount(input) {
   const { user } = await post('/sign-up/email', input)
   const account = remember(user)
@@ -83,15 +91,37 @@ export async function signIn(input) {
  * `returnTo` with the failure's code in `?error=`, for `googleFailure()`.
  * Signing in and creating an account are the same trip.
  * @param {string} returnTo the path of the screen the parent tapped it on
+ * @param {InvitationLink} [invitation] the link an invited parent came from: its token lets
+ *   the email sign up, and Google is asked to offer that email's account first (JUG-34)
  */
-export async function signInWithGoogle(returnTo) {
+export async function signInWithGoogle(returnTo, invitation) {
   const { url } = await post('/sign-in/social', {
     provider: 'google',
     callbackURL: '/',
     newUserCallbackURL: '/bienvenida',
     errorCallbackURL: returnTo,
+    ...(invitation && { additionalData: { invitation: invitation.token }, loginHint: invitation.email }),
   })
   window.location.assign(url)
+}
+
+/**
+ * Where an invitation's link leads (JUG-34): creating the account with the
+ * invited email, signing in when that email has one already, or a link that
+ * no longer works because it expired or a newer one replaced it.
+ * @param {InvitationLink} link the token and email in the link
+ * @returns {Promise<Invitation>}
+ */
+export async function checkInvitation({ token, email }) {
+  if (!token || !email) return { next: 'invalid' }
+  try {
+    const found = await request('POST', '/invitations/check', { token, email })
+    return { next: found.registered ? 'signIn' : 'signUp', email: found.email }
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'INVITATION_EXPIRED') return { next: 'expired' }
+    if (error instanceof ApiError && (error.status === 400 || error.status === 404)) return { next: 'invalid' }
+    throw error
+  }
 }
 
 /**

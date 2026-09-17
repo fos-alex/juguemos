@@ -1,6 +1,7 @@
 /**
- * The catalog admin's activity templates. The admin has no login yet, so the
- * API serves these only where ADMIN_ENABLED turns it on.
+ * The admin: the catalog's activity templates, and the accounts and
+ * invitations. The admin has no login yet, so the API serves these only where
+ * ADMIN_ENABLED turns it on.
  */
 import { request } from '../../shared/http'
 
@@ -8,6 +9,8 @@ import { request } from '../../shared/http'
 /** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
 /** @typedef {import('./types').MaterialCategory} MaterialCategory */
 /** @typedef {import('./types').Theme} Theme */
+/** @typedef {import('./types').AdminAccount} AdminAccount */
+/** @typedef {import('./types').Invitation} Invitation */
 
 const TEMPLATES = '/admin/activity-templates'
 
@@ -49,4 +52,19 @@ export function listMaterials() {
 /** The themes a template can be about. @returns {Promise<Theme[]>} */
 export function listThemes() {
   return request('GET', '/admin/themes')
+}
+
+/** Every account, and every invitation sent. @returns {Promise<{ users: AdminAccount[], invitations: Invitation[] }>} */
+export function listUsers() {
+  return request('GET', '/admin/users')
+}
+
+/**
+ * Invites an email to Ludi: the API sends it a link to sign up. Inviting it
+ * again sends a new link, and the one before stops working (JUG-34).
+ * @param {string} email
+ * @returns {Promise<Invitation>}
+ */
+export function invite(email) {
+  return request('POST', '/admin/invitations', { email })
 }

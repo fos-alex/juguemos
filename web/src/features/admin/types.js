@@ -21,4 +21,11 @@
 
 /** @typedef {{ key: string, label: string }} Theme What a template can be about (JUG-104). */
 
+/** @typedef {{ id: string, name: string, email: string, createdAt: string }} AdminAccount An account, as the Usuarios page lists it. */
+
+/**
+ * @typedef {{ id: string, email: string, status: 'pending' | 'expired' | 'accepted', sentAt: string, expiresAt: string }} Invitation
+ * An invitation to sign up (JUG-34). `accepted` once the email has an account.
+ */
+
 export {}

@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test'
 import { createAuth } from '../src/auth/auth.js'
 import { seedAccounts } from '../src/db/seed.js'
 import { createFamiliesService } from '../src/families/families.service.js'
+import { createInvitationsService } from '../src/invitations/invitations.service.js'
 import { createMaterialsService } from '../src/materials/materials.service.js'
 import { createToysService } from '../src/toys/toys.service.js'
 import { accounts as demoAccounts } from '../seeds/development.js'
@@ -32,9 +33,12 @@ before(async () => {
 })
 after(() => api.close())
 
+/** The invitations the seed's auth checks sign-ups against, with no mailer. @param {typeof api} target */
+const invitationsFor = (target) => createInvitationsService({ db: target.db, mailer: null, appUrl: target.config.auth.url })
+
 const runSeed = () =>
   seedAccounts({
-    auth: createAuth({ config: api.config.auth, db: api.db }),
+    auth: createAuth({ config: api.config.auth, db: api.db, invitations: invitationsFor(api) }),
     families: createFamiliesService({ db: api.db }),
     toys: createToysService({ db: api.db }),
     materials: createMaterialsService({ db: api.db }),
@@ -79,7 +83,7 @@ test('each demo account signs in and finds its own family, exactly as seeded', a
   const demo = await startApi({ signupEmails: demoAccounts.map(({ email }) => email) })
   try {
     await seedAccounts({
-      auth: createAuth({ config: demo.config.auth, db: demo.db }),
+      auth: createAuth({ config: demo.config.auth, db: demo.db, invitations: invitationsFor(demo) }),
       families: createFamiliesService({ db: demo.db }),
       toys: createToysService({ db: demo.db }),
       materials: createMaterialsService({ db: demo.db }),

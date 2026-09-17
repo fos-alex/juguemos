@@ -4,7 +4,7 @@ import { read } from '../shared/store'
 
 /** @typedef {import('../features/account').Account} Account */
 
-const SIGNED_OUT = ['/entrada', '/cuenta']
+const SIGNED_OUT = ['/entrada', '/cuenta', '/invitacion']
 const FIRST_RUN = ['/bienvenida', '/familia/contanos', '/familia/revisar', '/familia/corregir']
 
 /**

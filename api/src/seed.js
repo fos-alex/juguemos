@@ -7,6 +7,7 @@ import { loadConfig, loadDatabaseUrl } from './config.js'
 import { createDb } from './db/client.js'
 import { seedAccounts } from './db/seed.js'
 import { createFamiliesService } from './families/families.service.js'
+import { createInvitationsService } from './invitations/invitations.service.js'
 import { createMaterialsService } from './materials/materials.service.js'
 import { createToysService } from './toys/toys.service.js'
 
@@ -36,7 +37,12 @@ try {
     // is unchanged.
     const signupEmails = new Set([...config.auth.signupEmails, ...accounts.map(({ email }) => email.toLowerCase())])
     await seedAccounts({
-      auth: createAuth({ config: { ...config.auth, signupEmails }, db }),
+      // No mailer: seeding never invites anyone.
+      auth: createAuth({
+        config: { ...config.auth, signupEmails },
+        db,
+        invitations: createInvitationsService({ db, mailer: null, appUrl: config.auth.url }),
+      }),
       families,
       toys: createToysService({ db }),
       materials: createMaterialsService({ db }),

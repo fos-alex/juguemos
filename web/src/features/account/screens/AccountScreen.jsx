@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { createAccount, signIn } from '../api'
+import { PasswordField } from '../components/PasswordField'
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn'
 import { checkAccount, offerToSave } from '../model'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
@@ -12,11 +13,12 @@ import { Body, Field, Footer, GoogleButton, Header, PrimaryButton, Screen, Statu
 /**
  * 2b. Three fields and that's the whole account. "Ya tengo cuenta" reuses the
  * same screen in sign-in mode (`?modo=entrar`), with no name field. Google,
- * under the form, is the same in both modes.
+ * under the form, is the same in both modes. `?email=` fills the email, for an
+ * invitation whose email already has an account (JUG-34).
  * Account copy still needs a voice pass.
  */
 export function AccountScreen() {
-  const { modo, campo, error } = useSearch({ from: '/cuenta' })
+  const { modo, campo, email: invitedEmail, error } = useSearch({ from: '/cuenta' })
   const signingIn = modo === 'entrar'
   const navigate = useNavigate()
   const goBack = useGoBack('/entrada')
@@ -24,9 +26,8 @@ export function AccountScreen() {
   // Coming back from 2c to fix the email: keep what was typed.
   const [pending] = useState(() => read('account'))
   const [name, setName] = useState(pending?.name ?? '')
-  const [email, setEmail] = useState(pending?.email ?? '')
+  const [email, setEmail] = useState(invitedEmail ?? pending?.email ?? '')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}))
   const request = useRequest()
   const google = useGoogleSignIn({ returnTo: signingIn ? '/cuenta?modo=entrar' : '/cuenta', error })
@@ -101,10 +102,7 @@ export function AccountScreen() {
               clearError('email')
             }}
           />
-          <Field
-            label="Contraseña"
-            name="password"
-            type={showPassword ? 'text' : 'password'}
+          <PasswordField
             autoComplete={signingIn ? 'current-password' : 'new-password'}
             value={password}
             error={errors.password}
@@ -113,16 +111,6 @@ export function AccountScreen() {
               setPassword(event.target.value)
               clearError('password')
             }}
-            trailing={
-              <button
-                type="button"
-                className="field__toggle"
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((shown) => !shown)}
-              >
-                {showPassword ? 'ocultar' : 'mostrar'}
-              </button>
-            }
           />
           <StatusLine role="alert">{request.failure ?? google.failure}</StatusLine>
         </Body>

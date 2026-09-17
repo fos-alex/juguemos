@@ -1,15 +1,16 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth'
-import { APIError } from 'better-auth/api'
+import { APIError, getOAuthState } from 'better-auth/api'
 import { accounts, sessions, users, verifications } from './auth.schema.js'
 
 /** @typedef {import('../config.js').AuthConfig} AuthConfig */
+/** @typedef {import('../invitations/invitations.service.js').InvitationsService} InvitationsService */
 /** @typedef {ReturnType<typeof createAuth>} Auth */
 
 const DAY_SECONDS = 60 * 60 * 24
 
-/** @param {{ config: AuthConfig, db: import('../db/client.js').Db }} deps */
-export function createAuth({ config, db }) {
+/** @param {{ config: AuthConfig, db: import('../db/client.js').Db, invitations: InvitationsService }} deps */
+export function createAuth({ config, db, invitations }) {
   return betterAuth({
     baseURL: config.url,
     // The phone reaches the stack through Tailscale, at another origin than BETTER_AUTH_URL.
@@ -36,20 +37,43 @@ export function createAuth({ config, db }) {
     databaseHooks: {
       user: {
         create: {
-          // No outside testers until the guardrails are complete: only the
-          // listed emails, or emails at a listed @domain, can sign up,
-          // whatever the sign-in method.
-          before: async (user) => {
+          // No outside testers until the guardrails are complete: only an
+          // invited email, a listed email, or an email at a listed @domain can
+          // sign up, whatever the sign-in method (JUG-34).
+          before: async (user, context) => {
             const email = user.email.toLowerCase()
+            const token = await invitationTokenOf(context)
+            const invited = token ? await invitations.admits(token, email) : null
+            // The link came to this email, so following it verifies the email.
+            if (invited === 'admitted') return { data: { ...user, emailVerified: true } }
             const domain = email.slice(email.lastIndexOf('@'))
-            if (!config.signupEmails.has(email) && !config.signupEmails.has(domain)) {
-              throw new APIError('FORBIDDEN', { code: 'SIGNUP_NOT_ALLOWED', message: 'Sign-up is by invitation only' })
+            if (config.signupEmails.has(email) || config.signupEmails.has(domain)) return
+            if (invited === 'other-email') {
+              throw new APIError('FORBIDDEN', { code: 'INVITATION_OTHER_EMAIL', message: 'The invitation is for another email' })
             }
+            throw new APIError('FORBIDDEN', { code: 'SIGNUP_NOT_ALLOWED', message: 'Sign-up is by invitation only' })
           },
+          after: async (user) => invitations.accept(user.email),
         },
       },
     },
   })
+}
+
+/**
+ * The invitation token a sign-up carries: `invitation` in the body of an email
+ * sign-up, or in the `additionalData` a Google sign-in started with, which
+ * comes back in the OAuth state on Google's callback. The client sends it
+ * either way, so it counts only when the invitations service finds it open.
+ * @param {{ path?: string, body?: unknown } | null} context the Better Auth endpoint the user is created in
+ * @returns {Promise<string | null>}
+ */
+async function invitationTokenOf(context) {
+  const fromBody = /** @type {{ invitation?: unknown } | undefined} */ (context?.body)?.invitation
+  // The OAuth state exists only while an OAuth callback is handled.
+  const fromState = context?.path?.startsWith('/callback/') ? (await getOAuthState())?.invitation : undefined
+  const token = fromBody ?? fromState
+  return typeof token === 'string' && token.length > 0 && token.length <= 128 ? token : null
 }
 
 /**

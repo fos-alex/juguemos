@@ -1,13 +1,15 @@
 /**
- * The catalog admin's logic, with no React: how a template's tags read, the
- * form's state and how it maps to a template, and the checks the form makes
- * before the API makes them again.
+ * The admin's logic, with no React: how a template's tags read, the form's
+ * state and how it maps to a template, and the checks the form makes before
+ * the API makes them again. Then how the Usuarios page words its rows.
  */
 import { failureText } from '../../shared/format'
 import { ApiError } from '../../shared/http'
 
 /** @typedef {import('./types').ActivityTemplate} ActivityTemplate */
 /** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
+/** @typedef {import('./types').AdminAccount} AdminAccount */
+/** @typedef {import('./types').Invitation} Invitation */
 /**
  * @typedef {{
  *   slug: string, title: string, active: boolean, minutes: string, place: string,
@@ -206,4 +208,31 @@ export function check(form, isNew) {
     else if (unknown.length > 0) errors[name] = `${unknown.join(', ')} no es un espacio. Los que hay: ${SLOT_LIST}.`
   }
   return errors
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** @param {string} email */
+export const looksLikeEmail = (email) => EMAIL.test(email.trim())
+
+/** A day in words, like "1 de octubre". @param {string} iso */
+const day = (iso) => new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
+
+/** Where an invitation stands, in words. @param {Invitation} invitation */
+export function invitationLine({ status, sentAt, expiresAt }) {
+  if (status === 'accepted') return 'Ya tiene cuenta'
+  if (status === 'expired') return `Enviada el ${day(sentAt)} · venció el ${day(expiresAt)}`
+  return `Enviada el ${day(sentAt)} · vence el ${day(expiresAt)}`
+}
+
+/** @param {AdminAccount} account */
+export const accountLine = ({ email, createdAt }) => `${email} · desde el ${day(createdAt)}`
+
+/** What the admin says when an invitation isn't sent. @param {unknown} error */
+export function inviteFailure(error) {
+  if (error instanceof ApiError && error.code === 'ALREADY_REGISTERED') return 'Ese email ya tiene cuenta.'
+  if (error instanceof ApiError && error.code === 'EMAIL_OFF') {
+    return 'El email está apagado: configurá SMTP_HOST en .env y reiniciá la API.'
+  }
+  return adminFailure(error)
 }

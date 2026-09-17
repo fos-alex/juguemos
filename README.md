@@ -86,7 +86,7 @@ The API needs an OAuth client from Google. In the [Google Cloud console](https:/
 2. **Clients → Create client → Web application**, with one authorized redirect URI: `https://ludi.ar/api/auth/callback/google`.
 3. Put its client ID and secret in the droplet's `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
-Ludi asks Google only for the name and email. A Google account still gets in only if its email is in `SIGNUP_EMAILS`, or it already has an account, which it joins.
+Ludi asks Google only for the name and email. A Google account still gets in only if its email is in `SIGNUP_EMAILS`, it comes through an invitation for that email, or it already has an account, which it joins.
 
 **On this machine.** Google sends the browser back to `BETTER_AUTH_URL`, and it refuses `ludi.local` as a redirect URI, since `.local` isn't a public domain. It accepts `localhost` over plain HTTP, and Caddy already serves the stack there on port 3001:
 
@@ -153,9 +153,9 @@ The Whisper model downloads again on the first start (about 1.6 GB). The nightly
 | `bebe@ludi.local` | A baby and no pet: Olivia, 8 months. Likes songs and water, with two toys |
 | `hermanos@ludi.local` | Two kids far apart in age: Tomás, 8 years and 2 months, and Emma, 4 years and 4 months, and the cat Michi. A house with a garden, and no parents saved |
 
-### Catalog admin
+### Admin
 
-`/admin` manages the activity templates: add, edit, switch off, and delete. It has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
+`/admin` manages the activity templates: add, edit, switch off, and delete. `/admin/usuarios` lists the accounts and invites an email: it gets a link to `/invitacion` on `BETTER_AUTH_URL`, where it signs up with a password or Google, and that needs email set up. The admin has no login yet, so the API serves it only when `.env` has `ADMIN_ENABLED=true`. Never turn it on where anyone outside the family can reach it.
 
 ## Nightly cleanup
 

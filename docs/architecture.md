@@ -19,7 +19,7 @@ Version 1 targets Argentina, ages 1–5, on responsive web.
 | TLS and proxy | Caddy: automatic certificates in production, its internal CA locally |
 | Language | JavaScript with JSDoc on both sides. Not typechecked, and that is deliberate (JUG-70): TypeScript was tried and dropped when the shared contract package proved only theoretical |
 | Repo layout | One repo, npm workspaces (`api`, `web`): one install, separate codebases, no shared package |
-| Authentication | Better Auth in the API: email and password, and Sign in with Google, with sessions in PostgreSQL behind an httpOnly cookie. Sign-up is limited to an email allowlist until invitations (0.5), whatever the sign-in method |
+| Authentication | Better Auth in the API: email and password, and Sign in with Google, with sessions in PostgreSQL behind an httpOnly cookie. Sign-up is limited to an email allowlist and to emails invited from the admin, whatever the sign-in method |
 | Native apps | Not in v1. After 1.0: native Android/iOS or React Native, decided then |
 
 ## Why the droplet
@@ -117,7 +117,7 @@ The tables themselves, and what each domain owns, are in [api/AGENTS.md](../api/
 | Google | Sign in with Google | Asked only for the `openid`, `email`, and `profile` scopes; Ludi keeps the name and email. Better Auth's Google provider, set by environment variable (JUG-63). |
 | Weather | Matching suggestions to conditions | Cached per location. |
 | Maps | Nearby plazas and kid-friendly places | Maps data is enough for v1; no curated event listings. |
-| Email | Nothing yet; email verification and invitations when they come | Resend's free plan over SMTP, 3,000 emails a month and 100 a day. Any SMTP service is a change of environment variables (JUG-169). DigitalOcean blocks SMTP's usual ports on droplets, so it uses 2465. Only the address and the message leave the server. |
+| Email | Invitations to sign up (JUG-34); email verification when it comes | Resend's free plan over SMTP, 3,000 emails a month and 100 a day. Any SMTP service is a change of environment variables (JUG-169). DigitalOcean blocks SMTP's usual ports on droplets, so it uses 2465. Only the address and the message leave the server. |
 
 Each sits behind a thin internal interface, so a provider can be swapped without touching product code.
 
@@ -144,5 +144,5 @@ Version 1 runs a single environment. Staging is worth adding once families outsi
 - Which LLM provider to keep, and which model tier for which task. Story generation and activity tailoring have different quality and latency needs.
 - Whether the droplet's CPU transcribes fast enough to keep running Whisper itself (JUG-88).
 - Whether the content pipeline eventually splits into a separate worker, or a CMS with its own database. The content factory, where agents draft activities and humans review them, may be better as its own process than as part of the user-facing API.
-- How the partner invite (0.6) and invitation-only sign-ups (0.5) work on top of Better Auth.
+- How the partner invite (0.6) works on top of Better Auth.
 - How the holiday calendar is versioned and deployed.

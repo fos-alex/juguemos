@@ -44,6 +44,15 @@
   letter-spacing: 0.18em;
 }
 
+/* A value the screen gives and nobody changes, like an invitation's email. */
+.field__control:has(.field__input[readonly]) {
+  background: var(--surface-quiet);
+}
+
+.field__input[readonly] {
+  color: var(--ink-muted);
+}
+
 .field__suffix {
   font-size: 18px;
   color: var(--ink);

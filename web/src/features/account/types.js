@@ -9,4 +9,11 @@
  * so first run starts at /familia/contanos instead of the form.
  */
 
+/** @typedef {{ token: string, email: string }} InvitationLink The token and the email an invitation's link carries (JUG-34). */
+
+/**
+ * @typedef {{ next: 'signUp' | 'signIn', email: string } | { next: 'expired' | 'invalid' }} Invitation
+ * Where an invitation's link leads: creating the account, signing in because the email has one, or nowhere.
+ */
+
 export {}

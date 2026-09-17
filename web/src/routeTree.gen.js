@@ -15,10 +15,12 @@ import { Route as BienvenidaRouteImport } from './routes/bienvenida'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as CuentosRouteImport } from './routes/cuentos'
 import { Route as EntradaRouteImport } from './routes/entrada'
+import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as MaterialesRouteImport } from './routes/materiales'
 import { Route as VerificarRouteImport } from './routes/verificar'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminIdRouteImport } from './routes/admin.$id'
+import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as CuentoIdRouteImport } from './routes/cuento.$id'
 import { Route as CuentoPedidoRouteImport } from './routes/cuento.pedido'
 import { Route as FamiliaIndexRouteImport } from './routes/familia.index'
@@ -63,6 +65,11 @@ const EntradaRoute = EntradaRouteImport.update({
   path: '/entrada',
   getParentRoute: () => rootRouteImport,
 })
+const InvitacionRoute = InvitacionRouteImport.update({
+  id: '/invitacion',
+  path: '/invitacion',
+  getParentRoute: () => rootRouteImport,
+})
 const MaterialesRoute = MaterialesRouteImport.update({
   id: '/materiales',
   path: '/materiales',
@@ -81,6 +88,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminIdRoute = AdminIdRouteImport.update({
   id: '/admin/$id',
   path: '/admin/$id',
+  getParentRoute: () => rootRouteImport,
+})
+const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
+  id: '/admin/usuarios',
+  path: '/admin/usuarios',
   getParentRoute: () => rootRouteImport,
 })
 const CuentoIdRoute = CuentoIdRouteImport.update({
@@ -156,9 +168,11 @@ const rootRouteChildren = {
   CuentaRoute: CuentaRoute,
   CuentosRoute: CuentosRoute,
   EntradaRoute: EntradaRoute,
+  InvitacionRoute: InvitacionRoute,
   MaterialesRoute: MaterialesRoute,
   VerificarRoute: VerificarRoute,
   AdminIdRoute: AdminIdRoute,
+  AdminUsuariosRoute: AdminUsuariosRoute,
   CuentoIdRoute: CuentoIdRoute,
   CuentoPedidoRoute: CuentoPedidoRoute,
   FamiliaContanosRoute: FamiliaContanosRoute,
