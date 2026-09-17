@@ -5,7 +5,7 @@ import { read } from '../shared/store'
 /** @typedef {import('../features/account').Account} Account */
 
 const SIGNED_OUT = ['/entrada', '/cuenta']
-const FIRST_RUN = ['/familia/contanos', '/familia/revisar', '/familia/corregir']
+const FIRST_RUN = ['/bienvenida', '/familia/contanos', '/familia/revisar', '/familia/corregir']
 
 /**
  * The root route's `beforeLoad`: before each navigation, confirms the session
@@ -28,10 +28,11 @@ export async function guard({ location }) {
  * Keeps the first run in order: a signed-in account, a family, then the app.
  * Returns where the parent belongs, or null when the path is fine. A session
  * that ended sends them to sign in again; a device that never had one, or
- * signed out, to the entry. The family starts from the parent's own words when
- * the API has an LLM to read them (JUG-11), and in the form when it doesn't.
- * Verifying the email waits until the API sends email, so /verificar sends
- * them on. Pure: what the device knows comes in `device`.
+ * signed out, to the entry. A new account lands on /bienvenida (JUG-173),
+ * which only an account without a family can open. The family starts from the
+ * parent's own words when the API has an LLM to read them (JUG-11), and in the
+ * form when it doesn't. Verifying the email waits until the API sends email,
+ * so /verificar sends them on. Pure: what the device knows comes in `device`.
  * @param {string} path
  * @param {Account | null} account
  * @param {{ hasFamily: boolean, sessionEnded: boolean }} device
@@ -46,6 +47,6 @@ export function firstRunTarget(path, account, { hasFamily, sessionEnded }) {
     if (FIRST_RUN.includes(path)) return null
     return { to: account.familyFromText ? '/familia/contanos' : '/familia/corregir' }
   }
-  if ([...SIGNED_OUT, '/verificar', '/familia/contanos', '/familia/revisar'].includes(path)) return { to: '/' }
+  if ([...SIGNED_OUT, '/verificar', '/bienvenida', '/familia/contanos', '/familia/revisar'].includes(path)) return { to: '/' }
   return null
 }

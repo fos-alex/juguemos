@@ -77,14 +77,20 @@ export async function signIn(input) {
 
 /**
  * Leaves the app for Google's sign-in page. Google sends the parent back
- * through the API, which starts the session and opens Home, where the guard
- * confirms it as on any first load. When it fails, the parent comes back to
+ * through the API, which starts the session and opens Home, or Bienvenida for
+ * an account it has just created (JUG-173). The guard confirms the session
+ * there as on any first load. When it fails, the parent comes back to
  * `returnTo` with the failure's code in `?error=`, for `googleFailure()`.
  * Signing in and creating an account are the same trip.
  * @param {string} returnTo the path of the screen the parent tapped it on
  */
 export async function signInWithGoogle(returnTo) {
-  const { url } = await post('/sign-in/social', { provider: 'google', callbackURL: '/', errorCallbackURL: returnTo })
+  const { url } = await post('/sign-in/social', {
+    provider: 'google',
+    callbackURL: '/',
+    newUserCallbackURL: '/bienvenida',
+    errorCallbackURL: returnTo,
+  })
   window.location.assign(url)
 }
 
