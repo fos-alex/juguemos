@@ -12,19 +12,19 @@ export function groupByPart(paragraphs) {
 }
 
 /**
- * The waiting animation a story gets (JUG-132). A story is written for the
- * youngest kid playing, so its wait follows that age too: the ronda for the
- * littlest, jacarandá petals in the middle, and la rayuela once they are old
- * enough to play it. The bands are the API's own story bands, and an age
- * nobody gave falls where the API puts it, at three years old.
+ * What draws while a story is written (JUG-132, JUG-160). A story is written
+ * for the youngest kid playing, so its wait follows that age too: a crayon for
+ * the littlest, a pencil in the middle, and a pen once they are old enough to
+ * write. The bands are the API's own story bands, and an age nobody gave falls
+ * where the API puts it, at three years old.
  * @param {number | null} ageMonths the age the story is written for
- * @returns {'ronda' | 'petals' | 'rayuela'}
+ * @returns {'crayon' | 'pencil' | 'pen'}
  */
-export function waitingVariant(ageMonths) {
+export function waitingTool(ageMonths) {
   const months = ageMonths ?? 36
-  if (months < 36) return 'ronda'
-  if (months < 60) return 'petals'
-  return 'rayuela'
+  if (months < 36) return 'crayon'
+  if (months < 60) return 'pencil'
+  return 'pen'
 }
 
 /**

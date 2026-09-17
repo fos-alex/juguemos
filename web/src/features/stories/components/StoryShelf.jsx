@@ -1,3 +1,4 @@
+import { StoryMark } from './StoryMark'
 import { MetaLabel, TertiaryButton } from '../../../shared/ui'
 import '../stories.css'
 
@@ -21,7 +22,8 @@ export function StoryShelf({ stories, startingId, onOpen, onStartSeries }) {
       {/* Voice pass pending: "Para volver a leer". */}
       <h2 className="story-shelf__heading">Para volver a leer</h2>
       {stories.map((saved) => (
-        <div key={saved.id} className="card story-option story-shelf__row">
+        <div key={saved.id} className="card story-option story-shelf__row story-marked">
+          <StoryMark texts={[saved.title, saved.teaser]} />
           <button type="button" className="story-shelf__open" onClick={() => onOpen(saved)}>
             <span className="story-option__title">{saved.title}</span>
             <MetaLabel as="span" className="story-option__time">

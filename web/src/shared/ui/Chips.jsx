@@ -5,15 +5,17 @@ import './Chips.css'
 /**
  * A row of chips. `items` become chips that a tap removes (the interests and
  * a toy's other names); whatever else goes in `children`, such as toggles or
- * the add input, follows them.
+ * the add input, follows them. `lead` puts something before an item's words,
+ * like an interest's mark.
  * @param {{
  *   items?: string[],
  *   onRemove?: (index: number) => void,
+ *   lead?: (item: string) => React.ReactNode,
  *   className?: string,
  *   children?: React.ReactNode,
  * }} props
  */
-export function Chips({ items = [], onRemove, className = '', children }) {
+export function Chips({ items = [], onRemove, lead, className = '', children }) {
   return (
     <div className={`chips ${className}`.trim()}>
       {items.map((item, index) => (
@@ -26,6 +28,7 @@ export function Chips({ items = [], onRemove, className = '', children }) {
           aria-label={`Quitar ${item}`}
           onClick={() => onRemove?.(index)}
         >
+          {lead?.(item)}
           {item} <CloseIcon size={16} className="chip__remove" />
         </button>
       ))}

@@ -240,3 +240,40 @@ export function toFamily(form) {
     toys: form.toys.map((toy) => ({ id: toy.id, name: toy.name.trim() })).filter((toy) => toy.name),
   }
 }
+
+/**
+ * The words that give an interest its mark (JUG-160), in the order they are
+ * tried, so "camión de bomberos" is a tractor before anything else. Matched
+ * without accents or case, at the start of a word, against the family's own
+ * words, a story's title and teaser, or a series' storyline.
+ * @type {[import('../../shared/ui/Icons').Mark, RegExp][]}
+ */
+const MARK_WORDS = [
+  ['footprint', /\b(dino|dinosaurio|tiranosaurio|t-?rex|velociraptor)/],
+  ['tractor', /\b(tractor|camion|excavadora|topadora|grua|volquete|maquinas de obra)/],
+  ['car', /\b(autos?\b|autito|coche|carrito|carro\b|carros\b|camioneta|carrera|formula 1)/],
+  ['train', /\b(tren\b|trenes|trencito|locomotora)/],
+  ['rocket', /\b(cohete|astronauta|espacio\b|planeta|nave espacial)/],
+  ['waves', /\b(pirata|barco|mar\b|playa|pileta|nadar|peces|pez\b|sirena|olas?\b|agua\b)/],
+  ['bow', /\b(muneca|munequita|barbie|princesa|hada)/],
+  ['notes', /\b(musica|cancion|canciones|cantar|bailar|baile|instrumento|guitarra|tambor|piano)/],
+  ['ball', /\b(futbol|pelota|gol\b|goles|basquet)/],
+  ['paw', /\b(perr|gat[oai]|animal|mascota|caball|conej|vaca|oveja|granja|zoologico|leon|osito|osos?\b)/],
+]
+
+/**
+ * The mark for the first of `texts` that names a common interest, or null
+ * (JUG-160). Most interests have none, and that is fine: the mark is a small
+ * extra, never a category.
+ * @param {...(string | null | undefined)} texts
+ * @returns {import('../../shared/ui/Icons').Mark | null}
+ */
+export function interestMark(...texts) {
+  for (const text of texts) {
+    if (!text) continue
+    const plain = text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('es')
+    const found = MARK_WORDS.find(([, words]) => words.test(plain))
+    if (found) return found[0]
+  }
+  return null
+}

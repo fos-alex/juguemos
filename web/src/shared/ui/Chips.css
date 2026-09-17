@@ -20,6 +20,13 @@
   color: var(--ink);
 }
 
+/* An interest's mark sits before its words, on the same baseline as the remove mark. */
+.chip__mark {
+  display: inline-block;
+  margin: 0 6px -3px 0;
+  color: var(--primary);
+}
+
 /* The remove mark sits on the label's baseline, not on its own line. */
 .chip__remove {
   display: inline-block;

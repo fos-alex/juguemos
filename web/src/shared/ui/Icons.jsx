@@ -242,3 +242,115 @@ export function SettingsIcon(props) {
     </Icon>
   )
 }
+
+/*
+ * Interest marks (JUG-160): what the things kids love leave behind, rather
+ * than the things themselves, so none of them is a creature. Each is the
+ * drawing's lines alone, so the story's wait can draw the same mark by hand
+ * (Waiting.jsx). Which interest gets which mark is `interestMark()` in the
+ * family feature.
+ */
+
+/** @typedef {'car' | 'footprint' | 'tractor' | 'bow' | 'notes' | 'ball' | 'train' | 'paw' | 'waves' | 'rocket'} Mark */
+
+/** @type {Record<Mark, React.ReactNode>} */
+export const MARKS = {
+  // Autos: a car in profile.
+  car: (
+    <>
+      <path d="M6 16H3v-3.5L5 8h9l4 4.5h2a1 1 0 0 1 1 1V16h-2" />
+      <path d="M10 16h5" />
+      <path d="M9.5 8v4.5H18" />
+      <circle cx="8" cy="16.5" r="2" />
+      <circle cx="17" cy="16.5" r="2" />
+    </>
+  ),
+  // Dinosaurios: a three-toed footprint.
+  footprint: (
+    <>
+      <path d="M12 21c-3.2 0-4.8-2.6-4.2-5.4L3.5 6.5l5.8 4.6L12 3l2.7 8.1 5.8-4.6-4.3 9.1c.6 2.8-1 5.4-4.2 5.4z" />
+    </>
+  ),
+  // Tractores y camiones: a big back wheel and a small front one.
+  tractor: (
+    <>
+      <path d="M5 11V5h6l1.5 6H20v4" />
+      <path d="M16 11V7.5" />
+      <circle cx="7.5" cy="15.5" r="4.5" />
+      <circle cx="7.5" cy="15.5" r="1" />
+      <circle cx="18" cy="17.5" r="2.5" />
+      <path d="M12 17.5h3.5" />
+    </>
+  ),
+  // Muñecas: a bow.
+  bow: (
+    <>
+      <path d="M12 11 5 7.5c-1.2-.6-2.5.3-2.5 1.6v3.8c0 1.3 1.3 2.2 2.5 1.6z" />
+      <path d="m12 11 7-3.5c1.2-.6 2.5.3 2.5 1.6v3.8c0 1.3-1.3 2.2-2.5 1.6z" />
+      <circle cx="12" cy="11" r="1.6" />
+      <path d="m11 12.6-3 7" />
+      <path d="m13 12.6 3 7" />
+    </>
+  ),
+  // Música: two notes.
+  notes: (
+    <>
+      <path d="M9 17.5V6l11-2v11.5" />
+      <path d="M9 9.5l11-2" />
+      <circle cx="6.5" cy="17.5" r="2.5" />
+      <circle cx="17.5" cy="15.5" r="2.5" />
+    </>
+  ),
+  // Fútbol: a ball.
+  ball: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m12 8.2 3.2 2.3-1.2 3.8h-4l-1.2-3.8z" />
+      <path d="M12 8.2V3.5M15.2 10.5l4.4-1.4M14 14.3l2.7 3.8M10 14.3l-2.7 3.8M8.8 10.5 4.4 9.1" />
+    </>
+  ),
+  // Trenes: a steam engine in profile.
+  train: (
+    <>
+      <path d="M2.5 8.5h8" />
+      <path d="M3.5 16V8.5h6V16" />
+      <path d="M9.5 11h9a2.5 2.5 0 0 1 2.5 2.5V16H3.5" />
+      <path d="M15.5 11V7h3v4" />
+      <circle cx="7" cy="18" r="2" />
+      <circle cx="16" cy="18" r="2" />
+    </>
+  ),
+  // Animales: a paw print.
+  paw: (
+    <>
+      <path d="M12 12c-2.8 0-5 3.2-5 5.5 0 1.7 1.3 2.5 2.7 2.5 1 0 1.5-.5 2.3-.5s1.3.5 2.3.5c1.4 0 2.7-.8 2.7-2.5 0-2.3-2.2-5.5-5-5.5z" />
+      <circle cx="5" cy="10.5" r="1.8" />
+      <circle cx="9" cy="5.8" r="2" />
+      <circle cx="15" cy="5.8" r="2" />
+      <circle cx="19" cy="10.5" r="1.8" />
+    </>
+  ),
+  // El agua, el mar y los piratas: waves.
+  waves: (
+    <>
+      <path d="M3 7c1.5 0 1.5-1.5 3-1.5S7.5 7 9 7s1.5-1.5 3-1.5S13.5 7 15 7s1.5-1.5 3-1.5S19.5 7 21 7" />
+      <path d="M3 12c1.5 0 1.5-1.5 3-1.5S7.5 12 9 12s1.5-1.5 3-1.5 1.5 1.5 3 1.5 1.5-1.5 3-1.5 1.5 1.5 3 1.5" />
+      <path d="M3 17c1.5 0 1.5-1.5 3-1.5S7.5 17 9 17s1.5-1.5 3-1.5 1.5 1.5 3 1.5 1.5-1.5 3-1.5 1.5 1.5 3 1.5" />
+    </>
+  ),
+  // El espacio: a rocket.
+  rocket: (
+    <>
+      <path d="M12 2.5c3 2 4.5 5.5 4.5 9.5V17h-9v-5c0-4 1.5-7.5 4.5-9.5z" />
+      <circle cx="12" cy="10" r="1.6" />
+      <path d="M7.5 12.5 4.5 16v3l3-2" />
+      <path d="m16.5 12.5 3 3.5v3l-3-2" />
+      <path d="M10.5 20.5h3" />
+    </>
+  ),
+}
+
+/** One interest's mark, from the set above. @param {IconProps & { mark: Mark }} props */
+export function MarkIcon({ mark, ...props }) {
+  return <Icon {...props}>{MARKS[mark]}</Icon>
+}
