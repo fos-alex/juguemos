@@ -36,6 +36,18 @@ test('LLM_PROVIDER=openrouter uses the OpenRouter key and LLM_MODEL', () => {
   assert.equal(llm.model, 'some-lab/some-model')
 })
 
+test('LLM_PROVIDER=claude-code uses the Claude Code token, with sonnet unless LLM_MODEL says otherwise', () => {
+  assert.deepEqual(llmOf({ LLM_PROVIDER: 'claude-code', CLAUDE_CODE_OAUTH_TOKEN: 'cc-token', OPENCODE_API_KEY: 'oc-key' }), {
+    provider: 'claude-code',
+    apiKey: 'cc-token',
+    baseUrl: '',
+    model: 'sonnet',
+    appUrl: 'https://ludi.local:3000',
+  })
+  assert.equal(llmOf({ LLM_PROVIDER: 'claude-code', CLAUDE_CODE_OAUTH_TOKEN: 'cc-token', LLM_MODEL: 'haiku' }).model, 'haiku')
+  assert.equal(llmOf({ LLM_PROVIDER: 'claude-code', OPENCODE_API_KEY: 'oc-key' }).apiKey, null)
+})
+
 test('OpenRouter with a key and no model stops the API at startup', () => {
   assert.throws(
     () => llmOf({ LLM_PROVIDER: 'openrouter', OPENROUTER_API_KEY: 'or-key', OPENCODE_MODEL: 'viejo' }),
@@ -64,6 +76,6 @@ test('TRUSTED_ORIGINS adds origins for Better Auth, keeping only the origin of e
 test('an unknown provider stops the API at startup', () => {
   assert.throws(
     () => llmOf({ LLM_PROVIDER: 'openai' }),
-    (error) => error instanceof ConfigError && /LLM_PROVIDER must be opencode or openrouter/.test(error.message),
+    (error) => error instanceof ConfigError && /LLM_PROVIDER must be opencode, openrouter, or claude-code/.test(error.message),
   )
 })

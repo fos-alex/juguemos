@@ -9,11 +9,13 @@ const LOCAL_DATABASE_URL = 'postgres://ludi:ludi@localhost:5432/ludi'
 /**
  * The LLM providers stories can use: the setting that holds each one's key,
  * its API, and its default model. OpenRouter has no default, since its model
- * ids name the upstream lab and change often.
+ * ids name the upstream lab and change often. Claude Code runs its CLI, so it
+ * has no API URL, and its key is an OAuth token from `claude setup-token`.
  */
 const LLM_PROVIDERS = {
   opencode: { keyVar: 'OPENCODE_API_KEY', baseUrl: 'https://opencode.ai/zen/go/v1', model: 'glm-5.3-flash' },
   openrouter: { keyVar: 'OPENROUTER_API_KEY', baseUrl: 'https://openrouter.ai/api/v1', model: '' },
+  'claude-code': { keyVar: 'CLAUDE_CODE_OAUTH_TOKEN', baseUrl: '', model: 'sonnet' },
 }
 
 /**
@@ -26,11 +28,12 @@ const LLM_PROVIDERS = {
 
 /**
  * @typedef {object} LlmConfig
- * @property {'opencode' | 'openrouter'} provider which LLM writes the stories
+ * @property {'opencode' | 'openrouter' | 'claude-code'} provider which LLM writes the stories
  * @property {string | null} apiKey the chosen provider's key; without it stories come from templates
- * @property {string} baseUrl
+ * @property {string} baseUrl empty for Claude Code, which has no API URL
  * @property {string} model as the provider names it
  * @property {string} appUrl the public origin, which OpenRouter records as the app's URL
+ * @property {string} [command] the Claude Code CLI to run, `claude` on the PATH unless tests set another
  */
 
 /**
@@ -119,7 +122,7 @@ function loadStt(env) {
 function loadLlm(env, appUrl) {
   const name = env.LLM_PROVIDER?.trim().toLowerCase() || 'opencode'
   if (!Object.hasOwn(LLM_PROVIDERS, name)) {
-    throw new ConfigError(`LLM_PROVIDER must be opencode or openrouter, not "${env.LLM_PROVIDER}"`)
+    throw new ConfigError(`LLM_PROVIDER must be opencode, openrouter, or claude-code, not "${env.LLM_PROVIDER}"`)
   }
   const provider = /** @type {keyof typeof LLM_PROVIDERS} */ (name)
   const { keyVar, baseUrl, model: defaultModel } = LLM_PROVIDERS[provider]

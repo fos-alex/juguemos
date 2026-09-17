@@ -1,8 +1,9 @@
 /**
- * The LLM that writes stories: OpenCode Go or OpenRouter, chosen with
- * LLM_PROVIDER in config.js. Both speak the OpenAI chat completions API, so
- * one client serves both; they differ only in a few headers and, for
- * OpenRouter, a data policy. Server-side only: the browser never sees the key.
+ * The LLM that writes stories: OpenCode Go, OpenRouter, or Claude Code, chosen
+ * with LLM_PROVIDER in config.js. OpenCode Go and OpenRouter both speak the
+ * OpenAI chat completions API, so one request serves both; they differ only in
+ * a few headers and, for OpenRouter, a data policy. Claude Code runs its CLI
+ * instead (`claude-code.js`). Server-side only: the browser never sees the key.
  * Without a key there is no client, and stories come from the seeded templates.
  *
  * Every call made here carries the guardrails (JUG-90): this is the one place
@@ -11,6 +12,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { UpstreamError } from '../errors.js'
+import { claudeCode } from './claude-code.js'
 import { asData, withGuardrails } from './guardrails.js'
 import { jsonIn } from './prompt.js'
 
@@ -26,6 +28,15 @@ import { jsonIn } from './prompt.js'
  *   out, the provider's own limit applies
  * @property {boolean} [reasoning] false asks a reasoning model to skip its
  *   thinking, on the providers that take the option
+ */
+/**
+ * A call as a provider sends it, once the guardrails and the data block are in.
+ * @typedef {object} GuardedCall
+ * @property {string} system
+ * @property {string} user
+ * @property {number} [maxTokens]
+ * @property {boolean} [reasoning]
+ * @property {AbortSignal} [signal]
  */
 /**
  * @typedef {object} Llm
@@ -44,7 +55,7 @@ const USER_AGENT = 'ludi-api/0.1'
  *   don't store or train on prompts, because prompts carry the kids' names.
  *   It is also the one that takes `reasoning: { enabled: false }`, which a
  *   short call passes so a reasoning model answers without thinking first.
- * @type {Record<LlmConfig['provider'], (config: LlmConfig, call: { reasoning?: boolean }) => { headers: Record<string, string>, body: object }>}
+ * @type {Record<Exclude<LlmConfig['provider'], 'claude-code'>, (config: LlmConfig, call: { reasoning?: boolean }) => { headers: Record<string, string>, body: object }>}
  */
 const PROVIDER_EXTRAS = {
   opencode: () => ({ headers: { 'x-opencode-session': `ludi-${randomUUID()}` }, body: {} }),
@@ -61,10 +72,8 @@ const PROVIDER_EXTRAS = {
 export function createLlm({ config }) {
   const apiKey = config.apiKey?.trim()
   if (!apiKey) return null
-  if (!config.baseUrl) throw new Error('llm.baseUrl is required when a key is configured')
   if (!config.model) throw new Error('llm.model is required when a key is configured')
-  const baseUrl = config.baseUrl.replace(/\/$/, '')
-  const extras = PROVIDER_EXTRAS[config.provider]
+  const send = config.provider === 'claude-code' ? claudeCode(config, apiKey) : chatCompletions(config, apiKey)
 
   return {
     /**
@@ -74,54 +83,76 @@ export function createLlm({ config }) {
      * as `UpstreamError`: the log has the reason, and the client doesn't.
      * @param {LlmCall & { signal?: AbortSignal }} call
      */
-    async *stream({ system, user, data, maxTokens, reasoning, signal }) {
-      const { headers, body } = extras(config, { reasoning })
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
+    stream({ system, user, data, maxTokens, reasoning, signal }) {
+      return send({
+        system: withGuardrails(system),
+        user: data ? `${user}\n\n${asData(data)}` : user,
+        maxTokens,
+        reasoning,
         signal,
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'User-Agent': USER_AGENT,
-          ...headers,
-        },
-        body: JSON.stringify({
-          model: config.model,
-          stream: true,
-          ...(maxTokens ? { max_tokens: maxTokens } : {}),
-          messages: [
-            { role: 'system', content: withGuardrails(system) },
-            { role: 'user', content: data ? `${user}\n\n${asData(data)}` : user },
-          ],
-          ...body,
-        }),
-      }).catch((error) => {
-        throw new UpstreamError(`The story model is unreachable: ${error.message}`)
       })
-      if (!response.ok || !response.body) {
-        const reason = await response.text().catch(() => '')
-        throw new UpstreamError(`The story model answered HTTP ${response.status}: ${reason.slice(0, 300)}`)
-      }
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-      for await (const chunk of response.body) {
-        buffer += decoder.decode(chunk, { stream: true })
-        let index
-        while ((index = buffer.indexOf('\n')) >= 0) {
-          const line = buffer.slice(0, index).trim()
-          buffer = buffer.slice(index + 1)
-          const data = line.startsWith('data:') ? line.slice(5).trim() : ''
-          if (!data || data === '[DONE]') continue
-          const event = /** @type {{ error?: { message?: string }, choices?: { delta?: { content?: string } }[] } | null} */ (
-            jsonIn(data)
-          )
-          // A failure after the stream has started arrives as an event with an error.
-          if (event?.error) throw new UpstreamError(`The story model failed: ${event.error.message ?? 'no reason given'}`)
-          const text = event?.choices?.[0]?.delta?.content
-          if (text) yield text
-        }
-      }
     },
+  }
+}
+
+/**
+ * A call to OpenCode Go or OpenRouter, streamed over the chat completions API.
+ * @param {LlmConfig} config
+ * @param {string} apiKey
+ * @returns {(call: GuardedCall) => AsyncGenerator<string>}
+ */
+function chatCompletions(config, apiKey) {
+  if (!config.baseUrl) throw new Error('llm.baseUrl is required when a key is configured')
+  const baseUrl = config.baseUrl.replace(/\/$/, '')
+  const extras = PROVIDER_EXTRAS[/** @type {keyof typeof PROVIDER_EXTRAS} */ (config.provider)]
+
+  return async function* send({ system, user, maxTokens, reasoning, signal }) {
+    const { headers, body } = extras(config, { reasoning })
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'User-Agent': USER_AGENT,
+        ...headers,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        stream: true,
+        ...(maxTokens ? { max_tokens: maxTokens } : {}),
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        ...body,
+      }),
+    }).catch((error) => {
+      throw new UpstreamError(`The story model is unreachable: ${error.message}`)
+    })
+    if (!response.ok || !response.body) {
+      const reason = await response.text().catch(() => '')
+      throw new UpstreamError(`The story model answered HTTP ${response.status}: ${reason.slice(0, 300)}`)
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+    for await (const chunk of response.body) {
+      buffer += decoder.decode(chunk, { stream: true })
+      let index
+      while ((index = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, index).trim()
+        buffer = buffer.slice(index + 1)
+        const data = line.startsWith('data:') ? line.slice(5).trim() : ''
+        if (!data || data === '[DONE]') continue
+        const event = /** @type {{ error?: { message?: string }, choices?: { delta?: { content?: string } }[] } | null} */ (
+          jsonIn(data)
+        )
+        // A failure after the stream has started arrives as an event with an error.
+        if (event?.error) throw new UpstreamError(`The story model failed: ${event.error.message ?? 'no reason given'}`)
+        const text = event?.choices?.[0]?.delta?.content
+        if (text) yield text
+      }
+    }
   }
 }
