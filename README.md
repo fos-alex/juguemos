@@ -78,6 +78,24 @@ BETTER_AUTH_URL=https://ludi.ar
 
 Its own `BETTER_AUTH_SECRET` and a real `POSTGRES_PASSWORD` too, and `SIGNUP_EMAILS` with the family's emails only, never a domain. Then `docker compose up -d --build`.
 
+### Email
+
+The API sends email through an SMTP service: Resend's free plan to start, with 3,000 emails a month and 100 a day. Nothing sends email yet, and without `SMTP_HOST` it stays off. To set it up:
+
+1. At [resend.com](https://resend.com), add the domain `ludi.ar` in the São Paulo region, and add the DNS records Resend lists wherever `ludi.ar`'s DNS is hosted.
+2. Create an API key with sending access only.
+3. Add these lines to `.env`, then run `docker compose up -d`:
+
+   ```bash
+   SMTP_HOST=smtp.resend.com
+   SMTP_PORT=2465                          # DigitalOcean blocks 25, 465, and 587 on droplets
+   SMTP_USER=resend
+   SMTP_PASSWORD=re_...                    # the API key
+   EMAIL_FROM="Ludi <hola@ludi.ar>"
+   ```
+
+4. Send a test email: `docker compose exec api node api/src/send-test-email.js you@example.com`, or `npm run email:test -w api -- you@example.com` outside Docker.
+
 ### Moving from juguemos.local
 
 The product was called Juguemos until September 2026 (JUG-151). A machine set up before that starts over with a fresh database:
