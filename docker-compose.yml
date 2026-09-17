@@ -53,6 +53,8 @@ services:
       # Which LLM writes the stories (opencode, openrouter, or claude-code), its
       # model, and the providers' keys. Without the chosen provider's key,
       # stories come from templates. OPENCODE_MODEL is the old name for LLM_MODEL.
+      # The image has no Claude Code CLI, so claude-code fails every story call
+      # here, and the API logs why.
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
       OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}

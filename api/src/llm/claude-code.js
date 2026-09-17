@@ -2,6 +2,8 @@
  * Claude Code as the story model (JUG-168). Each call runs the `claude` CLI
  * once in print mode and streams the text of its answer. `client.js` has
  * already wrapped the prompts in the guardrails; this file only runs them.
+ * The API's Docker image doesn't carry the CLI: where it isn't installed,
+ * every call fails with an `UpstreamError`, which the API logs.
  *
  * The CLI runs as a plain model: no tools, MCP servers, settings files,
  * CLAUDE.md, skills, or saved sessions, in an empty folder of its own that is
@@ -111,7 +113,10 @@ export function claudeCode(config, token) {
 
       const code = await exited
       signal?.throwIfAborted()
-      if (failure) throw new UpstreamError(`The story model's CLI didn't run: ${failure.message}`)
+      if (failure) {
+        const reason = /** @type {NodeJS.ErrnoException} */ (failure).code === 'ENOENT' ? "isn't installed" : "didn't run"
+        throw new UpstreamError(`The Claude Code CLI ${reason}: ${failure.message}`)
+      }
       if (!ended || code !== 0) {
         throw new UpstreamError(`The story model's CLI exited with code ${code}: ${stderr.trim().slice(0, 300)}`)
       }

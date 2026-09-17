@@ -124,7 +124,7 @@ test('a CLI that exits without a result throws UpstreamError with its stderr', a
 test('a missing CLI throws UpstreamError', async () => {
   await assert.rejects(
     write(claudeCode({ command: join(folder, 'no-such-claude') })),
-    (error) => error instanceof UpstreamError && /didn't run/.test(error.message),
+    (error) => error instanceof UpstreamError && /Claude Code CLI isn't installed/.test(error.message),
   )
 })
 
