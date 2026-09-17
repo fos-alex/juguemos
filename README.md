@@ -159,3 +159,15 @@ Every 0.1 screen is built and runs on the API: accounts with a required session,
 Still missing, because they need services Ludi doesn't have yet: Google sign-in (0.3) and email verification.
 
 Next: Alex reviews the first templates, and the catalog grows to 30–40 activities (JUG-14).
+
+## License
+
+© 2026 Alex Otero
+
+Ludi is free software under the [GNU Affero General Public License, version 3](LICENSE) (`AGPL-3.0-only`). Anyone may use, copy, change, and share it under that license. Anyone who changes it and runs it for other people must offer those people the source code of their version. It comes with no warranty.
+
+These terms are added under section 7 of the license:
+
+1. **Credit, under 7(b).** Every copy and every modified version must keep the notice "© 2026 Alex Otero" and a link to the original source, <https://github.com/fos-alex/juguemos>, in its source code and in the Appropriate Legal Notices its user interface displays. In Ludi those notices are in Ajustes, under *Sobre Ludi*.
+2. **Modified versions are marked, under 7(c).** A modified version must say that it has been modified, and must not present itself as the original.
+3. **The name, under 7(e).** The license grants no rights to the name Ludi, its wordmark, or its app icon as trademarks. A modified version that is shared or run for others uses its own name and icon. It may say that it is based on Ludi.

@@ -72,3 +72,17 @@
   font-size: 15px;
   color: var(--ink-muted);
 }
+
+/* Ajustes */
+
+.settings__source {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}

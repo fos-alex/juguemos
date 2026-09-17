@@ -6,6 +6,9 @@ import { useGoBack } from '../../../shared/hooks/useGoBack'
 import { useRequest } from '../../../shared/hooks/useRequest'
 import { read } from '../../../shared/store'
 import { Body, Card, Footer, Header, MetaLabel, Screen, StatusLine, TertiaryButton } from '../../../shared/ui'
+import '../account.css'
+
+const SOURCE_URL = 'https://github.com/fos-alex/juguemos'
 
 /** Ajustes: account, not navigation. Not designed yet; kept to the minimum. Copy needs a voice pass. */
 export function SettingsScreen() {
@@ -34,6 +37,18 @@ export function SettingsScreen() {
           <MetaLabel wide>Tu cuenta</MetaLabel>
           <p className="card-title">{account?.name}</p>
           <p className="card-meta">{account?.email}</p>
+        </Card>
+        {/* The license's Appropriate Legal Notices (README, License). A voice pass may reword it,
+            but it keeps the copyright line, the license, no warranty, and the link to the source. */}
+        <Card>
+          <MetaLabel wide>Sobre Ludi</MetaLabel>
+          <p className="card-meta">
+            © 2026 Alex Otero. Ludi es software libre: cualquiera puede copiarlo y cambiarlo bajo la licencia
+            AGPL-3.0. No tiene garantía.
+          </p>
+          <a className="settings__source" href={SOURCE_URL} target="_blank" rel="noreferrer">
+            Ver el código y la licencia
+          </a>
         </Card>
       </Body>
       <Footer>

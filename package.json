@@ -1,6 +1,7 @@
 {
   "name": "ludi",
   "private": true,
+  "license": "AGPL-3.0-only",
   "workspaces": ["api", "web"],
   "scripts": {
     "dev": "npm run dev -w web",

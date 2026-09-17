@@ -41,6 +41,8 @@ An npm workspace with two projects, run locally by Docker Compose behind Caddy. 
 
 **JSDoc guides, nothing enforces it.** Both projects are plain JavaScript. JSDoc types are there so agents and readers can follow the data; there is no TypeScript, no typecheck, and no `.ts` file, and that is Alex's choice (JUG-70). Keep JSDoc accurate when you change a shape, but don't add a typechecker or a `tsconfig` or `jsconfig`.
 
+**The code is AGPL-3.0-only,** with added terms in the [README](README.md#license) (JUG-171). A new dependency needs a license AGPL-3.0 can include: MIT, ISC, BSD, Apache 2.0, LGPL, GPL-3.0, or AGPL-3.0 work, and GPL-2.0-only or a proprietary license doesn't. Ask Alex before adding one that isn't on that list.
+
 ## Writing
 
 **No mannered prose.** Code comments, docs, commit messages, PR descriptions, and Linear are written plainly: say what something does or why, in ordinary words. No literary turns, aphorisms, personification, or clever phrasing.
