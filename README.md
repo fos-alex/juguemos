@@ -76,7 +76,25 @@ BETTER_AUTH_URL=https://ludi.ar
 # COMPOSE_FILE left out: the production web app, no hot reload
 ```
 
-Its own `BETTER_AUTH_SECRET` and a real `POSTGRES_PASSWORD` too, and `SIGNUP_EMAILS` with the family's emails only, never a domain. Then `docker compose up -d --build`.
+Its own `BETTER_AUTH_SECRET` and a real `POSTGRES_PASSWORD` too, and `SIGNUP_EMAILS` with the family's emails only, never a domain. For Google sign-in, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from [the Google client](#sign-in-with-google). Then `docker compose up -d --build`.
+
+### Sign in with Google
+
+The API needs an OAuth client from Google. In the [Google Cloud console](https://console.cloud.google.com/auth/overview), in a project for Ludi:
+
+1. **Branding:** the app name (Ludi) and a support email. **Audience:** External. In Testing, only the Google accounts added as test users can sign in, so add the family's.
+2. **Clients → Create client → Web application**, with one authorized redirect URI: `https://ludi.ar/api/auth/callback/google`.
+3. Put its client ID and secret in the droplet's `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+Ludi asks Google only for the name and email. A Google account still gets in only if its email is in `SIGNUP_EMAILS`, or it already has an account, which it joins.
+
+**On this machine.** Google sends the browser back to `BETTER_AUTH_URL`, and it refuses `ludi.local` as a redirect URI, since `.local` isn't a public domain. It accepts `localhost` over plain HTTP, and Caddy already serves the stack there on port 3001:
+
+1. Create a second client, *Ludi local*, with the redirect URI `http://localhost:3001/api/auth/callback/google`, so the droplet's secret stays on the droplet.
+2. In `.env`, set its `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, set `BETTER_AUTH_URL=http://localhost:3001`, and add `https://ludi.local:3000` to `TRUSTED_ORIGINS`, so email sign-in keeps working there.
+3. `docker compose up -d`, open `http://localhost:3001`, and tap *Continuar con Google* with an account whose email is in `SIGNUP_EMAILS`.
+
+After changing `BETTER_AUTH_URL`, a browser may have to sign in again. While it points at `localhost`, Google sign-in works only at `http://localhost:3001`, not at `ludi.local` or on the phone; put it back when you're done.
 
 ### Email
 
@@ -156,7 +174,7 @@ To install it, copy `scripts/ludi-nightly.service` and `scripts/ludi-nightly.tim
 
 Every 0.1 screen is built and runs on the API: accounts with a required session, the family profile, the toy box, activities and stories from templates in the database, and voice notes on *Contame de tu familia*. Reading the family from the parent's own words and bespoke stories use the LLM set in `.env`; without a key, first run starts at the family form and stories come from templates.
 
-Still missing, because they need services Ludi doesn't have yet: Google sign-in (0.3) and email verification.
+Still missing: email verification. The API can send email (JUG-169), but nothing sends any yet.
 
 Next: Alex reviews the first templates, and the catalog grows to 30–40 activities (JUG-14).
 

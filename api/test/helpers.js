@@ -33,7 +33,8 @@ export function testConfig({ auth, llm, stories, stt, email, admin, audit, ...re
   return {
     port: 0,
     databaseUrl: '',
-    auth: { url: ORIGIN, trustedOrigins: [], secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(), ...auth },
+    // No Google client: Sign in with Google is off, unless a test passes its own `google` to startApi.
+    auth: { url: ORIGIN, trustedOrigins: [], secret: 'test-secret-that-is-at-least-32-chars', signupEmails: new Set(), google: null, ...auth },
     // No key: template stories, unless a test passes its own `llm` to startApi.
     llm: { provider: 'opencode', apiKey: null, baseUrl: '', model: '', appUrl: ORIGIN, ...llm },
     stories: { episodesPerSeries: DEFAULT_SERIES_EPISODES, ...stories },
@@ -86,11 +87,12 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ signupEmails?: string[], trustedOrigins?: string[], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
+ * @param {{ signupEmails?: string[], trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
  */
 export async function startApi({
   signupEmails = [],
   trustedOrigins = [],
+  google = null,
   random,
   now,
   llm,
@@ -105,7 +107,7 @@ export async function startApi({
   const db = createDb(database.url)
   const config = testConfig({
     databaseUrl: database.url,
-    auth: { trustedOrigins, signupEmails: new Set(signupEmails) },
+    auth: { trustedOrigins, signupEmails: new Set(signupEmails), google },
     stories: { episodesPerSeries: maxEpisodes },
     admin: { enabled: admin },
     audit: { transcripts: auditTranscripts },

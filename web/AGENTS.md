@@ -56,8 +56,8 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 
 | Route | Screen |
 |---|---|
-| `/entrada` | Entrada |
-| `/cuenta` | Crear cuenta. `?modo=entrar` switches it to sign-in, `?campo=email` focuses a field |
+| `/entrada` | Entrada, with *Continuar con Google* first. `?error=` is the code a failed Google sign-in came back with (JUG-63) |
+| `/cuenta` | Crear cuenta. `?modo=entrar` switches it to sign-in, `?campo=email` focuses a field, and `?error=` is as on Entrada |
 | `/verificar` | Verificar el email. Redirects until the API sends email |
 | `/familia/contanos` | Contame de tu familia, with the voice note on its mic |
 | `/familia/revisar` | ¿Está bien así?, or Entendió mal when the parse flags fields |
@@ -87,6 +87,8 @@ The admin is Alex's tool, not a parent's screen. It has no login yet (JUG-109), 
   - **A 401 signs the device out,** from that check or any other call: `request` in `shared/http.js` (and the story stream) calls `endSession()`, except under `/auth`, where a 401 means a wrong password. No answer at all — offline, weak signal, a server failure — keeps the cached account, so the last juego stays readable.
   - A device whose session ended goes to `/cuenta?modo=entrar`; one that never had an account, or signed out, goes to `/entrada`. `signOut()` waits for the API, since only the server can end the httpOnly cookie; offline it says so and the parent stays signed in.
   - **First run holds its order,** in `firstRunTarget()`: no account goes to `/entrada`, and no family to `/familia/contanos`. When `/api/me` says `familyFromText` is false (no LLM), no family goes to the form at `/familia/corregir` instead.
+- **Sign in with Google** (JUG-63) is `GoogleButton` on Entrada and under the form on `/cuenta`, in both modes, through `useGoogleSignIn()`. Signing in and creating an account are the same tap. It asks the API for Google's address and leaves the app; Google comes back through the API, which starts the session and opens `/`, where the guard takes over as on any first load. A failure comes back to the screen it started on with `?error=`, and `googleFailure()` words it; a parent who cancels at Google sees no message. Without a Google client on the server, the tap says Google isn't available.
+  - **The service worker leaves `/api/` navigations to the network** (`navigateFallbackDenylist` in `vite.config.js`). Without it, Google's return to `/api/auth/callback/google` would get the app instead of the API, and sign-in would never finish.
 - **Build screens from the primitives** in `shared/ui/`, exported by its `index.js`, rather than one-off layouts: `Screen` (with `Header`, `Body`, `Footer`, `BackButton`), the buttons, `Card`, `Field`, `Chips`, `StepList`, `Drawer`, `Dots`, `Waiting`, `FinMark` and `PetalFall` (the one-off moments), `Skeleton`, `StatusLine`, `OfflineNotice`, `MetaLabel`, `Label`, `Wordmark`, `ThemeToggle`, and the icons in `Icons.jsx`. `Screen`'s `tone` sets the page background.
 - **Screen patterns are hooks in `shared/hooks/`,** so no screen writes them again: `useRequest()` (`idle`, `loading`, `slow` after a delay, or `error` with the failure in words), `useOfflineNotice()` with `<OfflineNotice>`, `useSerialSaves()` for taps that save one after another, `useSlowWait()` for a wait that has gone on long enough to say something about, `useReducedMotion()`, and `useDocumentTitle()`.
 - **Data comes only from each feature's `api.js`,** through `request` in `shared/http.js`. Screens never call `fetch` themselves and the web hardcodes no data. The two story streams and the voice upload call `fetch` directly, since `request` only speaks JSON, but they fail the same way. Screens work with the shapes in their feature's `types.js`, and `api.js` translates the API's shapes to them. `features/account/mock.js` holds only email verification.
@@ -157,5 +159,3 @@ Write the function in its feature's `api.js`, calling `request` from `shared/htt
 - **Nothing that counts or compares:** no streaks, points, badges, percentages, or days since the family last played. The only progress bar marks position in a story.
 - **Thumb zone:** primary actions in the lower half, tap targets at least 48 px, design width 390 px capped with `max-width`.
 - **Copy is Rioplatense Spanish with *vos*.** What Ludi suggests is a *juego*, never an *idea*, and Home's button says "¡Juguemos!" (JUG-69). Copy still waiting on a voice pass is marked `Voice pass pending` in the code.
-
-**Google sign-in** is hidden on the account screens until it arrives in 0.3; `GoogleButton` waits for it.

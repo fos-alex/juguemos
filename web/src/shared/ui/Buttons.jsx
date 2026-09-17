@@ -78,7 +78,7 @@ export function TertiaryButton(props) {
   return <Button variant="tertiary" {...props} />
 }
 
-/** Mocked for now: Sign in with Google is scheduled for 0.3 in docs/releases.md. @param {Omit<ButtonProps, 'children'>} props */
+/** Sign in with Google, a secondary button with the G. @param {Omit<ButtonProps, 'children'>} props */
 export function GoogleButton({ size, ...props }) {
   return (
     <SecondaryButton size={size} busyLabel="Conectando con Google" {...props}>
