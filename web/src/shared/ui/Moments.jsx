@@ -156,3 +156,109 @@ export function DrawnWordmark() {
     </span>
   )
 }
+
+/** @typedef {'sun' | 'heat' | 'cloud' | 'fog' | 'rain' | 'storm' | 'wind' | 'cold' | 'moon'} Sky */
+
+/** The cloud over rain and over a storm, smaller and higher than a cloud alone. */
+const HIGH_CLOUD = 'M13.62 23.65H26.38A5.52 5.52 0 0 0 26.89 12.63A7.22 7.22 0 0 0 13.03 14.55A4.59 4.59 0 0 0 13.62 23.65z'
+
+/** Each weather's drawing, on a 40 px grid. Every part that moves has its own class. @type {Record<Sky, React.ReactNode>} */
+const SKIES = {
+  sun: (
+    <>
+      <circle className="weather-mark__sun" cx="20" cy="20" r="7.5" />
+      <path
+        className="weather-mark__rays"
+        d="M31.5 20h4M28.13 28.13l2.83 2.83M20 31.5v4M11.87 28.13l-2.83 2.83M8.5 20h-4M11.87 11.87 9.04 9.04M20 8.5v-4M28.13 11.87l2.83-2.83"
+      />
+    </>
+  ),
+  heat: (
+    <>
+      <circle className="weather-mark__sun" cx="20" cy="15" r="5.5" />
+      <path
+        className="weather-mark__rays"
+        d="M28.5 15h3M26.01 21.01l2.12 2.12M20 23.5v3M13.99 21.01l-2.12 2.12M11.5 15h-3M13.99 8.99l-2.12-2.12M20 6.5v-3M26.01 8.99l2.12-2.12"
+      />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '320ms' }} d="M8 31q3-3 6 0t6 0 6 0 6 0" />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '420ms' }} d="M12 36q3-3 6 0t6 0 6 0" />
+    </>
+  ),
+  cloud: (
+    <path
+      className="weather-mark__cloud"
+      d="M12.5 30.5H27.5A6.5 6.5 0 0 0 28.1 17.53A8.5 8.5 0 0 0 11.8 19.8A5.4 5.4 0 0 0 12.5 30.5z"
+    />
+  ),
+  fog: (
+    <>
+      <path className="weather-mark__line" pathLength="1" d="M8 13h18" />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '110ms' }} d="M13 19.5h19" />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '220ms' }} d="M8 26h20" />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '330ms' }} d="M14 32.5h14" />
+    </>
+  ),
+  rain: (
+    <>
+      <path className="weather-mark__cloud" d={HIGH_CLOUD} />
+      <path className="weather-mark__drop" style={{ '--at': '300ms' }} d="m14 29.5-1.5 4" />
+      <path className="weather-mark__drop" style={{ '--at': '420ms' }} d="m20.5 29.5-1.5 4" />
+      <path className="weather-mark__drop" style={{ '--at': '360ms' }} d="m27 29.5-1.5 4" />
+    </>
+  ),
+  storm: (
+    <>
+      <path className="weather-mark__cloud" d={HIGH_CLOUD} />
+      <path className="weather-mark__bolt" d="M22.5 22 17 30h4.5l-2 7 7.5-9.5h-4.5l2.5-5.5z" />
+    </>
+  ),
+  wind: (
+    <>
+      <path className="weather-mark__line" pathLength="1" d="M5 14h13.5a3 3 0 1 0-2.12-5.12" />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '120ms' }} d="M5 20h26.25a3.75 3.75 0 1 0-2.66-6.4" />
+      <path className="weather-mark__line" pathLength="1" style={{ '--at': '240ms' }} d="M5 26h18a3 3 0 1 1-2.12 5.12" />
+    </>
+  ),
+  cold: (
+    <>
+      <g className="weather-mark__hat">
+        <path className="weather-mark__dome" d="M9.5 26a10.5 10.5 0 0 1 21 0" />
+        <rect className="weather-mark__band" x="8" y="26" width="24" height="6.5" rx="3.25" />
+        <path d="M14 28.5V30M20 28.5V30M26 28.5V30" />
+      </g>
+      <circle className="weather-mark__pompom" cx="20" cy="12" r="3.2" />
+    </>
+  ),
+  moon: (
+    <>
+      <path className="weather-mark__moon" d="M25 10.1A12 12 0 1 0 31.3 25.1 9 9 0 0 1 25 10.1z" />
+      <path className="weather-mark__star" style={{ '--at': '380ms' }} d="M31 5.5v5M28.5 8h5" />
+      <path className="weather-mark__star" style={{ '--at': '480ms' }} d="M35 15v3M33.5 16.5h3" />
+    </>
+  ),
+}
+
+/**
+ * The weather a juego is picked for, drawn for Home's corner (JUG-191): a
+ * sun, heat, a cloud, fog, rain, a storm, wind, a wool hat for the cold, or
+ * the moon at night. It plays once when it appears, in under a second: the
+ * rays turn in, the rain falls, the wind blows through, the moon swings in.
+ * Line drawings in the primary, with the sun's yellow as the one fill, so
+ * they read on sand and at night. The words beside it say what it means.
+ * @param {{ sky: Sky, className?: string }} props
+ */
+export function WeatherMark({ sky, className = '' }) {
+  return (
+    <svg
+      className={`weather-mark ${className}`.trim()}
+      viewBox="0 0 40 40"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {SKIES[sky]}
+    </svg>
+  )
+}

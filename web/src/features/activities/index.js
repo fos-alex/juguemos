@@ -3,6 +3,7 @@ export { ActivityScreen } from './screens/ActivityScreen'
 export { TimerScreen } from './screens/TimerScreen'
 export { MoodRow } from './components/MoodRow'
 export { ReactionRow } from './components/ReactionRow'
+export { WeatherNote } from './components/WeatherNote'
 export { findActivity, reactToActivity, stopTimer, suggestActivity } from './api'
 export { placeText } from './model'
 

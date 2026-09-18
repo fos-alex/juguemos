@@ -198,3 +198,147 @@
     opacity: 1;
   }
 }
+
+/*
+ * The weather in Home's corner (JUG-191). Each part arrives once, in under a
+ * second, and at rest the drawing is whole, so with reduced motion it is
+ * simply there.
+ */
+
+.weather-mark {
+  display: block;
+  width: 40px;
+  height: 40px;
+  overflow: visible;
+  stroke: var(--primary);
+  stroke-width: 2.2;
+}
+
+.weather-mark__sun,
+.weather-mark__bolt,
+.weather-mark__band,
+.weather-mark__pompom,
+.weather-mark__moon {
+  fill: var(--dot-sun);
+}
+
+.weather-mark__cloud,
+.weather-mark__dome {
+  fill: var(--surface);
+}
+
+.weather-mark__sun,
+.weather-mark__rays,
+.weather-mark__pompom,
+.weather-mark__star,
+.weather-mark__moon,
+.weather-mark__hat {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.weather-mark__sun {
+  animation: pop-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+/* The rays turn in around the sun, and the moon swings in the other way. */
+.weather-mark__rays {
+  animation: weather-turn 700ms var(--ease-play) 80ms backwards;
+}
+
+.weather-mark__moon {
+  --turn: 70deg;
+
+  animation: weather-turn 560ms var(--ease-play) backwards;
+}
+
+.weather-mark__star {
+  animation: pop-in 320ms var(--ease-play) var(--at) backwards;
+}
+
+/* Fog, wind, and heat draw from the left, one line after another. */
+.weather-mark__line {
+  stroke-dasharray: 1;
+  animation: weather-draw 460ms ease-out var(--at, 0ms) backwards;
+}
+
+.weather-mark__cloud {
+  animation: weather-drift 620ms var(--ease-play) backwards;
+}
+
+.weather-mark__drop {
+  animation: weather-fall 320ms ease-in var(--at) backwards;
+}
+
+/* One flicker as it lands, then it stays lit. */
+.weather-mark__bolt {
+  animation: weather-flash 560ms linear 360ms backwards;
+}
+
+/* The hat lands with a small tilt, and its pompom pops on after. */
+.weather-mark__hat {
+  transform-origin: 50% 100%;
+  animation: weather-land 560ms var(--ease-play) backwards;
+}
+
+.weather-mark__pompom {
+  animation: pop-in 320ms var(--ease-play) 380ms backwards;
+}
+
+@keyframes weather-turn {
+  from {
+    opacity: 0;
+    transform: rotate(var(--turn, -60deg)) scale(0.5);
+  }
+}
+
+/* Hidden until its turn, so no round cap shows as a dot before the line starts. */
+@keyframes weather-draw {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+  }
+
+  1% {
+    opacity: 1;
+  }
+}
+
+@keyframes weather-drift {
+  from {
+    opacity: 0;
+    transform: translateX(-9px);
+  }
+}
+
+@keyframes weather-fall {
+  from {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes weather-flash {
+  0% {
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  40% {
+    opacity: 0.2;
+  }
+
+  55% {
+    opacity: 1;
+  }
+}
+
+@keyframes weather-land {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) rotate(-14deg);
+  }
+}

@@ -19,9 +19,10 @@ import { useSyncExternalStore } from 'react'
 /** @typedef {'toyBox'} ToysKey */
 /** @typedef {'materials'} MaterialsKey The categories of household materials, as the API last sent them. */
 /**
- * @typedef {'activities' | 'lastActivityId' | 'timer' | 'activityMood'} ActivitiesKey
+ * @typedef {'activities' | 'lastActivityId' | 'timer' | 'activityMood' | 'outside'} ActivitiesKey
  * `activityMood` is the parent's tap on Tranqui or Con pilas, which holds until the next
- * 19:00 or 07:00 (JUG-26); without one the clock decides.
+ * 19:00 or 07:00 (JUG-26); without one the clock decides. `outside` is the weather the next
+ * juego is picked for, as Home's corner shows it (JUG-191).
  */
 /**
  * @typedef {'storyOptions' | 'stories' | 'storyPositions' | 'series' | 'lastStoryId' | 'storyRequest'} StoriesKey

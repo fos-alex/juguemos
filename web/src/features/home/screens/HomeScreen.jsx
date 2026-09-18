@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { AppMenu } from '../../../app/AppMenu'
-import { MoodRow, placeText, ReactionRow, suggestActivity } from '../../activities'
+import { MoodRow, placeText, ReactionRow, suggestActivity, WeatherNote } from '../../activities'
 import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
 import { forgetOptions, LastStoryCard, storyOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
@@ -41,7 +41,8 @@ const SLOW_AFTER_MS = 6000
  * card, the feedback tap asks once how it went (JUG-23): it is there while the
  * juego has no reaction, stays through the tap, and isn't asked again. Before
  * bed, the mood row above the button says the next juego will be tranqui, and
- * lets the parent ask for one con pilas instead (JUG-26).
+ * lets the parent ask for one con pilas instead (JUG-26). In the top corner,
+ * the weather the juego is picked for, with its line on a tap (JUG-191).
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -133,6 +134,7 @@ export function HomeScreen() {
             <MenuIcon />
           </button>
           <Wordmark greet />
+          <WeatherNote />
         </div>
         {/* With the picker below, the kids are named there instead. */}
         {family && !picking && <p className="home__family">{familyLine(family)}</p>}

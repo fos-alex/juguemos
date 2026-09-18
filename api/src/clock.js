@@ -9,6 +9,14 @@ const hourInBuenosAires = new Intl.DateTimeFormat('en-US', {
   hourCycle: 'h23',
 })
 
+const monthInBuenosAires = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Argentina/Buenos_Aires',
+  month: 'numeric',
+})
+
+/** June, July, and August, when night starts at 18:00. */
+const WINTER = [6, 7, 8]
+
 /** @typedef {'calm' | 'lively'} Mood */
 
 /**
@@ -23,4 +31,17 @@ const hourInBuenosAires = new Intl.DateTimeFormat('en-US', {
 export function moodAt(now) {
   const hour = Number(hourInBuenosAires.format(now))
   return hour >= 19 || hour < 7 ? 'calm' : 'lively'
+}
+
+/**
+ * Whether it is night for going out (JUG-191): from 19:00, and from 18:00 in
+ * winter, until 07:00. A juego is then played at home, whatever the weather,
+ * and Home's weather says so with a moon.
+ * @param {Date} now
+ * @returns {boolean}
+ */
+export function nightAt(now) {
+  const hour = Number(hourInBuenosAires.format(now))
+  const from = WINTER.includes(Number(monthInBuenosAires.format(now))) ? 18 : 19
+  return hour >= from || hour < 7
 }

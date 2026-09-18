@@ -41,7 +41,9 @@
  *   catalog come up; rain, heat, cold or wind takes most of the outdoor ones
  *   away instead. `fair` weather, and no weather at all — a family that
  *   hasn't said where they live, or a provider that is down — leave every
- *   template where it is. Like the moment, it only ever lowers a score, and
+ *   template where it is. Night counts as poor weather whatever the forecast
+ *   (JUG-191): after dark the juego is at home, which is what Home's moon
+ *   tells the parent. Like the moment, it only ever lowers a score, and
  *   never to zero.
  *
  * Two things are out before scoring: the juego being left, and any template
@@ -96,7 +98,8 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {Mood | null} mood the moment it was picked for
  * @property {number} moment what that moment left it
  * @property {Conditions | null} conditions what it was like outside, and what said so
- * @property {number} weather what the weather left it
+ * @property {boolean} night whether it was night, which keeps the juego at home
+ * @property {number} weather what the weather and the night left it
  * @property {Weights} weights
  */
 /** @typedef {{ template: Template, fill: Fill }} Candidate */
@@ -140,6 +143,7 @@ const DAY = 86_400_000
  *   after?: Template | null,
  *   mood?: Mood | null,
  *   conditions?: Conditions | null,
+ *   night?: boolean,
  *   now: Date,
  *   random: () => number,
  *   weights?: Weights,
@@ -149,7 +153,8 @@ const DAY = 86_400_000
  *   template; `catalog` every template a reaction could be about, fitting or
  *   not; `after` the template of the juego being left; `mood` the moment the
  *   juego is for, or null for no preference; `conditions` what it is like
- *   outside where they live, or null when there is nothing to say.
+ *   outside where they live, or null when there is nothing to say; `night`
+ *   whether it is night, when outside is out whatever the weather.
  * @returns {{ template: Template, fill: Fill, pick: Pick }[]}
  */
 export function rank(
@@ -163,6 +168,7 @@ export function rank(
     after = null,
     mood = null,
     conditions = null,
+    night = false,
     now,
     random,
     weights = DEFAULT_WEIGHTS,
@@ -207,7 +213,8 @@ export function rank(
     const freshness = own ? freshnessOf(own, now, weights) : 1
     const difference = after ? 1 - weights.different * jaccard(tagsOf(template), tagsOf(after)) : 1
     const moment = mood ? weights.moment[mood][template.energy] : 1
-    const weather = conditions ? weights.weather[conditions.weather][template.place] : 1
+    const outside = night ? 'poor' : conditions?.weather
+    const weather = outside ? weights.weather[outside][template.place] : 1
 
     const score = fit * feedback * freshness * difference * moment * weather
     return {
@@ -215,7 +222,7 @@ export function rank(
       fill,
       pick: {
         score, fit, themes, named, favorite, feedback: { alpha, beta, sample }, freshness, difference,
-        mood, moment, conditions, weather, weights,
+        mood, moment, conditions, night, weather, weights,
       },
     }
   })

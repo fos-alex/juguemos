@@ -332,3 +332,60 @@
 .mood-row .chips {
   justify-content: flex-end;
 }
+
+/*
+ * The weather in Home's corner (JUG-191): the drawing, and the line a tap
+ * shows under it, pointing up at it. Flat like a card, no shadow.
+ */
+
+.weather-note {
+  position: relative;
+  flex: none;
+  margin-left: auto;
+  /* The drawing's edge sits on the page's padding, as the menu's icon does. */
+  margin-right: -4px;
+}
+
+.weather-note__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.weather-note__line {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 3;
+  width: max-content;
+  max-width: min(250px, calc(100vw - 52px));
+  padding: 10px 14px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 16px;
+  background: var(--surface);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink-body);
+  transform-origin: calc(100% - 24px) 0;
+  animation: pop-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+/* The tail, under the middle of the drawing. */
+.weather-note__line::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 18px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid var(--hairline-strong);
+  border-left: 1px solid var(--hairline-strong);
+  border-top-left-radius: 3px;
+  background: var(--surface);
+  transform: rotate(45deg);
+}

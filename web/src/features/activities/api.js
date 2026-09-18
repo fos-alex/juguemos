@@ -8,6 +8,7 @@ import { ApiError, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').Activity} Activity */
 /** @typedef {import('./types').Mood} Mood */
+/** @typedef {import('./types').Outside} Outside */
 
 /** Nothing in the catalog fits this family yet: a state to word plainly, not a failure. */
 export class NothingFitsError extends WordedError {
@@ -86,6 +87,26 @@ export async function findActivity(id) {
  */
 export function markPlayed(id) {
   if (UUID.test(id)) request('POST', `/activities/${id}/plays`).catch(() => {})
+}
+
+/**
+ * How long the weather Home shows is kept, since a forecast is about the next
+ * few hours and night comes on the clock. Past this Home shows none until the
+ * API answers again.
+ */
+const OUTSIDE_KEPT_MS = 30 * 60_000
+
+/**
+ * The weather the next juego is picked for (JUG-191), kept in the store for
+ * Home's corner, or null when there is none to show. An answer kept too long
+ * is forgotten first, so offline Home shows no weather rather than an old one.
+ */
+export async function loadOutside() {
+  const kept = read('outside')
+  if (kept && Date.now() - kept.at > OUTSIDE_KEPT_MS) write('outside', null)
+  /** @type {Outside | null} */
+  const outside = await request('GET', '/activities/weather')
+  write('outside', outside && { ...outside, at: Date.now() })
 }
 
 /**

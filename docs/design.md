@@ -34,7 +34,7 @@ From the five commitments in [constitution.md](constitution.md):
 
 **The brand travels to the inbox.** Ludi's emails are the same short palette and type as the app: the wordmark with its ronda, a white card on sand, one jacarandá button. They carry no images and no web fonts, so nothing is fetched when one is opened and nothing can track it, and they ask clients not to invert their colours, so the brand reads as it was drawn. [api/AGENTS.md](../api/AGENTS.md) says how one is built.
 
-**No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, an icon from the set, or one of the small drawings in `shared/ui`. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS; *Fin* and the moon at the end of a story, and the wordmark Bienvenida writes, are SVG lines in the tokens.
+**No photography, no stock art, no gradients.** Everything on screen is type, token colour, a CSS shape, an icon from the set, or one of the small drawings in `shared/ui`. The wordmark, the progress bar, the level trace and the waiting animations are drawn in CSS; *Fin* and the moon at the end of a story, the wordmark Bienvenida writes, and the weather on Home are SVG lines in the tokens.
 
 **The wordmark** is "Ludi" in Fredoka 600 with three dots in grass, sun, and jacarandá. The dots are a *ronda*, not a face. It is a working wordmark: the domain is `ludi.ar`, and the trademark check is pending.
 
@@ -85,6 +85,7 @@ Motion is where most of the fun lives, so it gets the same care as colour. The v
 |---|---|
 | A new account arrives on Bienvenida | The wordmark writes itself: *Ludi* stroke by stroke, then the i's dot, then the ronda hops in, one dot after another (JUG-173) |
 | Home opens | The wordmark's three dots hop once, one after another |
+| Home opens with the weather, or it is tapped | The weather in the corner draws itself once: the sun's rays turn in, rain falls, the wind blows through, a wool hat lands, the moon swings in. The tap also shows its line (JUG-191) |
 | ¡Juguemos! is thinking | The ronda turns inside the button |
 | Otro juego | The next juego is dealt in from the side |
 | A chip is added or chosen | It pops in; a chosen one swells and its check turns in |
@@ -109,7 +110,7 @@ The whole palette is `web/src/styles/tokens.css`, in a light set and a dark set.
 | Grass | `--grass`, `--grass-ink`, `--secondary-border`, `--secondary-text` | Meta labels and the secondary button's outline. In dark the secondary button drops the green |
 | Ink | `--ink`, `--ink-body`, `--ink-body-soft`, `--ink-reading`, `--ink-muted`, `--ink-faint`, `--ink-hint`, `--ink-disabled` | Text, from a heading down to a placeholder. Going quieter means going down this list, never adding opacity |
 | Lines | `--hairline`, `--hairline-strong`, `--row-divider`, `--dashed` | Card borders, dividers, and the dashed edge of anything not filled in yet |
-| Wordmark | `--wordmark`, `--dot-grass`, `--dot-sun`, `--dot-jacaranda` | The wordmark and the `RondaIcon`. Nothing else uses the three dot colours |
+| Wordmark | `--wordmark`, `--dot-grass`, `--dot-sun`, `--dot-jacaranda` | The wordmark and the `RondaIcon`. Beyond them, only the moments use the dot colours: the petals, the stars and moon at the end of a story, and the fill of the weather's sun, moon, bolt, and wool hat (JUG-191) |
 
 Contrast meets WCAG AA in both sets, because the app gets read in a sunny plaza and in a dark bedroom.
 
