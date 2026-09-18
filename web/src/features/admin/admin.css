@@ -95,6 +95,41 @@
   color: var(--ink-muted);
 }
 
+/* The rating over the switch, both as wide as the wider one. */
+.admin-row__controls {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-rating {
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 999px;
+}
+
+.admin-rating .field__input {
+  padding: 10px 0;
+  font-size: 15px;
+}
+
+/* On a phone the controls go under the words, side by side, so the title keeps the row's width. */
+@media (max-width: 560px) {
+  .admin-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-row__controls {
+    flex: 1 1 100%;
+    flex-direction: row;
+  }
+
+  .admin-rating {
+    flex: 1;
+  }
+}
+
 .admin-switch {
   flex: none;
   min-width: 104px;
