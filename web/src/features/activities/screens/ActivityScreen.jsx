@@ -23,6 +23,9 @@ import {
 } from '../../../shared/ui'
 import '../activities.css'
 
+/** Voice pass pending: said when no juego matched everything the parent chose (JUG-31). */
+const CLOSEST = 'No encontré uno con todo lo que eligieron. Este es el que más se parece.'
+
 /**
  * 2m, with 2p as its swap state. "Otro juego" turns the blocks into
  * placeholders in place and pushes the next juego, so back returns to the
@@ -35,13 +38,15 @@ import '../activities.css'
  * juego, the feedback tap (JUG-23), which is where a reaction can be changed.
  * A discovery game's Empezar opens the game instead of the timer (JUG-177).
  * A juego opened from Lo que jugamos is the same screen, to play it again
- * (JUG-188).
+ * (JUG-188). When no juego matched everything the parent chose in ¿Algo en
+ * especial?, the one that came closest says so above the buttons (JUG-31).
  */
 export function ActivityScreen() {
   const { id } = useParams({ from: '/idea/$id/' })
   const navigate = useNavigate()
   const goBack = useGoBack('/')
   const swapped = useRouterState({ select: (state) => Boolean(state.location.state?.swapped) })
+  const closest = useRouterState({ select: (state) => Boolean(state.location.state?.closest) })
   const online = useOnline()
   const activity = useStored('activities')?.[id]
   const timer = useStored('timer')
@@ -71,7 +76,7 @@ export function ActivityScreen() {
     try {
       const next = await suggestActivity({ after: id })
       setDealt(next.id)
-      await navigate({ to: '/idea/$id', params: { id: next.id }, state: { swapped: true } })
+      await navigate({ to: '/idea/$id', params: { id: next.id }, state: { swapped: true, closest: next.closest } })
       setSwap('idle')
     } catch (error) {
       setFailure(failureText(error))
@@ -112,7 +117,13 @@ export function ActivityScreen() {
   )
 
   const notice =
-    swap === 'offline' && !online ? 'Estás sin conexión. El último juego sigue acá.' : swap === 'error' ? failure : null
+    swap === 'offline' && !online
+      ? 'Estás sin conexión. El último juego sigue acá.'
+      : swap === 'error'
+        ? failure
+        : closest && !loading
+          ? CLOSEST
+          : null
 
   return (
     <Screen>

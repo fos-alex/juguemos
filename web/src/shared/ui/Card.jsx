@@ -32,10 +32,15 @@ export function MetaLabel({ tone = 'faint', wide = false, as: Tag = 'div', class
 
 /**
  * A short bold label that isn't uppercase: `Por qué ahora`, `Más fácil`.
- * @param {{ tone?: 'grass' | 'faint' | 'primary' | 'muted', small?: boolean, as?: 'div' | 'h2', children: React.ReactNode }} props
+ * `id` lets a group name itself after it.
+ * @param {{ tone?: 'grass' | 'faint' | 'primary' | 'muted', small?: boolean, as?: 'div' | 'h2' | 'h3', id?: string, children: React.ReactNode }} props
  */
-export function Label({ tone = 'muted', small = false, as: Tag = 'h2', children }) {
-  return <Tag className={`label${small ? ' label--sm' : ''} tone-${tone}`}>{children}</Tag>
+export function Label({ tone = 'muted', small = false, as: Tag = 'h2', id, children }) {
+  return (
+    <Tag id={id} className={`label${small ? ' label--sm' : ''} tone-${tone}`}>
+      {children}
+    </Tag>
+  )
 }
 
 /**

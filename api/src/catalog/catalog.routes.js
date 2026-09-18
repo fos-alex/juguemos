@@ -1,10 +1,9 @@
 import { errorBody, lines, text, uuid } from '../http/schemas.js'
 import { MATERIAL_KEYS } from '../materials/materials.js'
+import { CATEGORIES } from './categories.js'
 import { THEME_KEYS } from './themes.js'
 
 /** @typedef {ReturnType<typeof import('./catalog.controller.js').createCatalogController>} CatalogController */
-
-const CATEGORIES = ['move', 'create', 'pretend', 'explore', 'learn', 'low_energy', 'helpers', 'out_and_about']
 
 // Bad input is 400, an unknown template 404, and a slug already taken 409.
 const errors = { 400: errorBody, 404: errorBody, 409: errorBody, 500: errorBody }

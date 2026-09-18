@@ -40,8 +40,8 @@ export const activities = pgTable(
     // how long they played. Null while it was only suggested.
     playedAt: timestamptz(),
     // Why the ranking picked this template (JUG-104): the parts of its score
-    // and the weights, so a suggestion can be read back. Null for a juego from
-    // before the ranking.
+    // and the weights, so a suggestion can be read back, and what the parent
+    // chose it to be (JUG-31). Null for a juego from before the ranking.
     pick: jsonb(),
     createdAt: createdAt(),
   },

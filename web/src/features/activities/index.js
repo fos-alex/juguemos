@@ -1,7 +1,8 @@
 // Activities: the juego on screen, its timer, and asking for the next one.
 export { ActivityScreen } from './screens/ActivityScreen'
 export { TimerScreen } from './screens/TimerScreen'
-export { MoodRow } from './components/MoodRow'
+export { ChoiceChip } from './components/ChoiceChip'
+export { ChoiceSheet } from './components/ChoiceSheet'
 export { ReactionRow } from './components/ReactionRow'
 export { WeatherNote } from './components/WeatherNote'
 export { findActivity, reactToActivity, stopTimer, suggestActivity } from './api'

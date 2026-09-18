@@ -337,6 +337,53 @@ test('a juego before bed is calm, and the parent can ask for one con pilas (JUG-
   }
 })
 
+test('the parent can ask for a juego outside, with sound, or of a kind, and gets the closest when none is all of it (JUG-31)', async () => {
+  const choosing = await startApi({ now: () => new Date('2026-09-14T15:00:00-03:00'), random: seededRandom('elegir') })
+  try {
+    const choosingCatalog = createCatalogService({ db: choosing.db })
+    await choosingCatalog.addActivityTemplate(template({ slug: 'crear', title: 'Crear adentro', categories: ['create'] }))
+    await choosingCatalog.addActivityTemplate(
+      template({ slug: 'plaza', title: 'Correr en la plaza', place: 'outdoor', categories: ['move', 'out_and_about'] }),
+    )
+    await choosingCatalog.addActivityTemplate(
+      template({ slug: 'que-suena', title: '¿Qué suena?', categories: ['learn'], game: { type: 'sounds', set: 'granja' } }),
+    )
+    const { cookie } = await signUpAs(choosing, 'elegir@example.com')
+    await putFamily(choosing, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [] })
+    /** @param {object} body */
+    const ask = (body) =>
+      choosing.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: body })
+    /** @param {string} id */
+    const pickOf = async (id) => (await choosing.pool.query('select pick from activities where id = $1', [id])).rows[0].pick
+
+    const outside = (await ask({ place: 'outdoor' })).json()
+    assert.equal(outside.title, 'Correr en la plaza')
+    assert.equal(outside.closest, false)
+    assert.deepEqual((await pickOf(outside.id)).choices, { place: 'outdoor', sound: null, category: null })
+
+    const sound = (await ask({ sound: true })).json()
+    assert.equal(sound.title, '¿Qué suena?')
+    assert.equal(sound.game.type, 'sounds')
+
+    const quietCraft = (await ask({ sound: false, category: 'create' })).json()
+    assert.equal(quietCraft.title, 'Crear adentro')
+
+    // Nothing outside plays sound, so the juego is one of the two that come closest, and says so.
+    const closest = (await ask({ place: 'outdoor', sound: true })).json()
+    assert.ok(['Correr en la plaza', '¿Qué suena?'].includes(closest.title), closest.title)
+    assert.equal(closest.closest, true)
+    assert.equal((await pickOf(closest.id)).closest, true)
+
+    // Choosing nothing leaves every juego in, as before.
+    assert.equal((await ask({})).json().closest, false)
+
+    assert.equal((await ask({ category: 'volar' })).statusCode, 400)
+    assert.equal((await ask({ place: 'la luna' })).statusCode, 400)
+  } finally {
+    await choosing.close()
+  }
+})
+
 test('a fine afternoon brings a juego outside, and rain and the night keep it in (JUG-25, JUG-191)', async () => {
   /** A forecaster that answers the same hour all the way through, and counts its calls. */
   const forecasting = (/** @type {object} */ hour) => {

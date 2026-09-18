@@ -9,6 +9,7 @@ export {
   CheckIcon,
   CloseIcon,
   FamilyIcon,
+  FilterIcon,
   HistoryIcon,
   HomeIcon,
   LockIcon,
@@ -35,6 +36,7 @@ export { Waiting } from './Waiting'
 export { AS_TYPED, Field, FieldControl, FieldGroup } from './Field'
 export { StepList } from './StepList'
 export { Drawer } from './Drawer'
+export { Sheet } from './Sheet'
 export { Wordmark } from './Wordmark'
 export { ThemeToggle } from './ThemeToggle'
 export { Chips, ChipInput, ChipToggle } from './Chips'

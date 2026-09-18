@@ -134,7 +134,8 @@ test('a juego opens again as the parent saw it, only for its own family', async 
   await newFamily(cookie)
   const { cookie: other } = await signUpAs(api, 'eli@example.com')
   await newFamily(other)
-  const activity = await suggest(cookie)
+  // `closest` (JUG-31) belongs to the suggestion, not the juego, so opening it again doesn't send it.
+  const { closest, ...activity } = await suggest(cookie)
 
   const found = await api.app.inject({ method: 'GET', url: `/activities/${activity.id}`, headers: { cookie } })
   assert.equal(found.statusCode, 200)

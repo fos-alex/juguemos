@@ -2,6 +2,7 @@ import { userOf } from '../auth/session.js'
 import { familyOf } from '../families/require-family.js'
 
 /** @typedef {import('./activities.service.js').ActivitiesService} ActivitiesService */
+/** @typedef {import('./choices.js').Choices} Choices */
 
 /** Activities for the signed-in adult's family. @param {{ activities: ActivitiesService }} deps */
 export function createActivitiesController({ activities }) {
@@ -9,10 +10,19 @@ export function createActivitiesController({ activities }) {
     /** @type {import('fastify').RouteHandlerMethod} */
     async suggest(request, reply) {
       // `mood` left out is not the same as null: without it the clock decides.
-      const { after = null, mood } = /** @type {{ after?: string | null, mood?: 'calm' | 'lively' | null }} */ (
-        request.body ?? {}
-      )
-      const activity = await activities.suggest(familyOf(request), { after, mood, userId: userOf(request).id })
+      const {
+        after = null,
+        mood,
+        place = null,
+        sound = null,
+        category = null,
+      } = /** @type {{ after?: string | null, mood?: 'calm' | 'lively' | null } & Partial<Choices>} */ (request.body ?? {})
+      const activity = await activities.suggest(familyOf(request), {
+        after,
+        mood,
+        choices: { place, sound, category },
+        userId: userOf(request).id,
+      })
       return reply.code(201).send(activity)
     },
 
