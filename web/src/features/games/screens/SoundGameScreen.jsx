@@ -32,7 +32,8 @@ import '../games.css'
  * Words only: no pictures, no characters, and no score. A wrong guess just
  * hears the answer. Sound plays only on a tap here, the one place Ludi makes
  * any. The primary button walks the round, Escuchar, Ver la respuesta, Otro
- * sonido, with Escuchar otra vez under it once the sound has played. The
+ * sonido, with Escuchar otra vez under it once the sound has played; from
+ * then on, tapping the option the kids said reveals the answer too. The
  * screen stays on while the game is open.
  */
 export function SoundGameScreen() {
@@ -91,6 +92,8 @@ export function SoundGameScreen() {
     )
   }
 
+  // Ver la respuesta, or a tap on any option: the answer shows and is said.
+  // Tapped again after that, it is said again.
   const reveal = () => {
     setRevealed(true)
     say(answerLine(round))
@@ -125,7 +128,11 @@ export function SoundGameScreen() {
         }
       />
       <Body className="sound-game">
-        {round ? <SoundRound key={index} round={round} revealed={revealed} /> : <GameEnd activity={activity} />}
+        {round ? (
+          <SoundRound key={index} round={round} revealed={revealed} onChoose={heard ? reveal : undefined} />
+        ) : (
+          <GameEnd activity={activity} />
+        )}
       </Body>
       <Footer sticky className="sound-game__footer">
         {/* Voice pass pending: the failure line and every button below. */}

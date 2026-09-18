@@ -4,10 +4,11 @@
  * chance, so a seeded one deals the same game every time.
  *
  * How many options, and how close, follows the youngest kid playing. Under 3,
- * two that sound nothing alike, like a cow and a rooster. From 3, three, one
- * of them close to the answer. From 5, four, as many close ones as the set
- * has, like a horse, a donkey, and a cow. A family with no ages is dealt as
- * for a 3-year-old, the age stories fall back on too.
+ * three that sound nothing alike, like a cow, a rooster, and a cat; two were
+ * too easy even for them. From 3, three, one of them close to the answer.
+ * From 5, four, as many close ones as the set has, like a horse, a donkey,
+ * and a cow. A family with no ages is dealt as for a 3-year-old, the age
+ * stories fall back on too.
  *
  * An option is the family's own word when they have one: the pet's name for
  * its animal, and a toy's name for what the toy is, so the kids can answer
@@ -38,7 +39,7 @@ export const ROUNDS = 5
  */
 export function optionsFor(ageMonths) {
   const months = ageMonths ?? 36
-  if (months < 36) return { count: 2, close: 0 }
+  if (months < 36) return { count: 3, close: 0 }
   if (months < 60) return { count: 3, close: 1 }
   return { count: 4, close: 3 }
 }

@@ -8,9 +8,14 @@ import { CheckIcon } from '../../../shared/ui'
  * answer in their place over the options, marked with a tint, a bar, and a
  * check, so colour is never the only sign. A recording whose license asks
  * for credit names its author under them.
- * @param {{ round: Round, revealed: boolean }} props
+ *
+ * Once the sound has played, each option is a button: the parent taps what
+ * the kids said, and it does what *Ver la respuesta* does. It reveals the
+ * right one whichever was tapped, so a wrong guess just hears the answer and
+ * nothing marks it wrong. After that, a tap says the answer again.
+ * @param {{ round: Round, revealed: boolean, onChoose?: () => void }} props `onChoose` is left out until the sound has played
  */
-export function SoundRound({ round, revealed }) {
+export function SoundRound({ round, revealed, onChoose }) {
   return (
     <>
       {/* Voice pass pending: "¿Es…". */}
@@ -20,10 +25,21 @@ export function SoundRound({ round, revealed }) {
       <ul className={`sound-options${revealed ? ' is-revealed' : ''}`}>
         {round.options.map((option, index) => {
           const answer = revealed && index === round.answer
-          return (
-            <li key={index} className={`sound-option${answer ? ' is-answer' : ''}`}>
+          const words = (
+            <>
               {option}
               {answer && <CheckIcon className="sound-option__check" />}
+            </>
+          )
+          return (
+            <li key={index} className={`sound-option${answer ? ' is-answer' : ''}`}>
+              {onChoose ? (
+                <button type="button" className="sound-option__button" onClick={onChoose}>
+                  {words}
+                </button>
+              ) : (
+                <span className="sound-option__words">{words}</span>
+              )}
             </li>
           )
         })}

@@ -23,13 +23,14 @@ test('a game is five different sounds from its set, each with its answer among t
   }
 })
 
-test('the youngest get two options that sound nothing alike', () => {
-  assert.deepEqual(optionsFor(20), { count: 2, close: 0 })
+test('the youngest get three options, none of them close to the answer', () => {
+  assert.deepEqual(optionsFor(20), { count: 3, close: 0 })
   for (const seed of ['a', 'b', 'c', 'd']) {
     for (const round of deal(granja, { ageMonths: 20, random: seededRandom(seed) }).rounds) {
-      assert.equal(round.options.length, 2)
-      const [wrong] = round.options.filter((_, index) => index !== round.answer)
-      assert.notEqual(byName(wrong).group, item(round.sound).group)
+      assert.equal(round.options.length, 3)
+      for (const wrong of round.options.filter((_, index) => index !== round.answer)) {
+        assert.notEqual(byName(wrong).group, item(round.sound).group)
+      }
     }
   }
 })

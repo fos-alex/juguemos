@@ -1,4 +1,5 @@
 import { Card, Label, MetaLabel, Skeleton, StepList } from '../../../shared/ui'
+import { SoundNotice } from './SoundNotice'
 import '../activities.css'
 
 /** @typedef {import('../types').Activity} Activity */
@@ -7,7 +8,8 @@ import '../activities.css'
  * One idea, in either of the two layouts still open (docs/design.md):
  * `porque` (2m) earns trust before the steps, and is the one the app shows;
  * `pasos` (2n) is playable in the first screenful. Its blocks come in one
- * after another as it opens (JUG-159).
+ * after another as it opens (JUG-159). A juego that plays sound says so
+ * right under its title (JUG-177).
  * @param {{ activity: Activity, layout?: 'porque' | 'pasos', className?: string }} props
  */
 export function ActivityView({ activity, layout = 'porque', className = '' }) {
@@ -23,6 +25,7 @@ function WhyFirst({ activity, className }) {
   return (
     <article className={`activity activity--porque ${className}`.trim()}>
       <h1 className="activity__title">{activity.title}</h1>
+      {activity.game && <SoundNotice />}
       <Card tone="accent">
         <Label tone="primary">Por qué ahora</Label>
         <p className="activity__why">{activity.why}</p>
@@ -55,6 +58,7 @@ function StepsFirst({ activity, className }) {
   return (
     <article className={`activity activity--pasos ${className}`.trim()}>
       <h1 className="activity__title">{activity.title}</h1>
+      {activity.game && <SoundNotice />}
       <p className="activity__needs-line">Necesitás: {activity.needs}</p>
       <hr className="hairline" />
       <StepList steps={activity.steps} variant="numerals" />

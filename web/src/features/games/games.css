@@ -26,20 +26,40 @@
 
 /* Each round's options settle one after another, like the cards on Home. */
 .sound-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 60px;
-  padding: 12px 18px;
   border: 1px solid var(--hairline);
   border-radius: 16px;
   background: var(--surface);
+  color: var(--ink);
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+/* Words to read before the sound plays, and a button to tap after. */
+.sound-option__words,
+.sound-option__button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 18px;
+  border: 0;
+  background: none;
   font-family: var(--font-display);
   font-size: 24px;
   font-weight: 500;
   line-height: 1.2;
-  color: var(--ink);
-  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+  color: inherit;
+  text-align: left;
+}
+
+.sound-option__button {
+  touch-action: manipulation;
+  transition: transform var(--motion-quick) var(--ease-play);
+}
+
+.sound-option__button:active {
+  transform: scale(0.97);
+  transition-timing-function: var(--ease-out);
 }
 
 .sound-option:nth-child(2) {
@@ -54,12 +74,20 @@
   animation-delay: calc(var(--motion-stagger) * 3);
 }
 
-/* The answer: a tint, a bar, and a check, and the words above say it too. */
+/* The answer: a tint, a bar, and a check, and the words above say it too.
+   It swells once and its check pops in, as a chosen chip does. */
 .sound-option.is-answer {
   border-color: transparent;
   background: var(--surface-accent);
   box-shadow: inset 4px 0 0 var(--primary);
   color: var(--primary-pressed);
+  animation: answer-swell var(--motion-moment) var(--ease-play);
+}
+
+@keyframes answer-swell {
+  40% {
+    transform: scale(1.04);
+  }
 }
 
 .sound-options.is-revealed .sound-option:not(.is-answer) {
@@ -70,6 +98,7 @@
   flex: none;
   margin-left: auto;
   color: var(--primary);
+  animation: pop-in var(--motion-moment) var(--ease-play) backwards;
 }
 
 .sound-game__credit {
