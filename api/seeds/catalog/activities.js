@@ -69,6 +69,13 @@
  * phone, so they are all low_energy and played inside, and the steps say how
  * to play; vehicles and the house get the kids moving, so they are medium.
  *
+ * `rating`, from 1 to 5, is where every family's ranking starts before their
+ * reactions move it (JUG-192, JUG-195). It is higher for original juegos kids
+ * get into, and for the sound games. It is lower for dull or generic ones,
+ * chores with little play in them, and juegos that need many materials or
+ * something a family can't produce on demand, like a puddle or a hill. 3 is
+ * neither way.
+ *
  * Pending Alex's review and a voice pass (JUG-14).
  */
 
@@ -77,6 +84,7 @@ export const activityTemplates = [
   {
     slug: 'la-busqueda',
     title: 'La búsqueda de {toy}',
+    rating: 2,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 12,
@@ -101,6 +109,7 @@ export const activityTemplates = [
   {
     slug: 'tren-de-almohadones',
     title: 'Un tren de almohadones',
+    rating: 3,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 18,
@@ -125,6 +134,7 @@ export const activityTemplates = [
   {
     slug: 'hora-de-comer',
     title: '{toy} tiene hambre',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -149,6 +159,7 @@ export const activityTemplates = [
   {
     slug: 'galope-en-la-plaza',
     title: 'Galope en la plaza',
+    rating: 3,
     minutes: 20,
     place: 'outdoor',
     minAgeMonths: 18,
@@ -175,6 +186,7 @@ export const activityTemplates = [
   {
     slug: 'el-cumple',
     title: 'El cumple de {toy}',
+    rating: 4,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -199,6 +211,7 @@ export const activityTemplates = [
   {
     slug: 'el-consultorio',
     title: '{toy} va al médico',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -223,6 +236,7 @@ export const activityTemplates = [
   {
     slug: 'como-hace-la-mascota',
     title: '¿Cómo hace {pet}?',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -247,6 +261,7 @@ export const activityTemplates = [
   {
     slug: 'el-almacen',
     title: 'El almacén de {toy}',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -271,6 +286,7 @@ export const activityTemplates = [
   {
     slug: 'ring-ring',
     title: 'Ring, ring: llama {toy}',
+    rating: 3,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 15,
@@ -295,6 +311,7 @@ export const activityTemplates = [
   {
     slug: 'la-cueva',
     title: 'Una cueva para {toy}',
+    rating: 4,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 12,
@@ -322,6 +339,7 @@ export const activityTemplates = [
   {
     slug: 'el-retrato',
     title: 'El retrato de {toy}',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -346,6 +364,7 @@ export const activityTemplates = [
   {
     slug: 'la-orquesta',
     title: 'La orquesta de la cocina',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -370,6 +389,7 @@ export const activityTemplates = [
   {
     slug: 'una-torre',
     title: 'Una torre para {toy}',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -394,6 +414,7 @@ export const activityTemplates = [
   {
     slug: 'la-casa-de-carton',
     title: 'La casa de {toy}',
+    rating: 4,
     minutes: 25,
     place: 'indoor',
     minAgeMonths: 18,
@@ -421,6 +442,7 @@ export const activityTemplates = [
   {
     slug: 'el-camino',
     title: 'Un camino para {toy}',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -450,6 +472,7 @@ export const activityTemplates = [
   {
     slug: 'los-nenufares',
     title: 'De hoja en hoja',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -475,6 +498,7 @@ export const activityTemplates = [
   {
     slug: 'el-tunel-de-cajas',
     title: 'El túnel',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 12,
@@ -503,6 +527,7 @@ export const activityTemplates = [
   {
     slug: 'la-sombra',
     title: 'Pisar la sombra',
+    rating: 4,
     minutes: 10,
     place: 'outdoor',
     minAgeMonths: 24,
@@ -528,6 +553,7 @@ export const activityTemplates = [
   {
     slug: 'el-piso-es-lava',
     title: 'El piso es lava',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 36,
@@ -557,6 +583,7 @@ export const activityTemplates = [
   {
     slug: 'estatuas',
     title: 'Estatuas',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -582,6 +609,7 @@ export const activityTemplates = [
   {
     slug: 'la-mancha',
     title: 'La mancha en la plaza',
+    rating: 3,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 30,
@@ -607,6 +635,7 @@ export const activityTemplates = [
   {
     slug: 'el-circuito',
     title: 'El circuito del living',
+    rating: 4,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 36,
@@ -638,6 +667,7 @@ export const activityTemplates = [
   {
     slug: 'la-lista-de-la-plaza',
     title: 'La lista de la plaza',
+    rating: 4,
     minutes: 20,
     place: 'outdoor',
     minAgeMonths: 30,
@@ -666,6 +696,7 @@ export const activityTemplates = [
   {
     slug: 'la-rayuela',
     title: 'La rayuela',
+    rating: 3,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 36,
@@ -695,6 +726,7 @@ export const activityTemplates = [
   {
     slug: 'el-veo-veo',
     title: 'Veo veo',
+    rating: 2,
     minutes: 10,
     place: 'outdoor',
     minAgeMonths: 36,
@@ -720,6 +752,7 @@ export const activityTemplates = [
   {
     slug: 'el-mandado',
     title: 'El encargo de la verdulería',
+    rating: 4,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 36,
@@ -745,6 +778,7 @@ export const activityTemplates = [
   {
     slug: 'el-camino-de-tiza',
     title: 'El camino de tiza',
+    rating: 3,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 24,
@@ -770,6 +804,7 @@ export const activityTemplates = [
   {
     slug: 'las-hormigas',
     title: 'Seguir a las hormigas',
+    rating: 3,
     minutes: 10,
     place: 'outdoor',
     minAgeMonths: 30,
@@ -800,6 +835,7 @@ export const activityTemplates = [
   {
     slug: 'las-medias-perdidas',
     title: 'Las medias perdidas',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -825,6 +861,7 @@ export const activityTemplates = [
   {
     slug: 'poner-la-mesa',
     title: 'Poner la mesa',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 30,
@@ -850,6 +887,7 @@ export const activityTemplates = [
   {
     slug: 'lavar-la-verdura',
     title: 'El lavadero de verduras',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -879,6 +917,7 @@ export const activityTemplates = [
   {
     slug: 'la-plantita',
     title: 'Una plantita de {kid}',
+    rating: 3,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 36,
@@ -909,6 +948,7 @@ export const activityTemplates = [
   {
     slug: 'guardar-antes-de-que-suene',
     title: 'Guardar antes de que suene',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 30,
@@ -935,6 +975,7 @@ export const activityTemplates = [
   {
     slug: 'el-trapo-y-el-balde',
     title: 'El trapo y el balde',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -965,6 +1006,7 @@ export const activityTemplates = [
   {
     slug: 'el-intruso',
     title: 'El intruso',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 30,
@@ -990,6 +1032,7 @@ export const activityTemplates = [
   {
     slug: 'el-ruido-escondido',
     title: 'El ruido escondido',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1015,6 +1058,7 @@ export const activityTemplates = [
   {
     slug: 'frio-o-caliente',
     title: 'Frío, frío… caliente',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 30,
@@ -1040,6 +1084,7 @@ export const activityTemplates = [
   {
     slug: 'cuantos-pasos',
     title: '¿Cuántos pasos?',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1066,6 +1111,7 @@ export const activityTemplates = [
   {
     slug: 'se-hunde-o-flota',
     title: '¿Se hunde o flota?',
+    rating: 4,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1096,6 +1142,7 @@ export const activityTemplates = [
   {
     slug: 'el-memotest-casero',
     title: 'El memotest de la casa',
+    rating: 2,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1122,6 +1169,7 @@ export const activityTemplates = [
   {
     slug: 'la-caza-del-color',
     title: 'La caza del color',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1149,6 +1197,7 @@ export const activityTemplates = [
   {
     slug: 'la-ciudad-de-carton',
     title: 'Una ciudad de cartón',
+    rating: 3,
     minutes: 30,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1179,6 +1228,7 @@ export const activityTemplates = [
   {
     slug: 'los-binoculares',
     title: 'Binoculares de cartón',
+    rating: 3,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1208,6 +1258,7 @@ export const activityTemplates = [
   {
     slug: 'el-titere-de-media',
     title: 'El títere de media',
+    rating: 4,
     minutes: 25,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1234,6 +1285,7 @@ export const activityTemplates = [
   {
     slug: 'la-masa-y-la-pizzeria',
     title: 'La masa y la pizzería',
+    rating: 5,
     minutes: 25,
     place: 'indoor',
     minAgeMonths: 30,
@@ -1265,6 +1317,7 @@ export const activityTemplates = [
   {
     slug: 'el-mural',
     title: 'El mural de la pared',
+    rating: 3,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1293,6 +1346,7 @@ export const activityTemplates = [
   {
     slug: 'el-libro-de-lo-que-me-gusta',
     title: 'El libro de {kid}',
+    rating: 4,
     minutes: 25,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1319,6 +1373,7 @@ export const activityTemplates = [
   {
     slug: 'los-aviones-de-papel',
     title: 'Aviones de papel',
+    rating: 4,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 42,
@@ -1347,6 +1402,7 @@ export const activityTemplates = [
   {
     slug: 'el-frasco-de-la-calma',
     title: 'El frasco de la calma',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 30,
@@ -1376,6 +1432,7 @@ export const activityTemplates = [
   {
     slug: 'sombras-en-la-pared',
     title: 'Sombras en la pared',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1401,6 +1458,7 @@ export const activityTemplates = [
   {
     slug: 'la-pizza-en-la-espalda',
     title: 'La pizza en la espalda',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1427,6 +1485,7 @@ export const activityTemplates = [
   {
     slug: 'el-globo-que-se-infla',
     title: 'El globo que se infla',
+    rating: 2,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 30,
@@ -1452,6 +1511,7 @@ export const activityTemplates = [
   {
     slug: 'el-cuento-sin-leer',
     title: 'El cuento sin leer',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1479,6 +1539,7 @@ export const activityTemplates = [
   {
     slug: 'la-gallinita-ciega',
     title: 'La gallinita ciega',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1507,6 +1568,7 @@ export const activityTemplates = [
   {
     slug: 'anton-pirulero',
     title: 'Antón Pirulero',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 36,
@@ -1534,6 +1596,7 @@ export const activityTemplates = [
   {
     slug: 'aserrin-aserran',
     title: 'Aserrín, aserrán',
+    rating: 3,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 12,
@@ -1558,6 +1621,7 @@ export const activityTemplates = [
   {
     slug: 'este-compro-un-huevito',
     title: 'Este compró un huevito',
+    rating: 3,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 12,
@@ -1582,6 +1646,7 @@ export const activityTemplates = [
   {
     slug: 'las-caras',
     title: 'Las caras',
+    rating: 3,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 12,
@@ -1606,6 +1671,7 @@ export const activityTemplates = [
   {
     slug: 'la-lluvia-de-papelitos',
     title: 'La lluvia de papelitos',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -1630,6 +1696,7 @@ export const activityTemplates = [
   {
     slug: 'la-cinta-pegajosa',
     title: 'La cinta pegajosa',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -1654,6 +1721,7 @@ export const activityTemplates = [
   {
     slug: 'el-buzon',
     title: 'El buzón',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1678,6 +1746,7 @@ export const activityTemplates = [
   {
     slug: 'el-ascensor',
     title: 'El ascensor',
+    rating: 3,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1702,6 +1771,7 @@ export const activityTemplates = [
   {
     slug: 'la-radio',
     title: 'La radio',
+    rating: 5,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1726,6 +1796,7 @@ export const activityTemplates = [
   {
     slug: 'la-torre-en-la-panza',
     title: 'La torre en la panza',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1750,6 +1821,7 @@ export const activityTemplates = [
   {
     slug: 'el-oso-que-duerme',
     title: 'El oso que duerme',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1774,6 +1846,7 @@ export const activityTemplates = [
   {
     slug: 'el-panqueque',
     title: 'El panqueque',
+    rating: 5,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1801,6 +1874,7 @@ export const activityTemplates = [
   {
     slug: 'la-peluqueria',
     title: 'La peluquería',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1825,6 +1899,7 @@ export const activityTemplates = [
   {
     slug: 'que-sera',
     title: '¿Qué será?',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1849,6 +1924,7 @@ export const activityTemplates = [
   {
     slug: 'los-dibujos-que-se-secan',
     title: 'Los dibujos que se secan',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1873,6 +1949,7 @@ export const activityTemplates = [
   {
     slug: 'la-ventana',
     title: 'La ventana',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1897,6 +1974,7 @@ export const activityTemplates = [
   {
     slug: 'quien-camino-por-la-espalda',
     title: '¿Quién caminó por tu espalda?',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1921,6 +1999,7 @@ export const activityTemplates = [
   {
     slug: 'buenas-noches-a-todo',
     title: 'Buenas noches a todo',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -1945,6 +2024,7 @@ export const activityTemplates = [
   {
     slug: 'la-voz-perdida',
     title: 'La voz perdida',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1969,6 +2049,7 @@ export const activityTemplates = [
   {
     slug: 'los-ruidos-de-la-noche',
     title: 'Los ruidos de la noche',
+    rating: 2,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 24,
@@ -1993,6 +2074,7 @@ export const activityTemplates = [
   {
     slug: 'los-pies-dormidos',
     title: 'Los pies dormidos',
+    rating: 3,
     minutes: 5,
     place: 'indoor',
     minAgeMonths: 24,
@@ -2018,6 +2100,7 @@ export const activityTemplates = [
   {
     slug: 'el-tubo',
     title: 'El tubo',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -2042,6 +2125,7 @@ export const activityTemplates = [
   {
     slug: 'el-camino-descalzo',
     title: 'El camino descalzo',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2066,6 +2150,7 @@ export const activityTemplates = [
   {
     slug: 'a-que-huele',
     title: '¿A qué huele?',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -2090,6 +2175,7 @@ export const activityTemplates = [
   {
     slug: 'el-lavadero-de-juguetes',
     title: 'El lavadero de juguetes',
+    rating: 4,
     minutes: 20,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2117,6 +2203,7 @@ export const activityTemplates = [
   {
     slug: 'la-serpiente-de-espuma',
     title: 'La serpiente de espuma',
+    rating: 5,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 30,
@@ -2144,6 +2231,7 @@ export const activityTemplates = [
   {
     slug: 'el-tesoro-en-la-arena',
     title: 'El tesoro en la arena',
+    rating: 4,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 24,
@@ -2171,6 +2259,7 @@ export const activityTemplates = [
   {
     slug: 'el-barco-en-el-charco',
     title: 'El barco en el charco',
+    rating: 2,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 24,
@@ -2198,6 +2287,7 @@ export const activityTemplates = [
   {
     slug: 'el-lavarropas',
     title: 'El lavarropas',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2222,6 +2312,7 @@ export const activityTemplates = [
   {
     slug: 'los-broches',
     title: 'Los broches',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -2246,6 +2337,7 @@ export const activityTemplates = [
   {
     slug: 'las-compras',
     title: 'Las compras',
+    rating: 1,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2270,6 +2362,7 @@ export const activityTemplates = [
   {
     slug: 'la-merienda',
     title: 'La merienda la hace {kid}',
+    rating: 4,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 24,
@@ -2297,6 +2390,7 @@ export const activityTemplates = [
   {
     slug: 'la-comida-de-la-mascota',
     title: 'La comida de {pet}',
+    rating: 2,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2324,6 +2418,7 @@ export const activityTemplates = [
   {
     slug: 'el-rociador',
     title: 'El rociador',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2348,6 +2443,7 @@ export const activityTemplates = [
   {
     slug: 'las-medias-que-limpian',
     title: 'Las medias que limpian',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2373,6 +2469,7 @@ export const activityTemplates = [
   {
     slug: 'el-tunel-de-piernas',
     title: 'El túnel de las piernas',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -2397,6 +2494,7 @@ export const activityTemplates = [
   {
     slug: 'el-paracaidas',
     title: 'El paracaídas',
+    rating: 4,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -2421,6 +2519,7 @@ export const activityTemplates = [
   {
     slug: 'el-baile-del-repasador',
     title: 'El baile del repasador',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -2445,6 +2544,7 @@ export const activityTemplates = [
   {
     slug: 'la-mudanza',
     title: 'La mudanza',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2472,6 +2572,7 @@ export const activityTemplates = [
   {
     slug: 'el-bowling-de-botellas',
     title: 'El bowling de botellas',
+    rating: 3,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2496,6 +2597,7 @@ export const activityTemplates = [
   {
     slug: 'la-montana-del-sillon',
     title: 'La montaña del sillón',
+    rating: 4,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 18,
@@ -2523,6 +2625,7 @@ export const activityTemplates = [
   {
     slug: 'la-telarana',
     title: 'La telaraña',
+    rating: 4,
     minutes: 15,
     place: 'indoor',
     minAgeMonths: 24,
@@ -2550,6 +2653,7 @@ export const activityTemplates = [
   {
     slug: 'el-charco-de-cinta',
     title: 'El charco que se agranda',
+    rating: 3,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,
@@ -2574,6 +2678,7 @@ export const activityTemplates = [
   {
     slug: 'las-palomas',
     title: 'Las palomas',
+    rating: 3,
     minutes: 10,
     place: 'outdoor',
     minAgeMonths: 18,
@@ -2601,6 +2706,7 @@ export const activityTemplates = [
   {
     slug: 'la-lomita',
     title: 'La lomita',
+    rating: 2,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 24,
@@ -2628,6 +2734,7 @@ export const activityTemplates = [
   {
     slug: 'el-tobogan-de-los-juguetes',
     title: 'El tobogán de {toy}',
+    rating: 3,
     minutes: 15,
     place: 'outdoor',
     minAgeMonths: 24,
@@ -2652,6 +2759,7 @@ export const activityTemplates = [
   {
     slug: 'que-suena-granja',
     title: '¿Qué suena? Animales de la granja',
+    rating: 5,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -2677,6 +2785,7 @@ export const activityTemplates = [
   {
     slug: 'que-suena-vehiculos',
     title: '¿Qué suena? Vehículos',
+    rating: 5,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 12,
@@ -2702,6 +2811,7 @@ export const activityTemplates = [
   {
     slug: 'que-suena-casa',
     title: '¿Qué suena? Sonidos de la casa',
+    rating: 5,
     minutes: 10,
     place: 'indoor',
     minAgeMonths: 24,

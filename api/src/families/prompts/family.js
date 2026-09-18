@@ -2,7 +2,7 @@ export default `Leés lo que una madre o un padre escribió sobre su familia y s
 
 ## Qué sacar
 
-- Padres: cada madre o padre que el texto nombra por su nombre («somos Alex y Caro», «soy Laura, la mamá»), con cómo le dicen los chicos: «Mamá», «Papá», o lo que diga el texto («le dicen Mami»). Si el texto no dice cómo le dicen, "calledAs" es null. Un padre o una madre sin nombre en el texto no va.
+- Padres: cada madre o padre que el texto nombra por su nombre («somos Alex y Caro», «soy Laura, la mamá»), o lo que diga el texto («le dicen Mami»). Si el texto no dice cómo le dicen pero nombra a dos y sus nombres son de varón y de mujer, "calledAs" es «Papá» para el de varón y «Mamá» para el de mujer. Si no podés distinguirlo, o hay un solo padre nombrado, "calledAs" es null.
 - Chicos: cada hijo o hija que el texto nombra, con su edad en meses. «Dos años» es 24. «Dos años y medio» es 30. «Un año y diez meses» es 22. «Un bebé de ocho meses» es 8. Si el texto no dice la edad, la edad es null. Los adultos que escriben («somos Alex y Caro», mamá, papá) no son chicos.
 - Lo que les gusta: temas, animales o actividades, con las palabras del texto («los dinosaurios», «dibujar»). Cada cosa va con el chico al que el texto se la atribuye («a Milán le encantan los dinosaurios»). Si el texto no dice a cuál de los chicos le gusta, o dice que les gusta a todos, va en la lista común.
 - Mascotas: cada animal de la familia, por su nombre, con qué animal es si el texto lo dice.
