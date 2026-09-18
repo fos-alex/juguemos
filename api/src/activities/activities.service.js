@@ -27,6 +27,7 @@ import { kidIdsOf } from '../families/families.service.js'
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
+/** @typedef {import('../weather/weather.service.js').WeatherService} WeatherService */
 /** @typedef {ReturnType<typeof createActivitiesService>} ActivitiesService */
 
 /** How many of the family's latest activities the ranking reads. */
@@ -38,20 +39,30 @@ const HISTORY = 400
  *   catalog: CatalogService,
  *   families: FamiliesService,
  *   materials: MaterialsService,
+ *   weather: WeatherService,
  *   random?: () => number,
  *   now?: () => Date,
  * }} deps `random` is the only source of chance, `now` the clock the
- *   freshness is measured against; tests pin both.
+ *   freshness is measured against; tests pin both. `weather` answers null for
+ *   a family that hasn't said where they live, and whenever it can't be read.
  */
-export function createActivitiesService({ db, catalog, families, materials, random = Math.random, now = () => new Date() }) {
+export function createActivitiesService({
+  db,
+  catalog,
+  families,
+  materials,
+  weather,
+  random = Math.random,
+  now = () => new Date(),
+}) {
   return {
     /**
      * Picks a template that is switched on, whose age range covers every kid
      * playing, whose slots the family can fill, and that needs no material the
      * family doesn't have (JUG-153); ranks what fits by fit, feedback,
-     * freshness, difference from the juego being left, and the moment
-     * (ranking.js); fills the winner's slots; and saves the result with the
-     * kids who played and why it won.
+     * freshness, difference from the juego being left, the moment, and what
+     * it is like outside (ranking.js); fills the winner's slots; and saves
+     * the result with the kids who played and why it won.
      * @param {string} familyId
      * @param {{ after?: string | null, userId?: string | null, mood?: Mood | null }} [options] the
      *   activity to move on from; the adult asking, whose kids sitting out are left out (everyone
@@ -63,7 +74,7 @@ export function createActivitiesService({ db, catalog, families, materials, rand
     async suggest(familyId, { after = null, userId = null, mood } = {}) {
       const at = now()
       const isAfter = sql`${activities.id} = ${after}`
-      const [profile, templates, missing, history, others] = await Promise.all([
+      const [profile, templates, missing, history, others, place] = await Promise.all([
         families.playingProfile(familyId, userId),
         catalog.activeActivityTemplates(),
         materials.missing(familyId),
@@ -86,7 +97,11 @@ export function createActivitiesService({ db, catalog, families, materials, rand
           .from(activities)
           .where(and(ne(activities.familyId, familyId), isNotNull(activities.reaction), isNotNull(activities.templateId)))
           .groupBy(activities.templateId, activities.reaction),
+        // Where the family lives, for the weather (JUG-25). Null until they say.
+        families.placeOf(familyId),
       ])
+      // Cached per location on the server, and never a reason to fail a juego.
+      const conditions = await weather.conditionsAt(place)
 
       const fitting = templates.flatMap((template) => {
         if (template.materials.some((key) => missing.has(key))) return []
@@ -115,6 +130,7 @@ export function createActivitiesService({ db, catalog, families, materials, rand
         catalog: templates,
         after: templates.find((each) => each.id === afterTemplateId) ?? null,
         mood: mood === undefined ? moodAt(at) : mood,
+        conditions,
         now: at,
         random,
       })

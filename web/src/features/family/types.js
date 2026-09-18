@@ -22,13 +22,27 @@
 /** @typedef {'perro' | 'gato' | 'pajaro' | 'pez' | 'conejo' | 'tortuga' | 'otro'} PetKind What animal the pet is (JUG-21). */
 /** @typedef {'departamento' | 'casa' | 'casa_con_parque'} Home The kind of home (JUG-21). */
 /**
- * @typedef {{ parents: Parent[], kids: Kid[], pet: string, petKind: PetKind, home: Home | null, toys: FamilyToy[] }} Family
- * `petKind` is a dog until the family says otherwise, with or without a pet.
+ * @typedef {{ name: string, located: boolean }} Location
+ * Where the family lives (JUG-25), as typed, and whether Ludi could find it.
+ * A city or a zone is enough: it is only read to know what the weather is
+ * like there. The coordinates stay on the server.
  */
 /**
- * @typedef {Omit<Family, 'toys'> & { toys?: FamilyToy[] }} FamilyInput
- * The family as the form saves it. Mi familia's form has no toys, which live
- * in the toy box (JUG-21), so it leaves them out and the API keeps them.
+ * @typedef {{
+ *   parents: Parent[], kids: Kid[], pet: string, petKind: PetKind, home: Home | null,
+ *   location: Location | null, toys: FamilyToy[],
+ * }} Family
+ * `petKind` is a dog until the family says otherwise, with or without a pet.
+ * `location` is null until the family says where they live.
+ */
+/**
+ * @typedef {Omit<Family, 'toys' | 'location'> & { location?: string | null, toys?: FamilyToy[] }}
+ *   FamilyInput
+ * The family as a form saves it. Where they live goes back as the words the
+ * parent typed, and the API answers with whether it found them (JUG-25). A
+ * form that doesn't show a field leaves it out and the API keeps what it has:
+ * the toys, which live in the toy box (JUG-21), and the location, which
+ * onboarding's card never asks for.
  */
 /**
  * @typedef {{ family: Family, flagged: string[], note: string | null }} ParseResult

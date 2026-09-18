@@ -18,13 +18,22 @@ const words = { type: 'array', items: { type: 'string' } }
 const petKind = { type: 'string', enum: Object.keys(PET_KINDS) }
 const home = { type: ['string', 'null'], enum: [...HOMES, null] }
 
+// Where the family lives (JUG-25), in their own words, and whether anyone
+// could put them on the map. The coordinates never leave the server.
+const location = {
+  type: ['object', 'null'],
+  required: ['name', 'located'],
+  properties: { name: { type: 'string' }, located: { type: 'boolean' } },
+}
+
 const profile = {
   type: 'object',
-  required: ['id', 'name', 'home', 'parents', 'kids', 'pets', 'toys'],
+  required: ['id', 'name', 'home', 'location', 'parents', 'kids', 'pets', 'toys'],
   properties: {
     id: { type: 'string' },
     name: { type: ['string', 'null'] },
     home,
+    location,
     parents: {
       type: 'array',
       items: {
@@ -72,6 +81,9 @@ const profileInput = {
   properties: {
     name: { type: ['string', 'null'], maxLength: 80 },
     home,
+    // A city or a zone, in the parent's own words (JUG-25). Left out, it
+    // stays as it was, like the home and the toys.
+    location: { type: ['string', 'null'], maxLength: 120 },
     parents: {
       type: 'array',
       maxItems: 6,

@@ -4,19 +4,38 @@
  * stay exactly as typed.
  */
 import { relations, sql } from 'drizzle-orm'
-import { check, date, index, pgTable, primaryKey, smallint, text, uuid } from 'drizzle-orm/pg-core'
+import { check, date, doublePrecision, index, pgTable, primaryKey, smallint, text, uuid } from 'drizzle-orm/pg-core'
 import { users } from '../auth/auth.schema.js'
 import { createdAt } from '../db/columns.js'
 import { householdMaterials } from '../materials/materials.schema.js'
 import { toys } from '../toys/toys.schema.js'
 
-export const families = pgTable('families', {
-  id: uuid().primaryKey().defaultRandom(),
-  name: text(),
-  // A key from HOMES in kinds.js, or null until the family says (JUG-21).
-  home: text(),
-  createdAt: createdAt(),
-})
+export const families = pgTable(
+  'families',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text(),
+    // A key from HOMES in kinds.js, or null until the family says (JUG-21).
+    home: text(),
+    // Where the family lives, for the weather (JUG-25): their own words, as
+    // typed, and the city the geocoder put them in. Only the weather reads
+    // it, so a city or a zone is enough and these are never a home's
+    // coordinates; a place nobody could find keeps the words with no
+    // coordinates.
+    location: text(),
+    latitude: doublePrecision(),
+    longitude: doublePrecision(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    check('families_location_check', sql`${table.location} <> ''`),
+    check(
+      'families_coordinates_check',
+      sql`(${table.latitude} is null) = (${table.longitude} is null)
+        and (${table.latitude} is null or (${table.latitude} between -90 and 90 and ${table.longitude} between -180 and 180))`,
+    ),
+  ],
+)
 
 // The adults with an account in each family. One family per adult for now;
 // the second parent joins in 0.6.

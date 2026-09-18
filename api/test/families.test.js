@@ -304,3 +304,84 @@ test('choosing who plays needs a session and a family', async () => {
   if (!cookie) return
   assert.equal((await choosePlaying(cookie, [randomUUID()])).statusCode, 404)
 })
+
+test('where the family lives is saved in their own words and put on the map (JUG-25)', async () => {
+  // Its own API, with a geocoder that says what it was asked and answers for
+  // the places it knows. No test reaches the real one.
+  /** @type {string[]} */
+  const looked = []
+  const located = await startApi({
+    geocoder: {
+      async locate(name) {
+        looked.push(name)
+        return name === 'Capital Federal' ? { latitude: -34.61315, longitude: -58.37723 } : null
+      },
+    },
+  })
+  try {
+    const service = createFamiliesService({ db: located.db })
+    const { cookie } = await signUpAs(located, 'donde@example.com')
+    /** @param {object} profile */
+    const save = (profile) => putFamily(located, cookie, { ...EXAMPLE_PROFILE, ...profile })
+    const rowOf = async (/** @type {string} */ id) =>
+      (await located.pool.query('select location, latitude, longitude from families where id = $1', [id])).rows[0]
+
+    // The geocoder is asked for the family's own words; what Argentines call
+    // their city is its business, and its own test's (JUG-25).
+    const saved = (await save({ location: 'Capital Federal' })).json()
+    assert.deepEqual(saved.location, { name: 'Capital Federal', located: true })
+    assert.deepEqual(looked, ['Capital Federal'])
+    const row = await rowOf(saved.id)
+    // Their own words are kept as typed; the coordinates are the city's.
+    assert.equal(row.location, 'Capital Federal')
+    assert.equal(Math.round(row.latitude), -35)
+    assert.deepEqual(await service.placeOf(saved.id), { latitude: -34.61315, longitude: -58.37723 })
+
+    // Saving the family again with the same words asks nobody.
+    await save({ location: 'Capital Federal' })
+    assert.deepEqual(looked, ['Capital Federal'])
+
+    // Left out, it stays as it was, like the home and the toys.
+    const untouched = (await save({})).json()
+    assert.deepEqual(untouched.location, { name: 'Capital Federal', located: true })
+
+    // Words nobody can place are still the family's: kept, with no coordinates
+    // and no weather.
+    const nowhere = (await save({ location: 'Nunquistán' })).json()
+    assert.deepEqual(nowhere.location, { name: 'Nunquistán', located: false })
+    assert.equal(await service.placeOf(nowhere.id), null)
+
+    // And cleared, it goes, coordinates and all.
+    const cleared = (await save({ location: null })).json()
+    assert.equal(cleared.location, null)
+    assert.deepEqual(await rowOf(cleared.id), { location: null, latitude: null, longitude: null })
+
+    // The coordinates are the server's alone: the profile never carries them.
+    assert.deepEqual(Object.keys((await save({ location: 'Capital Federal' })).json().location).sort(), ['located', 'name'])
+  } finally {
+    await located.close()
+  }
+})
+
+test('a family still saves when the geocoder is down, or when there is none', async () => {
+  const broken = await startApi({
+    geocoder: {
+      async locate() {
+        throw new Error('the geocoding service is unreachable')
+      },
+    },
+  })
+  try {
+    const { cookie } = await signUpAs(broken, 'sinmapa@example.com')
+    const saved = await putFamily(broken, cookie, { ...EXAMPLE_PROFILE, location: 'La Plata' })
+    assert.equal(saved.statusCode, 200)
+    assert.deepEqual(saved.json().location, { name: 'La Plata', located: false })
+  } finally {
+    await broken.close()
+  }
+
+  // startApi gives no geocoder by default, which is a server that places nobody.
+  const { cookie } = await signUpAs(api, 'nogeo@example.com')
+  const saved = await putFamily(api, cookie, { ...EXAMPLE_PROFILE, location: 'Rosario' })
+  assert.deepEqual(saved.json().location, { name: 'Rosario', located: false })
+})

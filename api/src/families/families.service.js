@@ -20,25 +20,36 @@ import { NotFoundError, ValidationError } from '../errors.js'
 /** @typedef {{ id: string, name: string, calledAs: string }} Parent A parent's name, and what the kids call them (JUG-21). */
 /** @typedef {{ id: string, name: string, favorite: boolean }} ProfileToy A toy by its family name, and whether it is a favorite (JUG-104). */
 /**
+ * @typedef {{ name: string, located: boolean }} FamilyLocation
+ * Where the family lives (JUG-25), in their own words, and whether anyone
+ * could put those words on the map. The coordinates stay on the server: only
+ * the weather reads them, and nothing serves them.
+ */
+/**
  * @typedef {{
- *   id: string, name: string | null, home: string | null, parents: Parent[], kids: Kid[], pets: Pet[],
- *   interests: string[], toys: ProfileToy[],
+ *   id: string, name: string | null, home: string | null, location: FamilyLocation | null,
+ *   parents: Parent[], kids: Kid[], pets: Pet[], interests: string[], toys: ProfileToy[],
  * }} Profile
  * `interests` are those of the kids in the profile, each once: the whole
  * family's in `profileOf`, and only the kids playing in `playingProfile`.
- * `home` is a key from HOMES, or null until the family says.
+ * `home` is a key from HOMES, or null until the family says, and `location`
+ * is null until they say where they live.
  */
 /**
  * @typedef {object} ProfileInput The whole profile, in order. Items that carry
  *   the id of one of the family's rows update it; the rest are new. What is
- *   left out (the name, the home, the parents, the toys) stays as it was.
+ *   left out (the name, the home, where they live, the parents, the toys) stays as it was.
  * @property {string | null} [name]
  * @property {string | null} [home]
+ * @property {string | null} [location] where they live, in their own words; the geocoder
+ *   is asked where that is only when these words changed
  * @property {{ id?: string, name: string, calledAs?: string }[]} [parents] a parent sent without `calledAs` is "Mamá"
  * @property {{ id?: string, name: string, ageMonths: number | null, interests?: string[] }[]} kids
  * @property {{ id?: string, name: string, kind?: string }[]} pets a new pet sent without `kind` is a dog
  * @property {{ id?: string, name: string }[]} [toys] the toy box's own screens edit them too (JUG-21)
  */
+/** @typedef {import('../places/geocoder.js').Geocoder} Geocoder */
+/** @typedef {import('../places/geocoder.js').Place} Place */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../db/client.js').Tx} Tx */
 /** @typedef {ReturnType<typeof createFamiliesService>} FamiliesService */
@@ -93,8 +104,12 @@ export function withKids(profile, kidIds) {
   return { ...profile, kids: kept, interests: interestsOf(kept) }
 }
 
-/** @param {{ db: Db }} deps */
-export function createFamiliesService({ db }) {
+/**
+ * @param {{ db: Db, geocoder?: Geocoder | null }} deps `geocoder` puts the
+ *   family's words for where they live on the map (JUG-25); without one the
+ *   words are still saved and the weather is simply never read for them.
+ */
+export function createFamiliesService({ db, geocoder = null }) {
   /**
    * @param {string} familyId
    * @param {string | null} [userId] the adult asking, whose kids sitting out come back not playing
@@ -102,7 +117,7 @@ export function createFamiliesService({ db }) {
    */
   async function profileOf(familyId, userId = null) {
     const family = await db.query.families.findFirst({
-      columns: { id: true, name: true, home: true },
+      columns: { id: true, name: true, home: true, location: true, latitude: true },
       where: eq(families.id, familyId),
       with: {
         parents: { columns: { id: true, name: true, calledAs: true }, orderBy: byPosition },
@@ -117,6 +132,7 @@ export function createFamiliesService({ db }) {
       },
     })
     if (!family) throw new NotFoundError('No such family')
+    const { location, latitude, ...rest } = family
     const out = new Set()
     if (userId) {
       const rows = await db.select({ kidId: kidsSittingOut.kidId }).from(kidsSittingOut).where(eq(kidsSittingOut.userId, userId))
@@ -131,7 +147,36 @@ export function createFamiliesService({ db }) {
       playing: nobodyPlays || !out.has(kid.id),
       interests: kid.interests.map((row) => row.label),
     }))
-    return { ...family, kids: familyKids, interests: interestsOf(familyKids) }
+    return {
+      ...rest,
+      location: location === null ? null : { name: location, located: latitude !== null },
+      kids: familyKids,
+      interests: interestsOf(familyKids),
+    }
+  }
+
+  /**
+   * What to write for where the family lives, or null to leave the row alone.
+   * The geocoder is asked only when the parent changed the words, so saving
+   * the family again asks nobody. Words nobody can place are still saved,
+   * with no coordinates: they are the family's own, and the weather is simply
+   * not read for them. A geocoder that fails is the same as one that found
+   * nothing, since a family must always be able to save.
+   * @param {string} userId
+   * @param {string | null} location
+   * @returns {Promise<{ location: string | null, latitude: number | null, longitude: number | null } | null>}
+   */
+  async function locatedFor(userId, location) {
+    const name = location?.trim().replace(/\s+/g, ' ') || null
+    const familyId = await familyIdOf(db, userId)
+    if (familyId) {
+      const [row] = await db.select({ location: families.location }).from(families).where(eq(families.id, familyId))
+      if (row && row.location === name) return null
+    }
+    if (!name) return { location: null, latitude: null, longitude: null }
+    // Never logged and never in an error: the words are the family's own.
+    const place = await geocoder?.locate(name).catch(() => null)
+    return { location: name, latitude: place?.latitude ?? null, longitude: place?.longitude ?? null }
   }
 
   return {
@@ -201,6 +246,20 @@ export function createFamiliesService({ db }) {
     },
 
     /**
+     * Where the family is, for the weather alone (JUG-25). Null until they
+     * say where they live, and null when nobody could place their words.
+     * @param {string} familyId
+     * @returns {Promise<Place | null>}
+     */
+    async placeOf(familyId) {
+      const [row] = await db
+        .select({ latitude: families.latitude, longitude: families.longitude })
+        .from(families)
+        .where(eq(families.id, familyId))
+      return row?.latitude != null && row.longitude != null ? { latitude: row.latitude, longitude: row.longitude } : null
+    },
+
+    /**
      * Saves the adult's whole family profile, starting their family if they
      * don't have one yet. All of it lands in one transaction.
      * @param {string} userId
@@ -208,6 +267,9 @@ export function createFamiliesService({ db }) {
      * @returns {Promise<Profile>}
      */
     async saveProfile(userId, input) {
+      // Before the transaction: a geocoder that takes its time must not hold
+      // the family's rows locked while it does.
+      const located = input.location === undefined ? null : await locatedFor(userId, input.location)
       const familyId = await db.transaction(async (tx) => {
         // Two first saves at once must not start two families.
         await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`)
@@ -215,6 +277,7 @@ export function createFamiliesService({ db }) {
         if (!familyId) familyId = (await insertFamily(tx, userId, input.name ?? null)).id
         else if (input.name !== undefined) await tx.update(families).set({ name: input.name }).where(eq(families.id, familyId))
         if (input.home !== undefined) await tx.update(families).set({ home: input.home }).where(eq(families.id, familyId))
+        if (located) await tx.update(families).set(located).where(eq(families.id, familyId))
 
         if (input.parents) {
           await syncRows(tx, parents, familyId, input.parents, {

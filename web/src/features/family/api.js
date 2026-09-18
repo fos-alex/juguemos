@@ -19,12 +19,14 @@ import { DEFAULT_CALLED_AS, DEFAULT_PET_KIND } from './model'
 /**
  * @typedef {{
  *   home?: import('./types').Home | null,
+ *   location?: import('./types').Location | null,
  *   parents?: { id?: string, name: string, calledAs: string | null }[],
  *   kids: { id?: string, name: string, ageMonths: number | null, playing?: boolean, interests?: string[] }[],
  *   pets: { name: string, kind?: import('./types').PetKind | null }[], toys?: { id?: string, name: string }[],
  * }} Profile
- * The understanding endpoint's family has no home, and says null for what
- * the kids call a parent, or for a pet's animal, when the words didn't say.
+ * The understanding endpoint's family has no home and no location, and says
+ * null for what the kids call a parent, or for a pet's animal, when the words
+ * didn't say.
  */
 
 /** @param {Profile} profile @returns {Family} */
@@ -35,6 +37,7 @@ function toFamily(profile) {
     pet: profile.pets[0]?.name ?? '',
     petKind: profile.pets[0]?.kind ?? DEFAULT_PET_KIND,
     home: profile.home ?? null,
+    location: profile.location ?? null,
     toys: (profile.toys ?? []).map(({ id, name }) => ({ id, name })),
   }
 }
@@ -48,6 +51,9 @@ function toFamily(profile) {
 function toProfile(family) {
   return {
     home: family.home,
+    // Their own words; the API looks up where that is and says if it found it
+    // (JUG-25). A form without the field sends none and the API keeps it.
+    ...(family.location !== undefined && { location: family.location }),
     parents: family.parents.map(({ id, name, calledAs }) => (id ? { id, name, calledAs } : { name, calledAs })),
     kids: family.kids.map(({ id, name, ageMonths, interests }) =>
       id ? { id, name, ageMonths, interests } : { name, ageMonths, interests },

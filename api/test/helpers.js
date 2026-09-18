@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import pg from 'pg'
 import { buildApp } from '../src/app.js'
-import { DEFAULT_SERIES_EPISODES, DEFAULT_SMTP_PORT } from '../src/config.js'
+import {
+  DEFAULT_GEOCODING_URL,
+  DEFAULT_SERIES_EPISODES,
+  DEFAULT_SMTP_PORT,
+  DEFAULT_WEATHER_CACHE_MINUTES,
+  DEFAULT_WEATHER_URL,
+} from '../src/config.js'
 import { createDb } from '../src/db/client.js'
 import { migrate } from '../src/db/migrate.js'
 import { createInvitationsService } from '../src/invitations/invitations.service.js'
@@ -24,13 +30,15 @@ export const ORIGIN = 'http://localhost:3000'
  *   llm?: Partial<Config['llm']>,
  *   stories?: Partial<Config['stories']>,
  *   stt?: Partial<Config['stt']>,
+ *   weather?: Partial<Config['weather']>,
+ *   places?: Partial<Config['places']>,
  *   email?: Partial<Config['email']>,
  *   admin?: Partial<Config['admin']>,
  *   audit?: Partial<Config['audit']>,
  * }} [overrides]
  * @returns {Config}
  */
-export function testConfig({ auth, llm, stories, stt, email, admin, audit, ...rest } = {}) {
+export function testConfig({ auth, llm, stories, stt, weather, places, email, admin, audit, ...rest } = {}) {
   return {
     port: 0,
     databaseUrl: '',
@@ -41,6 +49,10 @@ export function testConfig({ auth, llm, stories, stt, email, admin, audit, ...re
     stories: { episodesPerSeries: DEFAULT_SERIES_EPISODES, ...stories },
     // No service: voice notes are off, unless a test passes its own `transcriber`.
     stt: { url: null, model: '', apiKey: null, ...stt },
+    // The URLs the settings default to. Nothing reaches them: startApi gives
+    // the app no forecaster and no geocoder unless a test passes its own.
+    weather: { url: DEFAULT_WEATHER_URL, cacheMs: DEFAULT_WEATHER_CACHE_MINUTES * 60_000, ...weather },
+    places: { url: DEFAULT_GEOCODING_URL, ...places },
     email: { host: null, port: DEFAULT_SMTP_PORT, user: null, password: null, from: '', ...email },
     admin: { enabled: false, ...admin },
     audit: { transcripts: false, ...audit },
@@ -88,7 +100,9 @@ export async function createDatabase() {
 /**
  * A fresh database with every migration applied, and the API built on it.
  * Each test file starts its own, and `close` drops it.
- * @param {{ trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, mailer?: import('../src/email/mailer.js').Mailer, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
+ * No test reaches the internet: `forecaster` and `geocoder` are null unless
+ * the test passes its own, so the weather is whatever it says it is (JUG-25).
+ * @param {{ trustedOrigins?: string[], google?: Config['auth']['google'], random?: () => number, now?: () => Date, llm?: unknown, transcriber?: unknown, mailer?: import('../src/email/mailer.js').Mailer, forecaster?: import('../src/weather/open-meteo.js').Forecaster | null, geocoder?: import('../src/places/geocoder.js').Geocoder | null, admin?: boolean, auditTranscripts?: boolean, maxEpisodes?: number }} [options]
  */
 export async function startApi({
   trustedOrigins = [],
@@ -98,6 +112,8 @@ export async function startApi({
   llm,
   transcriber,
   mailer,
+  forecaster = null,
+  geocoder = null,
   admin = false,
   auditTranscripts = false,
   maxEpisodes = DEFAULT_SERIES_EPISODES,
@@ -113,7 +129,7 @@ export async function startApi({
     admin: { enabled: admin },
     audit: { transcripts: auditTranscripts },
   })
-  const app = buildApp({ config, db, logger: false, random, now, llm, transcriber, mailer })
+  const app = buildApp({ config, db, logger: false, random, now, llm, transcriber, mailer, forecaster, geocoder })
   await app.ready()
 
   return {

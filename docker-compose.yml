@@ -70,6 +70,12 @@ services:
       STT_URL: ${STT_URL:-http://stt:8000/v1}
       STT_MODEL: ${STT_MODEL:-}
       STT_API_KEY: ${STT_API_KEY:-}
+      # The weather where each family lives, and the service that puts their
+      # words for it on the map (JUG-25). Both default to Open-Meteo, which
+      # needs no key.
+      WEATHER_URL: ${WEATHER_URL:-}
+      GEOCODING_URL: ${GEOCODING_URL:-}
+      WEATHER_CACHE_MINUTES: ${WEATHER_CACHE_MINUTES:-}
       # The SMTP service email is sent through (JUG-169). Without SMTP_HOST,
       # email is off.
       SMTP_HOST: ${SMTP_HOST:-}
