@@ -21,6 +21,9 @@ import { createUnderstanding } from './families/understanding.js'
 import { createGamesController } from './games/games.controller.js'
 import { gamesRoutes } from './games/games.routes.js'
 import { createGamesService } from './games/games.service.js'
+import { createHistoryController } from './history/history.controller.js'
+import { historyRoutes } from './history/history.routes.js'
+import { createHistoryService } from './history/history.service.js'
 import { createMailer } from './email/mailer.js'
 import { AppError, UnavailableError } from './errors.js'
 import { createLlm } from './llm/client.js'
@@ -118,6 +121,8 @@ export function buildApp({
     maxEpisodes: config.stories.episodesPerSeries,
     logger: app.log,
   })
+  // The juegos played and the stories read lately (JUG-188).
+  const history = createHistoryService({ activities, stories, now })
   // Keeps what parents send in their own words, only while AUDIT_TRANSCRIPTS is on.
   const audit = createAuditService({ db, enabled: config.audit.transcripts })
   const understanding = createUnderstanding({ llm: llmClient, audit })
@@ -159,6 +164,7 @@ export function buildApp({
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }) })
   app.register(gamesRoutes, { controller: createGamesController({ games }) })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }) })
+  app.register(historyRoutes, { controller: createHistoryController({ history }) })
   // Session access, not family: onboarding records a note before the family exists.
   app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.

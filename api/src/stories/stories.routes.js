@@ -172,6 +172,8 @@ export async function storiesRoutes(app, { controller }) {
     controller.list,
   )
   app.get('/stories/:id', { config, schema: { params: idParams, response: { 200: story, ...storyErrors } } }, controller.find)
+  // The parent opened a story to read it (JUG-188), for the family's history.
+  app.post('/stories/:id/reads', { config, schema: { params: idParams, response: storyErrors } }, controller.markRead)
 
   // Series (JUG-59). Starting one and writing an episode both need the LLM,
   // so both can say the feature is off; a series that is already as long as it

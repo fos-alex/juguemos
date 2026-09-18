@@ -117,6 +117,9 @@ export const stories = pgTable(
     // next episode is written from. The model writes it outside the story
     // text, so no reader ever hears it.
     summary: text(),
+    // When the story was last read (JUG-188), for the family's history: when
+    // it was written, and again each time the parent opens it.
+    readAt: timestamptz().notNull().defaultNow(),
     createdAt: createdAt(),
   },
   (table) => [

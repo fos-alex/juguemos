@@ -151,6 +151,13 @@ export function createStoriesController({ stories }) {
       return stories.find(familyOf(request), id)
     },
 
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async markRead(request, reply) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      await stories.markRead(familyOf(request), id)
+      return reply.code(204).send()
+    },
+
     /**
      * Turns a story the family has read into a series (JUG-59). It answers
      * with the series, whose only episode is that story.

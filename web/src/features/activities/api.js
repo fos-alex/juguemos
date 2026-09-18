@@ -64,6 +64,31 @@ export async function reactToActivity(id, reaction) {
 }
 
 /**
+ * One of the family's juegos, to play it again from the history (JUG-188):
+ * the copy this device kept, or the API's, which is kept from then on.
+ * @param {string} id
+ * @returns {Promise<Activity>}
+ */
+export async function findActivity(id) {
+  const cached = read('activities')?.[id]
+  if (cached) return cached
+  /** @type {Activity} */
+  const activity = await request('GET', `/activities/${id}`)
+  write('activities', { ...read('activities'), [id]: activity })
+  return activity
+}
+
+/**
+ * Tells the API the parent started a juego (JUG-188), which puts it in the
+ * family's history. Nothing waits on it: a failure, offline included, only
+ * leaves this play out of the history.
+ * @param {string} id
+ */
+export function markPlayed(id) {
+  if (UUID.test(id)) request('POST', `/activities/${id}/plays`).catch(() => {})
+}
+
+/**
  * The moment the next juego is for: the parent's own tap while it holds, and
  * the clock otherwise.
  * @param {Date} [now]

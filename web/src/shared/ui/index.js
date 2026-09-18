@@ -9,6 +9,7 @@ export {
   CheckIcon,
   CloseIcon,
   FamilyIcon,
+  HistoryIcon,
   HomeIcon,
   LockIcon,
   MarkIcon,

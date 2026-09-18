@@ -7,7 +7,8 @@ export { ReadingScreen } from './screens/ReadingScreen'
 export { RequestedStoryScreen } from './screens/RequestedStoryScreen'
 export { SeriesScreen } from './screens/SeriesScreen'
 export { StoryOptionsScreen } from './screens/StoryOptionsScreen'
-export { forgetOptions, storyOptions } from './api'
+export { StoryMark } from './components/StoryMark'
+export { forgetOptions, storyKey, storyOptions } from './api'
 
 /** @typedef {import('./types').Episode} Episode */
 /** @typedef {import('./types').SavedStorySummary} SavedStorySummary */

@@ -22,5 +22,18 @@ export function createActivitiesController({ activities }) {
       const { reaction } = /** @type {{ reaction: 'up' | 'down' | null }} */ (request.body)
       return activities.react(familyOf(request), id, reaction)
     },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async find(request) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      return activities.find(familyOf(request), id)
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
+    async play(request, reply) {
+      const { id } = /** @type {{ id: string }} */ (request.params)
+      await activities.play(familyOf(request), id)
+      return reply.code(204).send()
+    },
   }
 }
