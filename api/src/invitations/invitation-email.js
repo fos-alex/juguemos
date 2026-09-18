@@ -19,11 +19,11 @@ export function invitationEmail({ to, link, expiresAt }) {
   return {
     to,
     ...renderMessage({
-      subject: 'Te invitamos a Ludi',
+      subject: 'Invitación a Ludi',
       preheader: 'Creá tu cuenta y armemos juegos para tu familia.',
-      heading: 'Te invitamos a Ludi',
+      heading: 'Probá Ludi',
       paragraphs: [
-        'Hola: te invitamos a probar Ludi, el coach de juego que conoce a tu familia.',
+        'Hola! te invitamos a probar Ludi, el coach de juego que conoce a tu familia.',
         `Creá tu cuenta con este email. El enlace funciona hasta el ${until}.`,
       ],
       action: { label: 'Crear mi cuenta', url: link },

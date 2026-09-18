@@ -54,7 +54,7 @@ docker compose exec caddy cat /data/caddy/pki/authorities/local/root.pem | sudo 
 sudo update-ca-trust
 ```
 
-Voice notes run Whisper as the `stt` service. Its first start downloads about 1.6 GB into a volume, and voice notes fail until that finishes.
+Voice notes run Whisper as the `stt` service, its model built into the image: `docker compose up --build` downloads about 500 MB once, and every start after that needs no network access.
 
 ### On a phone
 
@@ -145,8 +145,6 @@ rm ~/.config/systemd/user/juguemos-nightly.*
 cp scripts/ludi-nightly.* ~/.config/systemd/user/
 systemctl --user daemon-reload && systemctl --user enable --now ludi-nightly.timer
 ```
-
-The Whisper model downloads again on the first start (about 1.6 GB). The nightly job moves its state folder on its own.
 
 ### Demo accounts
 

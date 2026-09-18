@@ -106,8 +106,8 @@ export const DEFAULT_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1'
  */
 export const DEFAULT_WEATHER_CACHE_MINUTES = 15
 
-/** Whisper large-v3-turbo, as the self-hosted speaches server names it. */
-export const DEFAULT_STT_MODEL = 'deepdml/faster-whisper-large-v3-turbo-ct2'
+/** Whisper small, as the self-hosted speaches server names it. */
+export const DEFAULT_STT_MODEL = 'Systran/faster-whisper-small'
 
 /**
  * Resend's port for SMTP over TLS. DigitalOcean blocks 25, 465, and 587 on
