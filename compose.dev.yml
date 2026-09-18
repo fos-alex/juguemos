@@ -34,6 +34,7 @@ services:
       - ./api/src:/app/api/src:ro
       - ./api/seeds:/app/api/seeds:ro
       - ./api/migrations:/app/api/migrations:ro
+      - ./api/sounds:/app/api/sounds:ro
 
   # New migrations and catalog templates apply on the next `docker compose up -d`.
   migrate:

@@ -90,7 +90,7 @@ export const THEMES = [
 export const THEME_KEYS = THEMES.map((theme) => theme.key)
 
 /** A word with no accents or case, so a stem reads every spelling. @param {string} word */
-const plain = (word) =>
+export const plain = (word) =>
   word
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')

@@ -8,6 +8,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { unknownPlaceholders } from './slots.js'
 import { activityTemplates, storyTemplates } from './catalog.schema.js'
 import { ConflictError, NotFoundError, ValidationError } from '../errors.js'
+import { checkGame } from '../games/sounds.js'
 import { MATERIAL_KEYS } from '../materials/materials.js'
 import { THEME_KEYS } from './themes.js'
 
@@ -32,6 +33,7 @@ import { THEME_KEYS } from './themes.js'
  * @property {string} easier
  * @property {string} harder
  * @property {boolean} [active] on unless set; off keeps it out of the suggestions
+ * @property {import('../games/sounds.js').GameKind | null} [game] the discovery game Empezar opens (JUG-128); none unless set
  */
 /** @typedef {Omit<ActivityTemplateInput, 'slug'>} ActivityTemplateUpdate everything but the slug, which never changes */
 /** @typedef {typeof activityTemplates.$inferSelect} ActivityTemplate */
@@ -88,7 +90,8 @@ const storyTexts = (template) => [template.title, template.teaser, ...template.p
 
 /**
  * Refuses what the catalog can't hold: a slot code can't fill, a material or
- * a theme that isn't on the list, or an age range that ends before it starts.
+ * a theme that isn't on the list, an age range that ends before it starts, or
+ * a game or a sound set that isn't on the list.
  * @param {ActivityTemplateUpdate & { slug?: string }} template
  */
 function checkTemplate(template) {
@@ -108,6 +111,7 @@ function checkTemplate(template) {
   if (template.maxAgeMonths < template.minAgeMonths) {
     throw new ValidationError('maxAgeMonths is below minAgeMonths', 'AGE_RANGE')
   }
+  checkGame(template.game)
 }
 
 /** @param {unknown} parts @returns {parts is string[][]} */

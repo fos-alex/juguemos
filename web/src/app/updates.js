@@ -8,10 +8,15 @@
 
 /**
  * The screens a reload would interrupt: reading a story or writing one, the
- * next episode of a series, the timer, and telling Ludi about the family,
- * where a voice note may be recording.
+ * next episode of a series, the timer, a game of ¿Qué suena?, and telling
+ * Ludi about the family, where a voice note may be recording.
  */
-const BUSY = [/^\/cuento\//, /^\/serie\/[^/]+\/episodio\/?$/, /^\/idea\/[^/]+\/reloj\/?$/, /^\/familia\/contanos\/?$/]
+const BUSY = [
+  /^\/cuento\//,
+  /^\/serie\/[^/]+\/episodio\/?$/,
+  /^\/idea\/[^/]+\/(reloj|que-suena)\/?$/,
+  /^\/familia\/contanos\/?$/,
+]
 
 /** How often an app left open asks whether a new version is out. */
 const CHECK_EVERY_MS = 30 * 60 * 1000

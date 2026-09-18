@@ -20,12 +20,15 @@ import { kidIdsOf } from '../families/families.service.js'
  * @typedef {{
  *   id: string, title: string, minutes: number, place: 'indoor' | 'outdoor',
  *   why: string, needs: string, steps: string[], easier: string, harder: string,
- *   reaction: Reaction | null,
+ *   game: Game | null, reaction: Reaction | null,
  * }} Activity
+ * `game` is the discovery game dealt with it (JUG-177), which Empezar opens instead of the timer.
  */
+/** @typedef {import('../games/rounds.js').Game} Game */
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
+/** @typedef {import('../games/games.service.js').GamesService} GamesService */
 /** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
 /** @typedef {import('../weather/weather.service.js').WeatherService} WeatherService */
 /** @typedef {ReturnType<typeof createActivitiesService>} ActivitiesService */
@@ -38,6 +41,7 @@ const HISTORY = 400
  *   db: Db,
  *   catalog: CatalogService,
  *   families: FamiliesService,
+ *   games: GamesService,
  *   materials: MaterialsService,
  *   weather: WeatherService,
  *   random?: () => number,
@@ -50,6 +54,7 @@ export function createActivitiesService({
   db,
   catalog,
   families,
+  games,
   materials,
   weather,
   random = Math.random,
@@ -61,8 +66,9 @@ export function createActivitiesService({
      * playing, whose slots the family can fill, and that needs no material the
      * family doesn't have (JUG-153); ranks what fits by fit, feedback,
      * freshness, difference from the juego being left, the moment, and what
-     * it is like outside (ranking.js); fills the winner's slots; and saves
-     * the result with the kids who played and why it won.
+     * it is like outside (ranking.js); fills the winner's slots, and deals
+     * its game when it is a discovery game (JUG-177); and saves the result
+     * with the kids who played and why it won.
      * @param {string} familyId
      * @param {{ after?: string | null, userId?: string | null, mood?: Mood | null }} [options] the
      *   activity to move on from; the adult asking, whose kids sitting out are left out (everyone
@@ -144,6 +150,7 @@ export function createActivitiesService({
         steps: template.steps.map((step) => render(step, fill)),
         easier: render(template.easier, fill),
         harder: render(template.harder, fill),
+        game: template.game ? await games.deal(familyId, template.game, profile) : null,
       }
       const [{ id }] = await db
         .insert(activities)

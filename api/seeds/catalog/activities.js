@@ -63,6 +63,12 @@
  * the noise and the neighbours are part of the design, and three for the
  * plaza, which the weather (JUG-25) brings up on a fine afternoon.
  *
+ * Batch 12 (JUG-177) is ¿Qué suena?, the first discovery game: one template
+ * per sound set, whose `game` names the set in src/games/sounds.js, so
+ * Empezar opens the game instead of the timer. The grown-up sits with the
+ * phone, so they are all low_energy and played inside, and the steps say how
+ * to play; vehicles and the house get the kids moving, so they are medium.
+ *
  * Pending Alex's review and a voice pass (JUG-14).
  */
 
@@ -2642,5 +2648,80 @@ export const activityTemplates = [
     ],
     easier: 'Largá vos a {toy} desde arriba, y que {kid} espere abajo para atajar.',
     harder: 'Que {kid} adivine, antes de largar, si va a llegar hasta abajo o si se va a quedar en el medio.',
+  },
+  {
+    slug: 'que-suena-granja',
+    title: '¿Qué suena? Animales de la granja',
+    minutes: 10,
+    place: 'indoor',
+    minAgeMonths: 12,
+    maxAgeMonths: 71,
+    energy: 'low',
+    categories: ['explore', 'learn', 'low_energy'],
+    smallSpace: true,
+    materials: [],
+    themes: ['animales'],
+    skills: ['escuchar', 'lenguaje'],
+    safety: [],
+    game: { type: 'sounds', set: 'granja' },
+    why: 'Adivinar un animal por cómo suena, sin verlo, afina el oído y suma palabras. Y después {kid} puede hacer el sonido.',
+    needs: 'el teléfono con volumen, y los animales de juguete si están a mano.',
+    steps: [
+      'Tocá Empezar y después Escuchar: el teléfono hace un sonido.',
+      'Leé las opciones en voz alta. Que adivinen como quieran: diciéndolo, imitando el sonido o trayendo el animal de juguete.',
+      'Tocá Ver la respuesta y el teléfono la dice. Son cinco sonidos, y el juego termina solo.',
+    ],
+    easier: 'Antes de ver la respuesta, imiten juntos el sonido.',
+    harder: 'Que {kid} adivine antes de que leas las opciones.',
+  },
+  {
+    slug: 'que-suena-vehiculos',
+    title: '¿Qué suena? Vehículos',
+    minutes: 10,
+    place: 'indoor',
+    minAgeMonths: 12,
+    maxAgeMonths: 71,
+    energy: 'medium',
+    categories: ['explore', 'learn', 'low_energy'],
+    smallSpace: true,
+    materials: [],
+    themes: ['vehiculos'],
+    skills: ['escuchar', 'lenguaje'],
+    safety: [],
+    game: { type: 'sounds', set: 'vehiculos' },
+    why: 'Un tren, un colectivo, una ambulancia: {kid} los escucha todos los días, y reconocerlos sin verlos es un desafío a su medida.',
+    needs: 'el teléfono con volumen, y los autitos y trenes de juguete si están a mano.',
+    steps: [
+      'Tocá Empezar y después Escuchar: el teléfono hace un sonido.',
+      'Leé las opciones en voz alta. Que adivinen como quieran: diciéndolo, haciendo el ruido o trayendo el juguete.',
+      'Tocá Ver la respuesta y el teléfono la dice. Son cinco sonidos, y el juego termina solo.',
+    ],
+    easier: 'Antes de ver la respuesta, hagan juntos el ruido: brum, chu-chú, iuu-iuu.',
+    harder: 'Que {kid} adivine antes de que leas las opciones.',
+  },
+  {
+    slug: 'que-suena-casa',
+    title: '¿Qué suena? Sonidos de la casa',
+    minutes: 10,
+    place: 'indoor',
+    minAgeMonths: 24,
+    maxAgeMonths: 71,
+    energy: 'medium',
+    categories: ['explore', 'learn', 'low_energy'],
+    smallSpace: true,
+    materials: [],
+    themes: [],
+    skills: ['escuchar', 'lenguaje'],
+    safety: [],
+    game: { type: 'sounds', set: 'casa' },
+    why: 'La casa suena todo el día: la pava, el timbre, la canilla. Adivinar sin ver y salir a buscar de dónde viene el ruido es mirar la casa de otra forma.',
+    needs: 'nada más que el teléfono con volumen: las respuestas están en la casa.',
+    steps: [
+      'Tocá Empezar y después Escuchar: el teléfono hace un sonido.',
+      'Leé las opciones en voz alta. Que adivinen diciéndolo, o que vayan a mostrar dónde está.',
+      'Tocá Ver la respuesta y el teléfono la dice. Son cinco sonidos, y el juego termina solo.',
+    ],
+    easier: 'Después de cada respuesta, vayan juntos a verlo y a tocarlo.',
+    harder: 'Que {kid} adivine antes de que leas las opciones, y que diga en qué parte de la casa está.',
   },
 ]

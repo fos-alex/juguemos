@@ -25,6 +25,9 @@ export const activities = pgTable(
     steps: text().array().notNull(),
     easier: text().notNull(),
     harder: text().notNull(),
+    // The discovery game dealt with it (JUG-177): for ¿Qué suena?, the five
+    // rounds as the parent will play them. Null for every other juego.
+    game: jsonb(),
     // The kids who played (JUG-107), for the recommendations and the journal.
     // No foreign key: the record outlives a kid removed from the profile.
     kidIds: uuid().array().notNull().default(sql`'{}'`),

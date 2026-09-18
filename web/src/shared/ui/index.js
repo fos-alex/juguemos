@@ -19,6 +19,7 @@ export {
   PlusIcon,
   RondaIcon,
   SettingsIcon,
+  SoundIcon,
   SunIcon,
   ThumbDownIcon,
   ThumbUpIcon,

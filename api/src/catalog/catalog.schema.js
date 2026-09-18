@@ -32,6 +32,10 @@ export const activityTemplates = pgTable(
     themes: text().array().notNull().default(sql`'{}'`),
     skills: text().array().notNull().default(sql`'{}'`),
     safety: text().array().notNull().default(sql`'{}'`),
+    // A discovery game (JUG-128), `{ type, set }`, which Empezar opens
+    // instead of the timer: `{ type: 'sounds', set: 'granja' }` is ¿Qué
+    // suena? with a set from src/games/sounds.js. Null for every other juego.
+    game: jsonb(),
     why: text().notNull(),
     needs: text().notNull(),
     steps: text().array().notNull(),

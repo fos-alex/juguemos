@@ -31,6 +31,7 @@ import { Route as JuguetesIndexRouteImport } from './routes/juguetes.index'
 import { Route as JuguetesIdRouteImport } from './routes/juguetes.$id'
 import { Route as CuentoTemaKeywordRouteImport } from './routes/cuento.tema.$keyword'
 import { Route as IdeaIdIndexRouteImport } from './routes/idea.$id.index'
+import { Route as IdeaIdQueSuenaRouteImport } from './routes/idea.$id.que-suena'
 import { Route as IdeaIdRelojRouteImport } from './routes/idea.$id.reloj'
 import { Route as SerieIdIndexRouteImport } from './routes/serie.$id.index'
 import { Route as SerieIdEpisodioRouteImport } from './routes/serie.$id.episodio'
@@ -145,6 +146,11 @@ const IdeaIdIndexRoute = IdeaIdIndexRouteImport.update({
   path: '/idea/$id/',
   getParentRoute: () => rootRouteImport,
 })
+const IdeaIdQueSuenaRoute = IdeaIdQueSuenaRouteImport.update({
+  id: '/idea/$id/que-suena',
+  path: '/idea/$id/que-suena',
+  getParentRoute: () => rootRouteImport,
+})
 const IdeaIdRelojRoute = IdeaIdRelojRouteImport.update({
   id: '/idea/$id/reloj',
   path: '/idea/$id/reloj',
@@ -183,6 +189,7 @@ const rootRouteChildren = {
   FamiliaIndexRoute: FamiliaIndexRoute,
   JuguetesIndexRoute: JuguetesIndexRoute,
   CuentoTemaKeywordRoute: CuentoTemaKeywordRoute,
+  IdeaIdQueSuenaRoute: IdeaIdQueSuenaRoute,
   IdeaIdRelojRoute: IdeaIdRelojRoute,
   SerieIdEpisodioRoute: SerieIdEpisodioRoute,
   IdeaIdIndexRoute: IdeaIdIndexRoute,
