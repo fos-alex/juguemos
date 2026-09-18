@@ -89,6 +89,7 @@ Motion is where most of the fun lives, so it gets the same care as colour. The v
 | Otro juego | The next juego is dealt in from the side |
 | A chip is added or chosen | It pops in; a chosen one swells and its check turns in |
 | The timer reaches zero | Jacarandá petals fall once over the screen and the clock nods. Still no sound |
+| ¿Qué suena? shows its answer | The answer's row swells once and its check pops in, whether the kids guessed it or not (JUG-177) |
 | The end of a story | *Fin* is drawn with a line under it; at night, a moon and two stars |
 | Night mode is tapped | The sun comes up turning, or the moon swings in |
 | A story card, a story's title, or a toy appears | Its interest mark lands with a small turn (`mark-in`) |

@@ -42,7 +42,7 @@ const suggest = (cookie) => api.app.inject({ method: 'POST', url: '/activities/s
 
 test('a ¿Qué suena? juego comes with its game dealt for the kids playing, and saved (JUG-177)', async () => {
   const { cookie } = await signUpAs(api, 'ana@example.com')
-  // Milán is 26 months, so two options a round; Inca is a dog, and the percherón a horse.
+  // Milán is 26 months, so three options a round; Inca is a dog, and the percherón a horse.
   await putFamily(api, cookie, EXAMPLE_PROFILE)
 
   const response = await suggest(cookie)
@@ -52,8 +52,8 @@ test('a ¿Qué suena? juego comes with its game dealt for the kids playing, and 
   assert.equal(game.set, 'granja')
   assert.equal(game.rounds.length, 5)
   for (const round of game.rounds) {
-    assert.equal(round.options.length, 2)
-    assert.ok(round.answer === 0 || round.answer === 1)
+    assert.equal(round.options.length, 3)
+    assert.ok([0, 1, 2].includes(round.answer))
     if (round.sound === 'perro') assert.equal(round.options[round.answer], 'Inca')
     if (round.sound === 'caballo') assert.equal(round.options[round.answer], 'el caballo percherón')
   }

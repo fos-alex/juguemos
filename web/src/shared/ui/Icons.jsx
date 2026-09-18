@@ -164,6 +164,17 @@ export function SoundIcon(props) {
   )
 }
 
+/** Music: two notes joined by a beam, for a juego that plays sound. @param {IconProps} props */
+export function MusicIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M9 17.5V5.5l11-2v12" />
+      <circle cx="6.5" cy="17.5" r="2.5" />
+      <circle cx="17.5" cy="15.5" r="2.5" />
+    </Icon>
+  )
+}
+
 /* Night mode. */
 
 /** Shown at night, where the tap goes back to day. @param {IconProps} props */

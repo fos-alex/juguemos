@@ -15,6 +15,7 @@ export {
   MaterialsIcon,
   MenuIcon,
   MicIcon,
+  MusicIcon,
   MoonIcon,
   PlusIcon,
   RondaIcon,
