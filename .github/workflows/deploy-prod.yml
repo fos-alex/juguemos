@@ -1,0 +1,37 @@
+# Deploys main to production at https://ludi.ar. Manual only: run it from the
+# repo's Actions tab ("Deploy production" → "Run workflow" → type DEPLOY).
+#
+# Setup (once): in the repo's Settings → Secrets → Actions, add LUDI_PROD_SSH_KEY
+# with the private key whose public half is in the droplet's
+# /root/.ssh/authorized_keys. The droplet keeps /var/www/ludi's .env and
+# docker-compose.prod-ports.yml untracked, so pulling never touches them.
+
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DEPLOY to deploy main to https://ludi.ar'
+        required: true
+
+jobs:
+  deploy:
+    if: inputs.confirm == 'DEPLOY'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull, back up, and rebuild on the droplet
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LUDI_PROD_SSH_KEY }}" > ~/.ssh/prod_deploy
+          chmod 600 ~/.ssh/prod_deploy
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/prod_deploy root@147.182.129.173 \
+            "set -e
+             mkdir -p /var/backups/ludi
+             cd /var/www/ludi
+             docker compose -p ludi exec -T db pg_dump -U ludi ludi | gzip > /var/backups/ludi/ludi-\$(date +%F-%H%M).sql.gz
+             ls -t /var/backups/ludi/ludi-*.sql.gz | tail -n +8 | xargs -r rm --
+             git fetch origin
+             git reset --hard origin/main
+             docker compose -p ludi up -d --build
+             curl -s --max-time 60 http://127.0.0.1:3080/api/health"
