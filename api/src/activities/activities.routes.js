@@ -4,9 +4,37 @@ import { errorBody, uuid } from '../http/schemas.js'
 
 const reaction = { type: ['string', 'null'], enum: ['up', 'down', null] }
 
+// A discovery game dealt with the juego (JUG-177), or null. A round's credit
+// is there only when its recording's license asks for one.
+const game = {
+  type: ['object', 'null'],
+  required: ['type', 'set', 'rounds'],
+  properties: {
+    type: { type: 'string', enum: ['sounds'] },
+    set: { type: 'string' },
+    rounds: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['sound', 'options', 'answer', 'credit'],
+        properties: {
+          sound: { type: 'string' },
+          options: { type: 'array', items: { type: 'string' } },
+          answer: { type: 'integer' },
+          credit: {
+            type: ['object', 'null'],
+            required: ['author', 'license', 'source'],
+            properties: { author: { type: 'string' }, license: { type: 'string' }, source: { type: 'string' } },
+          },
+        },
+      },
+    },
+  },
+}
+
 const activity = {
   type: 'object',
-  required: ['id', 'title', 'minutes', 'place', 'why', 'needs', 'steps', 'easier', 'harder', 'reaction'],
+  required: ['id', 'title', 'minutes', 'place', 'why', 'needs', 'steps', 'easier', 'harder', 'game', 'reaction'],
   properties: {
     id: { type: 'string' },
     title: { type: 'string' },
@@ -17,6 +45,7 @@ const activity = {
     steps: { type: 'array', items: { type: 'string' } },
     easier: { type: 'string' },
     harder: { type: 'string' },
+    game,
     reaction,
   },
 }

@@ -7,4 +7,6 @@ export { reactToActivity, stopTimer, suggestActivity } from './api'
 export { placeText } from './model'
 
 /** @typedef {import('./types').Activity} Activity */
+/** @typedef {import('./types').Game} Game */
+/** @typedef {import('./types').Round} Round */
 /** @typedef {import('./types').Timer} Timer */

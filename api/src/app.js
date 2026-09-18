@@ -18,6 +18,9 @@ import { familiesRoutes } from './families/families.routes.js'
 import { createFamiliesService } from './families/families.service.js'
 import { createRequireFamily } from './families/require-family.js'
 import { createUnderstanding } from './families/understanding.js'
+import { createGamesController } from './games/games.controller.js'
+import { gamesRoutes } from './games/games.routes.js'
+import { createGamesService } from './games/games.service.js'
 import { createMailer } from './email/mailer.js'
 import { AppError, UnavailableError } from './errors.js'
 import { createLlm } from './llm/client.js'
@@ -98,7 +101,9 @@ export function buildApp({
     logger: app.log,
     now,
   })
-  const activities = createActivitiesService({ db, catalog, families, materials, weather, random, now })
+  // Discovery games (JUG-128), dealt when their juego is suggested.
+  const games = createGamesService({ toys, random })
+  const activities = createActivitiesService({ db, catalog, families, games, materials, weather, random, now })
   // One LLM for stories and for reading a family's text; null without a key.
   const llmClient = llm ?? createLlm({ config: config.llm })
   // `model` is the model's name, which the story audit records beside each call.
@@ -152,6 +157,7 @@ export function buildApp({
   app.register(toysRoutes, { controller: createToysController({ toys, toysUnderstanding }) })
   app.register(materialsRoutes, { controller: createMaterialsController({ materials }) })
   app.register(activitiesRoutes, { controller: createActivitiesController({ activities }) })
+  app.register(gamesRoutes, { controller: createGamesController({ games }) })
   app.register(storiesRoutes, { controller: createStoriesController({ stories }) })
   // Session access, not family: onboarding records a note before the family exists.
   app.register(voiceRoutes, { controller: createVoiceController({ voice }) })

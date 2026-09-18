@@ -33,6 +33,7 @@ import '../activities.css'
  * anterior*, and has the way straight to Home in the top bar (JUG-155). The
  * mark is kept in that history entry, so it survives a reload. Under the
  * juego, the feedback tap (JUG-23), which is where a reaction can be changed.
+ * A discovery game's Empezar opens the game instead of the timer (JUG-177).
  */
 export function ActivityScreen() {
   const { id } = useParams({ from: '/idea/$id/' })
@@ -76,8 +77,10 @@ export function ActivityScreen() {
     }
   }
 
-  // The timer belongs to the activity: starting again reopens the running clock.
+  // The timer belongs to the activity: starting again reopens the running
+  // clock. A discovery game has no timer: Empezar opens the game (JUG-177).
   const start = () => {
+    if (activity.game) return void navigate({ to: '/idea/$id/que-suena', params: { id } })
     if (!running) startTimer(id, activity.minutes)
     void navigate({ to: '/idea/$id/reloj', params: { id } })
   }

@@ -12,6 +12,7 @@ RUN apk add --no-cache libgcc libstdc++ \
   && npm cache clean --force
 COPY api/migrations api/migrations
 COPY api/seeds api/seeds
+COPY api/sounds api/sounds
 COPY api/src api/src
 USER node
 CMD ["node", "api/src/server.js"]

@@ -1,0 +1,105 @@
+/* ¿Qué suena? (JUG-177): words the parent reads out, and nothing for the kids to look at. */
+
+.sound-game {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+
+.sound-game__question {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: pretty;
+}
+
+.sound-options {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each round's options settle one after another, like the cards on Home. */
+.sound-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 12px 18px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+.sound-option:nth-child(2) {
+  animation-delay: var(--motion-stagger);
+}
+
+.sound-option:nth-child(3) {
+  animation-delay: calc(var(--motion-stagger) * 2);
+}
+
+.sound-option:nth-child(n + 4) {
+  animation-delay: calc(var(--motion-stagger) * 3);
+}
+
+/* The answer: a tint, a bar, and a check, and the words above say it too. */
+.sound-option.is-answer {
+  border-color: transparent;
+  background: var(--surface-accent);
+  box-shadow: inset 4px 0 0 var(--primary);
+  color: var(--primary-pressed);
+}
+
+.sound-options.is-revealed .sound-option:not(.is-answer) {
+  color: var(--ink-muted);
+}
+
+.sound-option__check {
+  flex: none;
+  margin-left: auto;
+  color: var(--primary);
+}
+
+.sound-game__credit {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-hint);
+}
+
+.sound-game__footer {
+  gap: 10px;
+  padding-top: 14px;
+  padding-bottom: calc(34px + env(safe-area-inset-bottom));
+}
+
+.sound-end__lead {
+  font-size: 16px;
+  color: var(--ink-muted);
+}
+
+.sound-end__heard {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.sound-end__after {
+  font-size: 17px;
+  line-height: 1.45;
+}
