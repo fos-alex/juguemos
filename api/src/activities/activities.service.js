@@ -11,6 +11,7 @@ import { fillFor, render } from '../catalog/slots.js'
 import { themesOf } from '../catalog/themes.js'
 import { moodAt, nightAt } from '../clock.js'
 import { activities } from './activities.schema.js'
+import { ANY, matching } from './choices.js'
 import { rank, ratingNow } from './ranking.js'
 import { NotFoundError } from '../errors.js'
 import { kidIdsOf } from '../families/families.service.js'
@@ -33,6 +34,12 @@ import { kidIdsOf } from '../families/families.service.js'
  * A juego in the family's history (JUG-188), as its card shows it.
  */
 /** @typedef {import('../games/rounds.js').Game} Game */
+/** @typedef {import('./choices.js').Choices} Choices */
+/**
+ * @typedef {Activity & { closest: boolean }} Suggestion
+ * A new juego, and whether it is only the closest to what the parent chose
+ * (JUG-31), because no juego matched all of it.
+ */
 /**
  * @typedef {{ ups: number, downs: number, rating: number }} Reactions
  * What every family said about a template, and its rating now, 1 to 5 (JUG-192).
@@ -104,20 +111,21 @@ export function createActivitiesService({
     /**
      * Picks a template that is switched on, whose age range covers every kid
      * playing, whose slots the family can fill, and that needs no material the
-     * family doesn't have (JUG-153); ranks what fits by fit, feedback,
+     * family doesn't have (JUG-153); keeps the ones that match what the parent
+     * chose, or come closest to it (JUG-31); ranks them by fit, feedback,
      * freshness, difference from the juego being left, the moment, and what
      * it is like outside (ranking.js); fills the winner's slots, and deals
      * its game when it is a discovery game (JUG-177); and saves the result
      * with the kids who played and why it won.
      * @param {string} familyId
-     * @param {{ after?: string | null, userId?: string | null, mood?: Mood | null }} [options] the
+     * @param {{ after?: string | null, userId?: string | null, mood?: Mood | null, choices?: Choices }} [options] the
      *   activity to move on from; the adult asking, whose kids sitting out are left out (everyone
-     *   plays without one); and the moment the juego is for (JUG-26). A caller that leaves `mood`
-     *   out gets the clock's, calm in the evening, so a juego is calm before bed even when the
-     *   client says nothing; `null` asks for no preference.
-     * @returns {Promise<Activity>}
+     *   plays without one); the moment the juego is for (JUG-26); and what the parent chose it to
+     *   be (JUG-31). A caller that leaves `mood` out gets the clock's, calm in the evening, so a
+     *   juego is calm before bed even when the client says nothing; `null` asks for no preference.
+     * @returns {Promise<Suggestion>}
      */
-    async suggest(familyId, { after = null, userId = null, mood } = {}) {
+    async suggest(familyId, { after = null, userId = null, mood, choices = ANY } = {}) {
       const at = now()
       const isAfter = sql`${activities.id} = ${after}`
       const [profile, templates, missing, history, others, place] = await Promise.all([
@@ -154,8 +162,9 @@ export function createActivitiesService({
         throw new NotFoundError('No activity in the catalog fits this family yet', 'NO_FITTING_ACTIVITY')
       }
 
+      const { chosen, closest } = matching(fitting, choices)
       const afterTemplateId = history.find((row) => row.isAfter)?.templateId ?? null
-      const [{ template, fill, pick }] = rank(fitting, {
+      const [{ template, fill, pick }] = rank(chosen, {
         interestThemes: themesOf(profile.interests),
         favoriteToys: profile.toys.filter((toy) => toy.favorite).map((toy) => toy.name),
         history: history.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
@@ -182,9 +191,15 @@ export function createActivitiesService({
       }
       const [{ id }] = await db
         .insert(activities)
-        .values({ familyId, templateId: template.id, kidIds: kidIdsOf(profile), pick, ...activity })
+        .values({
+          familyId,
+          templateId: template.id,
+          kidIds: kidIdsOf(profile),
+          pick: { ...pick, choices, closest },
+          ...activity,
+        })
         .returning({ id: activities.id })
-      return { id, ...activity, reaction: null }
+      return { id, ...activity, reaction: null, closest }
     },
 
     /**

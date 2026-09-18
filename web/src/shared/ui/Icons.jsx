@@ -117,6 +117,17 @@ export function MenuIcon(props) {
   )
 }
 
+/** Choose what the next juego is (JUG-31): three lines, each shorter than the one above. @param {IconProps} props */
+export function FilterIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7h16" />
+      <path d="M7 12h10" />
+      <path d="M10 17h4" />
+    </Icon>
+  )
+}
+
 /** Slide up to fix the recording. @param {IconProps} props */
 export function ArrowUpIcon(props) {
   return (

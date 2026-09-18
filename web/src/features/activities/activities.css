@@ -315,22 +315,72 @@
   color: var(--ink-body);
 }
 
-/* Antes de dormir (JUG-26): the moment the next juego is for, and the way to
-   change it. It sits above ¡Juguemos! with who's playing, aligned like it. */
-.mood-row {
+/*
+ * ¿Algo en especial? (JUG-31): the chip above ¡Juguemos!, aligned right like
+ * who's playing, and the sheet it opens. Chosen, the chip fills like a
+ * pressed toggle, and a long list of choices ends in an ellipsis rather than
+ * wrapping the pill: the sheet shows them all.
+ */
+.choice-chip {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
 }
 
-.mood-row__label {
+.choice-chip__label {
   font-size: 15px;
   color: var(--ink-muted);
 }
 
-.mood-row .chips {
-  justify-content: flex-end;
+.choice-chip__row {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.choice-chip__open {
+  min-width: 0;
+  color: var(--primary);
+}
+
+.choice-chip__open--chosen {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.choice-chip__open .icon {
+  flex: none;
+}
+
+.choice-chip__words {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.choice-chip__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 48px;
+  min-height: 48px;
+  padding: 0;
+  color: var(--ink-muted);
+}
+
+.choice-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.choice-sheet__question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /*

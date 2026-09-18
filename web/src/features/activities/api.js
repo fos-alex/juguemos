@@ -2,12 +2,12 @@
  * Activities, against the real API. Each suggestion is also kept in the
  * local store, which is what keeps the last one readable offline.
  */
-import { chooseMood, moodNow } from './model'
+import { choicesNow, choose } from './model'
 import { read, write } from '../../shared/store'
 import { ApiError, request, WordedError } from '../../shared/http'
 
 /** @typedef {import('./types').Activity} Activity */
-/** @typedef {import('./types').Mood} Mood */
+/** @typedef {import('./types').Choices} Choices */
 /** @typedef {import('./types').Outside} Outside */
 
 /** Nothing in the catalog fits this family yet: a state to word plainly, not a failure. */
@@ -21,27 +21,30 @@ export class NothingFitsError extends WordedError {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
- * The next juego, for the moment the family is in (JUG-26). Every way of
- * asking goes through here, so Otro juego carries the same moment as the tap
- * on Home.
+ * The next juego, for what the parent chose it to be (JUG-31) and the moment
+ * the family is in (JUG-26). Every way of asking goes through here, so Otro
+ * juego carries the same choices as the tap on Home. `closest` says no juego
+ * matched all of them, and this one comes nearest; it is for the screen that
+ * asked, and isn't kept with the juego.
  * @param {{ after?: string | null }} [options] the activity to move on from
- * @returns {Promise<Activity>}
+ * @returns {Promise<Activity & { closest: boolean }>}
  */
 export async function suggestActivity({ after = null } = {}) {
-  let activity
+  let answer
   try {
     // Ids cached before activities came from the API aren't the API's.
-    activity = await request('POST', '/activities/suggestions', {
+    answer = await request('POST', '/activities/suggestions', {
       after: after && UUID.test(after) ? after : null,
-      mood: activityMood(),
+      ...activityChoices(),
     })
   } catch (error) {
     if (error instanceof ApiError && error.code === 'NO_FITTING_ACTIVITY') throw new NothingFitsError()
     throw error
   }
+  const { closest, ...activity } = answer
   write('activities', { ...read('activities'), [activity.id]: activity })
   write('lastActivityId', activity.id)
-  return activity
+  return { ...activity, closest }
 }
 
 /**
@@ -110,18 +113,23 @@ export async function loadOutside() {
 }
 
 /**
- * The moment the next juego is for: the parent's own tap while it holds, and
- * the clock otherwise.
+ * What the next juego is for (JUG-31): the parent's own choices while they
+ * hold, and the clock's otherwise.
  * @param {Date} [now]
- * @returns {Mood | null}
+ * @returns {Choices}
  */
-export function activityMood(now = new Date()) {
-  return moodNow({ now, choice: read('activityMood') })
+export function activityChoices(now = new Date()) {
+  return choicesNow({ now, stored: read('activityChoices') })
 }
 
-/** Saves a tap on Tranqui or Con pilas, until the next switch. @param {Mood} mood */
-export function chooseActivityMood(mood) {
-  write('activityMood', chooseMood(mood, new Date()))
+/**
+ * Saves a tap in ¿Algo en especial?, or takes every choice back with null,
+ * until the next switch.
+ * @param {Partial<Choices> | null} change
+ */
+export function chooseActivity(change) {
+  const now = new Date()
+  write('activityChoices', choose(activityChoices(now), change, now))
 }
 
 /** Remembers the juego on screen as the last one, for Home's card. @param {string} id */

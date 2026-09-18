@@ -168,7 +168,7 @@ One set, in `web/src/shared/ui/Icons.jsx`, exported through `shared/ui/index.js`
 - **`size` is the only knob.** 24 in a 48 px target, 22 in a drawer row, 15–18 inside a chip or a mark, 28 on the mic. Don't restyle the stroke.
 - **Add a new icon here, never an `<svg>` in a screen,** so the set stays one weight. If a screen needs an idea the set doesn't have, the icon is the work, not the workaround.
 
-**What the set covers.** Back, home, close, check, plus, menu, arrow-up; mic and lock for the voice note; sun and moon for night mode; and one per drawer section — ronda (¡Juguemos!), book (Hora del cuento), a clock turning back (Lo que jugamos), family, toy box, scissors (Materiales), and sliders for Ajustes. Sliders rather than a gear, which reads mechanical.
+**What the set covers.** Back, home, close, check, plus, menu, arrow-up; a filter for *¿Algo en especial?*, three lines each shorter than the last; mic and lock for the voice note; sun and moon for night mode; and one per drawer section — ronda (¡Juguemos!), book (Hora del cuento), a clock turning back (Lo que jugamos), family, toy box, scissors (Materiales), and sliders for Ajustes. Sliders rather than a gear, which reads mechanical.
 
 **The pet's animal is the one place with emoji.** In the family form the Mascota row is one control: a picker with the animal's emoji, and the pet's name beside it. Emoji rather than the set, because seven animals would cost seven drawings; the emoji alone, with no word next to it, because the row reads at a glance. Each animal still carries its word as the option's accessible name, so a screen reader says "Perro". Nothing else in the app uses emoji.
 

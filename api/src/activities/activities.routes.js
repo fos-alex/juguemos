@@ -1,3 +1,4 @@
+import { CATEGORIES } from '../catalog/categories.js'
 import { errorBody, uuid } from '../http/schemas.js'
 
 /** @typedef {ReturnType<typeof import('./activities.controller.js').createActivitiesController>} ActivitiesController */
@@ -60,7 +61,20 @@ const suggestion = {
     // gets them moving, null asks for no preference. Left out, the server's
     // clock decides, so an old client still gets a calm juego before bed.
     mood: { type: ['string', 'null'], enum: ['calm', 'lively', null] },
+    // What the parent chose the juego to be (JUG-31), each null for any: where
+    // it is played, whether it plays sound on the phone, and the kind of play.
+    place: { type: ['string', 'null'], enum: ['indoor', 'outdoor', null] },
+    sound: { type: ['boolean', 'null'] },
+    category: { type: ['string', 'null'], enum: [...CATEGORIES, null] },
   },
+}
+
+// A new juego, and whether it is only the closest to what the parent chose,
+// because no juego matched all of it (JUG-31).
+const suggested = {
+  ...activity,
+  required: [...activity.required, 'closest'],
+  properties: { ...activity.properties, closest: { type: 'boolean' } },
 }
 
 // The feedback tap (JUG-23): how the juego went, or null to take it back.
@@ -104,7 +118,7 @@ export async function activitiesRoutes(app, { controller }) {
       config: { access: 'family' },
       schema: {
         body: suggestion,
-        response: { 201: activity, 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
+        response: { 201: suggested, 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
       },
     },
     controller.suggest,

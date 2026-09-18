@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { AppMenu } from '../../../app/AppMenu'
-import { MoodRow, placeText, ReactionRow, suggestActivity, WeatherNote } from '../../activities'
+import { ChoiceChip, ChoiceSheet, placeText, ReactionRow, suggestActivity, WeatherNote } from '../../activities'
 import { choosePlaying, familyLine, loadFamily, markPlaying, WhoPlays } from '../../family'
 import { forgetOptions, LastStoryCard, storyOptions } from '../../stories'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
@@ -39,10 +39,11 @@ const SLOW_AFTER_MS = 6000
  * with them already on screen (JUG-140). The last story read sits under the
  * juego, with the way to make it a series (JUG-154). Inside the last juego's
  * card, the feedback tap asks once how it went (JUG-23): it is there while the
- * juego has no reaction, stays through the tap, and isn't asked again. Before
- * bed, the mood row above the button says the next juego will be tranqui, and
- * lets the parent ask for one con pilas instead (JUG-26). In the top corner,
- * the weather the juego is picked for, with its line on a tap (JUG-191).
+ * juego has no reaction, stays through the tap, and isn't asked again. Above
+ * the button, *¿Algo en especial?* opens the sheet where the parent chooses
+ * what the juego should be (JUG-31); before bed it says the next juego will
+ * be tranqui (JUG-26). In the top corner, the weather the juego is picked
+ * for, with its line on a tap (JUG-191).
  */
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -62,6 +63,7 @@ export function HomeScreen() {
   // Choices are saved one after another, and a juego or a story waits for the last one.
   const saves = useSerialSaves()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   // The juego reacted to on this visit, so the chips don't vanish under the tap.
   const [reactedTo] = useState(() => (last && last.reaction == null ? last.id : null))
   const picking = (family?.kids.length ?? 0) > 1
@@ -109,7 +111,7 @@ export function HomeScreen() {
     void request.run(async () => {
       await saves.settled()
       const activity = await suggestActivity({ after: lastId })
-      void navigate({ to: '/idea/$id', params: { id: activity.id } })
+      void navigate({ to: '/idea/$id', params: { id: activity.id }, state: { closest: activity.closest } })
     })
   }
 
@@ -175,7 +177,7 @@ export function HomeScreen() {
 
       <Footer className="home__actions">
         {picking && family && <WhoPlays kids={family.kids} onToggle={toggle} />}
-        <MoodRow />
+        <ChoiceChip open={choosing} onOpen={() => setChoosing(true)} />
         <PrimaryButton
           size="home"
           busy={request.busy}
@@ -194,6 +196,14 @@ export function HomeScreen() {
         </SecondaryButton>
       </Footer>
 
+      <ChoiceSheet
+        open={choosing}
+        onClose={() => setChoosing(false)}
+        onPlay={() => {
+          setChoosing(false)
+          if (!request.busy) suggest()
+        }}
+      />
       <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} onStories={() => void openStories()} />
     </Screen>
   )

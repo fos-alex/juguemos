@@ -33,8 +33,20 @@
  * What the family is up for: tranqui winds the kids down, con pilas gets them moving (JUG-26).
  */
 /**
- * @typedef {{ mood: Mood, until: number }} MoodChoice
- * The parent's own tap, which holds until the next 19:00 or 07:00, in epoch milliseconds.
+ * @typedef {'move' | 'create' | 'pretend' | 'explore' | 'learn' | 'helpers'} Category
+ * The kinds of play a parent can ask for (JUG-30, JUG-31). The catalog's other two, low
+ * energy and out and about, are what Tranqui and Afuera already ask for.
+ */
+/**
+ * @typedef {{
+ *   mood: Mood | null, place: Activity['place'] | null, sound: boolean | null, category: Category | null,
+ * }} Choices
+ * What the parent asked the next juego to be (JUG-31), each null for any. `mood` is Tranqui
+ * or Con pilas (JUG-26), and `sound` whether the juego plays sound on the phone.
+ */
+/**
+ * @typedef {Choices & { until: number }} StoredChoices
+ * The parent's own taps, which hold until the next 19:00 or 07:00, in epoch milliseconds.
  */
 /**
  * @typedef {{
