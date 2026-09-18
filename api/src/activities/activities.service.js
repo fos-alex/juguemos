@@ -11,7 +11,7 @@ import { fillFor, render } from '../catalog/slots.js'
 import { themesOf } from '../catalog/themes.js'
 import { moodAt, nightAt } from '../clock.js'
 import { activities } from './activities.schema.js'
-import { rank } from './ranking.js'
+import { rank, ratingNow } from './ranking.js'
 import { NotFoundError } from '../errors.js'
 import { kidIdsOf } from '../families/families.service.js'
 
@@ -33,7 +33,13 @@ import { kidIdsOf } from '../families/families.service.js'
  * A juego in the family's history (JUG-188), as its card shows it.
  */
 /** @typedef {import('../games/rounds.js').Game} Game */
+/**
+ * @typedef {{ ups: number, downs: number, rating: number }} Reactions
+ * What every family said about a template, and its rating now, 1 to 5 (JUG-192).
+ */
+/** @typedef {import('../catalog/catalog.service.js').ActivityTemplate} ActivityTemplate */
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
+/** @typedef {import('drizzle-orm').SQL} SQL */
 /** @typedef {import('../db/client.js').Db} Db */
 /** @typedef {import('../families/families.service.js').FamiliesService} FamiliesService */
 /** @typedef {import('../games/games.service.js').GamesService} GamesService */
@@ -132,11 +138,7 @@ export function createActivitiesService({
           .orderBy(sql`${isAfter} desc nulls last`, desc(activities.createdAt))
           .limit(HISTORY),
         // Every other family's reactions, by template.
-        db
-          .select({ templateId: activities.templateId, reaction: activities.reaction, count: count() })
-          .from(activities)
-          .where(and(ne(activities.familyId, familyId), isNotNull(activities.reaction), isNotNull(activities.templateId)))
-          .groupBy(activities.templateId, activities.reaction),
+        reactionCounts(db, ne(activities.familyId, familyId)),
         // Where the family lives, for the weather (JUG-25). Null until they say.
         families.placeOf(familyId),
       ])
@@ -152,21 +154,12 @@ export function createActivitiesService({
         throw new NotFoundError('No activity in the catalog fits this family yet', 'NO_FITTING_ACTIVITY')
       }
 
-      /** @type {Map<string, { ups: number, downs: number }>} */
-      const counts = new Map()
-      for (const row of others) {
-        const id = /** @type {string} */ (row.templateId)
-        const entry = counts.get(id) ?? { ups: 0, downs: 0 }
-        if (row.reaction === 'up') entry.ups += row.count
-        else entry.downs += row.count
-        counts.set(id, entry)
-      }
       const afterTemplateId = history.find((row) => row.isAfter)?.templateId ?? null
       const [{ template, fill, pick }] = rank(fitting, {
         interestThemes: themesOf(profile.interests),
         favoriteToys: profile.toys.filter((toy) => toy.favorite).map((toy) => toy.name),
         history: history.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-        others: counts,
+        others,
         catalog: templates,
         after: templates.find((each) => each.id === afterTemplateId) ?? null,
         mood: mood === undefined ? moodAt(at) : mood,
@@ -279,5 +272,46 @@ export function createActivitiesService({
         .orderBy(sql`${lastPlayed} desc`, desc(activities.id))
         .limit(limit)
     },
+
+    /**
+     * Each template's rating now, for the admin (JUG-192): its rating there,
+     * moved by every family's thumbs up and down, with the counts.
+     * @param {Pick<ActivityTemplate, 'id' | 'rating'>[]} templates
+     * @returns {Promise<Map<string, Reactions>>}
+     */
+    async ratings(templates) {
+      const counts = await reactionCounts(db)
+      return new Map(
+        templates.map(({ id, rating }) => {
+          const { ups, downs } = counts.get(id) ?? { ups: 0, downs: 0 }
+          return [id, { ups, downs, rating: ratingNow(rating, { ups, downs }) }]
+        }),
+      )
+    },
   }
+}
+
+/**
+ * The thumbs up and down each template got, from the families `where` keeps,
+ * or from every family.
+ * @param {Db} db
+ * @param {SQL} [where]
+ * @returns {Promise<Map<string, { ups: number, downs: number }>>}
+ */
+async function reactionCounts(db, where) {
+  const rows = await db
+    .select({ templateId: activities.templateId, reaction: activities.reaction, count: count() })
+    .from(activities)
+    .where(and(isNotNull(activities.reaction), isNotNull(activities.templateId), where))
+    .groupBy(activities.templateId, activities.reaction)
+  /** @type {Map<string, { ups: number, downs: number }>} */
+  const counts = new Map()
+  for (const row of rows) {
+    const id = /** @type {string} */ (row.templateId)
+    const entry = counts.get(id) ?? { ups: 0, downs: 0 }
+    if (row.reaction === 'up') entry.ups += row.count
+    else entry.downs += row.count
+    counts.set(id, entry)
+  }
+  return counts
 }

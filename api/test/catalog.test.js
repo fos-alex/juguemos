@@ -300,3 +300,45 @@ test('adding a template again keeps the one in the database', async () => {
   const { rows } = await api.pool.query(`select title from activity_templates where slug = 'otra-vez'`)
   assert.equal(rows[0].title, 'La búsqueda de {toy}')
 })
+
+test('a template is rated 3 unless the admin rates it, and every family\'s reactions move its rating now (JUG-192)', async () => {
+  const templates = (await call('GET', URL)).json()
+  for (const template of templates) await call('PUT', `${URL}/${template.id}`, { ...edit(template), active: false })
+  const rated = await create({ slug: 'con-puntaje', title: 'Con puntaje' })
+  assert.equal(rated.rating, 3)
+  assert.deepEqual(rated.reactions, { ups: 0, downs: 0, rating: 3 })
+
+  const five = await call('PUT', `${URL}/${rated.id}`, { ...edit(rated), rating: 5 })
+  assert.equal(five.statusCode, 200)
+  assert.equal(five.json().rating, 5)
+  assert.equal(five.json().reactions.rating, 5)
+  // An edit that leaves the rating out keeps it.
+  const { rating: _rating, ...unrated } = edit(five.json())
+  assert.equal((await call('PUT', `${URL}/${rated.id}`, unrated)).json().rating, 5)
+  for (const rating of [0, 6, 2.5]) {
+    assert.equal((await call('PUT', `${URL}/${rated.id}`, { ...edit(rated), rating })).statusCode, 400, `${rating}`)
+  }
+
+  // A family's thumbs down reaches the admin, and the pick says what rating it started from.
+  assert.equal(await nextTitle(), 'Con puntaje')
+  const suggested = await adminApi.app.inject({
+    method: 'POST',
+    url: '/activities/suggestions',
+    headers: { cookie: familyCookie },
+    payload: {},
+  })
+  const { id } = suggested.json()
+  const reacted = await adminApi.app.inject({
+    method: 'PUT',
+    url: `/activities/${id}/reaction`,
+    headers: { cookie: familyCookie },
+    payload: { reaction: 'down' },
+  })
+  assert.equal(reacted.statusCode, 200)
+  const { reactions } = (await call('GET', `${URL}/${rated.id}`)).json()
+  assert.equal(reactions.ups, 0)
+  assert.equal(reactions.downs, 1)
+  assert.ok(reactions.rating < 5)
+  const [row] = (await adminApi.pool.query('select pick from activities where id = $1', [id])).rows
+  assert.equal(row.pick.feedback.rating, 5)
+})

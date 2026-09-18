@@ -12,16 +12,20 @@
  * - **Feedback.** Thumbs up and down are binary outcomes, so each template
  *   is a Beta-Bernoulli arm and the pick is Thompson sampling (Chapelle and
  *   Li, 2011): one draw from Beta(alpha, beta), where alpha counts the ups
- *   and beta the downs, each starting at `prior`. A template nobody has
- *   judged draws around one half, so the fit decides; one with ups draws
- *   higher and wins more often, and the more ups the more surely; one with
- *   downs draws low. The draw, not the mean, is what keeps a family from
- *   seeing the same best-rated game every time. The family's own reactions count in full, other
- *   families' at a fraction (the catalog-wide prior, as in empirical Bayes
- *   shrinkage), and reactions to similar templates count by how similar they
- *   are, which is what makes a "No era para nosotros" spread to games like
- *   it. Similarity is Jaccard over the tags: categories, themes, skills,
- *   energy, and place.
+ *   and beta the downs. They start from the template's rating in the admin
+ *   (JUG-192), 1 to 5, as ups and downs worth two `prior`s together: a 3 is
+ *   `prior` of each, so a template nobody has judged draws around one half
+ *   and the fit decides; a 5 starts at seven ups in ten, and a 1 at three.
+ *   Among twenty juegos alike, a 5 comes first about five times as often as
+ *   a 3, and a 1 about a tenth as often. One with ups draws higher and wins
+ *   more often, and the more ups the more surely; one with downs draws low.
+ *   The draw, not the mean, is what keeps a family from seeing the same
+ *   best-rated game every time. The family's own reactions count in full,
+ *   other families' at a fraction (the catalog-wide prior, as in empirical
+ *   Bayes shrinkage), so what families like comes up more for everyone, and
+ *   reactions to similar templates count by how similar they are, which is
+ *   what makes a "No era para nosotros" spread to games like it. Similarity
+ *   is Jaccard over the tags: categories, themes, skills, energy, and place.
  * - **Freshness.** A template the family saw comes back on an exponential
  *   curve: most of the way after `seenDays`, slower after one they said they
  *   played. It never reaches zero, so something can always be offered.
@@ -67,8 +71,11 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {number} interest what a template about something a kid loves gains
  * @property {number} named what a template that names an interest gains
  * @property {number} favorite what a template that drew a favorite toy gains
- * @property {number} prior the ups and the downs every template starts with, which is how
- *   much one reaction moves it: at 3, the first up takes its mean from 0.5 to 0.57
+ * @property {number} prior the ups and the downs a template rated 3 starts with, and half of
+ *   what any rating is worth, which is how much one reaction moves it: at 3, the first up
+ *   takes its mean from 0.5 to 0.57
+ * @property {number} rating what each step of the admin's rating above or below 3 adds to or
+ *   takes from the share of ups a template starts with
  * @property {number} others what one family's reaction counts for another, from 0 to 1
  * @property {number} alike what a reaction to another template counts, times their similarity
  * @property {number} seenDays days after which a template seen is most of the way back
@@ -92,7 +99,7 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {string[]} themes the themes it shares with what the kids love
  * @property {boolean} named whether it names an interest
  * @property {boolean} favorite whether the toy it drew is a favorite
- * @property {{ alpha: number, beta: number, sample: number }} feedback
+ * @property {{ rating: number, alpha: number, beta: number, sample: number }} feedback `rating` is the admin's
  * @property {number} freshness
  * @property {number} difference
  * @property {Mood | null} mood the moment it was picked for
@@ -110,7 +117,9 @@ export const DEFAULT_WEIGHTS = {
   named: 0.3,
   favorite: 0.3,
   prior: 3,
-  others: 0.3,
+  rating: 0.1,
+  // Two other families' reactions count as much as one of the family's own.
+  others: 0.5,
   alike: 0.5,
   seenDays: 4,
   playedDays: 10,
@@ -199,8 +208,9 @@ export function rank(
 
     const own = seen.get(template.id)
     const other = others.get(template.id)
-    let alpha = weights.prior + (own?.ups ?? 0) + weights.others * (other?.ups ?? 0)
-    let beta = weights.prior + (own?.downs ?? 0) + weights.others * (other?.downs ?? 0)
+    const start = priorOf(template.rating, weights)
+    let alpha = start.alpha + (own?.ups ?? 0) + weights.others * (other?.ups ?? 0)
+    let beta = start.beta + (own?.downs ?? 0) + weights.others * (other?.downs ?? 0)
     for (const entry of reacted) {
       if (entry.id === template.id) continue
       const like = entry.template ? jaccard(tagsOf(template), tagsOf(entry.template)) : 0
@@ -221,13 +231,44 @@ export function rank(
       template,
       fill,
       pick: {
-        score, fit, themes, named, favorite, feedback: { alpha, beta, sample }, freshness, difference,
-        mood, moment, conditions, night, weather, weights,
+        score, fit, themes, named, favorite, feedback: { rating: template.rating, alpha, beta, sample },
+        freshness, difference, mood, moment, conditions, night, weather, weights,
       },
     }
   })
 
   return ranked.sort((a, b) => b.pick.score - a.pick.score || a.template.slug.localeCompare(b.template.slug))
+}
+
+/**
+ * The ups and downs a template's feedback starts with, from its rating in
+ * the admin (JUG-192): two `prior`s split by the share of ups the rating
+ * stands for, one half at 3 and `rating` more or less for each step.
+ * @param {number} rating 1 to 5
+ * @param {Weights} [weights]
+ * @returns {{ alpha: number, beta: number }}
+ */
+export function priorOf(rating, weights = DEFAULT_WEIGHTS) {
+  const share = 0.5 + (rating - 3) * weights.rating
+  return { alpha: 2 * weights.prior * share, beta: 2 * weights.prior * (1 - share) }
+}
+
+/**
+ * A template's rating now, from 1 to 5, for the admin (JUG-192): its rating
+ * there, moved by every family's reactions, each counting as another
+ * family's does in the ranking. It is where a family that never reacted to
+ * the template, or to one like it, starts, on the admin's scale: a share of
+ * ups above what a 5 starts with is still a 5. To one decimal, which is all
+ * the admin shows.
+ * @param {number} rating the admin's, 1 to 5
+ * @param {Counts} counts every family's reactions to it
+ * @param {Weights} [weights]
+ */
+export function ratingNow(rating, { ups, downs }, weights = DEFAULT_WEIGHTS) {
+  const start = priorOf(rating, weights)
+  const alpha = start.alpha + weights.others * ups
+  const share = alpha / (alpha + start.beta + weights.others * downs)
+  return Math.round(10 * Math.min(5, Math.max(1, 3 + (share - 0.5) / weights.rating))) / 10
 }
 
 /**
