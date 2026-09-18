@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { StoryMark } from './StoryMark'
 import { MetaLabel, TertiaryButton } from '../../../shared/ui'
 import '../stories.css'
@@ -5,8 +6,9 @@ import '../stories.css'
 /** @typedef {import('../types').SavedStorySummary} SavedStorySummary */
 
 /**
- * The stories the family has already read, to read again with one tap
- * (JUG-50), each with the way to turn it into a series (JUG-59). The episodes
+ * The two stories the family read last, to read again with one tap (JUG-50,
+ * JUG-189), each with the way to turn it into a series (JUG-59). The link
+ * under them opens Lo que jugamos, where the rest are (JUG-188). The episodes
  * of a series are not here: they are read under their series.
  * @param {{
  *   stories: SavedStorySummary[],
@@ -16,6 +18,7 @@ import '../stories.css'
  * }} props `startingId` is the story whose series is being made right now
  */
 export function StoryShelf({ stories, startingId, onOpen, onStartSeries }) {
+  const navigate = useNavigate()
   if (stories.length === 0) return null
   return (
     <section className="story-shelf">
@@ -40,6 +43,10 @@ export function StoryShelf({ stories, startingId, onOpen, onStartSeries }) {
           </TertiaryButton>
         </div>
       ))}
+      {/* Voice pass pending. */}
+      <TertiaryButton size="inline" className="story-shelf__more" onClick={() => void navigate({ to: '/historial' })}>
+        Ver todo en Lo que jugamos
+      </TertiaryButton>
     </section>
   )
 }

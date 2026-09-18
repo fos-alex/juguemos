@@ -81,8 +81,8 @@ import { createTemplateStories } from './template-stories.js'
 /** @typedef {import('../llm/client.js').Llm} Llm */
 /** @typedef {ReturnType<typeof createStoriesService>} StoriesService */
 
-/** How many stories a family keeps: stories are for re-reading, not for hoarding. */
-const LIBRARY_CAP = 20
+/** How many stories the shelf holds (JUG-189): the rest are in the family's history. */
+const SHELF_SIZE = 2
 
 /** How long a series grows when nobody says otherwise, which config.js does. */
 const DEFAULT_SERIES_EPISODES = 10
@@ -225,9 +225,9 @@ export function createStoriesService({
     },
 
     /**
-     * The family's recent stories, the ones worth reading again. Newest
-     * first; short, because stories are for re-reading, not for hoarding.
-     * The episodes of a series are not in here: they are read under their
+     * The shelf of stories to read again: the two the family read last, the
+     * last one first (JUG-189). The rest are in the family's history
+     * (JUG-188). The episodes of a series are not in here: they are read under their
      * series (JUG-50). A series the family stopped following leaves its
      * episodes behind, and those come back as the stories they are.
      * @param {string} familyId
@@ -239,8 +239,8 @@ export function createStoriesService({
         .from(stories)
         .leftJoin(storySeries, eq(stories.seriesId, storySeries.id))
         .where(and(eq(stories.familyId, familyId), or(isNull(stories.seriesId), isNotNull(storySeries.removedAt))))
-        .orderBy(desc(stories.createdAt), desc(stories.id))
-        .limit(LIBRARY_CAP)
+        .orderBy(desc(stories.readAt), desc(stories.id))
+        .limit(SHELF_SIZE)
       return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))
     },
 

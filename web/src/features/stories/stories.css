@@ -124,6 +124,11 @@
   border: 0;
 }
 
+/* Under the shelf, the way to the rest of what they read (JUG-189). */
+.story-shelf__more {
+  justify-self: start;
+}
+
 /* The last story on Home: its two links share one line. */
 .last-story__links {
   display: flex;

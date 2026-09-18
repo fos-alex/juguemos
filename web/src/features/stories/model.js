@@ -11,6 +11,21 @@ export function groupByPart(paragraphs) {
   return parts.filter(Boolean)
 }
 
+/** The articles an interest can start with, and the space after one. */
+const LEADING_ARTICLE = /^(el|la|los|las|un|una|unos|unas)\s+/i
+
+/**
+ * An interest as its chip under *Quizás un cuento de…* says it (JUG-190):
+ * without the article it starts with, so "los dinosaurios" reads
+ * "dinosaurios". The rest stays as the family typed it, and a tap still sends
+ * all of it.
+ * @param {string} interest
+ */
+export function keywordLabel(interest) {
+  const trimmed = interest.trim()
+  return trimmed.replace(LEADING_ARTICLE, '') || trimmed
+}
+
 /**
  * A paragraph in pieces, with the sounds the parent acts out set apart
  * (JUG-170). The text marks each one between brackets, and the brackets never

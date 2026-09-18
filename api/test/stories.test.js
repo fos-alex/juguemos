@@ -116,6 +116,23 @@ test('stories star the kids playing, and each set of kids gets its own story', a
   assert.deepEqual(rows[0].kids, [sofi.id])
 })
 
+test('the shelf holds the two stories read last (JUG-189)', async () => {
+  const { cookie } = await signUpAs(api, 'fer@example.com')
+  await putFamily(api, cookie, EXAMPLE_PROFILE)
+  const shown = optionsFrom(await options(cookie))
+  const [next] = optionsFrom(await options(cookie, shown.map((option) => option.id)))
+  const read = []
+  for (const option of [...shown, next]) read.push((await write(cookie, option.id)).json())
+  const shelf = async () =>
+    (await api.app.inject({ method: 'GET', url: '/stories', headers: { cookie } }))
+      .json()
+      .map((/** @type {{ id: string }} */ saved) => saved.id)
+
+  assert.deepEqual(await shelf(), [read[2].id, read[1].id])
+  await api.app.inject({ method: 'POST', url: `/stories/${read[0].id}/reads`, headers: { cookie } })
+  assert.deepEqual(await shelf(), [read[0].id, read[2].id])
+})
+
 test('an unknown story is a 404', async () => {
   const { cookie } = await signUpAs(api, 'dani@example.com')
   await putFamily(api, cookie, EXAMPLE_PROFILE)
