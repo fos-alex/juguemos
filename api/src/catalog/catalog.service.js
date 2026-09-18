@@ -33,6 +33,7 @@ import { THEME_KEYS } from './themes.js'
  * @property {string} easier
  * @property {string} harder
  * @property {boolean} [active] on unless set; off keeps it out of the suggestions
+ * @property {number} [rating] 1 to 5, what the ranking starts from (JUG-192); 3 unless set
  * @property {import('../games/sounds.js').GameKind | null} [game] the discovery game Empezar opens (JUG-128); none unless set
  */
 /** @typedef {Omit<ActivityTemplateInput, 'slug'>} ActivityTemplateUpdate everything but the slug, which never changes */

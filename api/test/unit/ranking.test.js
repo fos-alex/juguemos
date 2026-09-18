@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { betaSample, DEFAULT_WEIGHTS, jaccard, rank } from '../../src/activities/ranking.js'
+import { betaSample, DEFAULT_WEIGHTS, jaccard, priorOf, rank, ratingNow } from '../../src/activities/ranking.js'
 import { seededRandom } from '../../src/catalog/slots.js'
 
 const NOW = new Date('2026-09-16T15:00:00Z')
@@ -27,6 +27,7 @@ const template = (overrides) => ({
   easier: '',
   harder: '',
   active: true,
+  rating: 3,
   createdAt: NOW,
   updatedAt: NOW,
   deletedAt: null,
@@ -179,6 +180,53 @@ test('other families reactions count at a fraction of the family own', () => {
   assert.ok(winRate([liked, other], { others }, 'liked') > 0.7)
   const disliked = new Map([['liked', { ups: 0, downs: 10 }]])
   assert.ok(winRate([liked, other], { others: disliked }, 'liked') < 0.3)
+})
+
+test('the rating in the admin is where the feedback starts, so a juego rated higher wins more often for every family', () => {
+  const rated = candidate(template({ slug: 'rated', rating: 5 }))
+  const plain = candidate(template({ slug: 'plain' }))
+  const ranked = rank([rated, plain], context())
+  const pick = (/** @type {string} */ slug) => /** @type {any} */ (ranked.find((each) => each.template.slug === slug)).pick
+  assert.equal(pick('rated').feedback.rating, 5)
+  assert.ok(Math.abs(pick('rated').feedback.alpha - 0.7 * 2 * DEFAULT_WEIGHTS.prior) < 1e-9)
+  assert.ok(Math.abs(pick('rated').feedback.beta - 0.3 * 2 * DEFAULT_WEIGHTS.prior) < 1e-9)
+  assert.equal(pick('plain').feedback.alpha, DEFAULT_WEIGHTS.prior)
+  assert.equal(pick('plain').feedback.beta, DEFAULT_WEIGHTS.prior)
+
+  const rate = winRate([rated, plain], {}, 'rated')
+  assert.ok(rate > 0.65, `won ${rate}`)
+  assert.ok(rate < 0.95, `won ${rate}`)
+  const low = candidate(template({ slug: 'low', rating: 1 }))
+  assert.ok(winRate([low, plain], {}, 'low') < 0.35)
+  // Other families' reactions move it from there.
+  const others = new Map([['rated', { ups: 0, downs: 30 }]])
+  assert.ok(winRate([rated, plain], { others }, 'rated') < 0.3)
+})
+
+test('a rating is two priors split by the share of ups it stands for', () => {
+  assert.deepEqual(priorOf(3), { alpha: DEFAULT_WEIGHTS.prior, beta: DEFAULT_WEIGHTS.prior })
+  for (const [rating, share] of [[1, 0.3], [2, 0.4], [4, 0.6], [5, 0.7]]) {
+    const { alpha, beta } = priorOf(rating)
+    assert.ok(Math.abs(alpha + beta - 2 * DEFAULT_WEIGHTS.prior) < 1e-9)
+    assert.ok(Math.abs(alpha / (alpha + beta) - share) < 1e-9, `${rating} is ${share}`)
+  }
+})
+
+test('the rating now is the admin rating moved by every family reactions, from 1 to 5', () => {
+  const none = { ups: 0, downs: 0 }
+  for (const rating of [1, 2, 3, 4, 5]) assert.equal(ratingNow(rating, none), rating)
+  assert.ok(ratingNow(3, { ups: 4, downs: 0 }) > 4)
+  assert.ok(ratingNow(5, { ups: 0, downs: 20 }) < 3)
+  assert.equal(ratingNow(5, { ups: 1000, downs: 0 }), 5)
+  assert.equal(ratingNow(1, { ups: 0, downs: 1000 }), 1)
+  // It is the mean a family that never reacted draws around, to one decimal.
+  const { alpha, beta } = priorOf(4)
+  const ups = 6
+  const downs = 2
+  const mean = (alpha + DEFAULT_WEIGHTS.others * ups) / (alpha + beta + DEFAULT_WEIGHTS.others * (ups + downs))
+  const now = 3 + (mean - 0.5) / DEFAULT_WEIGHTS.rating
+  assert.ok(Math.abs(ratingNow(4, { ups, downs }) - now) <= 0.05, `${now}`)
+  assert.equal(ratingNow(4, { ups, downs }), Math.round(10 * now) / 10)
 })
 
 test('a reaction to a similar template counts by the similarity, so a thumbs down spreads to games like it', () => {

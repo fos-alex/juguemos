@@ -43,6 +43,9 @@ export const activityTemplates = pgTable(
     harder: text().notNull(),
     // Off keeps a template out of the suggestions without deleting it.
     active: boolean().notNull().default(true),
+    // The admin's rating, from 1 to 5, which every family's ranking starts
+    // from before their reactions move it (JUG-192). 3 is neither way.
+    rating: smallint().notNull().default(3),
     createdAt: createdAt(),
     updatedAt: timestamptz().notNull().defaultNow(),
     // Deleted from the admin. The row stays so the catalog seed, which skips
@@ -60,6 +63,7 @@ export const activityTemplates = pgTable(
       sql`cardinality(${table.categories}) > 0 and ${table.categories} <@ array['move', 'create', 'pretend', 'explore', 'learn', 'low_energy', 'helpers', 'out_and_about']`,
     ),
     check('activity_templates_steps_check', sql`cardinality(${table.steps}) > 0`),
+    check('activity_templates_rating_check', sql`${table.rating} between 1 and 5`),
     check('activity_templates_themes_check', sql`${table.themes} <@ ${sql.raw(`array[${THEME_KEYS.map((key) => `'${key}'`).join(', ')}]`)}`),
   ],
 )

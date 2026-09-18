@@ -1,0 +1,2 @@
+ALTER TABLE "activity_templates" ADD COLUMN "rating" smallint DEFAULT 3 NOT NULL;--> statement-breakpoint
+ALTER TABLE "activity_templates" ADD CONSTRAINT "activity_templates_rating_check" CHECK ("activity_templates"."rating" between 1 and 5);

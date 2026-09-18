@@ -3,6 +3,7 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { createTemplate, deleteTemplate, loadTemplate, saveTemplate } from '../api'
 import { AudienceSection } from '../components/AudienceSection'
 import { NameSection } from '../components/NameSection'
+import { RatingSection } from '../components/RatingSection'
 import { TagsSection } from '../components/TagsSection'
 import { TextsSection } from '../components/TextsSection'
 import { adminFailure, check, EMPTY, NEW, toFields, toForm } from '../model'
@@ -15,6 +16,7 @@ import '../admin.css'
 
 /** @typedef {import('../model').FormState} FormState */
 /** @typedef {import('../model').Errors} Errors */
+/** @typedef {import('../types').Reactions} Reactions */
 
 const CHECK_FIELDS = 'Revisá los campos marcados.'
 
@@ -31,6 +33,8 @@ export function TemplateScreen() {
   const navigate = useNavigate()
   const goBack = useGoBack('/admin')
   const [form, setForm] = useState(/** @type {FormState | null} */ (isNew ? EMPTY : null))
+  // Every family's reactions, which the form doesn't edit. None for a new template.
+  const [reactions, setReactions] = useState(/** @type {Reactions | null} */ (null))
   const [slugTouched, setSlugTouched] = useState(false)
   const [errors, setErrors] = useState(/** @type {Errors} */ ({}))
   // A taken slug is a field to fix, so it points at the fields instead of failing.
@@ -41,7 +45,10 @@ export function TemplateScreen() {
   useEffect(() => {
     if (isNew) return
     loadTemplate(id).then(
-      (template) => setForm(toForm(template)),
+      (template) => {
+        setForm(toForm(template))
+        setReactions(template.reactions)
+      },
       (error) =>
         request.fail(
           error instanceof ApiError && error.status === 404 ? 'No encontré ese juego. Puede que lo hayan borrado.' : error,
@@ -98,6 +105,7 @@ export function TemplateScreen() {
               slugTouched={slugTouched}
               onSlugTouched={() => setSlugTouched(true)}
             />
+            <RatingSection form={form} reactions={reactions} update={update} />
             <AudienceSection form={form} errors={errors} update={update} />
             <TextsSection form={form} errors={errors} update={update} />
             <TagsSection form={form} update={update} />

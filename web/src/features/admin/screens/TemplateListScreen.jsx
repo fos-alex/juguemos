@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { listTemplates, saveTemplate } from '../api'
 import { AdminNav } from '../components/AdminNav'
-import { adminFailure, categoryNames, fieldsOf, NEW, templateLine } from '../model'
+import { adminFailure, categoryNames, fieldsOf, NEW, reactionsLine, templateLine } from '../model'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { Body, Dots, Header, Screen, StatusLine } from '../../../shared/ui'
 import '../admin.css'
@@ -10,8 +10,9 @@ import '../admin.css'
 /** @typedef {import('../types').ActivityTemplate} ActivityTemplate */
 
 /**
- * The catalog admin: every activity template, on or off. A tap on a row edits
- * it, and the switch beside it takes it in or out of ¡Juguemos! No login yet.
+ * The catalog admin: every activity template, on or off, with its rating now
+ * (JUG-192). A tap on a row edits it, and the switch beside it takes it in or
+ * out of ¡Juguemos! No login yet.
  */
 export function TemplateListScreen() {
   const [templates, setTemplates] = useState(/** @type {ActivityTemplate[] | null} */ (null))
@@ -65,6 +66,7 @@ export function TemplateListScreen() {
                 <span className="admin-row__title">{template.title}</span>
                 <span className="card-meta">{templateLine(template)}</span>
                 <span className="card-meta">{categoryNames(template.categories)}</span>
+                <span className="card-meta">Puntaje {reactionsLine(template.reactions)}</span>
               </Link>
               <button
                 type="button"

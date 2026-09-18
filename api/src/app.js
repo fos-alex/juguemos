@@ -169,7 +169,7 @@ export function buildApp({
   app.register(voiceRoutes, { controller: createVoiceController({ voice }) })
   // The admin has no login yet, so it exists only where ADMIN_ENABLED turns it on.
   if (config.admin.enabled) {
-    app.register(catalogRoutes, { controller: createCatalogController({ catalog }) })
+    app.register(catalogRoutes, { controller: createCatalogController({ catalog, activities }) })
     app.register(adminUsersRoutes, { controller: createInvitationsController({ invitations }) })
     app.register(adminAccountsRoutes, { controller: createAccountsController({ accounts, families, understanding }) })
   }

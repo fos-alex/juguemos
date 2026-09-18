@@ -13,6 +13,8 @@ const errors = { 400: errorBody, 404: errorBody, 409: errorBody, 500: errorBody 
 const fields = {
   title: text(120),
   active: { type: 'boolean' },
+  // What every family's ranking starts from (JUG-192).
+  rating: { type: 'integer', minimum: 1, maximum: 5 },
   minutes: { type: 'integer', minimum: 1, maximum: 240 },
   place: { type: 'string', enum: ['indoor', 'outdoor'] },
   minAgeMonths: { type: 'integer', minimum: 0, maximum: 215 },
@@ -32,7 +34,7 @@ const fields = {
   easier: text(600),
   harder: text(600),
 }
-const requiredFields = Object.keys(fields).filter((name) => name !== 'active' && name !== 'themes')
+const requiredFields = Object.keys(fields).filter((name) => !['active', 'rating', 'themes'].includes(name))
 const slug = { type: 'string', pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 80 }
 
 const templateInput = {
@@ -52,12 +54,18 @@ const templateUpdate = {
 
 const template = {
   type: 'object',
-  required: ['id', 'slug', 'updatedAt', ...Object.keys(fields)],
+  required: ['id', 'slug', 'updatedAt', ...Object.keys(fields), 'reactions'],
   properties: {
     id: { type: 'string' },
     slug: { type: 'string' },
     updatedAt: { type: 'string', format: 'date-time' },
     ...fields,
+    // What every family said about it, and its rating now, 1 to 5.
+    reactions: {
+      type: 'object',
+      required: ['ups', 'downs', 'rating'],
+      properties: { ups: { type: 'integer' }, downs: { type: 'integer' }, rating: { type: 'number' } },
+    },
   },
 }
 

@@ -8,12 +8,13 @@ import { ApiError } from '../../shared/http'
 
 /** @typedef {import('./types').ActivityTemplate} ActivityTemplate */
 /** @typedef {import('./types').ActivityTemplateFields} ActivityTemplateFields */
+/** @typedef {import('./types').Reactions} Reactions */
 /** @typedef {import('./types').AdminAccount} AdminAccount */
 /** @typedef {import('./types').Invitation} Invitation */
 /** @typedef {import('./types').SentInvitation} SentInvitation */
 /**
  * @typedef {{
- *   slug: string, title: string, active: boolean, minutes: string, place: string,
+ *   slug: string, title: string, active: boolean, rating: string, minutes: string, place: string,
  *   minAgeMonths: string, maxAgeMonths: string, energy: string, categories: string[], smallSpace: boolean,
  *   materials: string[], themes: string[], skills: string, safety: string,
  *   why: string, needs: string, steps: string, easier: string, harder: string,
@@ -54,6 +55,19 @@ export const PLACES = [
   ['outdoor', 'Afuera'],
 ]
 
+/**
+ * A template's rating in the admin (JUG-192), and how often each makes it come
+ * up for every family next to a 3.
+ * @type {[string, string][]}
+ */
+export const RATINGS = [
+  ['1', '1 · sale mucho menos'],
+  ['2', '2 · sale menos'],
+  ['3', '3 · normal'],
+  ['4', '4 · sale más'],
+  ['5', '5 · sale mucho más'],
+]
+
 /** The id in /admin/nuevo, which adds a template instead of editing one. */
 export const NEW = 'nuevo'
 
@@ -62,6 +76,7 @@ export const EMPTY = {
   slug: '',
   title: '',
   active: true,
+  rating: '3',
   minutes: '15',
   place: 'indoor',
   minAgeMonths: '12',
@@ -107,13 +122,28 @@ export function templateLine(template) {
   return `${template.minAgeMonths}–${template.maxAgeMonths} meses · ${template.minutes} min · ${place}`
 }
 
+/** A rating with at most one decimal, the way Argentina writes it: 3,8. @param {number} rating */
+const ratingText = (rating) => rating.toLocaleString('es-AR', { maximumFractionDigits: 1 })
+
+/**
+ * A template's rating now and the reactions that moved it, like "3,8 · 12 a
+ * favor, 3 en contra", for its row in the list and its editor. @param {Reactions} reactions
+ */
+export function reactionsLine({ ups, downs, rating }) {
+  const counts = ups + downs === 0 ? 'sin reacciones' : `${ups} a favor, ${downs} en contra`
+  return `${ratingText(rating)} · ${counts}`
+}
+
 /** @param {string[]} categories */
 export function categoryNames(categories) {
   return categories.map((category) => CATEGORIES.find(([value]) => value === category)?.[1] ?? category).join(' · ')
 }
 
-/** What the API saves for a template: everything but its id, slug, and when it changed. @param {ActivityTemplate} template @returns {ActivityTemplateFields} */
-export function fieldsOf({ id: _id, slug: _slug, updatedAt: _updatedAt, ...fields }) {
+/**
+ * What the API saves for a template: everything but its id, slug, when it
+ * changed, and its reactions. @param {ActivityTemplate} template @returns {ActivityTemplateFields}
+ */
+export function fieldsOf({ id: _id, slug: _slug, updatedAt: _updatedAt, reactions: _reactions, ...fields }) {
   return fields
 }
 
@@ -142,6 +172,7 @@ export function toForm(template) {
     slug: template.slug,
     title: template.title,
     active: template.active,
+    rating: String(template.rating),
     minutes: String(template.minutes),
     place: template.place,
     minAgeMonths: String(template.minAgeMonths),
@@ -166,6 +197,7 @@ export function toFields(form) {
   return {
     title: form.title.trim(),
     active: form.active,
+    rating: Number(form.rating),
     minutes: Number(form.minutes),
     place: /** @type {ActivityTemplateFields['place']} */ (form.place),
     minAgeMonths: Number(form.minAgeMonths),
