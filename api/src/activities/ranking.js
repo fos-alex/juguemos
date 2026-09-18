@@ -4,7 +4,7 @@
  * This orders what is left, and it is pure, so a seeded random gives the same
  * order every time and each rule has its own unit test.
  *
- * A template's score is five factors multiplied:
+ * A template's score is six factors multiplied:
  *
  * - **Fit.** 1, plus a bonus when it is about something a kid playing loves
  *   (its themes against the kids' interests, read through catalog/themes.js),
@@ -35,6 +35,14 @@
  *   mood leaves every template where it is. It only ever lowers a score, and
  *   never to zero, so a family whose catalog is all high-energy games still
  *   gets one at night.
+ * - **Weather.** What it is like outside where the family lives (JUG-25),
+ *   read from the forecast by weather/conditions.js: a fine afternoon takes
+ *   half of every indoor template away, so the few outdoor ones in the
+ *   catalog come up; rain, heat, cold or wind takes most of the outdoor ones
+ *   away instead. `fair` weather, and no weather at all — a family that
+ *   hasn't said where they live, or a provider that is down — leave every
+ *   template where it is. Like the moment, it only ever lowers a score, and
+ *   never to zero.
  *
  * Two things are out before scoring: the juego being left, and any template
  * whose last reaction from this family was a thumbs down. Each is let back
@@ -48,7 +56,10 @@ import { placeholdersIn } from '../catalog/slots.js'
 /** @typedef {import('../catalog/catalog.service.js').FillableActivityTemplate} Template */
 /** @typedef {import('../catalog/slots.js').Fill} Fill */
 /** @typedef {import('../clock.js').Mood} Mood */
+/** @typedef {import('../weather/conditions.js').Conditions} Conditions */
+/** @typedef {import('../weather/conditions.js').Weather} Weather */
 /** @typedef {Template['energy']} Energy */
+/** @typedef {Template['place']} Place */
 /**
  * @typedef {object} Weights
  * @property {number} interest what a template about something a kid loves gains
@@ -63,6 +74,7 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {number} floor what a template seen a moment ago keeps
  * @property {number} different what a template loses for being like the one being left, times the similarity
  * @property {Record<Mood, Record<Energy, number>>} moment what a template of each energy keeps in each moment
+ * @property {Record<Weather, Record<Place, number>>} weather what a template of each place keeps in each weather
  */
 /**
  * @typedef {object} Seen one activity the family was offered
@@ -83,6 +95,8 @@ import { placeholdersIn } from '../catalog/slots.js'
  * @property {number} difference
  * @property {Mood | null} mood the moment it was picked for
  * @property {number} moment what that moment left it
+ * @property {Conditions | null} conditions what it was like outside, and what said so
+ * @property {number} weather what the weather left it
  * @property {Weights} weights
  */
 /** @typedef {{ template: Template, fill: Fill }} Candidate */
@@ -103,6 +117,13 @@ export const DEFAULT_WEIGHTS = {
     calm: { low: 1, medium: 0.5, high: 0.15 },
     lively: { low: 0.25, medium: 0.6, high: 1 },
   },
+  // Indoor templates outnumber outdoor ones five to one, so a fine afternoon
+  // has to take a good half of them away for the plaza to come up at all.
+  weather: {
+    fine: { outdoor: 1, indoor: 0.5 },
+    fair: { outdoor: 1, indoor: 1 },
+    poor: { outdoor: 0.15, indoor: 1 },
+  },
 }
 
 const DAY = 86_400_000
@@ -118,6 +139,7 @@ const DAY = 86_400_000
  *   catalog: Template[],
  *   after?: Template | null,
  *   mood?: Mood | null,
+ *   conditions?: Conditions | null,
  *   now: Date,
  *   random: () => number,
  *   weights?: Weights,
@@ -126,12 +148,25 @@ const DAY = 86_400_000
  *   offered, newest first; `others` the reactions of every other family, by
  *   template; `catalog` every template a reaction could be about, fitting or
  *   not; `after` the template of the juego being left; `mood` the moment the
- *   juego is for, or null for no preference.
+ *   juego is for, or null for no preference; `conditions` what it is like
+ *   outside where they live, or null when there is nothing to say.
  * @returns {{ template: Template, fill: Fill, pick: Pick }[]}
  */
 export function rank(
   candidates,
-  { interestThemes, favoriteToys, history, others, catalog, after = null, mood = null, now, random, weights = DEFAULT_WEIGHTS },
+  {
+    interestThemes,
+    favoriteToys,
+    history,
+    others,
+    catalog,
+    after = null,
+    mood = null,
+    conditions = null,
+    now,
+    random,
+    weights = DEFAULT_WEIGHTS,
+  },
 ) {
   const seen = summarize(history)
   const byId = new Map(catalog.map((template) => [template.id, template]))
@@ -172,13 +207,15 @@ export function rank(
     const freshness = own ? freshnessOf(own, now, weights) : 1
     const difference = after ? 1 - weights.different * jaccard(tagsOf(template), tagsOf(after)) : 1
     const moment = mood ? weights.moment[mood][template.energy] : 1
+    const weather = conditions ? weights.weather[conditions.weather][template.place] : 1
 
-    const score = fit * feedback * freshness * difference * moment
+    const score = fit * feedback * freshness * difference * moment * weather
     return {
       template,
       fill,
       pick: {
-        score, fit, themes, named, favorite, feedback: { alpha, beta, sample }, freshness, difference, mood, moment, weights,
+        score, fit, themes, named, favorite, feedback: { alpha, beta, sample }, freshness, difference,
+        mood, moment, conditions, weather, weights,
       },
     }
   })

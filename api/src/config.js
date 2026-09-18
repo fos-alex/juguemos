@@ -55,6 +55,17 @@ const LLM_PROVIDERS = {
  */
 
 /**
+ * @typedef {object} WeatherConfig
+ * @property {string} url an Open-Meteo forecast API, up to its /v1
+ * @property {number} cacheMs how long one location's forecast is kept on the server
+ */
+
+/**
+ * @typedef {object} PlacesConfig
+ * @property {string} url an Open-Meteo geocoding API, up to its /v1
+ */
+
+/**
  * @typedef {object} EmailConfig
  * @property {string | null} host the SMTP service; without it email is off
  * @property {number} port 465 and 2465 use TLS from the start; any other port must upgrade with STARTTLS
@@ -71,6 +82,8 @@ const LLM_PROVIDERS = {
  * @property {LlmConfig} llm
  * @property {StoriesConfig} stories
  * @property {SttConfig} stt speech to text, for voice notes
+ * @property {WeatherConfig} weather what it is like where the family lives (JUG-25)
+ * @property {PlacesConfig} places putting the family's words for where they live on the map (JUG-25)
  * @property {EmailConfig} email the SMTP service email is sent through (JUG-169)
  * @property {{ enabled: boolean }} admin the catalog admin, which has no login yet
  * @property {{ transcripts: boolean }} audit whether parents' own words are kept in audit_transcripts (JUG-116)
@@ -78,6 +91,20 @@ const LLM_PROVIDERS = {
 
 /** How many episodes a story series holds before it is finished (JUG-59). */
 export const DEFAULT_SERIES_EPISODES = 10
+
+/**
+ * Open-Meteo, which asks for no account and no key, so the weather works in a
+ * fresh checkout. Its free service is for non-commercial use; a paid plan is
+ * a change of WEATHER_URL and GEOCODING_URL.
+ */
+export const DEFAULT_WEATHER_URL = 'https://api.open-meteo.com/v1'
+export const DEFAULT_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1'
+
+/**
+ * How long one location's forecast is kept, in minutes. Open-Meteo writes a
+ * new one every fifteen, and everyone in a city shares the entry.
+ */
+export const DEFAULT_WEATHER_CACHE_MINUTES = 15
 
 /** Whisper large-v3-turbo, as the self-hosted speaches server names it. */
 export const DEFAULT_STT_MODEL = 'deepdml/faster-whisper-large-v3-turbo-ct2'
@@ -120,6 +147,11 @@ export function loadConfig(env = process.env) {
     llm: loadLlm(env, url),
     stories: { episodesPerSeries: whole(env, 'STORY_SERIES_EPISODES', DEFAULT_SERIES_EPISODES, 2) },
     stt: loadStt(env),
+    weather: {
+      url: serviceUrl(env, 'WEATHER_URL', DEFAULT_WEATHER_URL),
+      cacheMs: whole(env, 'WEATHER_CACHE_MINUTES', DEFAULT_WEATHER_CACHE_MINUTES, 1) * 60_000,
+    },
+    places: { url: serviceUrl(env, 'GEOCODING_URL', DEFAULT_GEOCODING_URL) },
     email: loadEmail(env),
     admin: { enabled: flag(env, 'ADMIN_ENABLED') },
     // Off unless set: the texts hold the family's names.
@@ -211,6 +243,19 @@ function whole(env, name, fallback, least) {
     throw new ConfigError(`${name} must be a whole number of at least ${least}, not "${env[name]}"`)
   }
   return value
+}
+
+/**
+ * The URL of a service that has a default, checked at startup rather than on
+ * the request that needs it.
+ * @param {NodeJS.ProcessEnv} env
+ * @param {string} name
+ * @param {string} fallback
+ */
+function serviceUrl(env, name, fallback) {
+  const url = env[name]?.trim() || fallback
+  if (!URL.canParse(url)) throw new ConfigError(`${name} must be a URL, not "${env[name]}"`)
+  return url
 }
 
 /** A true or false setting, false when unset. @param {NodeJS.ProcessEnv} env @param {string} name */

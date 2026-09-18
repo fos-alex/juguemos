@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test'
 import { DEFAULT_WEIGHTS } from '../src/activities/ranking.js'
 import { createCatalogService } from '../src/catalog/catalog.service.js'
 import { seededRandom } from '../src/catalog/slots.js'
+import { LIMITS } from '../src/weather/conditions.js'
 import { EXAMPLE_PROFILE, putFamily, signUpAs, startApi } from './helpers.js'
 
 /** @param {Partial<import('../src/catalog/catalog.service.js').ActivityTemplateInput>} overrides */
@@ -333,5 +334,89 @@ test('a juego before bed is calm, and the parent can ask for one con pilas (JUG-
     assert.equal((await ask(cookie, /** @type {any} */ ({ mood: 'dormido' }))).statusCode, 400)
   } finally {
     await evening.close()
+  }
+})
+
+test('a fine afternoon brings a juego outside, and rain keeps it in (JUG-25)', async () => {
+  /** A forecaster that answers the same hour all the way through, and counts its calls. */
+  const forecasting = (/** @type {object} */ hour) => {
+    /** @type {{ latitude: number, longitude: number }[]} */
+    const reads = []
+    return {
+      reads,
+      /** @param {{ latitude: number, longitude: number }} place */
+      async read(place) {
+        reads.push(place)
+        return { hours: Array.from({ length: LIMITS.hours }, () => hour) }
+      },
+    }
+  }
+  const CLEAR = { temperature: 22, rain: 0, rainChance: 0, wind: 12, code: 0 }
+  const POURING = { temperature: 18, rain: 2, rainChance: 90, wind: 20, code: 61 }
+  const geocoder = { async locate() {
+    return { latitude: -34.61315, longitude: -58.37723 }
+  } }
+
+  /** @param {object} hour */
+  const askWith = async (hour) => {
+    const forecaster = forecasting(hour)
+    // Midday, so the moment leaves both juegos where they are.
+    const weather = await startApi({
+      forecaster,
+      geocoder,
+      now: () => new Date('2026-09-14T15:00:00-03:00'),
+      random: seededRandom('tiempo'),
+    })
+    try {
+      const catalog = createCatalogService({ db: weather.db })
+      await catalog.addActivityTemplate(template({ slug: 'adentro', title: 'Un juego adentro', place: 'indoor' }))
+      await catalog.addActivityTemplate(template({ slug: 'afuera', title: 'Un juego afuera', place: 'outdoor' }))
+      const { cookie } = await signUpAs(weather, `tiempo-${hour.code}@example.com`)
+      await putFamily(weather, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [], location: 'Capital Federal' })
+
+      const suggested = (
+        await weather.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: {} })
+      ).json()
+      const { rows } = await weather.pool.query('select pick from activities where id = $1', [suggested.id])
+      return { suggested, pick: rows[0].pick, reads: forecaster.reads }
+    } finally {
+      await weather.close()
+    }
+  }
+
+  const fine = await askWith(CLEAR)
+  assert.equal(fine.suggested.title, 'Un juego afuera')
+  assert.deepEqual(fine.pick.conditions, { weather: 'fine', reason: 'clear' })
+  // The forecast is asked for where the geocoder put the family, not for a home.
+  assert.deepEqual(fine.reads, [{ latitude: -34.61315, longitude: -58.37723 }])
+
+  const wet = await askWith(POURING)
+  assert.equal(wet.suggested.title, 'Un juego adentro')
+  assert.deepEqual(wet.pick.conditions, { weather: 'poor', reason: 'rain' })
+  assert.equal(wet.pick.weather, DEFAULT_WEIGHTS.weather.poor.indoor)
+})
+
+test('a family that has not said where they live is offered a juego as before (JUG-25)', async () => {
+  const forecaster = {
+    async read() {
+      throw new Error('nobody should be asked without a place')
+    },
+  }
+  const nowhere = await startApi({ forecaster, now: () => new Date('2026-09-14T15:00:00-03:00') })
+  try {
+    const catalog = createCatalogService({ db: nowhere.db })
+    await catalog.addActivityTemplate(template({ slug: 'adentro', title: 'Un juego adentro', place: 'indoor' }))
+    const { cookie } = await signUpAs(nowhere, 'sinlugar@example.com')
+    await putFamily(nowhere, cookie, { ...EXAMPLE_PROFILE, pets: [], toys: [] })
+
+    const suggested = (
+      await nowhere.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: {} })
+    ).json()
+    assert.equal(suggested.title, 'Un juego adentro')
+    const { rows } = await nowhere.pool.query('select pick from activities where id = $1', [suggested.id])
+    assert.equal(rows[0].pick.conditions, null)
+    assert.equal(rows[0].pick.weather, 1)
+  } finally {
+    await nowhere.close()
   }
 })

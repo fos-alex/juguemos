@@ -29,6 +29,7 @@ import { createInvitationsService } from './invitations/invitations.service.js'
 import { createMaterialsController } from './materials/materials.controller.js'
 import { materialsRoutes } from './materials/materials.routes.js'
 import { createMaterialsService } from './materials/materials.service.js'
+import { createGeocoder } from './places/geocoder.js'
 import { createStoriesController } from './stories/stories.controller.js'
 import { storiesRoutes } from './stories/stories.routes.js'
 import { createStoriesService } from './stories/stories.service.js'
@@ -40,6 +41,8 @@ import { createTranscriber } from './voice/transcriber.js'
 import { createVoiceController } from './voice/voice.controller.js'
 import { voiceRoutes } from './voice/voice.routes.js'
 import { createVoiceService } from './voice/voice.service.js'
+import { createForecaster } from './weather/open-meteo.js'
+import { createWeatherService } from './weather/weather.service.js'
 
 /**
  * Builds the API with every dependency wired in, here and nowhere else.
@@ -55,22 +58,47 @@ import { createVoiceService } from './voice/voice.service.js'
  *   llm?: ReturnType<typeof createLlm> | null,
  *   transcriber?: ReturnType<typeof createTranscriber> | null,
  *   mailer?: import('./email/mailer.js').Mailer | null,
+ *   forecaster?: import('./weather/open-meteo.js').Forecaster | null,
+ *   geocoder?: import('./places/geocoder.js').Geocoder | null,
  * }} options `random` drives which template comes next; tests can pin it.
  * `now` picks the moment a story is written for, and when an invitation
- * expires; `llm`, `transcriber`, and `mailer` override the wire, so tests can
- * speak for the model and the speech-to-text service, and see the email sent.
- * Without a key, stories come from templates; without STT_URL, voice notes are
- * off; without SMTP_HOST, nobody can be invited.
+ * expires; `llm`, `transcriber`, `mailer`, `forecaster`, and `geocoder`
+ * override the wire, so tests can speak for the model and the speech-to-text
+ * service, see the email sent, and pick the weather rather than reach the
+ * internet. Without a key, stories come from templates; without STT_URL,
+ * voice notes are off; without SMTP_HOST, nobody can be invited.
  */
-export function buildApp({ config, db, logger = true, random = Math.random, now = () => new Date(), llm, transcriber, mailer }) {
+export function buildApp({
+  config,
+  db,
+  logger = true,
+  random = Math.random,
+  now = () => new Date(),
+  llm,
+  transcriber,
+  mailer,
+  forecaster,
+  geocoder,
+}) {
   const app = Fastify({ logger })
   const accounts = createAccountsService({ db })
-  const families = createFamiliesService({ db })
+  // Where the family's own words for where they live are on the map (JUG-25).
+  const places = geocoder === undefined ? createGeocoder({ config: config.places }) : geocoder
+  const families = createFamiliesService({ db, geocoder: places })
   const toys = createToysService({ db })
   const materials = createMaterialsService({ db })
   // Every activity and story template comes from here.
   const catalog = createCatalogService({ db })
-  const activities = createActivitiesService({ db, catalog, families, materials, random, now })
+  // What it is like outside where each family lives, cached per location
+  // (JUG-25). It never fails a juego: unread weather leaves the ranking as it
+  // was before the weather existed.
+  const weather = createWeatherService({
+    forecaster: forecaster === undefined ? createForecaster({ config: config.weather }) : forecaster,
+    cacheMs: config.weather.cacheMs,
+    logger: app.log,
+    now,
+  })
+  const activities = createActivitiesService({ db, catalog, families, materials, weather, random, now })
   // One LLM for stories and for reading a family's text; null without a key.
   const llmClient = llm ?? createLlm({ config: config.llm })
   // `model` is the model's name, which the story audit records beside each call.

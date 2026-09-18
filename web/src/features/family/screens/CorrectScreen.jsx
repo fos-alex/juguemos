@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { saveFamily, understandChanges } from '../api'
 import { HomeChoice } from '../components/HomeChoice'
 import { KidCards } from '../components/KidCards'
+import { LocationField } from '../components/LocationField'
 import { ParentCards } from '../components/ParentCards'
 import { PetField } from '../components/PetField'
 import { ToyRows } from '../components/ToyRows'
@@ -24,7 +25,8 @@ const HEARD = 'Lo anoté acá arriba. Revisalo y tocá Guardar.'
  * 2h. The fallback, and it looks like a plain form: a card for each parent
  * with their name and what the kids call them, a card for each kid with
  * their name, age, and what they love (JUG-144, JUG-152), then the pet and
- * its animal, and the kind of home (JUG-21). Everything is optional. Reached
+ * its animal, the kind of home (JUG-21), and where they live (JUG-25).
+ * Everything is optional. Reached
  * from "Corregir", a flagged row (focused on that field), the opt-out in 2d,
  * and Mi familia.
  *
@@ -42,6 +44,8 @@ export function CorrectScreen() {
   const { campo } = useSearch({ from: '/familia/corregir' })
   const navigate = useNavigate()
   const [onboarding] = useState(() => !read('family'))
+  // Where the family last saved, so the field can say when Ludi couldn't find it (JUG-25).
+  const [savedLocation] = useState(() => read('family')?.location ?? null)
   const goBack = useGoBack(onboarding ? '/familia/contanos' : '/familia')
   const [form, setForm] = useState(() => toForm(read('parseResult')?.family ?? read('family'), { toys: onboarding }))
   // The interest being typed for each kid, by the kid's position.
@@ -118,6 +122,12 @@ export function CorrectScreen() {
           />
 
           <HomeChoice home={form.home} onChange={(home) => update((f) => ({ ...f, home }))} />
+
+          <LocationField
+            location={form.location}
+            saved={savedLocation}
+            onChange={(location) => update((f) => ({ ...f, location }))}
+          />
 
           {form.toys && (
             <ToyRows

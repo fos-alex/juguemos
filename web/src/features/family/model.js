@@ -14,11 +14,13 @@
  * @typedef {{
  *   parents: Parent[],
  *   kids: { id?: string, name: string, years: string, months: string, interests: string[] }[],
- *   pet: string, petKind: PetKind, home: Home | null, toys: FamilyToy[] | null,
+ *   pet: string, petKind: PetKind, home: Home | null, location: string | null,
+ *   toys: FamilyToy[] | null,
  * }} FormState
  * The family form (2h) as typed: the years and the months of each age stay
- * text until saved (JUG-145). `toys` is null when the form doesn't show them,
- * which is everywhere but onboarding: the toy box is where toys live (JUG-21).
+ * text until saved (JUG-145). `location` is where they live in their own
+ * words (JUG-25). `toys` is null when the form doesn't show them, which is
+ * everywhere but onboarding: the toy box is where toys live (JUG-21).
  */
 /**
  * @typedef {Omit<Family, 'petKind' | 'parents'> & { petKind: PetKind | null, parents: { name: string, calledAs: string | null }[] }} HeardFamily
@@ -187,6 +189,18 @@ export function familyRows(family, { toys = false } = {}) {
   // Voice pass pending.
   if (home) rows.push({ field: 'home', label: 'Mi casa', value: home.label })
 
+  // Voice pass pending.
+  if (family.location) {
+    rows.push({
+      field: 'location',
+      label: 'Dónde vivimos',
+      value: family.location.name,
+      // Colour is never the only signal, and this isn't an error either: a
+      // place Ludi couldn't find simply means no weather (JUG-25).
+      ...(family.location.located ? {} : { aside: '· no lo encontré' }),
+    })
+  }
+
   if (toys && family.toys.length > 0) rows.push({ field: 'toys', label: 'Juguetes', value: family.toys.map((toy) => toy.name).join(' · ') })
   return rows
 }
@@ -218,6 +232,7 @@ export function toForm(family, { toys = false } = {}) {
     pet: family?.pet ?? '',
     petKind: family?.petKind ?? DEFAULT_PET_KIND,
     home: family?.home ?? null,
+    location: family?.location?.name ?? null,
     toys: toys ? (family?.toys.length ? family.toys : [{ name: '' }]) : null,
   }
 }
@@ -307,6 +322,7 @@ export function withChanges(form, said) {
     pet: said.pet || form.pet,
     petKind: said.petKind ?? (samePet ? form.petKind : DEFAULT_PET_KIND),
     home: form.home,
+    location: form.location,
     toys,
   }
 }
@@ -336,6 +352,8 @@ export function toFamily(form) {
     pet: form.pet.trim(),
     petKind: form.petKind,
     home: form.home,
+    // Their own words, or nothing: the API looks up where that is (JUG-25).
+    location: form.location?.trim() || null,
     // Each toy keeps its id, so the toy box keeps what it knows about it.
     ...(form.toys && { toys: form.toys.map((toy) => ({ id: toy.id, name: toy.name.trim() })).filter((toy) => toy.name) }),
   }

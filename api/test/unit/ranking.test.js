@@ -226,14 +226,54 @@ test('an energetic juego is still offered before bed when it is the only one tha
   assert.ok(only.pick.score > 0)
 })
 
+test('a fine afternoon brings the juegos outside up, and rain takes them away', () => {
+  const inside = candidate(template({ slug: 'inside', place: 'indoor' }))
+  const outside = candidate(template({ slug: 'outside', place: 'outdoor' }))
+  const pick = (/** @type {ReturnType<typeof rank>} */ ranked, /** @type {string} */ slug) =>
+    /** @type {any} */ (ranked.find((each) => each.template.slug === slug)).pick
+
+  const fine = rank([inside, outside], context({ conditions: { weather: 'fine', reason: 'clear' } }))
+  assert.equal(pick(fine, 'outside').weather, 1)
+  assert.equal(pick(fine, 'inside').weather, DEFAULT_WEIGHTS.weather.fine.indoor)
+  assert.deepEqual(pick(fine, 'outside').conditions, { weather: 'fine', reason: 'clear' })
+  assert.ok(winRate([inside, outside], { conditions: { weather: 'fine', reason: 'clear' } }, 'outside') > 0.65)
+
+  // Rain is the other way round, and harder: the plaza is out, the living room isn't.
+  const poor = rank([inside, outside], context({ conditions: { weather: 'poor', reason: 'rain' } }))
+  assert.equal(pick(poor, 'inside').weather, 1)
+  assert.equal(pick(poor, 'outside').weather, DEFAULT_WEIGHTS.weather.poor.outdoor)
+  assert.ok(winRate([inside, outside], { conditions: { weather: 'poor', reason: 'rain' } }, 'inside') > 0.95)
+
+  // Weather that is neither, and no weather at all, leave every template where it is.
+  const fair = rank([inside, outside], context({ conditions: { weather: 'fair', reason: 'grey' } }))
+  assert.ok(fair.every((each) => each.pick.weather === 1))
+  const unknown = rank([inside, outside], context())
+  assert.ok(unknown.every((each) => each.pick.weather === 1))
+  assert.equal(pick(unknown, 'inside').conditions, null)
+})
+
+test('a juego outside is still offered in the rain when it is the only one that fits', () => {
+  const only = candidate(template({ slug: 'outside', place: 'outdoor' }))
+  const [picked] = rank([only], context({ conditions: { weather: 'poor', reason: 'rain' } }))
+  assert.equal(picked.template.slug, 'outside')
+  assert.ok(picked.pick.score > 0)
+})
+
 test('the pick keeps every part of the score and the weights', () => {
   const [first] = rank([candidate(template({ slug: 'a' }))], context())
   assert.deepEqual(Object.keys(first.pick).sort(), [
-    'difference', 'favorite', 'feedback', 'fit', 'freshness', 'moment', 'mood', 'named', 'score', 'themes', 'weights',
+    'conditions', 'difference', 'favorite', 'feedback', 'fit', 'freshness', 'moment', 'mood', 'named', 'score',
+    'themes', 'weather', 'weights',
   ])
   assert.equal(
     first.pick.score,
-    first.pick.fit * 2 * first.pick.feedback.sample * first.pick.freshness * first.pick.difference * first.pick.moment,
+    first.pick.fit *
+      2 *
+      first.pick.feedback.sample *
+      first.pick.freshness *
+      first.pick.difference *
+      first.pick.moment *
+      first.pick.weather,
   )
   assert.deepEqual(first.pick.weights, DEFAULT_WEIGHTS)
 })

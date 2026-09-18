@@ -27,7 +27,9 @@ export function ReviewScreen() {
 
   const confirm = () =>
     void request.run(async () => {
-      await saveFamily(parse.family)
+      // The card has no place to say where they live (JUG-25), so it sends
+      // none and the API keeps whatever the family has.
+      await saveFamily({ ...parse.family, location: undefined })
       void navigate({ to: '/', replace: true })
     })
 
