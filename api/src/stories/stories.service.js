@@ -14,7 +14,7 @@
  * Its episodes live in the same table and read the same way; what the library
  * does with them is show them under their series instead of on their own.
  */
-import { and, desc, eq, isNotNull, isNull, or } from 'drizzle-orm'
+import { and, desc, eq, gte, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import { withKids } from '../families/families.service.js'
 import { NotFoundError, UnavailableError, ValidationError } from '../errors.js'
 import { createGeneratedStories } from './generated-stories.js'
@@ -46,6 +46,13 @@ import { createTemplateStories } from './template-stories.js'
  * @property {Sound[]} sounds the sounds the parent acts out (JUG-170), which the parts mark
  */
 /** @typedef {{ id: string, title: string, teaser: string, minutes: number, createdAt: string }} SavedStory */
+/**
+ * @typedef {{
+ *   id: string, title: string, teaser: string, minutes: number,
+ *   series: Story['series'], readAt: Date,
+ * }} ReadStory
+ * A story in the family's history (JUG-188), as its card shows it.
+ */
 /**
  * @typedef {object} StoryParagraph
  * @property {'paragraph'} type
@@ -253,6 +260,53 @@ export function createStoriesService({
       if (!row) throw new NotFoundError('No such story')
       const { seriesId, seriesTitle, episode, ...story } = row
       return toStory(story, seriesId ? { id: seriesId, title: seriesTitle, episode: episode ?? 1 } : null)
+    },
+
+    /**
+     * The parent opened a story to read it (JUG-188), which puts it at the top
+     * of the family's history. The database's clock, like the one that set
+     * `readAt` when the story was written.
+     * @param {string} familyId
+     * @param {string} storyId
+     */
+    async markRead(familyId, storyId) {
+      const [row] = await db
+        .update(stories)
+        .set({ readAt: sql`now()` })
+        .where(and(eq(stories.familyId, familyId), eq(stories.id, storyId)))
+        .returning({ id: stories.id })
+      if (!row) throw new NotFoundError('No such story')
+    },
+
+    /**
+     * The stories the family read since a moment, the one read last first
+     * (JUG-188), each once, at the last time it was read. Episodes are in it
+     * too, with their series while the family follows it.
+     * @param {string} familyId
+     * @param {{ since: Date, limit: number }} options
+     * @returns {Promise<ReadStory[]>}
+     */
+    async readSince(familyId, { since, limit }) {
+      const rows = await db
+        .select({
+          id: stories.id,
+          title: stories.title,
+          teaser: stories.teaser,
+          minutes: stories.minutes,
+          readAt: stories.readAt,
+          episode: stories.episode,
+          seriesId: storySeries.id,
+          seriesTitle: storySeries.title,
+        })
+        .from(stories)
+        .leftJoin(storySeries, and(eq(stories.seriesId, storySeries.id), isNull(storySeries.removedAt)))
+        .where(and(eq(stories.familyId, familyId), gte(stories.readAt, since)))
+        .orderBy(desc(stories.readAt), desc(stories.id))
+        .limit(limit)
+      return rows.map(({ seriesId, seriesTitle, episode, ...story }) => ({
+        ...story,
+        series: seriesId ? { id: seriesId, title: /** @type {string} */ (seriesTitle), episode: episode ?? 1 } : null,
+      }))
     },
 
     /**

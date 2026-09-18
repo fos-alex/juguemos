@@ -341,6 +341,31 @@ export async function savedStory(id) {
 }
 
 /**
+ * Tells the API the parent opened a story to read it (JUG-188), which puts it
+ * at the top of the family's history. Nothing waits on it: a failure, offline
+ * included, only leaves this read out of the history.
+ * @param {string} id the story's own id
+ */
+export function markRead(id) {
+  request('POST', `/stories/${id}/reads`).catch(() => {})
+}
+
+/**
+ * Where this device keeps a story, which is also the URL that opens it: the
+ * option's id for a story picked from the options, and the story's own id
+ * otherwise. A story the device doesn't have is opened by its own id, and the
+ * reading screen asks the API for it.
+ * @param {string} id the story's own id
+ * @returns {string}
+ */
+export function storyKey(id) {
+  /** @type {Record<string, Story>} */
+  const stories = read('stories') ?? {}
+  if (stories[id]) return id
+  return Object.keys(stories).find((key) => stories[key].id === id) ?? id
+}
+
+/**
  * The family's series, newest first, each with its episodes in order. They are
  * kept on the device, so the screen shows the last ones it saw while the API
  * answers, and offline.

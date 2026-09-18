@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import { interestMark, playingAgeMonths } from '../../family'
-import { forgetOptions, rememberLastStory, savedStory, writeEpisode, writeKeywordStory, writeRequestedStory, writeStory } from '../api'
+import {
+  forgetOptions,
+  markRead,
+  rememberLastStory,
+  savedStory,
+  writeEpisode,
+  writeKeywordStory,
+  writeRequestedStory,
+  writeStory,
+} from '../api'
 import { StoryEnd } from './StoryEnd'
 import { StoryMark } from './StoryMark'
 import { StoryProgress } from './StoryProgress'
@@ -55,7 +64,8 @@ import '../stories.css'
  * down while the parent reads (JUG-170).
  *
  * Once the story is whole, it is the one Home offers again, and its end says
- * what comes next: Listo, and a series or its next episode (JUG-154).
+ * what comes next: Listo, and a series or its next episode (JUG-154). Each
+ * time it opens whole it goes to the top of Lo que jugamos (JUG-188).
  * @param {{ id?: string, keyword?: string, request?: import('../types').StoryRequest, seriesId?: string }} props
  *   one of the four: the story to read, the interest to write one about, the
  *   story the parent asked for, or the series to write the next episode of
@@ -149,6 +159,12 @@ export function StoryReader({ id: picked, keyword, request, seriesId }) {
   useEffect(() => {
     if (story && id) rememberLastStory(id)
   }, [story, id])
+
+  // Each time a story is opened whole is a read, for the family's history (JUG-188).
+  const storyId = story?.id
+  useEffect(() => {
+    if (storyId) markRead(storyId)
+  }, [storyId])
 
   const title = story?.title ?? option?.title ?? written
   const minutes = story?.minutes ?? option?.minutes

@@ -273,6 +273,21 @@ export function MaterialsIcon(props) {
   )
 }
 
+/**
+ * Lo que jugamos (JUG-188). A clock whose rim turns back on itself, for going
+ * back to what the family already played and read.
+ * @param {IconProps} props
+ */
+export function HistoryIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4.2 13.5A8 8 0 1 0 6.3 6.3L3.8 8.8" />
+      <path d="M3.8 4.6v4.2H8" />
+      <path d="M12 8v4.4l2.8 1.8" />
+    </Icon>
+  )
+}
+
 /** Ajustes. Sliders rather than a gear, which reads mechanical. @param {IconProps} props */
 export function SettingsIcon(props) {
   return (

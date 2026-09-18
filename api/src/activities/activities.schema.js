@@ -35,6 +35,10 @@ export const activities = pgTable(
     // change or take back. Nothing about how long they played.
     reaction: text({ enum: ['up', 'down'] }),
     reactedAt: timestamptz(),
+    // When the parent last tapped Empezar on it (JUG-188), for the family's
+    // history: a juego played again moves up. Only when it started, never
+    // how long they played. Null while it was only suggested.
+    playedAt: timestamptz(),
     // Why the ranking picked this template (JUG-104): the parts of its score
     // and the weights, so a suggestion can be read back. Null for a juego from
     // before the ranking.

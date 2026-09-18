@@ -77,10 +77,11 @@ const reacted = {
   properties: { id: { type: 'string' }, reaction },
 }
 
+const idParams = { type: 'object', required: ['id'], properties: { id: uuid } }
+
 /**
  * Activities for an adult who has already saved a family. 404 is the catalog
- * having nothing that fits it yet, or a reaction to a juego that isn't the
- * family's.
+ * having nothing that fits it yet, or a juego that isn't the family's.
  * @param {import('fastify').FastifyInstance} app
  * @param {{ controller: ActivitiesController }} options
  */
@@ -101,11 +102,35 @@ export async function activitiesRoutes(app, { controller }) {
     {
       config: { access: 'family' },
       schema: {
-        params: { type: 'object', required: ['id'], properties: { id: uuid } },
+        params: idParams,
         body: reactionInput,
         response: { 200: reacted, 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
       },
     },
     controller.react,
+  )
+  // One juego as the parent saw it, to play it again from the history (JUG-188).
+  app.get(
+    '/activities/:id',
+    {
+      config: { access: 'family' },
+      schema: {
+        params: idParams,
+        response: { 200: activity, 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
+      },
+    },
+    controller.find,
+  )
+  // The parent tapped Empezar (JUG-188): when, and nothing else.
+  app.post(
+    '/activities/:id/plays',
+    {
+      config: { access: 'family' },
+      schema: {
+        params: idParams,
+        response: { 400: errorBody, 401: errorBody, 404: errorBody, 409: errorBody, 500: errorBody },
+      },
+    },
+    controller.play,
   )
 }

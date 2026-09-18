@@ -6,6 +6,7 @@ import {
   CloseIcon,
   Drawer,
   FamilyIcon,
+  HistoryIcon,
   MaterialsIcon,
   MoonIcon,
   RondaIcon,
@@ -27,7 +28,7 @@ export function AppMenu({ open, onClose, onStories }) {
   const account = useStored('account')
   const { dark, toggle } = useTheme()
 
-  /** @param {'/familia' | '/juguetes' | '/materiales' | '/ajustes'} to */
+  /** @param {'/historial' | '/familia' | '/juguetes' | '/materiales' | '/ajustes'} to */
   const go = (to) => {
     onClose()
     void navigate({ to })
@@ -55,6 +56,11 @@ export function AppMenu({ open, onClose, onStories }) {
         <button type="button" className="drawer__item" onClick={onStories}>
           <BookIcon size={22} />
           Hora del cuento
+        </button>
+        {/* JUG-188. Voice pass pending. */}
+        <button type="button" className="drawer__item" onClick={() => go('/historial')}>
+          <HistoryIcon size={22} />
+          Lo que jugamos
         </button>
         <button type="button" className="drawer__item" onClick={() => go('/familia')}>
           <FamilyIcon size={22} />

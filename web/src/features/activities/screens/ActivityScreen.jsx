@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams, useRouterState } from '@tanstack/react-router'
-import { rememberLast, startTimer, suggestActivity } from '../api'
+import { markPlayed, rememberLast, startTimer, suggestActivity } from '../api'
 import { ActivitySkeleton, ActivityView } from '../components/ActivityView'
 import { ReactionRow } from '../components/ReactionRow'
 import { placeText } from '../model'
@@ -34,6 +34,8 @@ import '../activities.css'
  * mark is kept in that history entry, so it survives a reload. Under the
  * juego, the feedback tap (JUG-23), which is where a reaction can be changed.
  * A discovery game's Empezar opens the game instead of the timer (JUG-177).
+ * A juego opened from Lo que jugamos is the same screen, to play it again
+ * (JUG-188).
  */
 export function ActivityScreen() {
   const { id } = useParams({ from: '/idea/$id/' })
@@ -79,9 +81,16 @@ export function ActivityScreen() {
 
   // The timer belongs to the activity: starting again reopens the running
   // clock. A discovery game has no timer: Empezar opens the game (JUG-177).
+  // Either way a start is a play, for the family's history (JUG-188).
   const start = () => {
-    if (activity.game) return void navigate({ to: '/idea/$id/que-suena', params: { id } })
-    if (!running) startTimer(id, activity.minutes)
+    if (activity.game) {
+      markPlayed(id)
+      return void navigate({ to: '/idea/$id/que-suena', params: { id } })
+    }
+    if (!running) {
+      startTimer(id, activity.minutes)
+      markPlayed(id)
+    }
     void navigate({ to: '/idea/$id/reloj', params: { id } })
   }
 

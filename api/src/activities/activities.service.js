@@ -3,7 +3,8 @@
  * that fits the family, ranked above the others that fit (ranking.js), with
  * its slots filled from their profile, saved as the parent saw it. The
  * parent's reaction to it (JUG-23) is saved on the same row, and every later
- * ranking reads it.
+ * ranking reads it. So is when they last started it (JUG-188), which is what
+ * puts it in the family's history.
  */
 import { and, count, desc, eq, isNotNull, ne, sql } from 'drizzle-orm'
 import { fillFor, render } from '../catalog/slots.js'
@@ -24,6 +25,13 @@ import { kidIdsOf } from '../families/families.service.js'
  * }} Activity
  * `game` is the discovery game dealt with it (JUG-177), which Empezar opens instead of the timer.
  */
+/**
+ * @typedef {{
+ *   id: string, title: string, minutes: number, place: 'indoor' | 'outdoor',
+ *   reaction: Reaction | null, playedAt: Date,
+ * }} PlayedActivity
+ * A juego in the family's history (JUG-188), as its card shows it.
+ */
 /** @typedef {import('../games/rounds.js').Game} Game */
 /** @typedef {import('../catalog/catalog.service.js').CatalogService} CatalogService */
 /** @typedef {import('../db/client.js').Db} Db */
@@ -35,6 +43,27 @@ import { kidIdsOf } from '../families/families.service.js'
 
 /** How many of the family's latest activities the ranking reads. */
 const HISTORY = 400
+
+/** The columns an activity is sent with, as the parent saw it. */
+const activityColumns = {
+  id: activities.id,
+  title: activities.title,
+  minutes: activities.minutes,
+  place: activities.place,
+  why: activities.why,
+  needs: activities.needs,
+  steps: activities.steps,
+  easier: activities.easier,
+  harder: activities.harder,
+  game: activities.game,
+  reaction: activities.reaction,
+}
+
+// When a juego was last played (JUG-188): its Empezar, or its ¡Lo hicimos!,
+// whichever came later. A thumbs up says they played it too, which is how
+// juegos from before Empezar was recorded, and ones started offline, count.
+// `greatest` skips a null, so a juego with neither was never played.
+const lastPlayed = sql`greatest(${activities.playedAt}, case when ${activities.reaction} = 'up' then ${activities.reactedAt} end)`
 
 /**
  * @param {{
@@ -175,6 +204,61 @@ export function createActivitiesService({
         .returning({ id: activities.id, reaction: activities.reaction })
       if (!row) throw new NotFoundError('No such activity')
       return row
+    },
+
+    /**
+     * One of the family's juegos, as the parent saw it, to play it again
+     * from the history (JUG-188).
+     * @param {string} familyId
+     * @param {string} id
+     * @returns {Promise<Activity>}
+     */
+    async find(familyId, id) {
+      const [row] = await db
+        .select(activityColumns)
+        .from(activities)
+        .where(and(eq(activities.id, id), eq(activities.familyId, familyId)))
+      if (!row) throw new NotFoundError('No such activity')
+      return { ...row, game: /** @type {Game | null} */ (row.game) }
+    },
+
+    /**
+     * The parent tapped Empezar on a juego, its timer's or its game's
+     * (JUG-188). Playing it again moves the time up; nothing about how long
+     * they played is kept.
+     * @param {string} familyId
+     * @param {string} id
+     */
+    async play(familyId, id) {
+      const [row] = await db
+        .update(activities)
+        .set({ playedAt: now() })
+        .where(and(eq(activities.id, id), eq(activities.familyId, familyId)))
+        .returning({ id: activities.id })
+      if (!row) throw new NotFoundError('No such activity')
+    },
+
+    /**
+     * The juegos the family played since a moment, the one played last first
+     * (JUG-188). Each is there once, at the last time it was played.
+     * @param {string} familyId
+     * @param {{ since: Date, limit: number }} options
+     * @returns {Promise<PlayedActivity[]>}
+     */
+    async playedSince(familyId, { since, limit }) {
+      return db
+        .select({
+          id: activities.id,
+          title: activities.title,
+          minutes: activities.minutes,
+          place: activities.place,
+          reaction: activities.reaction,
+          playedAt: lastPlayed.mapWith(activities.playedAt),
+        })
+        .from(activities)
+        .where(and(eq(activities.familyId, familyId), sql`${lastPlayed} >= ${since}`))
+        .orderBy(sql`${lastPlayed} desc`, desc(activities.id))
+        .limit(limit)
     },
   }
 }

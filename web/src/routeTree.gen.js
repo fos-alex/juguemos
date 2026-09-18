@@ -15,6 +15,7 @@ import { Route as BienvenidaRouteImport } from './routes/bienvenida'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as CuentosRouteImport } from './routes/cuentos'
 import { Route as EntradaRouteImport } from './routes/entrada'
+import { Route as HistorialRouteImport } from './routes/historial'
 import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as MaterialesRouteImport } from './routes/materiales'
 import { Route as VerificarRouteImport } from './routes/verificar'
@@ -64,6 +65,11 @@ const CuentosRoute = CuentosRouteImport.update({
 const EntradaRoute = EntradaRouteImport.update({
   id: '/entrada',
   path: '/entrada',
+  getParentRoute: () => rootRouteImport,
+})
+const HistorialRoute = HistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
   getParentRoute: () => rootRouteImport,
 })
 const InvitacionRoute = InvitacionRouteImport.update({
@@ -174,6 +180,7 @@ const rootRouteChildren = {
   CuentaRoute: CuentaRoute,
   CuentosRoute: CuentosRoute,
   EntradaRoute: EntradaRoute,
+  HistorialRoute: HistorialRoute,
   InvitacionRoute: InvitacionRoute,
   MaterialesRoute: MaterialesRoute,
   VerificarRoute: VerificarRoute,

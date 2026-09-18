@@ -73,7 +73,7 @@ const answerTo = (user) => {
 /** @type {Awaited<ReturnType<typeof startApi>>} */
 let api
 let llm
-const emails = Array.from({ length: 12 }, (_, i) => `serie-${i}@example.com`)
+const emails = Array.from({ length: 16 }, (_, i) => `serie-${i}@example.com`)
 let emailCount = 0
 const signUp = () => signUpAs(api, emails[emailCount++])
 
@@ -254,6 +254,28 @@ test('the episodes of a series are read under it, not beside it in the library',
   const first = await api.app.inject({ method: 'GET', url: `/stories/${story.id}`, headers: { cookie } })
   assert.equal(first.statusCode, 200)
   assert.deepEqual(first.json().series, { id: series.id, title: 'Las tardes de Milán.', episode: 1 })
+})
+
+test('the episodes a family read are in its history, each with its series (JUG-188)', async () => {
+  const { cookie, story, series } = await familyWithSeries()
+  const second = storyIn(await writeEpisode(cookie, series.id))
+
+  const { stories } = (await api.app.inject({ method: 'GET', url: '/history', headers: { cookie } })).json()
+  assert.deepEqual(
+    stories.map((/** @type {{ id: string, series: object }} */ read) => [read.id, read.series]),
+    [
+      [second.id, { id: series.id, title: 'Las tardes de Milán.', episode: 2 }],
+      [story.id, { id: series.id, title: 'Las tardes de Milán.', episode: 1 }],
+    ],
+  )
+
+  // A series the family stopped following leaves its episodes there as stories.
+  await api.app.inject({ method: 'DELETE', url: `/series/${series.id}`, headers: { cookie } })
+  const after = (await api.app.inject({ method: 'GET', url: '/history', headers: { cookie } })).json()
+  assert.deepEqual(
+    after.stories.map((/** @type {{ series: object | null }} */ read) => read.series),
+    [null, null],
+  )
 })
 
 test('a series the family stops following shows up nowhere, and its stories come back', async () => {

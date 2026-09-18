@@ -1,0 +1,51 @@
+/* Lo que jugamos (JUG-188). Not in the design: built from the Plaza primitives. */
+
+.history {
+  gap: 26px;
+}
+
+/* A day's juegos and stories, under its heading. The first days arrive one
+   after another, like the toys in the baúl. */
+.history__day {
+  display: grid;
+  gap: 12px;
+  animation: rise-in var(--motion-moment) var(--ease-play) backwards;
+}
+
+.history__day:nth-of-type(2) {
+  animation-delay: var(--motion-stagger);
+}
+
+.history__day:nth-of-type(n + 3) {
+  animation-delay: calc(var(--motion-stagger) * 2);
+}
+
+.history__day--skeleton {
+  animation: none;
+}
+
+.history__heading {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-body-soft);
+}
+
+.history__empty {
+  margin-top: 0;
+}
+
+.history-entry__line {
+  margin-top: 8px;
+}
+
+/* How the juego went, when the parent said so (JUG-23): its thumb and its words. */
+.history-entry__reaction {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
