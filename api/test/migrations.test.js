@@ -184,6 +184,45 @@ test('0009 turns the years a parent gave into months, keeping the day they gave 
   })
 })
 
+test('0017 adds the categories a loaded template was missing, and keeps what the admin chose (JUG-30)', async () => {
+  await withEmptyDatabase(async (databaseUrl) => {
+    const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql') && f < '0017').sort()
+    const earlier = await Promise.all(
+      files.map(async (f) => ({ tag: f.replace('.sql', ''), sql: await readFile(join(MIGRATIONS_DIR, f), 'utf8') })),
+    )
+    await migrate({ databaseUrl, migrationsFolder: await migrationsFolder(earlier) })
+
+    const client = new pg.Client({ connectionString: databaseUrl })
+    await client.connect()
+    try {
+      // As the seed loaded them, except el-almacen, which the admin gave
+      // helpers, and la-mancha, which the admin already made out_and_about.
+      await client.query(
+        `insert into activity_templates
+           (slug, title, minutes, place, min_age_months, max_age_months, energy, categories, small_space, why, needs, steps, easier, harder)
+         select slug, slug, 10, 'indoor', 12, 47, 'low', categories, true, 'Porque sí.', 'nada.', array['Jugar.'], 'Menos.', 'Más.'
+         from (values
+           ('la-sombra', array['move', 'explore']),
+           ('el-almacen', array['pretend', 'helpers']),
+           ('la-mancha', array['move', 'out_and_about']),
+           ('estatuas', array['move'])
+         ) as t(slug, categories)`,
+      )
+
+      assert.equal((await migrate({ databaseUrl }))[0], '0017_activity-categories')
+      const { rows } = await client.query(`select slug, categories from activity_templates order by slug`)
+      assert.deepEqual(rows, [
+        { slug: 'el-almacen', categories: ['pretend', 'helpers', 'low_energy'] },
+        { slug: 'estatuas', categories: ['move'] },
+        { slug: 'la-mancha', categories: ['move', 'out_and_about'] },
+        { slug: 'la-sombra', categories: ['move', 'explore', 'out_and_about'] },
+      ])
+    } finally {
+      await client.end()
+    }
+  })
+})
+
 test('all migration files apply cleanly to a fresh database', async () => {
   await withEmptyDatabase(async (databaseUrl) => {
     const applied = await migrate({ databaseUrl })

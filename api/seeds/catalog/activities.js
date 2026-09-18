@@ -22,6 +22,27 @@
  * about, and the ranking (JUG-104) favours it for a kid who loves one of
  * them. A template about nothing in particular leaves it empty.
  *
+ * `categories` are the kinds of play a parent can ask for (JUG-30), and a
+ * template carries every one that fits it, not only the main one. The test
+ * for each is whether a parent who asked for that kind of play would be glad
+ * to get this juego:
+ *
+ * - move: the kid's body is the game: running, jumping, climbing, dancing,
+ *   carrying, throwing.
+ * - create: the kid makes something: a drawing, a craft, a building, music.
+ * - pretend: make-believe: role play, puppets, a toy or the grown-up playing
+ *   a character.
+ * - explore: nature, water and the senses, and finding out how something
+ *   behaves.
+ * - learn: it practises something with a name: counting, colours, sorting,
+ *   memory, words.
+ * - low_energy: the grown-up can sit or lie down and has nothing to prepare;
+ *   calm games, quiet sensory play, the minutes before bed.
+ * - helpers: a real job in the house: the kitchen, the laundry, the plants,
+ *   the pet, the shopping.
+ * - out_and_about: played away from home: the plaza, the street, an errand.
+ *   Every outdoor template carries it.
+ *
  * Batches 2 to 8 (JUG-24) cover ages 3 to 5, which batch 1 barely reached,
  * and the categories it never used: learn, helpers and out_and_about. They
  * are longer where the age allows it, up to six steps, and most need no toy,
@@ -123,7 +144,7 @@ export const activityTemplates = [
     minAgeMonths: 18,
     maxAgeMonths: 71,
     energy: 'high',
-    categories: ['move', 'explore'],
+    categories: ['move', 'explore', 'out_and_about'],
     smallSpace: false,
     materials: [],
     themes: ['animales', 'cuerpo'],
@@ -221,7 +242,7 @@ export const activityTemplates = [
     minAgeMonths: 18,
     maxAgeMonths: 47,
     energy: 'low',
-    categories: ['pretend'],
+    categories: ['pretend', 'low_energy'],
     smallSpace: true,
     materials: [],
     themes: ['munecos', 'numeros'],
@@ -296,7 +317,7 @@ export const activityTemplates = [
     minAgeMonths: 18,
     maxAgeMonths: 47,
     energy: 'low',
-    categories: ['create'],
+    categories: ['create', 'low_energy'],
     smallSpace: true,
     materials: ['crayones'],
     themes: ['dibujar'],
@@ -477,7 +498,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 71,
     energy: 'high',
-    categories: ['move', 'explore'],
+    categories: ['move', 'explore', 'out_and_about'],
     smallSpace: false,
     materials: [],
     themes: ['cuerpo'],
@@ -502,7 +523,7 @@ export const activityTemplates = [
     minAgeMonths: 36,
     maxAgeMonths: 71,
     energy: 'high',
-    categories: ['move'],
+    categories: ['move', 'pretend'],
     smallSpace: true,
     materials: ['almohadones', 'mantas'],
     themes: ['cuerpo'],
@@ -556,7 +577,7 @@ export const activityTemplates = [
     minAgeMonths: 30,
     maxAgeMonths: 71,
     energy: 'high',
-    categories: ['move'],
+    categories: ['move', 'out_and_about'],
     smallSpace: false,
     materials: [],
     themes: ['cuerpo'],
@@ -640,7 +661,7 @@ export const activityTemplates = [
     minAgeMonths: 36,
     maxAgeMonths: 71,
     energy: 'high',
-    categories: ['move', 'learn'],
+    categories: ['move', 'learn', 'out_and_about'],
     smallSpace: false,
     materials: ['tizas'],
     themes: ['numeros', 'cuerpo'],
@@ -694,7 +715,7 @@ export const activityTemplates = [
     minAgeMonths: 36,
     maxAgeMonths: 71,
     energy: 'low',
-    categories: ['out_and_about', 'helpers'],
+    categories: ['out_and_about', 'helpers', 'learn'],
     smallSpace: true,
     materials: [],
     themes: ['numeros', 'cocinar'],
@@ -719,7 +740,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 59,
     energy: 'medium',
-    categories: ['move', 'create'],
+    categories: ['move', 'create', 'out_and_about'],
     smallSpace: false,
     materials: ['tizas'],
     themes: ['dibujar', 'cuerpo'],
@@ -744,7 +765,7 @@ export const activityTemplates = [
     minAgeMonths: 30,
     maxAgeMonths: 71,
     energy: 'low',
-    categories: ['explore', 'low_energy'],
+    categories: ['explore', 'low_energy', 'out_and_about'],
     smallSpace: true,
     materials: [],
     themes: ['naturaleza', 'animales'],
@@ -1799,7 +1820,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 47,
     energy: 'low',
-    categories: ['low_energy', 'learn'],
+    categories: ['low_energy', 'learn', 'explore'],
     smallSpace: true,
     materials: ['repasadores'],
     themes: ['esconderse'],
@@ -1823,7 +1844,7 @@ export const activityTemplates = [
     minAgeMonths: 18,
     maxAgeMonths: 47,
     energy: 'low',
-    categories: ['low_energy', 'create'],
+    categories: ['low_energy', 'create', 'explore'],
     smallSpace: true,
     materials: [],
     themes: ['agua', 'dibujar'],
@@ -1943,7 +1964,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 47,
     energy: 'low',
-    categories: ['low_energy', 'learn'],
+    categories: ['low_energy', 'learn', 'explore'],
     smallSpace: true,
     materials: [],
     themes: [],
@@ -2040,7 +2061,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 47,
     energy: 'low',
-    categories: ['explore', 'learn'],
+    categories: ['explore', 'learn', 'low_energy'],
     smallSpace: true,
     materials: [],
     themes: ['cocinar'],
@@ -2118,7 +2139,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 47,
     energy: 'medium',
-    categories: ['explore'],
+    categories: ['explore', 'out_and_about'],
     smallSpace: true,
     materials: [],
     themes: ['esconderse'],
@@ -2145,7 +2166,7 @@ export const activityTemplates = [
     minAgeMonths: 24,
     maxAgeMonths: 47,
     energy: 'medium',
-    categories: ['explore'],
+    categories: ['explore', 'out_and_about'],
     smallSpace: true,
     materials: [],
     themes: ['agua', 'naturaleza'],
