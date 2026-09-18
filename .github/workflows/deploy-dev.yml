@@ -21,4 +21,4 @@ jobs:
           echo "${{ secrets.LUDI_DEV_SSH_KEY }}" > ~/.ssh/dev_deploy
           chmod 600 ~/.ssh/dev_deploy
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/dev_deploy root@147.182.129.173 \
-            "cd /var/www/ludi-dev && git fetch origin && git reset --hard origin/main && docker compose -p ludi-dev up -d --build && curl -s --max-time 30 http://127.0.0.1:3081/api/health"
+            "cd /var/www/ludi-dev && git fetch origin && git reset --hard origin/main && docker compose -p ludi-dev up -d --build && n=0; until curl -sf --max-time 10 http://127.0.0.1:3081/api/health; do n=$((n+1)); [ $n -ge 24 ] && exit 1; sleep 5; done"

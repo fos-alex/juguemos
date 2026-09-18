@@ -34,4 +34,4 @@ jobs:
              git fetch origin
              git reset --hard origin/main
              docker compose -p ludi up -d --build
-             curl -s --max-time 60 http://127.0.0.1:3080/api/health"
+             n=0; until curl -sf --max-time 10 http://127.0.0.1:3080/api/health; do n=$((n+1)); [ $n -ge 24 ] && exit 1; sleep 5; done"
