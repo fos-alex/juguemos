@@ -37,6 +37,21 @@
  * The parent's own tap, which holds until the next 19:00 or 07:00, in epoch milliseconds.
  */
 /**
+ * @typedef {{
+ *   weather: 'fine' | 'fair' | 'poor',
+ *   reason: 'clear' | 'rain' | 'storm' | 'cold' | 'heat' | 'wind' | 'fog' | 'grey',
+ *   night: boolean,
+ * }} Outside
+ * The weather the next juego is picked for (JUG-191), as the ranking reads
+ * it: `fine` favours a juego outside, `poor` one inside, and `fair` changes
+ * nothing. `reason` says what decided it. At `night` the juego is inside
+ * whatever the weather.
+ */
+/**
+ * @typedef {Outside & { at: number }} StoredOutside
+ * The last answer, and when it came, in epoch milliseconds.
+ */
+/**
  * @typedef {{ activityId: string, endsAt: number }} Timer
  * The juego being played, from Empezar until Terminamos. `endsAt` is in epoch milliseconds.
  */

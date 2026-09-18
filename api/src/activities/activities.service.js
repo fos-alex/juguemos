@@ -9,7 +9,7 @@
 import { and, count, desc, eq, isNotNull, ne, sql } from 'drizzle-orm'
 import { fillFor, render } from '../catalog/slots.js'
 import { themesOf } from '../catalog/themes.js'
-import { moodAt } from '../clock.js'
+import { moodAt, nightAt } from '../clock.js'
 import { activities } from './activities.schema.js'
 import { rank } from './ranking.js'
 import { NotFoundError } from '../errors.js'
@@ -39,6 +39,11 @@ import { kidIdsOf } from '../families/families.service.js'
 /** @typedef {import('../games/games.service.js').GamesService} GamesService */
 /** @typedef {import('../materials/materials.service.js').MaterialsService} MaterialsService */
 /** @typedef {import('../weather/weather.service.js').WeatherService} WeatherService */
+/**
+ * @typedef {import('../weather/conditions.js').Conditions & { night: boolean }} Outside
+ * What the juegos are picked for outside (JUG-191): the weather where the
+ * family lives, and whether it is night.
+ */
 /** @typedef {ReturnType<typeof createActivitiesService>} ActivitiesService */
 
 /** How many of the family's latest activities the ranking reads. */
@@ -166,6 +171,7 @@ export function createActivitiesService({
         after: templates.find((each) => each.id === afterTemplateId) ?? null,
         mood: mood === undefined ? moodAt(at) : mood,
         conditions,
+        night: nightAt(at),
         now: at,
         random,
       })
@@ -186,6 +192,19 @@ export function createActivitiesService({
         .values({ familyId, templateId: template.id, kidIds: kidIdsOf(profile), pick, ...activity })
         .returning({ id: activities.id })
       return { id, ...activity, reaction: null }
+    },
+
+    /**
+     * The weather a juego is picked for now, for Home to show (JUG-191), read
+     * the way `suggest` reads it, so what Home says is what the ranking does.
+     * Null when there is no weather to show: the family hasn't said where
+     * they live, or the forecast couldn't be read.
+     * @param {string} familyId
+     * @returns {Promise<Outside | null>}
+     */
+    async outside(familyId) {
+      const conditions = await weather.conditionsAt(await families.placeOf(familyId))
+      return conditions && { ...conditions, night: nightAt(now()) }
     },
 
     /**

@@ -337,7 +337,7 @@ test('a juego before bed is calm, and the parent can ask for one con pilas (JUG-
   }
 })
 
-test('a fine afternoon brings a juego outside, and rain keeps it in (JUG-25)', async () => {
+test('a fine afternoon brings a juego outside, and rain and the night keep it in (JUG-25, JUG-191)', async () => {
   /** A forecaster that answers the same hour all the way through, and counts its calls. */
   const forecasting = (/** @type {object} */ hour) => {
     /** @type {{ latitude: number, longitude: number }[]} */
@@ -357,14 +357,14 @@ test('a fine afternoon brings a juego outside, and rain keeps it in (JUG-25)', a
     return { latitude: -34.61315, longitude: -58.37723 }
   } }
 
-  /** @param {object} hour */
-  const askWith = async (hour) => {
+  /** @param {object} hour @param {string} [at] the time in Buenos Aires */
+  const askWith = async (hour, at = '2026-09-14T15:00:00-03:00') => {
     const forecaster = forecasting(hour)
-    // Midday, so the moment leaves both juegos where they are.
+    // Midday by default, so the moment leaves both juegos where they are.
     const weather = await startApi({
       forecaster,
       geocoder,
-      now: () => new Date('2026-09-14T15:00:00-03:00'),
+      now: () => new Date(at),
       random: seededRandom('tiempo'),
     })
     try {
@@ -378,7 +378,9 @@ test('a fine afternoon brings a juego outside, and rain keeps it in (JUG-25)', a
         await weather.app.inject({ method: 'POST', url: '/activities/suggestions', headers: { cookie }, payload: {} })
       ).json()
       const { rows } = await weather.pool.query('select pick from activities where id = $1', [suggested.id])
-      return { suggested, pick: rows[0].pick, reads: forecaster.reads }
+      // What Home shows, from the same cache entry.
+      const outside = (await weather.app.inject({ method: 'GET', url: '/activities/weather', headers: { cookie } })).json()
+      return { suggested, pick: rows[0].pick, reads: forecaster.reads, outside }
     } finally {
       await weather.close()
     }
@@ -389,11 +391,19 @@ test('a fine afternoon brings a juego outside, and rain keeps it in (JUG-25)', a
   assert.deepEqual(fine.pick.conditions, { weather: 'fine', reason: 'clear' })
   // The forecast is asked for where the geocoder put the family, not for a home.
   assert.deepEqual(fine.reads, [{ latitude: -34.61315, longitude: -58.37723 }])
+  assert.deepEqual(fine.outside, { weather: 'fine', reason: 'clear', night: false })
 
   const wet = await askWith(POURING)
   assert.equal(wet.suggested.title, 'Un juego adentro')
   assert.deepEqual(wet.pick.conditions, { weather: 'poor', reason: 'rain' })
   assert.equal(wet.pick.weather, DEFAULT_WEIGHTS.weather.poor.indoor)
+  assert.deepEqual(wet.outside, { weather: 'poor', reason: 'rain', night: false })
+
+  // A clear night still keeps the juego at home, and Home is told it is night.
+  const night = await askWith(CLEAR, '2026-09-14T21:00:00-03:00')
+  assert.equal(night.suggested.title, 'Un juego adentro')
+  assert.equal(night.pick.night, true)
+  assert.deepEqual(night.outside, { weather: 'fine', reason: 'clear', night: true })
 })
 
 test('a family that has not said where they live is offered a juego as before (JUG-25)', async () => {
@@ -416,6 +426,10 @@ test('a family that has not said where they live is offered a juego as before (J
     const { rows } = await nowhere.pool.query('select pick from activities where id = $1', [suggested.id])
     assert.equal(rows[0].pick.conditions, null)
     assert.equal(rows[0].pick.weather, 1)
+    // And Home has no weather to show.
+    const outside = await nowhere.app.inject({ method: 'GET', url: '/activities/weather', headers: { cookie } })
+    assert.equal(outside.statusCode, 200)
+    assert.equal(outside.json(), null)
   } finally {
     await nowhere.close()
   }

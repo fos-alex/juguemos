@@ -252,6 +252,25 @@ test('a fine afternoon brings the juegos outside up, and rain takes them away', 
   assert.equal(pick(unknown, 'inside').conditions, null)
 })
 
+test('at night the juego is at home, whatever the weather says', () => {
+  const inside = candidate(template({ slug: 'inside', place: 'indoor' }))
+  const outside = candidate(template({ slug: 'outside', place: 'outdoor' }))
+  const pick = (/** @type {ReturnType<typeof rank>} */ ranked, /** @type {string} */ slug) =>
+    /** @type {any} */ (ranked.find((each) => each.template.slug === slug)).pick
+
+  // A clear night ranks like rain, and keeps what the forecast said.
+  const clear = rank([inside, outside], context({ conditions: { weather: 'fine', reason: 'clear' }, night: true }))
+  assert.equal(pick(clear, 'inside').weather, 1)
+  assert.equal(pick(clear, 'outside').weather, DEFAULT_WEIGHTS.weather.poor.outdoor)
+  assert.deepEqual(pick(clear, 'outside').conditions, { weather: 'fine', reason: 'clear' })
+  assert.equal(pick(clear, 'outside').night, true)
+
+  // So does a night with no weather: nobody goes to the plaza after dark.
+  const unknown = rank([inside, outside], context({ night: true }))
+  assert.equal(pick(unknown, 'outside').weather, DEFAULT_WEIGHTS.weather.poor.outdoor)
+  assert.ok(winRate([inside, outside], { night: true }, 'inside') > 0.95)
+})
+
 test('a juego outside is still offered in the rain when it is the only one that fits', () => {
   const only = candidate(template({ slug: 'outside', place: 'outdoor' }))
   const [picked] = rank([only], context({ conditions: { weather: 'poor', reason: 'rain' } }))
@@ -262,8 +281,8 @@ test('a juego outside is still offered in the rain when it is the only one that 
 test('the pick keeps every part of the score and the weights', () => {
   const [first] = rank([candidate(template({ slug: 'a' }))], context())
   assert.deepEqual(Object.keys(first.pick).sort(), [
-    'conditions', 'difference', 'favorite', 'feedback', 'fit', 'freshness', 'moment', 'mood', 'named', 'score',
-    'themes', 'weather', 'weights',
+    'conditions', 'difference', 'favorite', 'feedback', 'fit', 'freshness', 'moment', 'mood', 'named', 'night',
+    'score', 'themes', 'weather', 'weights',
   ])
   assert.equal(
     first.pick.score,

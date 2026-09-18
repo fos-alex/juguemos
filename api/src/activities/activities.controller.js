@@ -17,6 +17,11 @@ export function createActivitiesController({ activities }) {
     },
 
     /** @type {import('fastify').RouteHandlerMethod} */
+    async outside(request) {
+      return activities.outside(familyOf(request))
+    },
+
+    /** @type {import('fastify').RouteHandlerMethod} */
     async react(request) {
       const { id } = /** @type {{ id: string }} */ (request.params)
       const { reaction } = /** @type {{ reaction: 'up' | 'down' | null }} */ (request.body)

@@ -79,6 +79,18 @@ const reacted = {
 
 const idParams = { type: 'object', required: ['id'], properties: { id: uuid } }
 
+// The weather the next juego is picked for (JUG-191), or null when there is
+// none to show. Only what the ranking reads: no temperature, no place.
+const outside = {
+  type: ['object', 'null'],
+  required: ['weather', 'reason', 'night'],
+  properties: {
+    weather: { type: 'string', enum: ['fine', 'fair', 'poor'] },
+    reason: { type: 'string', enum: ['clear', 'rain', 'storm', 'cold', 'heat', 'wind', 'fog', 'grey'] },
+    night: { type: 'boolean' },
+  },
+}
+
 /**
  * Activities for an adult who has already saved a family. 404 is the catalog
  * having nothing that fits it yet, or a juego that isn't the family's.
@@ -96,6 +108,14 @@ export async function activitiesRoutes(app, { controller }) {
       },
     },
     controller.suggest,
+  )
+  app.get(
+    '/activities/weather',
+    {
+      config: { access: 'family' },
+      schema: { response: { 200: outside, 401: errorBody, 409: errorBody, 500: errorBody } },
+    },
+    controller.outside,
   )
   app.put(
     '/activities/:id/reaction',
