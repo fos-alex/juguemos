@@ -80,7 +80,7 @@ The router plugin turns `src/routes/` into the route tree. A dot nests the path 
 | `/serie/$id` | One series: its storyline, its episodes in order, *Leer otro episodio*, and *Ya no la seguimos* (JUG-59) |
 | `/serie/$id/episodio` | The same reading screen, writing the series' next episode. Once saved, the URL is replaced with the story's own |
 | `/historial` | Lo que jugamos (JUG-188): the juegos played and the stories read in the last month, under a heading per day, each opening again with one tap. Reached from the menu. Built from the primitives, with no design of its own |
-| `/admin` | The catalog admin: every activity template, with its rating now and every family's reactions, and a switch that takes it out of *¡Juguemos!* |
+| `/admin` | The catalog admin: every activity template, with its rating now and every family's reactions. Beside each, its *Puntaje inicial*, which saves as soon as it changes, and a switch that takes it out of *¡Juguemos!* On a phone both go under the words |
 | `/admin/$id` | Edits one template, including its *Puntaje inicial*, 1 to 5, which every family's ranking starts from (JUG-192). `/admin/nuevo` adds one |
 | `/admin/usuarios` | Usuarios: invite an email, with *Reenviar* for the invitations still open, and the accounts, each with *Borrar* (JUG-34, JUG-175) |
 
